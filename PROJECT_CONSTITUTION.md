@@ -44,3 +44,10 @@ Review
 - Use modular architecture.
 - Keep functions small.
 - Keep modules independent.
+## Engineering Governance
+
+All significant architectural decisions must be documented using Architecture Decision Records (ADR).
+
+Every feature must satisfy the Definition of Done before being considered complete.
+
+Engineering workflow is standardized through documented governance rather than individual preference.

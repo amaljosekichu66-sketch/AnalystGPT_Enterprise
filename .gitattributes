@@ -1,0 +1,38 @@
+# Normalize text files to LF in the repository
+* text=auto
+
+# Python
+*.py text
+
+# Markdown
+*.md text
+
+# YAML
+*.yml text
+*.yaml text
+
+# JSON
+*.json text
+
+# TOML
+*.toml text
+
+# Docker
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.pdf binary

@@ -373,3 +373,14 @@ Every new feature should satisfy the following rules:
 - Prefer extension over modification.
 - Architecture decisions must solve a business problem.
 - Code should optimize for readability and maintainability.
+## Engineering Governance
+
+The project follows enterprise engineering governance through:
+
+- Architecture Decision Records (ADR)
+- Engineering Playbook
+- Definition of Done
+- Documentation Standards
+- Code Review Checklist
+
+These documents standardize engineering decisions and development workflow across the project.

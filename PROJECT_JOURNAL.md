@@ -96,3 +96,49 @@
 - Custom exceptions improve maintainability
 - Good architecture reduces cognitive load
 - Design before implementation
+
+# Sprint 0.75 — Enterprise Engineering Workflow
+
+**Status:** ✅ Completed
+
+## Completed
+
+- Installed and configured Git
+- Initialized local Git repository
+- Created `.gitignore`
+- Learned Git workflow:
+  - git status
+  - git add
+  - git commit
+  - git log
+  - git restore
+  - git remote
+  - git remote -v
+- Connected repository to GitHub
+- Created first production-quality commits
+- Published repository to GitHub
+- Created annotated release tag `v0.75.0`
+- Established Engineering Governance
+- Created Architecture Decision Records (ADR-001 to ADR-006)
+- Added Engineering Playbook
+- Added Code Review Checklist
+- Added Documentation Standards
+- Added Definition of Done
+- Added Sprint Retrospective
+- Added Sprint Release Report
+
+## Lessons Learned
+
+- Git is a distributed version control system, not cloud storage.
+- Commits create immutable snapshots of the repository.
+- The staging area allows changes to be reviewed before committing.
+- GitHub stores and shares the repository but Git manages version history.
+- Tags mark important milestones such as software releases.
+- Architecture decisions should be documented rather than remembered.
+- Enterprise software requires engineering governance before feature development.
+
+## Release
+
+Version: **v0.75.0**
+
+Sprint Status: ✅ Closed

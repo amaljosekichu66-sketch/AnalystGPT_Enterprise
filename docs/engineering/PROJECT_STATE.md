@@ -1,8 +1,14 @@
 # AnalystGPT Enterprise — PROJECT_STATE.md
 
-> Source of truth for the current state of AnalystGPT Enterprise.
-> Read this document before reviewing the repository.
-> Estimated reading time: 2 minutes.
+> **Purpose**
+>
+> This document is the single source of truth for the current state of AnalystGPT Enterprise.
+> It provides enough context for an engineer (or AI assistant) to understand the project in approximately two minutes.
+>
+> Historical details belong in:
+> - PROJECT_JOURNAL.md
+> - CHANGELOG.md
+> - ROADMAP.md
 
 ---
 
@@ -10,295 +16,220 @@
 
 Project: AnalystGPT Enterprise
 
-Version: v0.5.0
+Version: **v0.75.0**
 
-Last Updated: 04 July 2026
+Last Updated: **13 July 2026**
 
-Current Sprint: Sprint 0.75
+Repository Status: 🟢 Active Development
 
-Status: 🟡 Ready to Begin
+Current Sprint: **Sprint 1 — Upload Module**
 
-Current Module: Enterprise Engineering Workflow
+Sprint Progress: **0%**
 
-Repository Status: Active Development
+Current Task: **Business Requirements**
+
+Latest Stable Release: **v0.75.0**
+
+Default Branch: **main**
+
+Latest ADR: **ADR-006**
+
+Architecture Status: ✅ Approved
 
 ---
 
 # Mission
 
-Build an enterprise-grade analytics platform while becoming capable of independently designing, building, testing and deploying production-quality analytics software.
+Build an enterprise-grade analytics platform while becoming capable of independently designing, building, testing, documenting, reviewing and deploying production-quality analytics software.
 
 ---
 
 # Current Architecture
 
 ```
-main.py
-   │
-   ▼
-Upload
-   │
-   ▼
-Cleaning
-   │
-   ▼
-Quality
-   │
-   ▼
-Analytics
-   │
-   ▼
-Reporting
+                 main.py
+                    │
+                    ▼
+            Upload Module
+                    │
+                    ▼
+           Cleaning Module
+                    │
+                    ▼
+            Quality Module
+                    │
+                    ▼
+           Analytics Module
+                    │
+                    ▼
+           Reporting Module
 ```
 
 Shared Infrastructure
 
 ```
 core/
-
-constants.py
-
-config.py
-
-logger.py
-
-exceptions.py
+├── __init__.py
+├── constants.py
+├── config.py
+├── logger.py
+└── exceptions.py
 ```
 
-Architecture Status
+Architecture Principles
 
-✅ Approved
+- main.py is an orchestrator only.
+- Business modules own business logic.
+- Shared infrastructure belongs in `core`.
+- Business modules depend on `core`.
+- `core` never depends on business modules.
 
 ---
 
-# Stable Contracts
+# Stable Module Contract
 
-Upload
+## Upload Module
 
-Input
+### Supported Inputs
 
-CSV
+- CSV
+- Excel
+- JSON
 
-Excel
+### Planned Inputs
 
-JSON
+- API
+- Database
+- XML
+- Parquet
 
-API
+### Output
 
-Database
+**Pandas DataFrame**
 
-Future
+### Contract
 
-XML
+Every downstream business module consumes only a standardized Pandas DataFrame.
 
-Parquet
+### Status
 
-Output
+✅ Stable
 
-Pandas DataFrame
-
-Rule
-
-Every downstream module consumes only DataFrames.
-
-Contract Status
-
-🔒 Locked
+Changes require a new Architecture Decision Record (ADR).
 
 ---
 
-# Repository Snapshot
-
-Current Structure
+# Repository Structure
 
 ```
+AnalystGPT_Enterprise/
+
 docs/
+├── adr/
+└── engineering/
+
 src/
 tests/
+
+README.md
+ARCHITECTURE.md
+CHANGELOG.md
+LESSONS_LEARNED.md
+PROJECT_CONSTITUTION.md
+PROJECT_JOURNAL.md
+PROJECT_STATE.md
+ROADMAP.md
 requirements.txt
 ```
 
-Current Core Files
+---
 
-```
-constants.py
+# Engineering Governance
 
-config.py
+The repository currently contains:
 
-logger.py
+- Architecture Decision Records (ADR)
+- Engineering Playbook
+- Documentation Standards
+- Code Review Checklist
+- Definition of Done
+- Sprint Retrospective
+- Sprint Release Report
 
-exceptions.py
-```
-
-Current Upload Files
-
-```
-upload_manager.py
-
-csv_reader.py
-```
+Engineering governance is complete through Sprint 0.75.
 
 ---
 
-# Completed Sprints
+# Project Timeline
 
-## Sprint 0 ✅
+| Sprint | Status |
+|---------|--------|
+| Sprint 0 | ✅ Completed |
+| Sprint 0.5 | ✅ Completed |
+| Sprint 0.75 | ✅ Completed |
+| Sprint 1 | 🟡 Ready to Begin |
+| Sprint 1.5 | ⬜ Planned |
 
-Status
-
-Completed
-
-Major Deliverables
-
-✔ Project Foundation
-
-✔ Repository Structure
-
-✔ Architecture
-
-✔ README
-
-✔ Python Environment
-
-✔ main.py
-
----
-
-## Sprint 0.5 ✅
-
-Status
-
-Completed
-
-Major Deliverables
-
-✔ Core Infrastructure
-
-✔ Shared Logger
-
-✔ Shared Configuration
-
-✔ Shared Constants
-
-✔ Custom Exceptions
-
-✔ Stable Contracts
-
-✔ Dependency Direction
-
-✔ DataFrame Contract
-
-✔ Engineering Documentation
-
-Architecture Decisions
-
-✔ Shared infrastructure belongs inside core.
-
-✔ Upload always returns a DataFrame.
-
-✔ Business modules never depend on each other directly.
-
-✔ main.py remains an orchestrator.
+For detailed sprint history, see **PROJECT_JOURNAL.md**.
 
 ---
 
 # Current Sprint
 
-Sprint
+## Sprint 1 — Upload Module
 
-0.75
+### Objective
 
-Title
+Develop the first production-quality business module while following the engineering standards established during Sprint 0.75.
 
-Enterprise Engineering Workflow
+### Deliverables
 
-Progress
+#### Planning
 
-0%
+- ⬜ Business Requirements
+- ⬜ User Stories
+- ⬜ Acceptance Criteria
+- ⬜ Technical Design
 
-Objective
+#### Architecture
 
-Build the professional engineering workflow before implementing business features.
+- ⬜ Upload Manager
+- ⬜ Reader Architecture
+- ⬜ Module Contracts
 
-Current Checklist
+#### Readers
 
-□ Git Fundamentals
+- ⬜ CSV Reader
+- ⬜ Excel Reader
+- ⬜ JSON Reader
 
-□ git init
+#### Validation
 
-□ .gitignore
+- ⬜ File Extension Validation
+- ⬜ File Size Validation
+- ⬜ Exception Handling
+- ⬜ Logging Integration
 
-□ git status
+#### Output
 
-□ git add
-
-□ git commit
-
-□ git log
-
-□ git restore
-
-□ Branches
-
-□ Pull Requests
-
-□ ADR
-
-□ Definition of Done
-
----
-
-# Next Sprint
-
-Sprint 1
-
-Upload Module
-
-Deliverables
-
-CSV Reader
-
-Excel Reader
-
-JSON Reader
-
-Upload Manager
-
-Validation
-
-Logging
-
-Exceptions
-
-DataFrame Contract
+- ⬜ Standardized Pandas DataFrame
 
 ---
 
 # Current Engineering Decisions
 
-Status
+Approved Decisions
 
-Approved
-
-Decision Log
-
-✔ main.py is only an orchestrator.
-
-✔ Shared infrastructure belongs inside core.
-
-✔ Upload owns data acquisition.
-
-✔ Upload returns DataFrame.
-
-✔ Business modules consume DataFrames only.
-
-✔ Shared logger architecture.
-
-✔ Configuration is centralized.
-
-✔ Constants remain immutable.
-
-✔ Custom exceptions are centralized.
+- main.py is only an orchestrator.
+- Upload owns data acquisition.
+- Business modules communicate using DataFrames.
+- Shared infrastructure belongs inside `core`.
+- Dependency direction is enforced.
+- Logging is centralized.
+- Configuration is centralized.
+- Constants remain immutable.
+- Custom exceptions are centralized.
+- Significant architectural changes require a new ADR.
 
 ---
 
@@ -310,87 +241,74 @@ None
 
 # Current Focus
 
-Current Goal
+Primary Goal
 
-Develop software engineering thinking rather than Python syntax.
+Implement the Upload Module while maintaining enterprise engineering quality.
 
 Current Priorities
 
-Architecture
-
-Git
-
-Engineering Workflow
-
-Code Reviews
-
-Documentation
-
-Testing
+- Clean Architecture
+- Modular Design
+- Readability
+- Maintainability
+- Logging
+- Exception Handling
+- Git Workflow
 
 ---
 
 # Development Environment
 
-OS
+Current Development Machine
 
-macOS
+- ASUS Laptop (Windows 11)
 
-Machine
+Primary Development Machine
 
-MacBook Pro M1
+- MacBook Pro M1 (Under Repair)
 
 IDE
 
-VS Code
+- Visual Studio Code
 
 Python
 
-3.10.5
+- 3.11.x
 
-Interpreter
+Git
 
-/usr/local/bin/python3
+- Configured
 
 GitHub
 
-Connected
+- Connected
+
+Repository Visibility
+
+- Public
+
+Latest Release
+
+- v0.75.0
 
 ---
 
 # Conversation Bootstrap
 
-When starting a new conversation:
+When starting a new engineering session:
 
-1.
-
-Read ENGINEERING_OPERATING_SYSTEM.md
-
-2.
-
-Read PROJECT_STATE.md
-
-3.
-
-Review AnalystGPT_Enterprise.zip
-
-4.
-
-Summarize
-
-Current Sprint
-
-Architecture
-
-Completed Work
-
-Today's Objective
-
-5.
-
-Continue exactly where the previous session ended.
-
-Never restart completed topics unless requested.
+1. Read PROJECT_STATE.md.
+2. Review ROADMAP.md.
+3. Review ARCHITECTURE.md.
+4. Review any ADRs created after the latest completed sprint.
+5. Verify the latest Git tag.
+6. Summarize:
+   - Current Sprint
+   - Architecture
+   - Completed Work
+   - Current Objective
+7. Continue from the latest completed task.
+8. Do not revisit completed architecture decisions unless a new ADR is proposed.
 
 ---
 
@@ -398,26 +316,18 @@ Never restart completed topics unless requested.
 
 The project succeeds when I can independently:
 
-✔ Design software architecture
-
-✔ Build modular enterprise software
-
-✔ Write production-quality Python
-
-✔ Design ETL pipelines
-
-✔ Work with SQL
-
-✔ Integrate APIs
-
-✔ Write tests
-
-✔ Use Git professionally
-
-✔ Build dashboards
-
-✔ Deploy applications
-
-✔ Explain architectural decisions confidently
-
-✔ Think like an Enterprise Software Engineer
+- ✅ Design enterprise software architecture
+- ✅ Build modular analytics applications
+- ✅ Develop production-quality Python
+- ✅ Design ETL pipelines
+- ✅ Build scalable data processing workflows
+- ✅ Work professionally with Git & GitHub
+- ✅ Write maintainable engineering documentation
+- ✅ Implement automated testing
+- ✅ Integrate SQL databases
+- ✅ Consume REST APIs
+- ✅ Build analytical dashboards
+- ✅ Deploy production applications
+- ✅ Review Pull Requests
+- ✅ Explain and defend architectural decisions confidently
+- ✅ Think and communicate like an Enterprise Software Engineer

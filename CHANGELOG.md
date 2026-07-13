@@ -22,3 +22,24 @@
 ### Testing
 
 - Initial Smoke Test
+## [v0.75.0] - 2026-07-13
+
+### Added
+
+- Git version control
+- GitHub integration
+- Engineering Playbook
+- Code Review Checklist
+- Documentation Standards
+- Definition of Done
+- Sprint Retrospective
+- Sprint Release Report
+- ADR-001 to ADR-006
+
+### Changed
+
+- Repository upgraded to enterprise engineering workflow.
+
+### Release
+
+Official Sprint 0.75 Release

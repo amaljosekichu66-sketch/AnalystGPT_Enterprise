@@ -286,3 +286,27 @@ Ask
 - Design for change.
 - Prefer extension over modification.
 - Understand before implementing.
+# Sprint 0.75
+
+## Git
+
+- Git records the complete history of a project through immutable commits.
+- Every commit should represent one logical change.
+- The staging area exists to review changes before committing.
+- Annotated tags should be used for official software releases.
+- Always verify repository status before committing.
+
+## Engineering Governance
+
+- Good software is governed before it is expanded.
+- Architecture decisions should be documented using ADRs.
+- Every feature should satisfy a Definition of Done.
+- Documentation should have clearly defined ownership.
+- Code reviews protect software quality.
+
+## Architecture
+
+- Shared infrastructure belongs in `core/`.
+- Business modules must never create circular dependencies.
+- Stable module contracts reduce coupling.
+- Separation of Concerns improves maintainability.
