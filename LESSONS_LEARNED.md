@@ -310,3 +310,21 @@ Ask
 - Business modules must never create circular dependencies.
 - Stable module contracts reduce coupling.
 - Separation of Concerns improves maintainability.
+# Sprint 1 Lessons
+
+## Technical Lessons
+
+- Every module should have a single responsibility.
+- UploadManager should orchestrate, not read files.
+- Readers should only read their own file types.
+- All readers should return the same abstraction (DataFrame).
+- Custom exceptions improve maintainability.
+- Logging should exist from the beginning of a project.
+- Validation should happen before business logic.
+
+## Engineering Lessons
+
+- Build architecture before adding features.
+- Keep modules small and focused.
+- Design for future extension.
+- Prefer reusable components over duplicated logic.
