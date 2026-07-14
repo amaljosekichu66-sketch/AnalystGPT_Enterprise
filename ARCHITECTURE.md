@@ -1,386 +1,498 @@
 # AnalystGPT Enterprise Architecture
 
+> **Purpose**
+>
+> This document describes the software architecture of AnalystGPT Enterprise.
+> It defines the responsibilities, boundaries, dependencies, and data flow
+> between modules.
+>
+> This document reflects the current implementation as of **v2.0.0**.
+
 ---
 
-# Project Philosophy
+# Architecture Philosophy
 
-AnalystGPT Enterprise is built as an enterprise analytics platform rather than a collection of Python scripts.
+AnalystGPT Enterprise follows a modular, layered architecture designed around
+Separation of Concerns (SoC), SOLID principles, and maintainability.
 
-The architecture prioritizes:
-
-- Business before implementation
-- Architecture before code
-- Separation of Concerns
-- Low Coupling
-- High Cohesion
-- Scalability
-- Maintainability
-- Extensibility
-- Reusability
-
-Python is the implementation language.
-
-The architecture is the product.
+Each business capability is implemented as an independent module with a single,
+well-defined responsibility.
 
 ---
 
 # High-Level Architecture
 
 ```
-main.py
-    │
-    ▼
-Upload Module
-    │
-    ▼
-Cleaning Module
-    │
-    ▼
-Quality Module
-    │
-    ▼
-Analytics Module
-    │
-    ▼
-Reporting Module
+                    main.py
+                       │
+                       ▼
+              Upload Manager
+                       │
+                       ▼
+            Standardized DataFrame
+                       │
+                       ▼
+             Cleaning Manager
+                       │
+                       ▼
+               Clean DataFrame
+                       │
+                       ▼
+              Quality Manager
+                       │
+                       ▼
+            Validated DataFrame
+                       │
+                       ▼
+             Analytics Manager
+                       │
+                       ▼
+             Reporting Manager
 ```
-
-`main.py` is responsible only for orchestrating the application workflow.
-
-Business logic never belongs inside `main.py`.
 
 ---
 
-# Application Flow
+# Layered Architecture
 
 ```
-User
+Presentation Layer
 
-↓
+        main.py
+
+──────────────────────────────────
+
+Business Layer
 
 Upload
-
-↓
-
 Cleaning
-
-↓
-
 Quality
-
-↓
-
 Analytics
-
-↓
-
 Reporting
 
-↓
+──────────────────────────────────
 
-Business Output
-```
+Shared Infrastructure
 
-Every module performs exactly one responsibility before passing its output to the next module.
-
----
-
-# Module Responsibilities
-
-## Upload Module
-
-Responsibilities
-
-- Read CSV
-- Read Excel
-- Read JSON
-- Read APIs
-- Read SQL Databases
-- Validate file type
-- Return standardized Pandas DataFrame
-
-Output
-
-- Pandas DataFrame
-
----
-
-## Cleaning Module
-
-Responsibilities
-
-- Handle missing values
-- Remove duplicates
-- Standardize columns
-- Convert data types
-- Clean raw data
-
-Output
-
-- Clean Pandas DataFrame
-
----
-
-## Quality Module
-
-Responsibilities
-
-- Validate business rules
-- Validate schema
-- Data quality checks
-- Generate quality metrics
-
-Output
-
-- Validated Pandas DataFrame
-
----
-
-## Analytics Module
-
-Responsibilities
-
-- KPI calculations
-- Business metrics
-- Statistical summaries
-- Insight generation
-
-Output
-
-- Analytics Results
-
----
-
-## Reporting Module
-
-Responsibilities
-
-- PDF Reports
-- PowerPoint Reports
-- Excel Reports
-- Dashboard Data
-- Streamlit Output
-
-Output
-
-- Business Reports
-
----
-
-# Core Infrastructure
-
-The `core` package contains infrastructure shared across the entire application.
-
-```
 core/
 
-├── constants.py
-├── config.py
-├── logger.py
-└── exceptions.py
+──────────────────────────────────
+
+External Libraries
+
+Pandas
+OpenPyXL
+JSON
+Pytest
+Logging
 ```
 
-These components are reusable services.
-
-Business modules use them.
-
-Business modules never implement their own versions.
-
 ---
 
-# Core Responsibilities
-
-## constants.py
-
-Stores values that define the application.
-
-Examples
-
-- Application Name
-- Version
-- Default Encoding
-
----
-
-## config.py
-
-Stores environment-specific configuration.
-
-Examples
-
-- Debug Mode
-- Log Level
-- Maximum Upload Size
-
----
-
-## logger.py
-
-Provides centralized logging.
-
-Responsibilities
-
-- Shared Logger
-- Log Level
-- Handlers
-- Future File Logging
-- Future Cloud Logging
-
----
-
-## exceptions.py
-
-Defines application-specific exceptions.
-
-Responsibilities
-
-- Centralized exception definitions
-- Consistent error handling
-- Better debugging
-
----
-
-# Stable Module Contract
-
-The Upload Module must always return a Pandas DataFrame.
-
-Regardless of whether the source is:
-
-- CSV
-- Excel
-- JSON
-- API
-- SQL Database
-- XML (future)
-- Parquet (future)
-- Cloud Storage (future)
-
-The remaining modules never need to know where the data originated.
-
-This stable contract minimizes coupling and maximizes extensibility.
-
----
-
-# Dependency Direction
-
-Allowed
-
-```
-Business Modules
-
-↓
-
-Core
-```
-
-Not Allowed
-
-```
-Core
-
-↓
-
-Business Modules
-```
-
-This prevents circular dependencies and keeps infrastructure reusable.
-
----
-
-# Shared Logging Architecture
-
-Every business module uses the shared logger.
-
-```
-Upload
-
-Cleaning
-
-Quality
-
-Analytics
-
-Reporting
-
-        │
-        ▼
-
-core/logger.py
-
-        │
-        ▼
-
-Application Logs
-```
-
-Business modules do not create independent logging systems.
-
----
-
-# Design Principles
-
-The project follows:
-
-- Separation of Concerns (SoC)
-- Single Responsibility Principle (SRP)
-- Open/Closed Principle (OCP)
-- Abstraction
-- Low Coupling
-- High Cohesion
-- Modular Design
-- Scalability
-- Maintainability
-- Extensibility
-- Reusability
-- Stable Module Contracts
-
----
-
-# Current Project Structure
+# Repository Structure
 
 ```
 AnalystGPT_Enterprise/
 
 docs/
-tests/
-src/
 
-    core/
-        constants.py
-        config.py
-        logger.py
-        exceptions.py
+sample_data/
+
+src/
 
     upload/
     cleaning/
     quality/
     analytics/
     reporting/
+    core/
 
-    main.py
+tests/
+
+main.py
 ```
 
 ---
 
-# Architecture Goals
+# Current Stable Modules
 
-Every new feature should satisfy the following rules:
+## Upload Module
 
-- One responsibility per module.
-- Shared functionality belongs inside `core`.
-- `main.py` remains an orchestrator.
-- Business modules communicate through stable contracts.
-- Prefer extension over modification.
-- Architecture decisions must solve a business problem.
-- Code should optimize for readability and maintainability.
-## Engineering Governance
+### Responsibility
 
-The project follows enterprise engineering governance through:
+Acquire data from supported file formats and convert it into a standardized
+Pandas DataFrame.
 
-- Architecture Decision Records (ADR)
-- Engineering Playbook
-- Definition of Done
-- Documentation Standards
-- Code Review Checklist
+### Components
 
-These documents standardize engineering decisions and development workflow across the project.
+- UploadManager
+- CSVReader
+- ExcelReader
+- JSONReader
+
+### Supported Formats
+
+- CSV
+- Excel (.xlsx, .xls)
+- JSON
+
+### Output
+
+```
+Pandas DataFrame
+```
+
+### Status
+
+✅ Stable
+
+---
+
+## Cleaning Module
+
+### Responsibility
+
+Normalize uploaded data before quality validation.
+
+### Components
+
+- CleaningManager
+- ColumnCleaner
+- TextCleaner
+- MissingValueCleaner
+- DuplicateCleaner
+- DataTypeCleaner
+
+### Processing Pipeline
+
+```
+Raw DataFrame
+
+↓
+
+ColumnCleaner
+
+↓
+
+TextCleaner
+
+↓
+
+MissingValueCleaner
+
+↓
+
+DuplicateCleaner
+
+↓
+
+DataTypeCleaner
+
+↓
+
+Reset Index
+
+↓
+
+Clean DataFrame
+```
+
+### Status
+
+✅ Stable
+
+---
+
+## Quality Module
+
+### Responsibility
+
+Validate cleaned datasets before analytical processing.
+
+### Planned Components
+
+- QualityManager
+- CompletenessChecker
+- ValidityChecker
+- ConsistencyChecker
+- UniquenessChecker
+- OutlierChecker
+- QualityReport
+
+### Planned Output
+
+```
+Validated DataFrame
+
++
+
+Quality Report
+```
+
+### Status
+
+🟡 Planned (Sprint 3)
+
+---
+
+## Analytics Module
+
+### Responsibility
+
+Generate business insights from validated datasets.
+
+### Planned Components
+
+- AnalyticsManager
+- KPI Engine
+- Statistical Analysis
+- Business Metrics
+
+### Status
+
+⚪ Planned
+
+---
+
+## Reporting Module
+
+### Responsibility
+
+Generate reports for business users.
+
+### Planned Outputs
+
+- Excel
+- PDF
+- HTML
+- Dashboard datasets
+
+### Status
+
+⚪ Planned
+
+---
+
+# Shared Infrastructure
+
+The `core` package contains reusable infrastructure shared across all business
+modules.
+
+```
+core/
+
+config.py
+
+constants.py
+
+logger.py
+
+exceptions.py
+```
+
+Responsibilities
+
+### config.py
+
+Centralized application configuration.
+
+### constants.py
+
+Immutable application constants.
+
+### logger.py
+
+Centralized logging configuration.
+
+### exceptions.py
+
+Custom application exceptions.
+
+---
+
+# Dependency Rules
+
+Business modules may depend on `core`.
+
+Business modules may not depend on each other directly except through
+well-defined manager interfaces.
+
+The `core` package must never depend on any business module.
+
+```
+Allowed
+
+Cleaning
+
+↓
+
+core
+
+Not Allowed
+
+core
+
+↓
+
+Cleaning
+```
+
+---
+
+# Data Flow
+
+```
+CSV / Excel / JSON
+
+↓
+
+UploadManager
+
+↓
+
+Pandas DataFrame
+
+↓
+
+CleaningManager
+
+↓
+
+Clean DataFrame
+
+↓
+
+QualityManager
+
+↓
+
+Validated DataFrame
+
+↓
+
+AnalyticsManager
+
+↓
+
+Business Insights
+
+↓
+
+ReportingManager
+
+↓
+
+Reports
+```
+
+---
+
+# Manager Pattern
+
+Every business module exposes one orchestration class.
+
+| Module | Manager |
+|---------|----------|
+| Upload | UploadManager |
+| Cleaning | CleaningManager |
+| Quality | QualityManager |
+| Analytics | AnalyticsManager |
+| Reporting | ReportingManager |
+
+Managers coordinate components but do not contain business logic.
+
+---
+
+# Logging Strategy
+
+Logging is centralized through:
+
+```
+core/logger.py
+```
+
+Every business module should:
+
+- Log execution start
+- Log execution completion
+- Log warnings
+- Log errors
+- Log significant metrics
+
+---
+
+# Exception Strategy
+
+All custom exceptions are defined in:
+
+```
+core/exceptions.py
+```
+
+Business modules raise domain-specific exceptions while avoiding generic
+exceptions wherever practical.
+
+---
+
+# Testing Strategy
+
+Testing is implemented using **Pytest**.
+
+Current automated coverage:
+
+- ColumnCleaner
+- TextCleaner
+- MissingValueCleaner
+- DuplicateCleaner
+- DataTypeCleaner
+
+Current Result
+
+```
+5 Tests Passed
+```
+
+Every new component added to the project must include automated tests before
+being considered complete.
+
+---
+
+# Design Principles
+
+The architecture follows these principles:
+
+- Single Responsibility Principle (SRP)
+- Open/Closed Principle (OCP)
+- Dependency Inversion Principle (DIP)
+- Separation of Concerns (SoC)
+- High Cohesion
+- Low Coupling
+- Reusability
+- Testability
+- Scalability
+- Maintainability
+
+---
+
+# Current Architecture Status
+
+| Layer | Status |
+|--------|--------|
+| Upload | ✅ Stable |
+| Cleaning | ✅ Stable |
+| Quality | 🟡 Next Sprint |
+| Analytics | ⚪ Planned |
+| Reporting | ⚪ Planned |
+| Core Infrastructure | ✅ Stable |
+
+---
+
+# Architecture Governance
+
+Changes affecting module boundaries, dependency direction, manager
+responsibilities, or data flow require a new Architecture Decision Record (ADR).
+
+This ensures architectural consistency as the project evolves.
+
+---
+
+**Current Architecture Version:** v2.0.0

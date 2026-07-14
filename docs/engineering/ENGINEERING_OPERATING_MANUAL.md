@@ -3,6 +3,21 @@
 ## Version 2.0
 
 ---
+Every completed sprint must include
+
+✓ Documentation updates
+
+✓ Tests
+
+✓ Changelog
+ 
+✓ Lessons learned
+
+✓ Architecture update
+
+✓ Git commit
+---
+
 
 # PURPOSE
 

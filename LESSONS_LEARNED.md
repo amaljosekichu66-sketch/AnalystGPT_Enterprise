@@ -328,3 +328,72 @@ Ask
 - Keep modules small and focused.
 - Design for future extension.
 - Prefer reusable components over duplicated logic.
+## Sprint 2
+
+### Software Engineering
+
+- Separation of Concerns is easier to maintain.
+- Logging should exist at orchestration level.
+- Testing each module independently reduces debugging time.
+- Package structure matters.
+- Use python -m for package-based execution.
+
+### Python
+
+- Type hints improve readability.
+- reset_index() should be used after row deletions.
+- Logging is better than print().
+---
+
+# Sprint 2 Lessons Learned
+
+## Architecture
+
+- Separation of Concerns improves maintainability.
+- Managers should coordinate work rather than perform business logic.
+- Stable module contracts simplify downstream development.
+- Centralized infrastructure reduces duplication.
+
+---
+
+## Python
+
+- Type hints improve readability.
+- Pathlib provides cleaner path handling.
+- Custom exceptions make error handling clearer.
+- Logging should replace print statements in production applications.
+
+---
+
+## Testing
+
+- Automated tests provide confidence during refactoring.
+- Pytest offers a clean and scalable testing framework.
+- Small independent unit tests are easier to maintain.
+- Every business component should have dedicated tests.
+
+---
+
+## Engineering
+
+- Documentation must remain synchronized with implementation.
+- Git history should reflect completed milestones.
+- Repository consistency is part of software quality.
+- Enterprise software development extends beyond writing code.
+
+---
+
+## Personal Growth
+
+During Sprint 2 I strengthened my understanding of:
+
+- Modular software architecture
+- Pipeline orchestration
+- Data cleaning design
+- Automated testing
+- Logging
+- Custom exception handling
+- Repository organization
+- Engineering documentation
+
+These lessons establish the foundation for implementing the Quality Module in Sprint 3. 

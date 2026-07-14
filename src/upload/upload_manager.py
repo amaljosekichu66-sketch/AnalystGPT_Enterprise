@@ -1,53 +1,64 @@
+"""
+Upload Manager Module
+
+Coordinates file upload operations by delegating file reading
+to the appropriate reader based on file extension.
+"""
+
 from pathlib import Path
 
 import pandas as pd
 
-from core.config import MAX_UPLOAD_SIZE_MB
-from core.exceptions import (
-    FileTooLargeError,
+from src.core.exceptions import (
     SourceFileNotFoundError,
     UnsupportedFileTypeError,
 )
-from upload.csv_reader import CSVReader
-from upload.excel_reader import ExcelReader
-from upload.json_reader import JSONReader
+from src.core.logger import logger
+from src.upload.csv_reader import CSVReader
+from src.upload.excel_reader import ExcelReader
+from src.upload.json_reader import JSONReader
 
 
 class UploadManager:
-    """Handles file uploads and delegates reading to the appropriate reader."""
+    """
+    Coordinates file upload operations.
+    """
 
-    def __init__(self) -> None:
-        """Initialize the reader registry."""
-        self._readers = {
-            ".csv": CSVReader(),
-            ".xlsx": ExcelReader(),
-            ".json": JSONReader(),
-        }
+    def __init__(self):
+        """Initialize supported file readers."""
+
+        self.csv_reader = CSVReader()
+        self.excel_reader = ExcelReader()
+        self.json_reader = JSONReader()
 
     def upload(self, file_path: str | Path) -> pd.DataFrame:
-        """Upload and read a supported file into a Pandas DataFrame."""
+        """
+        Upload a file and return its contents as a Pandas DataFrame.
+        """
+
         file_path = Path(file_path)
 
+        logger.info(f"Uploading file: {file_path}")
+
         if not file_path.exists():
+            logger.error(f"File not found: {file_path}")
             raise SourceFileNotFoundError(
                 f"File not found: {file_path}"
             )
 
-        max_size_bytes = MAX_UPLOAD_SIZE_MB * 1024 * 1024
-
-        if file_path.stat().st_size > max_size_bytes:
-            raise FileTooLargeError(
-                f"File exceeds the maximum allowed size "
-                f"({MAX_UPLOAD_SIZE_MB} MB): {file_path}"
-            )
-
         extension = file_path.suffix.lower()
 
-        reader = self._readers.get(extension)
+        if extension == ".csv":
+            return self.csv_reader.read(file_path)
 
-        if reader is None:
-            raise UnsupportedFileTypeError(
-                f"Unsupported file type: {extension}"
-            )
+        if extension in [".xlsx", ".xls"]:
+            return self.excel_reader.read(file_path)
 
-        return reader.read(file_path)
+        if extension == ".json":
+            return self.json_reader.read(file_path)
+
+        logger.error(f"Unsupported file type: {extension}")
+
+        raise UnsupportedFileTypeError(
+            f"Unsupported file type: {extension}"
+        )

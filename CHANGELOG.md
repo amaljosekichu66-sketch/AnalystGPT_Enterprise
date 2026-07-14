@@ -100,3 +100,90 @@ Sprint 1 completed successfully.# v1.0.0 — Sprint 1 (14 July 2026)
 ## Status
 
 ✅ Sprint 1 Completed
+## v0.7 - Sprint 2 Complete
+
+### Added
+
+- CleaningManager
+- ColumnCleaner
+- TextCleaner
+- MissingValueCleaner
+- DuplicateCleaner
+- DataTypeCleaner
+- Execution timing
+- Enterprise logging
+- Cleaning module tests
+
+### Improved
+
+- Modular architecture
+- Type hints
+- Pipeline orchestration
+
+### Fixed
+
+- Import issues
+- Package initialization
+- Test execution
+---
+
+# v2.0.0 — Sprint 2 (Data Cleaning Module)
+
+**Release Date:** July 2026
+
+## Added
+
+### Cleaning Module
+
+- CleaningManager
+- ColumnCleaner
+- TextCleaner
+- MissingValueCleaner
+- DuplicateCleaner
+- DataTypeCleaner
+
+### Architecture
+
+- Complete Upload → Cleaning pipeline
+- Stable manager-based orchestration
+- Standardized DataFrame pipeline
+- Consistent dependency direction
+
+### Logging
+
+- Centralized application logging
+- Pipeline execution logging
+- Cleaner execution logging
+- Pipeline execution timing
+
+### Testing
+
+- Automated Pytest suite
+- Unit tests for every cleaner
+- End-to-end pipeline verification
+
+## Improved
+
+- Import consistency across the project
+- Upload module integration
+- Exception hierarchy
+- Code readability
+- Documentation
+- Engineering standards
+
+## Fixed
+
+- Upload module import inconsistencies
+- Main pipeline orchestration
+- Duplicate MissingValueCleaner implementation
+- Logging inconsistencies
+- Architecture violations
+
+## Repository Status
+
+- Upload Module → Stable
+- Cleaning Module → Stable
+- Automated Tests → Passing
+- Architecture → Stable
+
+**Release Version:** v2.0.0

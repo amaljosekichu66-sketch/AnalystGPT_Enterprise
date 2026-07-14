@@ -4,7 +4,7 @@ Centralized logging configuration for AnalystGPT Enterprise.
 
 import logging
 
-from core.config import LOG_LEVEL
+from src.core.config import LOG_LEVEL
 
 logger = logging.getLogger("AnalystGPT")
 logger.setLevel(LOG_LEVEL)

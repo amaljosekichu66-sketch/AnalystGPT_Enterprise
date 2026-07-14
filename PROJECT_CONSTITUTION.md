@@ -51,3 +51,10 @@ All significant architectural decisions must be documented using Architecture De
 Every feature must satisfy the Definition of Done before being considered complete.
 
 Engineering workflow is standardized through documented governance rather than individual preference.
+Managers coordinate modules.
+
+Modules never call sibling modules.
+
+Logging is mandatory for managers.
+
+Each module must have independent tests.

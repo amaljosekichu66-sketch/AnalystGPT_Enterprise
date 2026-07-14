@@ -3,9 +3,11 @@
 > **Purpose**
 >
 > This document is the single source of truth for the current state of AnalystGPT Enterprise.
+>
 > It provides enough context for an engineer (or AI assistant) to understand the project in approximately two minutes.
 >
-> Historical details belong in:
+> Historical information belongs in:
+>
 > - PROJECT_JOURNAL.md
 > - CHANGELOG.md
 > - ROADMAP.md
@@ -16,23 +18,24 @@
 
 | Area | Status |
 |------|--------|
-| Version | v1.0.0 |
+| Version | **v2.0.0** |
 | Repository | 🟢 Active Development |
-| Current Sprint | Sprint 2 |
-| Sprint Progress | 0% |
+| Current Sprint | **Sprint 3** |
+| Sprint Progress | **0%** |
 | Architecture | 🟢 Stable |
 | Documentation | 🟢 Current |
 | Upload Module | ✅ Complete |
-| Cleaning Module | 🟡 In Progress |
-| Testing | 🟡 Manual |
+| Cleaning Module | ✅ Complete |
+| Quality Module | 🟡 Ready to Begin |
+| Testing | ✅ Automated (Pytest) |
 | Technical Debt | 🟢 Low |
-| Next Milestone | Sprint 2 Complete |
+| Next Milestone | Sprint 3 Kickoff |
 
 ---
 
 # Mission
 
-Build an enterprise-grade analytics platform while becoming capable of independently designing, building, testing, documenting, reviewing and deploying production-quality analytics software.
+Build an enterprise-grade analytics platform while becoming capable of independently designing, architecting, developing, testing, documenting, reviewing and deploying production-quality analytics software.
 
 ---
 
@@ -57,30 +60,42 @@ Build an enterprise-grade analytics platform while becoming capable of independe
            Reporting Module
 ```
 
-Shared Infrastructure
+---
+
+# Shared Infrastructure
 
 ```
 core/
 ├── __init__.py
-├── constants.py
 ├── config.py
+├── constants.py
 ├── logger.py
 └── exceptions.py
 ```
 
-Architecture Principles
+---
+
+# Architecture Principles
 
 - main.py is an orchestrator only.
-- Business modules own business logic.
+- Upload owns all data acquisition.
+- Cleaning owns all data normalization.
+- Business modules communicate only through DataFrames.
 - Shared infrastructure belongs in `core`.
-- Business modules depend on `core`.
+- Business modules may depend on `core`.
 - `core` never depends on business modules.
+- Every module has a dedicated manager responsible for orchestration.
+- All business logic remains isolated inside business modules.
 
 ---
 
-# Stable Module Contract
+# Stable Module Contracts
 
 ## Upload Module
+
+### Purpose
+
+Load data from supported sources and return a standardized Pandas DataFrame.
 
 ### Supported Inputs
 
@@ -90,31 +105,72 @@ Architecture Principles
 
 ### Planned Inputs
 
-- API
-- Database
+- SQL Databases
+- REST APIs
 - XML
 - Parquet
 
-### Output
-
-**Pandas DataFrame**
-
-### Contract
-
-Every downstream business module consumes only a standardized Pandas DataFrame.
-
-### Implemented Components
+### Components
 
 - UploadManager
 - CSVReader
 - ExcelReader
 - JSONReader
 
+### Output
+
+Standardized Pandas DataFrame
+
 ### Status
 
 ✅ Stable
 
-Changes require a new Architecture Decision Record (ADR).
+---
+
+## Cleaning Module
+
+### Purpose
+
+Clean and normalize uploaded datasets before validation and analytics.
+
+### Components
+
+- CleaningManager
+- ColumnCleaner
+- TextCleaner
+- MissingValueCleaner
+- DuplicateCleaner
+- DataTypeCleaner
+
+### Output
+
+Cleaned Pandas DataFrame
+
+### Status
+
+✅ Stable
+
+---
+
+## Quality Module
+
+### Purpose
+
+Validate cleaned datasets before analytical processing.
+
+### Planned Components
+
+- QualityManager
+- CompletenessChecker
+- ValidityChecker
+- ConsistencyChecker
+- UniquenessChecker
+- OutlierChecker
+- QualityReport
+
+### Status
+
+🟡 Ready to Begin
 
 ---
 
@@ -127,6 +183,8 @@ docs/
 ├── adr/
 └── engineering/
 
+sample_data/
+
 src/
 ├── upload/
 ├── cleaning/
@@ -136,15 +194,17 @@ src/
 └── core/
 
 tests/
+└── cleaning/
 
+main.py
 README.md
 ARCHITECTURE.md
 CHANGELOG.md
-LESSONS_LEARNED.md
 PROJECT_CONSTITUTION.md
 PROJECT_JOURNAL.md
 PROJECT_STATE.md
 ROADMAP.md
+LESSONS_LEARNED.md
 requirements.txt
 ```
 
@@ -152,171 +212,144 @@ requirements.txt
 
 # Engineering Governance
 
-The repository currently contains:
+Current repository standards include:
 
 - Architecture Decision Records (ADR)
 - Engineering Playbook
 - Documentation Standards
-- Code Review Checklist
 - Definition of Done
-- Sprint Retrospective
-- Sprint Release Report
+- Code Review Checklist
+- Sprint Retrospectives
+- Sprint Release Reports
 
-Engineering governance is complete through Sprint 1.
-
----
-
-# Project Timeline
-
-| Sprint | Status |
-|---------|--------|
-| Sprint 0 | ✅ Completed |
-| Sprint 0.5 | ✅ Completed |
-| Sprint 0.75 | ✅ Completed |
-| Sprint 1 | ✅ Completed |
-| Sprint 2 | 🟡 Ready to Begin |
-| Sprint 2.5 | ⬜ Planned |
-
-For detailed sprint history, see **PROJECT_JOURNAL.md**.
+Engineering governance is complete through Sprint 2.
 
 ---
 
-# Current Sprint
+# Current Engineering Status
 
-## Sprint 2 — Data Cleaning Module
+## Completed
 
-### Objective
+### Sprint 0
 
-Develop the Data Cleaning Module while maintaining the architectural and engineering standards established during Sprint 1.
+- Project foundation
+- Repository structure
+- Documentation
+- Development environment
 
-### Sprint 1 Deliverables (Completed)
+### Sprint 0.5
 
-#### Planning
+- Git
+- GitHub
+- Repository standards
 
-- ✅ Business Requirements
-- ✅ User Stories
-- ✅ Acceptance Criteria
-- ✅ Technical Design
+### Sprint 0.75
 
-#### Architecture
+- Engineering governance
+- ADR framework
+- Documentation standards
+- Definition of Done
 
-- ✅ Upload Manager
-- ✅ Reader Architecture
-- ✅ Stable Module Contracts
+### Sprint 1
 
-#### Readers
+- Upload Module
+- UploadManager
+- CSV Reader
+- Excel Reader
+- JSON Reader
+- Validation
+- Logging
+- Exceptions
 
-- ✅ CSV Reader
-- ✅ Excel Reader
-- ✅ JSON Reader
+### Sprint 2
 
-#### Validation
-
-- ✅ File Existence Validation
-- ✅ Unsupported File Validation
-- ✅ Exception Handling
-- ✅ Logging Integration
-
-#### Output
-
-- ✅ Standardized Pandas DataFrame
-
----
-
-# Current Engineering Decisions
-
-Approved Decisions
-
-- main.py is only an orchestrator.
-- Upload owns data acquisition.
-- Business modules communicate using DataFrames.
-- Shared infrastructure belongs inside `core`.
-- Dependency direction is enforced.
-- Logging is centralized.
-- Configuration is centralized.
-- Constants remain immutable.
-- Custom exceptions are centralized.
-- Reader implementations remain isolated behind UploadManager.
-- Significant architectural changes require a new ADR.
+- CleaningManager
+- ColumnCleaner
+- TextCleaner
+- MissingValueCleaner
+- DuplicateCleaner
+- DataTypeCleaner
+- Centralized logging
+- Automated Pytest suite
+- End-to-end cleaning pipeline
 
 ---
 
-# Current Blockers
+# Testing Status
 
-None
+Current automated tests:
+
+- ✅ test_column_cleaner.py
+- ✅ test_text_cleaner.py
+- ✅ test_missing_value_cleaner.py
+- ✅ test_duplicate_cleaner.py
+- ✅ test_datatype_cleaner.py
+
+Current Result
+
+```
+5 Passed
+0 Failed
+0 Errors
+```
 
 ---
 
 # Current Focus
 
-Primary Goal
+## Sprint 3
 
-Develop the Cleaning Module while preserving the architecture established in Sprint 1.
+Develop the Quality Module.
 
-Current Priorities
+Objectives:
 
-- Missing value handling
-- Duplicate detection
-- Data type normalization
-- Column standardization
-- Modular cleaning pipeline
-- Automated testing
-- Git workflow
+- Validate datasets
+- Generate quality metrics
+- Produce quality reports
+- Maintain modular architecture
+- Expand automated testing
 
 ---
 
 # Development Environment
 
-Current Development Machine
+Primary Machine
 
-- ASUS Laptop (Windows 11)
+MacBook Pro M1
 
-Primary Development Machine
+Temporary Machine
 
-- MacBook Pro M1 (Under Repair)
+ASUS Windows 11
 
 IDE
 
-- Visual Studio Code
+Visual Studio Code
 
 Python
 
-- 3.11.x
+3.11
 
 Git
 
-- Configured
+Configured
 
 GitHub
 
-- Connected
+Connected
 
-Repository Visibility
+Repository
 
-- Public
+Public
 
 Latest Release
 
-v1.0.0
+**v2.0.0**
 
 ---
 
-# Conversation Bootstrap
+# Current Blockers
 
-When starting a new engineering session:
-
-1. Read PROJECT_STATE.md.
-2. Review ROADMAP.md.
-3. Review ARCHITECTURE.md.
-4. Review any ADRs created after the latest completed sprint.
-5. Verify the latest Git tag.
-6. Summarize:
-   - Current Sprint
-   - Architecture
-   - Completed Work
-   - Current Objective
-7. Continue from the latest completed task.
-8. Do not revisit completed architecture decisions unless a new ADR is proposed.
+None.
 
 ---
 
@@ -324,18 +357,15 @@ When starting a new engineering session:
 
 The project succeeds when I can independently:
 
-- ✅ Design enterprise software architecture
-- ✅ Build modular analytics applications
-- ✅ Develop production-quality Python
-- ✅ Design ETL pipelines
-- ✅ Build scalable data processing workflows
-- ✅ Work professionally with Git & GitHub
-- ✅ Write maintainable engineering documentation
-- ✅ Implement automated testing
-- ✅ Integrate SQL databases
-- ✅ Consume REST APIs
-- ✅ Build analytical dashboards
-- ✅ Deploy production applications
-- ✅ Review Pull Requests
-- ✅ Explain and defend architectural decisions confidently
-- ✅ Think and communicate like an Enterprise Software Engineer
+- Design enterprise software
+- Architect scalable analytics systems
+- Develop production-quality Python
+- Build ETL pipelines
+- Implement automated testing
+- Design SQL databases
+- Consume REST APIs
+- Build analytical dashboards
+- Deploy production applications
+- Review pull requests
+- Defend architectural decisions
+- Think and communicate like an Enterprise Software Engineer

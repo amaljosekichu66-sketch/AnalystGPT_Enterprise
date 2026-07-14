@@ -1,7 +1,19 @@
 """
-Application-wide configuration settings for AnalystGPT Enterprise.
+Application configuration for AnalystGPT Enterprise.
 """
 
-DEBUG_MODE = True
-LOG_LEVEL = "INFO"
-MAX_UPLOAD_SIZE_MB = 100
+import logging
+
+# ------------------------------------------------------------------
+# Logging Configuration
+# ------------------------------------------------------------------
+
+LOG_LEVEL = logging.INFO
+
+# ------------------------------------------------------------------
+# Application Configuration
+# ------------------------------------------------------------------
+
+MAX_FILE_SIZE_MB = 100
+
+RESET_INDEX_AFTER_CLEANING = True
