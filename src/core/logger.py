@@ -1,5 +1,23 @@
+"""
+Centralized logging configuration for AnalystGPT Enterprise.
+"""
+
 import logging
+
+from core.config import LOG_LEVEL
+
 logger = logging.getLogger("AnalystGPT")
-logger.setLevel(logging.INFO)
+logger.setLevel(LOG_LEVEL)
+
 handler = logging.StreamHandler()
-logger.addHandler(handler)
+
+formatter = logging.Formatter(
+    "%(asctime)s - %(levelname)s - %(message)s"
+)
+
+handler.setFormatter(formatter)
+
+if not logger.handlers:
+    logger.addHandler(handler)
+
+logger.propagate = False
