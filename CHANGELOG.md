@@ -2,6 +2,82 @@
 
 All notable changes to AnalystGPT Enterprise are documented in this file.
 
+The project follows a sprint-based release model where every completed sprint results in a stable versioned release.
+
+---
+
+# v4.0.0 — Sprint 4 (Analytics Module)
+
+**Release Date:** 15 July 2026
+
+## Added
+
+### Analytics Module
+
+- AnalyticsManager
+- DescriptiveStatistics
+- NumericalAnalysis
+- CategoricalAnalysis
+- CorrelationAnalysis
+- DistributionAnalysis
+- AnalyticsReport
+
+### Architecture
+
+- Complete Upload → Cleaning → Quality → Analytics pipeline
+- Manager-based analytics orchestration
+- Standardized analytics report generation
+- Pipeline execution summary
+- Stable analytics module contracts
+
+### Logging
+
+- Analytics pipeline execution logging
+- Individual analyzer execution logging
+- Analytics report generation logging
+- Pipeline execution timing
+- Console execution summary
+
+### Testing
+
+- Automated Pytest suite for Analytics Module
+- Unit tests for every analytics component
+- AnalyticsManager tests
+- AnalyticsReport tests
+- End-to-end integration pipeline
+- Full application pipeline verification
+
+## Improved
+
+- Enterprise architecture consistency
+- Analytics orchestration pattern
+- Console output readability
+- Analytics report formatting
+- Test coverage
+- Documentation
+- Type hints
+- Pandas compatibility
+
+## Fixed
+
+- Memory usage unit test
+- Deprecated Pandas dtype warnings
+- Analytics pipeline integration
+- Analytics logging consistency
+
+## Repository Status
+
+- Upload Module → Stable
+- Cleaning Module → Stable
+- Quality Module → Stable
+- Analytics Module → Stable
+- Integration Testing → Stable
+- Automated Tests → **60 Passed**
+- Warnings → **0**
+- Architecture → Stable
+
+**Release Version:** v4.0.0
+
 ---
 
 # v3.0.0 — Sprint 3 (Quality Module)
@@ -65,7 +141,7 @@ All notable changes to AnalystGPT Enterprise are documented in this file.
 - Upload Module → Stable
 - Cleaning Module → Stable
 - Quality Module → Stable
-- Automated Tests → 12 Passed
+- Automated Tests → **12 Passed**
 - Architecture → Stable
 
 **Release Version:** v3.0.0
@@ -128,7 +204,7 @@ All notable changes to AnalystGPT Enterprise are documented in this file.
 
 - Upload Module → Stable
 - Cleaning Module → Stable
-- Automated Tests → 5 Passed
+- Automated Tests → **5 Passed**
 - Architecture → Stable
 
 **Release Version:** v2.0.0
@@ -173,7 +249,7 @@ All notable changes to AnalystGPT Enterprise are documented in this file.
 
 - Introduced modular Upload Module
 - Established standardized DataFrame contract
-- Implemented reader registry pattern
+- Implemented Reader Registry Pattern
 
 ## Repository Status
 
@@ -191,7 +267,7 @@ All notable changes to AnalystGPT Enterprise are documented in this file.
 
 - Git version control
 - GitHub integration
-- Engineering Playbook
+- Engineering Operating Manual
 - Documentation Standards
 - Code Review Checklist
 - Definition of Done
@@ -213,7 +289,7 @@ All notable changes to AnalystGPT Enterprise are documented in this file.
 
 ### Core Infrastructure
 
-- src/core/
+- `src/core/`
 - constants.py
 - config.py
 - logger.py

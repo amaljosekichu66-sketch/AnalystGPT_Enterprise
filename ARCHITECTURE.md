@@ -2,65 +2,61 @@
 
 > **Purpose**
 >
-> This document describes the software architecture of AnalystGPT Enterprise.
-> It defines the responsibilities, boundaries, dependencies, and data flow
-> between modules.
+> This document defines the architecture of AnalystGPT Enterprise.
+> It describes the system structure, module responsibilities,
+> dependency rules, data flow, and architectural principles.
 >
-> This document reflects the current implementation as of **v3.0.0**.
+> This document reflects the implementation as of **v4.0.0**.
 
 ---
 
 # Architecture Philosophy
 
-AnalystGPT Enterprise follows a modular, layered architecture designed around
-Separation of Concerns (SoC), SOLID principles, and maintainability.
+AnalystGPT Enterprise follows a modular, layered architecture built around:
 
-Each business capability is implemented as an independent module with a single,
-well-defined responsibility.
+- Separation of Concerns (SoC)
+- SOLID Principles
+- Low Coupling
+- High Cohesion
+- Testability
+- Scalability
+- Maintainability
+
+Each business capability is implemented as an independent module with a single, well-defined responsibility.
 
 ---
 
 # High-Level Architecture
 
-```
-                    main.py
-                       │
-                       ▼
-              Upload Manager
-                       │
-                       ▼
-            Standardized DataFrame
-                       │
-                       ▼
-             Cleaning Manager
-                       │
-                       ▼
-               Clean DataFrame
-                       │
-                       ▼
-              Quality Manager
-                       │
-         ┌─────────────┴─────────────┐
-         ▼                           ▼
- Quality Assessment Report     Clean DataFrame
-                                       │
-                                       ▼
-                              Analytics Manager
-                                       │
-                                       ▼
-                              Reporting Manager
+```text
+                     main.py
+                        │
+                        ▼
+               UploadManager
+                        │
+                        ▼
+              CleaningManager
+                        │
+                        ▼
+               QualityManager
+                        │
+                        ▼
+              AnalyticsManager
+                        │
+                        ▼
+         ReportingManager (Sprint 5)
 ```
 
 ---
 
 # Layered Architecture
 
-```
+```text
 Presentation Layer
 
         main.py
 
-──────────────────────────────────
+────────────────────────────────────
 
 Business Layer
 
@@ -70,13 +66,13 @@ Quality
 Analytics
 Reporting
 
-──────────────────────────────────
+────────────────────────────────────
 
 Shared Infrastructure
 
 core/
 
-──────────────────────────────────
+────────────────────────────────────
 
 External Libraries
 
@@ -91,40 +87,43 @@ Logging
 
 # Repository Structure
 
-```
+```text
 AnalystGPT_Enterprise/
 
 docs/
+├── adr/
+├── engineering/
+└── sprints/
 
 sample_data/
 
 src/
-
-    upload/
-    cleaning/
-    quality/
-    analytics/
-    reporting/
-    core/
+├── analytics/
+├── cleaning/
+├── core/
+├── quality/
+├── reporting/
+└── upload/
 
 tests/
-
-    cleaning/
-    quality/
+├── analytics/
+├── cleaning/
+├── fixtures/
+├── integration/
+└── quality/
 
 main.py
 ```
 
 ---
 
-# Current Stable Modules
+# Stable Modules
 
 ## Upload Module
 
 ### Responsibility
 
-Acquire data from supported file formats and convert it into a standardized
-Pandas DataFrame.
+Acquire datasets from supported file formats and convert them into a standardized Pandas DataFrame.
 
 ### Components
 
@@ -136,12 +135,12 @@ Pandas DataFrame.
 ### Supported Formats
 
 - CSV
-- Excel (.xlsx, .xls)
+- Excel
 - JSON
 
 ### Output
 
-```
+```text
 Pandas DataFrame
 ```
 
@@ -155,7 +154,7 @@ Pandas DataFrame
 
 ### Responsibility
 
-Normalize uploaded data before quality assessment.
+Normalize uploaded datasets before quality assessment.
 
 ### Components
 
@@ -166,9 +165,9 @@ Normalize uploaded data before quality assessment.
 - DuplicateCleaner
 - DataTypeCleaner
 
-### Processing Pipeline
+### Pipeline
 
-```
+```text
 Raw DataFrame
 
 ↓
@@ -193,10 +192,6 @@ DataTypeCleaner
 
 ↓
 
-Reset Index
-
-↓
-
 Clean DataFrame
 ```
 
@@ -210,7 +205,7 @@ Clean DataFrame
 
 ### Responsibility
 
-Assess the quality of cleaned datasets before analytical processing.
+Evaluate data quality before analytical processing.
 
 ### Components
 
@@ -222,9 +217,9 @@ Assess the quality of cleaned datasets before analytical processing.
 - OutlierChecker
 - QualityReport
 
-### Processing Pipeline
+### Pipeline
 
-```
+```text
 Clean DataFrame
 
 ↓
@@ -258,7 +253,7 @@ Quality Assessment Report
 
 ### Output
 
-```
+```text
 Quality Assessment Report
 ```
 
@@ -272,19 +267,61 @@ Quality Assessment Report
 
 ### Responsibility
 
-Generate business insights from cleaned datasets using quality assessment
-results where appropriate.
+Generate reusable analytical insights from validated datasets.
 
-### Planned Components
+### Components
 
 - AnalyticsManager
-- KPI Engine
-- Statistical Analysis
-- Business Metrics
+- DescriptiveStatistics
+- NumericalAnalysis
+- CategoricalAnalysis
+- CorrelationAnalysis
+- DistributionAnalysis
+- AnalyticsReport
+
+### Pipeline
+
+```text
+Validated Data
+
+↓
+
+DescriptiveStatistics
+
+↓
+
+NumericalAnalysis
+
+↓
+
+CategoricalAnalysis
+
+↓
+
+CorrelationAnalysis
+
+↓
+
+DistributionAnalysis
+
+↓
+
+AnalyticsReport
+
+↓
+
+Analytics Summary
+```
+
+### Output
+
+```text
+Analytics Report
+```
 
 ### Status
 
-⚪ Planned
+✅ Stable
 
 ---
 
@@ -292,179 +329,187 @@ results where appropriate.
 
 ### Responsibility
 
-Generate reports for business users.
+Transform analytical results into business-ready reports.
 
 ### Planned Outputs
 
-- Excel
-- PDF
-- HTML
-- Dashboard datasets
+- Console Reports
+- JSON Reports
+- HTML Reports
+- Excel Reports
+- PDF Reports
 
 ### Status
 
-⚪ Planned
+🚧 Sprint 5
 
 ---
 
 # Shared Infrastructure
 
-The `core` package contains reusable infrastructure shared across all business
-modules.
+The `core` package provides infrastructure shared across every business module.
 
-```
+```text
 core/
 
 config.py
-
 constants.py
-
 logger.py
-
 exceptions.py
 ```
 
-Responsibilities
+### Responsibilities
 
-### config.py
+#### config.py
 
-Centralized application configuration.
+Application configuration.
 
-### constants.py
+#### constants.py
 
-Immutable application constants.
+Application-wide constants.
 
-### logger.py
+#### logger.py
 
 Centralized logging configuration.
 
-### exceptions.py
+#### exceptions.py
 
-Custom application exceptions.
+Custom exception hierarchy.
 
 ---
 
 # Dependency Rules
 
-Business modules may depend on `core`.
+## Allowed
 
-Business modules may not depend on each other directly except through
-well-defined manager interfaces.
-
-The `core` package must never depend on any business module.
-
+```text
+Business Modules
+        │
+        ▼
+      core
 ```
-Allowed
 
-Business Module
+## Not Allowed
 
-↓
-
+```text
 core
-
-Not Allowed
-
-core
-
-↓
-
-Business Module
+ │
+ ▼
+Business Modules
 ```
+
+Business modules communicate through standardized DataFrames and structured dictionaries rather than direct coupling.
 
 ---
 
 # Data Flow
 
-```
+```text
 CSV / Excel / JSON
 
-↓
+        │
+
+        ▼
 
 UploadManager
 
-↓
+        │
+
+        ▼
 
 Pandas DataFrame
 
-↓
+        │
+
+        ▼
 
 CleaningManager
 
-↓
+        │
+
+        ▼
 
 Clean DataFrame
 
-↓
+        │
+
+        ▼
 
 QualityManager
 
-↓
+        │
+
+        ▼
 
 Quality Assessment Report
 
-↓
+        │
+
+        ▼
 
 AnalyticsManager
 
-↓
+        │
 
-Business Insights
+        ▼
 
-↓
+Analytics Report
 
-ReportingManager
+        │
 
-↓
+        ▼
 
-Reports
+ReportingManager (Sprint 5)
 ```
 
 ---
 
-# Manager Pattern
+# Manager-Orchestrator Pattern
 
-Every business module exposes one orchestration class.
+Every business module exposes one manager responsible for orchestration.
 
 | Module | Manager |
-|---------|----------|
+|---------|---------|
 | Upload | UploadManager |
 | Cleaning | CleaningManager |
 | Quality | QualityManager |
 | Analytics | AnalyticsManager |
 | Reporting | ReportingManager |
 
-Managers coordinate components but do not contain business logic.
+Managers coordinate workflows.
+
+Business logic remains inside dedicated components.
 
 ---
 
 # Logging Strategy
 
-Logging is centralized through:
+Centralized logging is implemented through:
 
-```
+```text
 core/logger.py
 ```
 
-Every business module should:
+Every manager should:
 
-- Log execution start
-- Log execution completion
+- Log pipeline start
+- Log pipeline completion
+- Log execution timing
 - Log warnings
 - Log errors
-- Log significant metrics
+- Log important execution metrics
 
 ---
 
 # Exception Strategy
 
-All custom exceptions are defined in:
+Custom exceptions are defined in:
 
-```
+```text
 core/exceptions.py
 ```
 
-Business modules raise domain-specific exceptions while avoiding generic
-exceptions wherever practical.
+Business modules raise domain-specific exceptions rather than generic exceptions whenever practical.
 
 ---
 
@@ -472,9 +517,13 @@ exceptions wherever practical.
 
 Testing is implemented using **Pytest**.
 
-Current automated coverage:
+Current coverage includes:
 
-### Cleaning Module
+### Upload
+
+Covered through pipeline integration.
+
+### Cleaning
 
 - ColumnCleaner
 - TextCleaner
@@ -482,7 +531,7 @@ Current automated coverage:
 - DuplicateCleaner
 - DataTypeCleaner
 
-### Quality Module
+### Quality
 
 - QualityManager
 - CompletenessChecker
@@ -492,25 +541,39 @@ Current automated coverage:
 - OutlierChecker
 - QualityReport
 
-Current Result
+### Analytics
 
-```
-12 Tests Passed
+- AnalyticsManager
+- AnalyticsReport
+- DescriptiveStatistics
+- NumericalAnalysis
+- CategoricalAnalysis
+- CorrelationAnalysis
+- DistributionAnalysis
+
+### Integration
+
+- Complete pipeline execution
+
+Current results:
+
+```text
+60 Tests Passed
 0 Failed
 0 Errors
+0 Warnings
 ```
 
-Every new component added to the project must include automated tests before
-being considered complete.
+Every completed business component must include automated tests before release.
 
 ---
 
 # Design Principles
 
-The architecture follows these principles:
+The architecture follows:
 
 - Single Responsibility Principle (SRP)
-- Open/Closed Principle (OCP)
+- Open / Closed Principle (OCP)
 - Dependency Inversion Principle (DIP)
 - Separation of Concerns (SoC)
 - High Cohesion
@@ -529,19 +592,27 @@ The architecture follows these principles:
 | Upload | ✅ Stable |
 | Cleaning | ✅ Stable |
 | Quality | ✅ Stable |
-| Analytics | ⚪ Planned |
-| Reporting | ⚪ Planned |
+| Analytics | ✅ Stable |
+| Reporting | 🚧 Sprint 5 |
 | Core Infrastructure | ✅ Stable |
 
 ---
 
-# Architecture Governance
+# Future Evolution
 
-Changes affecting module boundaries, dependency direction, manager
-responsibilities, or data flow require a new Architecture Decision Record (ADR).
+The architecture will continue evolving through future sprints:
 
-This ensures architectural consistency as the project evolves.
+- Reporting Layer
+- SQLite Integration
+- PostgreSQL Integration
+- REST APIs
+- Power BI Integration
+- Streamlit UI
+- AI Insights
+- Production Deployment
+
+Each architectural change affecting module boundaries or dependency direction must be documented through a new Architecture Decision Record (ADR).
 
 ---
 
-**Current Architecture Version:** **v3.0.0**
+**Current Architecture Version:** **v4.0.0**

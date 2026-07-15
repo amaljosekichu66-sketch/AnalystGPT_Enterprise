@@ -4,7 +4,7 @@
 
 This document defines the standard engineering workflow for AnalystGPT Enterprise.
 
-All contributors should follow these guidelines to ensure consistency, maintainability, and long-term scalability.
+Its purpose is to ensure every feature is designed, implemented, tested, documented, and released using a consistent engineering process.
 
 ---
 
@@ -15,44 +15,62 @@ Every contribution should follow:
 - Business before Technology
 - Architecture before Implementation
 - Separation of Concerns
-- Single Responsibility Principle
+- Single Responsibility Principle (SRP)
 - Low Coupling
 - High Cohesion
 - Maintainability
 - Scalability
 - Extensibility
+- Testability
+- Readability over Cleverness
+
+---
+
+# Standard Development Workflow
+
+Every feature follows the same engineering lifecycle.
+
+```text
+Business Requirement
+        ↓
+Architecture Design
+        ↓
+Implementation
+        ↓
+Unit Testing
+        ↓
+Integration Testing (when applicable)
+        ↓
+Code Review
+        ↓
+Documentation
+        ↓
+Release Review
+        ↓
+Merge
+```
 
 ---
 
 # Git Workflow
 
-Every feature follows this workflow:
+Typical Git workflow:
 
-Issue
-
-↓
-
-Architecture Discussion
-
-↓
-
-Implementation
-
-↓
-
-Testing
-
-↓
-
-Code Review
-
-↓
-
-Documentation
-
-↓
-
+```text
+Create Branch
+        ↓
+Develop Feature
+        ↓
+Run Tests
+        ↓
+Review Documentation
+        ↓
+Commit
+        ↓
+Push
+        ↓
 Merge
+```
 
 ---
 
@@ -60,27 +78,28 @@ Merge
 
 Use descriptive branch names.
 
-Examples
+Examples:
 
+```text
 feature/upload-module
-
 feature/json-reader
+feature/reporting-module
 
 bugfix/logger-format
 
-refactor/cleaning-module
+refactor/cleaning-manager
 
 docs/architecture-update
+```
 
 Avoid:
 
+```text
 test
-
 new
-
-amal
-
 branch1
+amal
+```
 
 ---
 
@@ -88,27 +107,30 @@ branch1
 
 Use clear, descriptive commit messages.
 
-Examples
+Examples:
 
-feat: add CSV reader
+```text
+feat(upload): add Excel reader
 
-fix: resolve logger formatting issue
+feat(analytics): complete Sprint 4 Analytics Module
 
-docs: update architecture documentation
+fix(cleaning): resolve datatype conversion issue
 
-refactor: simplify upload manager
+refactor(core): simplify logger configuration
 
-test: add smoke tests for upload module
+docs(readme): update project overview
+
+test(quality): add completeness checker tests
+```
 
 Avoid:
 
+```text
 update
-
 fixed
-
 done
-
 changes
+```
 
 ---
 
@@ -116,26 +138,61 @@ changes
 
 Every Pull Request should:
 
-- Solve one problem
-- Be reviewed before merging
-- Pass testing
-- Update documentation if required
-- Respect existing architecture
+- Solve one logical problem.
+- Pass all automated tests.
+- Preserve existing architecture.
+- Include documentation updates when required.
+- Avoid unrelated changes.
+- Be understandable without external explanation.
 
 ---
 
-# Documentation Expectations
+# Testing Standards
 
-When architecture changes:
+Every feature should include appropriate automated testing.
 
-Update:
+### Unit Tests
 
-- Architecture.md
+Required for:
+
+- Business logic
+- Managers
+- Utility components
+
+### Integration Tests
+
+Required whenever multiple modules participate in the same business workflow.
+
+Current integration pipeline:
+
+```text
+Upload
+        ↓
+Cleaning
+        ↓
+Quality
+        ↓
+Analytics
+```
+
+---
+
+# Documentation Standards
+
+Whenever architecture or functionality changes, review and update the appropriate documentation.
+
+Potential documents include:
+
+- README.md
+- PROJECT_STATE.md
+- ARCHITECTURE.md
+- CHANGELOG.md
+- PROJECT_JOURNAL.md
+- ROADMAP.md
+- LESSONS_LEARNED.md
 - ADRs
-- Changelog
-- Project Journal
 
-Do not duplicate information across documents.
+Avoid duplicating information across documents.
 
 ---
 
@@ -143,18 +200,48 @@ Do not duplicate information across documents.
 
 A feature is complete only when:
 
-- Business problem understood
-- Architecture reviewed
-- Code implemented
-- Smoke testing completed
-- Documentation updated
-- Code reviewed
-- Ready for production
+- Business problem is understood.
+- Architecture is reviewed.
+- Code is implemented.
+- Unit tests pass.
+- Integration tests pass (where applicable).
+- No unintended warnings remain.
+- Documentation is updated.
+- Code review is completed.
+- Feature is ready for release.
+
+---
+
+# Sprint Release Workflow
+
+Every sprint should conclude with the following activities:
+
+```text
+Run Application
+        ↓
+Run Test Suite
+        ↓
+Resolve Warnings
+        ↓
+Update Documentation
+        ↓
+Repository Review
+        ↓
+Version Update
+        ↓
+Git Commit
+        ↓
+Git Tag
+        ↓
+Push to GitHub
+```
+
+A sprint is not considered complete until the release workflow has been finished.
 
 ---
 
 # Engineering Philosophy
 
-Build software that future engineers can understand, maintain, and extend.
+Build software that future engineers can understand, maintain, extend, and confidently deploy.
 
 Optimize for long-term engineering quality rather than short-term implementation speed.

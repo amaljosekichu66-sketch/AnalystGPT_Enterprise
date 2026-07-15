@@ -1,95 +1,94 @@
 # Lessons Learned
 
 > Permanent engineering concepts learned throughout AnalystGPT Enterprise.
-> This document is a quick engineering reference, not a project journal.
+>
+> This document serves as a continuously growing engineering knowledge base rather than a project journal.
 
 ---
 
-## Last Updated
+# Last Updated
 
-**Date:** 04 July 2026
+**Date:** 15 July 2026
 
 ---
 
 # Engineering Philosophy
 
-✅ Business before Technology
-
-✅ Architecture before Code
-
-✅ Think WHY before HOW
-
-✅ Design before Implementation
-
-✅ Build for Humans, not only Computers
+- ✅ Business before Technology
+- ✅ Architecture before Code
+- ✅ Think **WHY** before **HOW**
+- ✅ Design before Implementation
+- ✅ Build for Humans, not only Computers
+- ✅ Documentation is Part of the Product
+- ✅ Testing is Part of Development
 
 ---
 
 # Software Engineering Workflow
 
+```text
 Business Problem
-↓
+        ↓
 Business Value
-↓
+        ↓
 Architecture
-↓
+        ↓
 Design
-↓
+        ↓
 Implementation
-↓
-Testing
-↓
+        ↓
+Unit Testing
+        ↓
+Integration Testing
+        ↓
 Documentation
-↓
-Deployment
+        ↓
+Release
+```
 
 ---
 
 # Architecture Rules
 
-✅ main.py only orchestrates
-
-✅ One Module = One Responsibility
-
-✅ Shared infrastructure belongs in `core`
-
-✅ Business modules depend on `core`
-
-✅ `core` never depends on business modules
-
-✅ Modules communicate using stable contracts
+- ✅ `main.py` only orchestrates
+- ✅ One Module = One Responsibility
+- ✅ Shared infrastructure belongs in `core`
+- ✅ Business modules depend on `core`
+- ✅ `core` never depends on business modules
+- ✅ Managers coordinate business workflows
+- ✅ Business modules communicate through stable contracts
 
 ---
 
 # Stable Contracts
 
-### Upload
+## Upload
 
-Input
+### Input
 
 - CSV
 - Excel
 - JSON
-- API
-- Database
+- Database *(Planned)*
+- REST API *(Planned)*
 
-Output
+### Output
 
 - Pandas DataFrame
 
-Rule
+### Rule
 
-Downstream modules never know where the data came from.
+Downstream modules should never know where the data originated.
 
 ---
 
 # Core Package
 
-Purpose
+## Purpose
 
-Shared infrastructure used by every business module.
+Shared infrastructure used throughout the application.
 
-Contents
+### Components
 
 - constants.py
 - config.py
@@ -100,27 +99,27 @@ Contents
 
 # Configuration Rules
 
-### constants.py
+## constants.py
 
-Application identity
+Stores application identity and immutable values.
 
-Examples
+Examples:
 
-- App Name
+- Application Name
 - Version
 - Encoding
 
 ---
 
-### config.py
+## config.py
 
-Environment behaviour
+Stores configurable runtime behavior.
 
-Examples
+Examples:
 
 - Debug Mode
-- Log Level
-- Upload Size
+- Logging Level
+- Upload Limits
 
 ---
 
@@ -128,19 +127,19 @@ Examples
 
 Logger
 
-→ Creates log messages
+↓
 
-Log
-
-→ Recorded message
+Creates log messages
 
 Handler
 
-→ Decides where logs go
+↓
+
+Determines where log messages are written
 
 Rule
 
-Business modules use the shared logger.
+Business modules must use the shared logger.
 
 Never create independent logging systems.
 
@@ -148,15 +147,15 @@ Never create independent logging systems.
 
 # Exceptions
 
-Use
+Prefer:
 
 Specific exceptions
 
-Never
+Avoid:
 
-Generic Exception
+Generic `Exception`
 
-Good
+Examples:
 
 - UnsupportedFileTypeError
 - EmptyFileError
@@ -168,23 +167,23 @@ Good
 
 Correct
 
+```text
 Business Modules
+        ↓
+      Core
+```
 
-↓
+Incorrect
 
+```text
 Core
-
-Wrong
-
-Core
-
-↓
-
+    ↓
 Business Modules
+```
 
 Reason
 
-Prevents circular dependencies.
+Prevents circular dependencies and preserves modular architecture.
 
 ---
 
@@ -193,7 +192,6 @@ Prevents circular dependencies.
 - Separation of Concerns
 - Single Responsibility Principle (SRP)
 - Open / Closed Principle (OCP)
-- Abstraction
 - Low Coupling
 - High Cohesion
 - Modular Design
@@ -201,6 +199,7 @@ Prevents circular dependencies.
 - Maintainability
 - Extensibility
 - Reusability
+- Testability
 
 ---
 
@@ -208,71 +207,48 @@ Prevents circular dependencies.
 
 Before writing code ask:
 
-□ What business problem am I solving?
-
-□ Which module owns this?
-
-□ What is the module contract?
-
-□ What can fail?
-
-□ Can this be extended later?
-
-□ Does this violate SRP?
-
-□ Can another engineer understand this quickly?
+- □ What business problem am I solving?
+- □ Which module owns this responsibility?
+- □ What is the module contract?
+- □ What can fail?
+- □ Can this be extended later?
+- □ Does this violate SRP?
+- □ Can another engineer understand this quickly?
 
 ---
 
 # Python Project Rules
 
-✅ src contains application code
-
-✅ main.py stays small
-
-✅ Prefer many small modules
-
-✅ Avoid hardcoding
-
-✅ Configuration ≠ Constants
-
-✅ One responsibility per file
+- `src/` contains application code.
+- `main.py` remains an orchestrator.
+- Prefer many small modules.
+- Avoid hardcoding.
+- Configuration is not Constants.
+- One responsibility per file.
 
 ---
 
 # Naming Rules
 
-Variables
-
-snake_case
-
-Functions
-
-verb_noun()
-
-Classes
-
-PascalCase
-
-Constants
-
-UPPER_CASE
-
-Modules
-
-snake_case.py
+| Item | Convention |
+|------|------------|
+| Variables | snake_case |
+| Functions | verb_noun() |
+| Classes | PascalCase |
+| Constants | UPPER_CASE |
+| Modules | snake_case.py |
 
 ---
 
 # Engineering Mindset
 
-Don't ask
+Don't ask:
 
-"How do I code this?"
+> "How do I code this?"
 
-Ask
+Ask:
 
-"How should this system be designed?"
+> "How should this system be designed?"
 
 ---
 
@@ -286,151 +262,116 @@ Ask
 - Design for change.
 - Prefer extension over modification.
 - Understand before implementing.
-# Sprint 0.75
+- Small modules scale better.
+- Documentation preserves engineering knowledge.
+
+---
+
+# Sprint 0.75 Lessons
 
 ## Git
 
-- Git records the complete history of a project through immutable commits.
+- Git records the complete history of a project.
 - Every commit should represent one logical change.
-- The staging area exists to review changes before committing.
-- Annotated tags should be used for official software releases.
+- Use the staging area to review changes before committing.
+- Annotated tags identify official releases.
 - Always verify repository status before committing.
 
 ## Engineering Governance
 
 - Good software is governed before it is expanded.
-- Architecture decisions should be documented using ADRs.
-- Every feature should satisfy a Definition of Done.
-- Documentation should have clearly defined ownership.
+- Architectural decisions belong in ADRs.
+- Every feature must satisfy the Definition of Done.
+- Documentation should have clear ownership.
 - Code reviews protect software quality.
 
-## Architecture
+---
 
-- Shared infrastructure belongs in `core/`.
-- Business modules must never create circular dependencies.
-- Stable module contracts reduce coupling.
-- Separation of Concerns improves maintainability.
 # Sprint 1 Lessons
 
-## Technical Lessons
-
-- Every module should have a single responsibility.
-- UploadManager should orchestrate, not read files.
-- Readers should only read their own file types.
-- All readers should return the same abstraction (DataFrame).
-- Custom exceptions improve maintainability.
-- Logging should exist from the beginning of a project.
-- Validation should happen before business logic.
-
-## Engineering Lessons
-
-- Build architecture before adding features.
-- Keep modules small and focused.
-- Design for future extension.
-- Prefer reusable components over duplicated logic.
-## Sprint 2
-
-### Software Engineering
-
-- Separation of Concerns is easier to maintain.
-- Logging should exist at orchestration level.
-- Testing each module independently reduces debugging time.
-- Package structure matters.
-- Use python -m for package-based execution.
-
-### Python
-
-- Type hints improve readability.
-- reset_index() should be used after row deletions.
-- Logging is better than print().
----
-
-# Sprint 2 Lessons Learned
-
 ## Architecture
 
-- Separation of Concerns improves maintainability.
-- Managers should coordinate work rather than perform business logic.
-- Stable module contracts simplify downstream development.
-- Centralized infrastructure reduces duplication.
-
----
-
-## Python
-
-- Type hints improve readability.
-- Pathlib provides cleaner path handling.
-- Custom exceptions make error handling clearer.
-- Logging should replace print statements in production applications.
-
----
-
-## Testing
-
-- Automated tests provide confidence during refactoring.
-- Pytest offers a clean and scalable testing framework.
-- Small independent unit tests are easier to maintain.
-- Every business component should have dedicated tests.
-
----
+- Every module should have a single responsibility.
+- Managers should orchestrate rather than implement business logic.
+- Stable DataFrame contracts simplify downstream processing.
+- Validation should occur before business logic.
 
 ## Engineering
 
-- Documentation must remain synchronized with implementation.
-- Git history should reflect completed milestones.
+- Logging should exist from the beginning.
+- Build architecture before features.
+- Prefer reusable components over duplicated logic.
+
+---
+
+# Sprint 2 Lessons
+
+## Architecture
+
+- Separation of Concerns improves maintainability.
+- Managers coordinate work rather than perform business logic.
+- Stable contracts simplify downstream development.
+- Centralized infrastructure reduces duplication.
+
+## Testing
+
+- Automated testing provides confidence during refactoring.
+- Small independent unit tests are easier to maintain.
+- Every business component deserves dedicated tests.
+
+## Engineering
+
+- Documentation must evolve alongside implementation.
 - Repository consistency is part of software quality.
 - Enterprise software development extends beyond writing code.
 
 ---
 
-## Personal Growth
+# Sprint 3 Lessons
 
-During Sprint 2 I strengthened my understanding of:
+## Architecture
 
-- Modular software architecture
-- Pipeline orchestration
-- Data cleaning design
-- Automated testing
-- Logging
-- Custom exception handling
-- Repository organization
-- Engineering documentation
+- Data cleaning and data quality assessment are separate responsibilities.
+- Report builders improve extensibility.
+- Structured outputs preserve module boundaries.
+- Small focused classes are easier to maintain.
 
-These lessons establish the foundation for implementing the Quality Module in Sprint 3. 
+## Engineering
+
+- Passing tests without warnings improves confidence.
+- Sprint completion includes implementation, testing, documentation, and release preparation.
+- Documentation should accurately reflect architecture.
 
 ---
 
-# Sprint 3 — Quality Module
+# Sprint 4 Lessons
 
-## Technical Lessons
+## Analytics
 
-- Data cleaning and data quality assessment are separate responsibilities and should remain independent modules.
-- Managers should orchestrate workflows rather than contain business logic.
-- Every checker should perform exactly one responsibility.
-- A dedicated report builder simplifies future expansion and improves maintainability.
-- Enterprise software benefits from small, focused classes rather than large multifunctional components.
-- Automated testing should be developed alongside implementation to validate architecture and behavior.
+- Analytics should be implemented as independent reusable components.
+- Managers coordinate analyzers rather than performing analysis directly.
+- Standardized analytics reports simplify downstream reporting.
 
-## Architecture Lessons
+## Testing
 
-- Separating orchestration from execution results in a cleaner and more maintainable design.
-- Returning structured assessment results instead of modifying the DataFrame preserves module boundaries.
-- Designing for extensibility early reduces future refactoring effort.
-- Consistent coding standards across modules improve readability and long-term maintainability.
+- Integration tests validate collaboration between modules rather than individual implementations.
+- Unit tests should verify public contracts instead of internal implementation details.
+- Shared fixtures reduce duplicated test data and improve maintainability.
 
-## Engineering Lessons
+## Engineering
 
-- Completing a sprint includes implementation, integration, testing, documentation, and release preparation.
-- Documentation should evolve together with the codebase and accurately reflect the implemented architecture.
-- Passing tests without warnings provides greater confidence in code quality than simply achieving passing assertions.
+- Console output should communicate meaningful business information rather than raw objects.
+- Resolve compatibility warnings early to reduce future maintenance effort.
+- Release management is a core engineering activity, not an afterthought.
+- Every sprint should conclude with repository review, documentation updates, testing, and versioned release.
 
-## Sprint 3 Milestone
+---
 
-Sprint 3 completed the data preparation foundation of AnalystGPT Enterprise.
+# Current Engineering Milestone
 
-Current architecture:
+The project now consists of a complete analytics pipeline:
 
-```
+```text
 Upload
     ↓
 Cleaning
@@ -439,7 +380,9 @@ Quality
     ↓
 Analytics
     ↓
-Reporting
+Reporting (Next Sprint)
 ```
 
-The project is now ready to begin Sprint 4 — Analytics Module.
+Sprint 4 established the analytical foundation of AnalystGPT Enterprise.
+
+The next milestone is **Sprint 5 — Reporting Module**, where analytical results will be transformed into reusable enterprise reports.

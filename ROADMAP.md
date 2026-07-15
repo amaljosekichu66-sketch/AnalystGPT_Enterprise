@@ -2,19 +2,24 @@
 
 > **Purpose**
 >
-> This roadmap defines the long-term engineering plan for AnalystGPT Enterprise.
-> Each sprint builds one stable capability while preserving architecture,
-> engineering quality, automated testing, and documentation.
+> This roadmap defines the long-term engineering vision for AnalystGPT Enterprise.
+> Each sprint delivers one stable capability while preserving architecture,
+> software quality, automated testing, documentation, and enterprise engineering
+> standards.
 
 ---
 
 # Current Project Status
 
-| Version | **v3.0.0** |
-|----------|------------|
-| Current Sprint | **Sprint 4** |
-| Current Focus | **Analytics Module** |
-| Repository Status | Active Development |
+| Item | Status |
+|------|--------|
+| Current Version | **v4.0.0** |
+| Current Sprint | **Sprint 4 Completed** |
+| Repository Status | 🟢 Active Development |
+| Current Focus | **Sprint 5 – Reporting Module** |
+| Architecture | 🟢 Stable |
+| Automated Tests | ✅ 60 Passed |
+| Warnings | ✅ 0 |
 
 ---
 
@@ -24,12 +29,12 @@ Build an enterprise-grade analytics platform capable of:
 
 - Uploading datasets from multiple sources
 - Cleaning and standardizing data
-- Validating data quality
-- Performing advanced analytics
+- Assessing data quality
+- Performing statistical analytics
 - Generating enterprise reports
 - Supporting SQL databases
 - Integrating REST APIs
-- Providing AI-assisted analytical insights
+- Delivering AI-assisted business insights
 - Deploying as a production-ready application
 
 ---
@@ -42,48 +47,43 @@ Build an enterprise-grade analytics platform capable of:
 
 - Project initialization
 - Repository structure
-- Documentation
 - Development environment
+- Core documentation
 
 ### Deliverables
 
-- Project architecture
+- Initial architecture
+- Project structure
 - Core documentation
 - Python environment
-- Folder structure
 
 ---
 
-## Sprint 0.5 — Git & GitHub ✅
-
-### Objectives
-
-Professional source control.
+## Sprint 0.5 — Core Infrastructure ✅
 
 ### Deliverables
 
-- Git
-- GitHub
-- Repository
-- Branching
-- Commits
-- Version control
+- Core package
+- Configuration
+- Constants
+- Centralized logging
+- Custom exceptions
+- Shared infrastructure
 
 ---
 
-## Sprint 0.75 — Engineering Governance ✅
-
-### Objectives
-
-Create enterprise engineering standards.
+## Sprint 0.75 — Enterprise Engineering Foundation ✅
 
 ### Deliverables
 
-- ADR framework
+- Git & GitHub
+- Engineering governance
 - Documentation standards
+- Architecture Decision Records (ADR)
+- Engineering Playbook
+- Engineering Operating Manual
 - Definition of Done
 - Code Review Checklist
-- Engineering Playbook
 
 ---
 
@@ -97,14 +97,14 @@ Create enterprise engineering standards.
 - JSONReader
 - Validation
 - Logging
-- Exceptions
+- Exception handling
 
 ### Output
 
-```
-Raw Data
-      │
-      ▼
+```text
+Raw Files
+     │
+     ▼
 Standardized DataFrame
 ```
 
@@ -121,14 +121,21 @@ Standardized DataFrame
 - DuplicateCleaner
 - DataTypeCleaner
 
+### Achievements
+
+- End-to-end cleaning pipeline
+- Automated testing
+- Enterprise logging
+
 ### Testing
 
-- Automated Pytest Suite
-- 5 Passing Tests
+```text
+5 Tests Passed
+```
 
 ### Output
 
-```
+```text
 Raw DataFrame
       │
       ▼
@@ -149,103 +156,106 @@ Clean DataFrame
 - OutlierChecker
 - QualityReport
 
+### Achievements
+
+- Quality assessment pipeline
+- Manager-Orchestrator architecture
+- Structured quality reporting
+- Complete module integration
+
 ### Testing
 
-- Automated Pytest Suite
-- 12 Passing Tests
-- End-to-end Quality Pipeline
+```text
+12 Tests Passed
+```
 
 ### Output
 
-```
+```text
 Clean DataFrame
       │
       ▼
 Quality Assessment Report
 ```
 
+---
+
+## Sprint 4 — Analytics Module ✅
+
+### Deliverables
+
+- AnalyticsManager
+- DescriptiveStatistics
+- NumericalAnalysis
+- CategoricalAnalysis
+- CorrelationAnalysis
+- DistributionAnalysis
+- AnalyticsReport
+
 ### Achievements
 
-- Enterprise-quality assessment pipeline
-- Manager-Orchestrator architecture
-- Modular checker design
-- Centralized logging
-- Complete documentation
-- Full integration with Upload and Cleaning modules
+- Complete analytics pipeline
+- Dataset profiling
+- Numerical summaries
+- Categorical analysis
+- Correlation analysis
+- Distribution analysis
+- Integration testing
+- Pipeline execution summary
+- Zero warning build
+
+### Testing
+
+```text
+60 Tests Passed
+0 Failed
+0 Warnings
+```
+
+### Output
+
+```text
+Validated Data
+      │
+      ▼
+Analytics Report
+```
 
 ---
 
 # Current Sprint
 
-# Sprint 4 — Analytics Module 🚧
+# Sprint 5 — Reporting Module 🚧
 
 ## Objective
 
-Generate meaningful business insights from cleaned datasets using statistical analysis and reusable analytics components.
+Transform analytical results into professional business reports suitable for enterprise users.
 
----
+### Planned Components
 
-## Planned Components
+- ReportingManager
+- ConsoleReport
+- JSONReport
+- HTMLReport
+- PDFReport *(planned)*
+- ExcelReport *(planned)*
 
-### AnalyticsManager
+### Planned Features
 
-Coordinates the analytics pipeline.
+- Professional report formatting
+- Report export
+- Report templates
+- Business summaries
+- Report orchestration
 
----
+### Acceptance Criteria
 
-### DescriptiveAnalytics
+Sprint 5 is complete only when:
 
-Produces:
-
-- Dataset overview
-- Record counts
-- Column summaries
-
----
-
-### StatisticalAnalyzer
-
-Produces:
-
-- Mean
-- Median
-- Mode
-- Standard Deviation
-- Variance
-
----
-
-### KPIEngine
-
-Calculates business metrics and key performance indicators.
-
----
-
-### AggregationEngine
-
-Supports grouped analysis and summary statistics.
-
----
-
-### AnalyticsReport
-
-Produces:
-
-- Statistical summary
-- KPI summary
-- Business insights
-
----
-
-## Acceptance Criteria
-
-Sprint 4 is complete only when:
-
-- AnalyticsManager orchestrates all analytics components.
-- Every component is independently testable.
-- Automated Pytest coverage is complete.
-- Analytics reports are generated successfully.
-- Architecture remains modular.
+- ReportingManager orchestrates all report generation.
+- Reports are generated from AnalyticsReport.
+- Multiple output formats are supported.
+- Automated tests are implemented.
 - Documentation is updated.
 - End-to-end pipeline executes successfully.
 
@@ -253,86 +263,60 @@ Sprint 4 is complete only when:
 
 # Future Roadmap
 
-## Sprint 5 — Reporting Module
-
-Goals
-
-- ReportingManager
-- Report generation
-- Excel reports
-- PDF reports
-- HTML reports
-
----
-
 ## Sprint 5.5 — Architecture Review
 
-Goals
-
 - Refactoring
-- Performance review
 - Dependency review
+- Performance improvements
 - Documentation audit
 
 ---
 
 ## Sprint 6 — SQLite Integration
 
-Goals
-
 - Local database
-- CRUD
-- Persistence
-- Repository layer
+- CRUD operations
+- Persistence layer
+- Repository pattern
 
 ---
 
-## Sprint 7 — PostgreSQL
-
-Goals
+## Sprint 7 — PostgreSQL Integration
 
 - Enterprise database
-- SQL optimization
 - Transactions
 - Connection pooling
+- SQL optimization
 
 ---
 
-## Sprint 8 — REST APIs
-
-Goals
+## Sprint 8 — REST API Integration
 
 - API client
 - Authentication
 - External integrations
-- API error handling
+- Error handling
 
 ---
 
-## Sprint 9 — Dashboard Integration
+## Sprint 9 — Power BI Integration
 
-Goals
-
-- Power BI
 - Dashboard datasets
-- Export pipelines
+- Export pipeline
+- Business reporting
 
 ---
 
 ## Sprint 10 — Streamlit Application
 
-Goals
-
 - Interactive UI
 - Dataset upload
-- Report generation
+- Report visualization
 - Dashboard
 
 ---
 
 ## Sprint 11 — AI Insights
-
-Goals
 
 - AI-generated summaries
 - Business recommendations
@@ -342,15 +326,12 @@ Goals
 
 ## Sprint 12 — Production Deployment
 
-Goals
-
-- Packaging
 - Docker
 - CI/CD
 - Cloud deployment
 - Monitoring
-- Logging
-- Production readiness
+- Production logging
+- Packaging
 
 ---
 
@@ -359,57 +340,52 @@ Goals
 Every sprint must:
 
 - Preserve modular architecture.
-- Maintain SOLID principles.
-- Include automated tests.
+- Follow SOLID principles.
+- Include automated testing.
+- Include integration testing where applicable.
 - Update documentation.
-- Pass quality review.
-- Follow Definition of Done.
+- Pass Definition of Done.
 - Produce a releasable version.
+- Complete release management before the next sprint begins.
 
 ---
 
 # Release Plan
 
-| Version | Status |
-|----------|--------|
+| Version | Release |
+|----------|---------|
+| v0.5.0 | Core Infrastructure |
+| v0.75.0 | Enterprise Engineering Foundation |
 | v1.0.0 | Upload Module |
 | v2.0.0 | Cleaning Module |
-| **v3.0.0** | **Quality Module** |
-| v4.0.0 | Analytics Module |
+| v3.0.0 | Quality Module |
+| **v4.0.0** | **Analytics Module** |
 | v5.0.0 | Reporting Module |
-| v6.0.0 | Database Integration |
-| v7.0.0 | Enterprise Platform |
+| v6.0.0 | SQLite Integration |
+| v7.0.0 | PostgreSQL Integration |
+| v8.0.0 | REST API Integration |
+| v9.0.0 | Power BI Integration |
+| v10.0.0 | Streamlit Application |
+| v11.0.0 | AI Insights |
+| v12.0.0 | Production Deployment |
 
 ---
 
 # Long-Term Goal
 
-AnalystGPT Enterprise will evolve into a production-quality analytics platform demonstrating enterprise software architecture, scalable data engineering, automated testing, documentation excellence, and modern software engineering best practices.
+AnalystGPT Enterprise will evolve into a production-ready analytics platform demonstrating:
 
-naming commit should be like
+- Enterprise Software Architecture
+- Data Engineering
+- Analytics Engineering
+- Automated Testing
+- Documentation Excellence
+- Database Integration
+- API Development
+- Reporting Systems
+- AI-Assisted Analytics
+- Production Deployment
 
-release(v0.75.0): Enterprise Engineering Foundation
+---
 
-release(v1.0.0): Upload Module
-
-release(v2.0.0): Cleaning Module
-
-release(v3.0.0): Quality Module
-
-release(v4.0.0): Analytics Module
-
-release(v5.0.0): Reporting Module
-
-release(v6.0.0): SQLite Integration
-
-release(v7.0.0): PostgreSQL Integration
-
-release(v8.0.0): REST API Integration
-
-release(v9.0.0): Power BI Integration
-
-release(v10.0.0): Streamlit Application
-
-release(v11.0.0): AI Insights
-
-release(v12.0.0): Production Deployment
+**Current Roadmap Version:** **v4.0.0**

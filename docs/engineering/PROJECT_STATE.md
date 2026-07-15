@@ -18,46 +18,47 @@
 
 | Area | Status |
 |------|--------|
-| Version | **v3.0.0** |
+| Version | **v4.0.0** |
 | Repository | 🟢 Active Development |
-| Current Sprint | **Sprint 3** |
+| Current Sprint | **Sprint 4** |
 | Sprint Progress | **100%** |
 | Architecture | 🟢 Stable |
 | Documentation | 🟢 Current |
 | Upload Module | ✅ Complete |
 | Cleaning Module | ✅ Complete |
 | Quality Module | ✅ Complete |
-| Testing | ✅ Automated (Pytest) |
+| Analytics Module | ✅ Complete |
+| Testing | ✅ Automated (Pytest + Integration) |
 | Technical Debt | 🟢 Low |
-| Next Milestone | **Sprint 4 – Analytics Module** |
+| Next Milestone | **Sprint 5 – Reporting Module** |
 
 ---
 
 # Mission
 
-Build an enterprise-grade analytics platform while becoming capable of independently designing, architecting, developing, testing, documenting, reviewing and deploying production-quality analytics software.
+Build an enterprise-grade analytics platform while becoming capable of independently designing, architecting, developing, testing, documenting, reviewing, and deploying production-quality analytics software.
 
 ---
 
 # Current Architecture
 
 ```
-                 main.py
-                    │
-                    ▼
-            Upload Module
-                    │
-                    ▼
-           Cleaning Module
-                    │
-                    ▼
-            Quality Module
-                    │
-                    ▼
-           Analytics Module
-                    │
-                    ▼
-           Reporting Module
+                main.py
+                   │
+                   ▼
+           UploadManager
+                   │
+                   ▼
+          CleaningManager
+                   │
+                   ▼
+           QualityManager
+                   │
+                   ▼
+          AnalyticsManager
+                   │
+                   ▼
+        ReportingManager (Next)
 ```
 
 ---
@@ -77,16 +78,16 @@ core/
 
 # Architecture Principles
 
-- main.py is an orchestrator only.
-- Upload owns all data acquisition.
-- Cleaning owns all data normalization.
-- Quality owns all data quality assessment.
-- Business modules communicate only through DataFrames and structured results.
-- Shared infrastructure belongs in `core`.
+- `main.py` acts only as the application orchestrator.
+- Each business module owns a single responsibility.
+- Modules communicate through Pandas DataFrames and structured dictionaries.
+- Shared infrastructure belongs exclusively in `core`.
 - Business modules may depend on `core`.
 - `core` never depends on business modules.
-- Every module has a dedicated manager responsible for orchestration.
-- All business logic remains isolated inside business modules.
+- Every module exposes a dedicated Manager responsible for orchestration.
+- Business logic remains encapsulated inside individual modules.
+- Automated testing is required for every completed module.
+- Integration testing validates end-to-end pipeline execution.
 
 ---
 
@@ -96,7 +97,7 @@ core/
 
 ### Purpose
 
-Load data from supported sources and return a standardized Pandas DataFrame.
+Load datasets from supported sources.
 
 ### Supported Inputs
 
@@ -132,7 +133,7 @@ Standardized Pandas DataFrame
 
 ### Purpose
 
-Clean and normalize uploaded datasets before validation and analytics.
+Normalize and clean uploaded datasets.
 
 ### Components
 
@@ -157,7 +158,7 @@ Cleaned Pandas DataFrame
 
 ### Purpose
 
-Assess the quality of cleaned datasets before analytical processing.
+Assess dataset quality before analytical processing.
 
 ### Components
 
@@ -171,7 +172,33 @@ Assess the quality of cleaned datasets before analytical processing.
 
 ### Output
 
-Consolidated Quality Assessment Report
+Quality Assessment Report
+
+### Status
+
+✅ Stable
+
+---
+
+## Analytics Module
+
+### Purpose
+
+Generate analytical insights from validated datasets.
+
+### Components
+
+- AnalyticsManager
+- DescriptiveStatistics
+- NumericalAnalysis
+- CategoricalAnalysis
+- CorrelationAnalysis
+- DistributionAnalysis
+- AnalyticsReport
+
+### Output
+
+Analytics Report
 
 ### Status
 
@@ -199,10 +226,13 @@ src/
 └── core/
 
 tests/
+├── analytics/
 ├── cleaning/
+├── integration/
 └── quality/
 
 main.py
+
 README.md
 ARCHITECTURE.md
 CHANGELOG.md
@@ -211,6 +241,7 @@ PROJECT_JOURNAL.md
 PROJECT_STATE.md
 ROADMAP.md
 LESSONS_LEARNED.md
+
 requirements.txt
 ```
 
@@ -221,53 +252,59 @@ requirements.txt
 Current repository standards include:
 
 - Architecture Decision Records (ADR)
-- Engineering Playbook
+- Engineering Operating Manual
 - Documentation Standards
 - Definition of Done
 - Code Review Checklist
 - Sprint Retrospectives
-- Sprint Release Reports
+- Release Management
+- Automated Testing Standards
 
-Engineering governance is complete through Sprint 3.
+Engineering governance is complete through Sprint 4.
 
 ---
 
 # Current Engineering Status
 
-## Completed
+## Sprint 0
 
-### Sprint 0
+- Project Foundation
+- Repository Structure
+- Core Documentation
+- Development Environment
 
-- Project foundation
-- Repository structure
-- Documentation
-- Development environment
+---
 
-### Sprint 0.5
+## Sprint 0.5
 
 - Git
 - GitHub
-- Repository standards
+- Repository Standards
 
-### Sprint 0.75
+---
 
-- Engineering governance
-- ADR framework
-- Documentation standards
+## Sprint 0.75
+
+- Engineering Governance
+- ADR Framework
+- Documentation Standards
 - Definition of Done
 
-### Sprint 1
+---
 
-- Upload Module
+## Sprint 1
+
 - UploadManager
-- CSV Reader
-- Excel Reader
-- JSON Reader
-- Validation
+- CSVReader
+- ExcelReader
+- JSONReader
+- Upload Pipeline
 - Logging
 - Exceptions
 
-### Sprint 2
+---
+
+## Sprint 2
 
 - CleaningManager
 - ColumnCleaner
@@ -275,11 +312,12 @@ Engineering governance is complete through Sprint 3.
 - MissingValueCleaner
 - DuplicateCleaner
 - DataTypeCleaner
-- Centralized logging
-- Automated Pytest suite
-- End-to-end cleaning pipeline
+- End-to-End Cleaning Pipeline
+- Automated Unit Tests
 
-### Sprint 3
+---
+
+## Sprint 3
 
 - QualityManager
 - CompletenessChecker
@@ -288,99 +326,143 @@ Engineering governance is complete through Sprint 3.
 - UniquenessChecker
 - OutlierChecker
 - QualityReport
-- Quality assessment pipeline
-- End-to-end quality integration
-- Automated quality test suite
+- End-to-End Quality Pipeline
+- Automated Unit Tests
+
+---
+
+## Sprint 4
+
+- AnalyticsManager
+- DescriptiveStatistics
+- NumericalAnalysis
+- CategoricalAnalysis
+- CorrelationAnalysis
+- DistributionAnalysis
+- AnalyticsReport
+- End-to-End Analytics Pipeline
+- Pipeline Execution Summary
+- Integration Testing
+- Pandas Compatibility Improvements
+- Complete Analytics Test Suite
 
 ---
 
 # Testing Status
 
-Current automated tests:
+## Upload Module
 
-### Cleaning Module
+✅ Covered through integration pipeline.
 
-- ✅ test_column_cleaner.py
-- ✅ test_text_cleaner.py
-- ✅ test_missing_value_cleaner.py
-- ✅ test_duplicate_cleaner.py
-- ✅ test_datatype_cleaner.py
+---
 
-### Quality Module
+## Cleaning Module
 
-- ✅ test_quality_manager.py
-- ✅ test_completeness_checker.py
-- ✅ test_validity_checker.py
-- ✅ test_consistency_checker.py
-- ✅ test_uniqueness_checker.py
-- ✅ test_outlier_checker.py
-- ✅ test_quality_report.py
+- ✅ ColumnCleaner
+- ✅ TextCleaner
+- ✅ MissingValueCleaner
+- ✅ DuplicateCleaner
+- ✅ DataTypeCleaner
 
-Current Result
+---
+
+## Quality Module
+
+- ✅ QualityManager
+- ✅ CompletenessChecker
+- ✅ ValidityChecker
+- ✅ ConsistencyChecker
+- ✅ UniquenessChecker
+- ✅ OutlierChecker
+- ✅ QualityReport
+
+---
+
+## Analytics Module
+
+- ✅ AnalyticsManager
+- ✅ AnalyticsReport
+- ✅ DescriptiveStatistics
+- ✅ NumericalAnalysis
+- ✅ CategoricalAnalysis
+- ✅ CorrelationAnalysis
+- ✅ DistributionAnalysis
+
+---
+
+## Integration Tests
+
+- ✅ Complete Pipeline Execution
+
+---
+
+## Current Test Results
 
 ```
-12 Passed
+60 Tests Passed
 0 Failed
 0 Errors
+0 Warnings
 ```
 
 ---
 
 # Current Focus
 
-## Sprint 4
-
-Develop the Analytics Module.
+## Sprint 5 — Reporting Module
 
 Objectives:
 
-- Generate descriptive analytics
-- Produce statistical summaries
-- Build reusable analytics components
-- Maintain modular architecture
-- Expand automated testing
+- Generate professional analytical reports
+- Export reports to multiple formats
+- Produce business-ready summaries
+- Improve reporting architecture
+- Maintain enterprise coding standards
+- Expand automated test coverage
 
 ---
 
 # Development Environment
 
-Primary Machine
+## Primary Machine
 
 MacBook Pro M1
 
-Temporary Machine
+## Temporary Machine
 
 ASUS Windows 11
 
-IDE
+## IDE
 
 Visual Studio Code
 
-Python
+## Python
 
 3.11
 
-Git
+## Git
 
 Configured
 
-GitHub
+## GitHub
 
 Connected
 
-Repository
+## Repository
 
 Public
 
-Latest Release
+## Current Release
 
-**v2.0.0**
+**v4.0.0**
 
 ---
 
 # Current Blockers
 
 None.
+
+Repository status is stable.
 
 ---
 

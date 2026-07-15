@@ -2123,6 +2123,100 @@ Rules:
 - Release commits serve as permanent project milestones and should remain concise, consistent, and descriptive.
 - Intermediate development commits may follow Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `test`, etc.), but the final sprint milestone must always use the `release(...)` convention.
 
+
+---
+
+---
+
+# SPRINT CLOSURE DOCUMENTATION CHECKLIST
+
+Every sprint concludes with a documentation review to ensure the repository accurately reflects the current state of the project.
+
+The following documents should be reviewed and updated where applicable before a sprint is considered complete.
+
+## Project Documentation
+
+- □ README.md
+- □ PROJECT_STATE.md
+- □ CHANGELOG.md
+- □ ROADMAP.md
+- □ ARCHITECTURE.md
+- □ PROJECT_JOURNAL.md
+- □ LESSONS_LEARNED.md
+- □ PROJECT_CONSTITUTION.md
+
+---
+
+## Engineering Documentation
+
+Review and update when engineering practices or workflows have changed.
+
+- □ ENGINEERING_PLAYBOOK.md
+- □ ENGINEERING_OPERATING_MANUAL.md
+
+---
+
+## Sprint Documentation
+
+Review existing sprint documents and create new ones when applicable.
+
+- □ SPRINT_X_RELEASE_REPORT.md
+- □ SPRINT_X_RETROSPECTIVE.md (if applicable)
+- □ SPRINT_X_TECHNICAL_DESIGN.md (if applicable)
+- □ SPRINT_X_BUSINESS_REQUIREMENTS.md (if applicable)
+
+---
+
+## Architecture Review
+
+Verify that all architecture diagrams and documentation accurately reflect the implemented system.
+
+- □ Processing Pipeline
+- □ Module Responsibilities
+- □ Manager Orchestration
+- □ Stable Module Contracts
+- □ Repository Structure
+
+---
+
+## Testing Review
+
+Verify that:
+
+- □ All unit tests pass.
+- □ Integration tests pass (where applicable).
+- □ No unexpected warnings remain.
+- □ Test results are reflected in documentation.
+
+---
+
+## Repository Review
+
+Verify repository quality before release.
+
+- □ Folder structure is clean.
+- □ Naming conventions remain consistent.
+- □ No temporary or generated files are committed.
+- □ Version numbers are synchronized across documentation.
+- □ Git status contains only intended changes.
+
+---
+
+## Release Checklist
+
+Before creating a release:
+
+- □ Run the application successfully.
+- □ Execute the complete automated test suite.
+- □ Review all documentation.
+- □ Complete repository review.
+- □ Create release commit.
+- □ Create Git tag.
+- □ Push commit and tag to GitHub.
+
+---
+
+A sprint is not considered complete until implementation, testing, documentation, repository review, and the release process have all been successfully completed.
 ---
 
 # END OF MASTER PROMPT

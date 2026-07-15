@@ -2,150 +2,105 @@
 
 > **Enterprise-Grade Analytics Platform**
 >
-> AnalystGPT Enterprise is a modular analytics platform being built from the ground up while following professional software engineering practices.
->
-> The project focuses equally on **building production-quality software** and **learning enterprise software engineering** through architecture, testing, documentation, Git discipline, and scalable design.
+> AnalystGPT Enterprise is a modular analytics platform built using enterprise software engineering principles. The project demonstrates how a production-quality analytics application can be designed through clean architecture, automated testing, documentation, and scalable engineering practices.
 
 ---
 
-# Current Version
+## Current Status
 
-**v2.0.0**
-
----
-
-# Project Mission
-
-Build an enterprise-grade analytics platform capable of:
-
-- Uploading datasets from multiple sources
-- Cleaning and standardizing data
-- Validating data quality
-- Performing business analytics
-- Generating enterprise reports
-- Integrating databases and APIs
-- Delivering AI-assisted business insights
-
-while learning to think and work like an Enterprise Software Engineer.
+| Item | Status |
+|------|--------|
+| **Current Version** | **v4.0.0** |
+| **Development Status** | 🟢 Active Development |
+| **Current Sprint** | ✅ Sprint 4 Complete |
+| **Automated Tests** | ✅ 60 Passed |
+| **Warnings** | ✅ 0 |
+| **Architecture** | 🟢 Stable |
 
 ---
 
-# Current Features
+# Features
 
-## Upload Module ✅
+## Completed Modules
 
-Supported Formats
+- ✅ Upload Module
+- ✅ Cleaning Module
+- ✅ Quality Module
+- ✅ Analytics Module
 
-- CSV
-- Excel (.xlsx, .xls)
-- JSON
+## Upcoming Modules
 
-Components
-
-- UploadManager
-- CSVReader
-- ExcelReader
-- JSONReader
-
-Capabilities
-
-- File validation
-- Unsupported file detection
-- Centralized logging
-- Custom exception handling
-- Standardized Pandas DataFrame output
+- ⏳ Reporting
+- ⏳ SQLite
+- ⏳ PostgreSQL
+- ⏳ REST APIs
+- ⏳ Power BI
+- ⏳ Streamlit
+- ⏳ AI Insights
+- ⏳ Deployment
 
 ---
 
-## Cleaning Module ✅
+# Architecture
 
-Components
-
-- CleaningManager
-- ColumnCleaner
-- TextCleaner
-- MissingValueCleaner
-- DuplicateCleaner
-- DataTypeCleaner
-
-Capabilities
-
-- Column standardization
-- Text normalization
-- Missing value handling
-- Duplicate removal
-- Data type normalization
-- Centralized orchestration
-- Execution timing
-- Logging integration
-
----
-
-# Current Architecture
-
-```
-                main.py
-                   │
-                   ▼
-          Upload Manager
-                   │
-                   ▼
-        Standardized DataFrame
-                   │
-                   ▼
-         Cleaning Manager
-                   │
-                   ▼
-          Clean DataFrame
-                   │
-                   ▼
-          Quality Manager
-                   │
-                   ▼
-        Validated DataFrame
-                   │
-                   ▼
-         Analytics Manager
-                   │
-                   ▼
-         Reporting Manager
+```text
+                   main.py
+                      │
+                      ▼
+              UploadManager
+                      │
+                      ▼
+             CleaningManager
+                      │
+                      ▼
+              QualityManager
+                      │
+                      ▼
+             AnalyticsManager
+                      │
+                      ▼
+        ReportingManager (Next)
 ```
 
 ---
 
-# Project Structure
+# Processing Pipeline
 
-```
-AnalystGPT_Enterprise/
-
-docs/
-├── adr/
-└── engineering/
-
-sample_data/
-
-src/
-├── analytics/
-├── cleaning/
-├── core/
-├── quality/
-├── reporting/
-└── upload/
-
-tests/
-
-main.py
-requirements.txt
+```text
+Dataset
+   │
+   ▼
+Upload
+   │
+   ▼
+Cleaning
+   │
+   ▼
+Quality Assessment
+   │
+   ▼
+Analytics
+   │
+   ▼
+Reporting
 ```
 
 ---
 
-# Technologies
+# Technology Stack
+
+### Language
 
 - Python 3.11
+
+### Libraries
+
 - Pandas
 - OpenPyXL
 - Pytest
+
+### Development Tools
+
 - Git
 - GitHub
 - Visual Studio Code
@@ -154,96 +109,43 @@ requirements.txt
 
 # Engineering Principles
 
-The project follows:
+This project follows modern software engineering practices including:
 
 - SOLID Principles
 - Separation of Concerns (SoC)
 - Layered Architecture
 - Modular Design
-- Manager Pattern
+- Manager-Orchestrator Pattern
 - Centralized Logging
 - Centralized Exception Handling
-- Automated Testing
+- Automated Unit Testing
+- Integration Testing
 - Documentation-Driven Development
+- Release-Based Development
 
 ---
 
-# Current Repository Status
+# Testing
 
-| Module | Status |
-|---------|--------|
-| Foundation | ✅ |
-| Upload | ✅ |
-| Cleaning | ✅ |
-| Quality | 🚧 Next Sprint |
-| Analytics | ⏳ Planned |
-| Reporting | ⏳ Planned |
+Current automated test status:
 
----
-
-# Automated Testing
-
-Current automated tests:
-
-- ColumnCleaner
-- TextCleaner
-- MissingValueCleaner
-- DuplicateCleaner
-- DataTypeCleaner
-
-Current Result
-
-```
-5 Passed
+```text
+60 Tests Passed
 0 Failed
+0 Warnings
 ```
 
-Testing framework:
+Tests include:
 
-- Pytest
+- Unit Tests
+- Integration Tests
+- End-to-End Pipeline Validation
 
----
+Run the test suite:
 
-# Roadmap
-
-## Completed
-
-- Sprint 0 – Foundation
-- Sprint 0.5 – Git & GitHub
-- Sprint 0.75 – Engineering Governance
-- Sprint 1 – Upload Module
-- Sprint 2 – Cleaning Module
-
-## Next
-
-Sprint 3 – Quality Module
-
-Planned components:
-
-- QualityManager
-- CompletenessChecker
-- ValidityChecker
-- ConsistencyChecker
-- UniquenessChecker
-- OutlierChecker
-- QualityReport
-
----
-
-# Documentation
-
-Project documentation includes:
-
-- Architecture
-- Roadmap
-- Project Journal
-- Project State
-- Changelog
-- Lessons Learned
-- Architecture Decision Records (ADR)
-- Engineering Standards
-- Definition of Done
-- Code Review Checklist
+```bash
+python -m pytest
+```
 
 ---
 
@@ -252,10 +154,10 @@ Project documentation includes:
 Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise.git
 ```
 
-Navigate to the project:
+Navigate into the project:
 
 ```bash
 cd AnalystGPT_Enterprise
@@ -273,51 +175,67 @@ Run the application:
 python main.py
 ```
 
-Run automated tests:
+---
 
-```bash
-python -m pytest -v
-```
+# Repository Documentation
+
+Detailed engineering documentation is available in:
+
+- 📄 PROJECT_STATE.md
+- 📄 ARCHITECTURE.md
+- 📄 ROADMAP.md
+- 📄 CHANGELOG.md
+- 📄 PROJECT_JOURNAL.md
+- 📄 LESSONS_LEARNED.md
+- 📄 PROJECT_CONSTITUTION.md
+- 📄 docs/adr/
+- 📄 docs/engineering/
+
+---
+
+# Roadmap
+
+## Completed
+
+- ✅ Sprint 0 — Foundation
+- ✅ Sprint 0.5 — Git & GitHub
+- ✅ Sprint 0.75 — Engineering Governance
+- ✅ Sprint 1 — Upload Module
+- ✅ Sprint 2 — Cleaning Module
+- ✅ Sprint 3 — Quality Module
+- ✅ Sprint 4 — Analytics Module
+
+## Next
+
+- Sprint 5 — Reporting Module
+- Sprint 5.5 — Architecture Refactor
+- Sprint 6 — SQLite Integration
+- Sprint 7 — PostgreSQL Integration
+- Sprint 8 — REST APIs
+- Sprint 9 — Power BI Integration
+- Sprint 10 — Streamlit Application
+- Sprint 11 — AI Insights
+- Sprint 12 — Deployment
 
 ---
 
 # Long-Term Vision
 
-AnalystGPT Enterprise will evolve into a production-ready analytics platform capable of:
+AnalystGPT Enterprise is being developed as a complete enterprise analytics platform capable of:
 
-- ETL Pipelines
+- Data Ingestion
+- Data Cleaning
 - Data Quality Validation
-- Advanced Analytics
-- SQL Database Integration
+- Statistical Analytics
+- Enterprise Reporting
+- Database Integration
 - REST API Integration
 - Dashboard Generation
 - AI-Assisted Business Insights
-- Cloud Deployment
-- CI/CD Integration
-- Enterprise Monitoring
-
----
-
-# Learning Goals
-
-This project is also a structured software engineering journey.
-
-Objectives include:
-
-- Enterprise Architecture
-- Clean Code
-- Professional Git Workflow
-- Automated Testing
-- Documentation Excellence
-- Scalable System Design
-- Production Readiness
+- Production Deployment
 
 ---
 
 # License
 
-This project is intended for educational and portfolio purposes.
-
----
-
-**Current Release:** **v2.0.0**
+This project is developed for educational, portfolio, and professional software engineering learning purposes.
