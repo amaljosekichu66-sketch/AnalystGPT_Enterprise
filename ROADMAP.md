@@ -385,3 +385,31 @@ Every sprint must:
 # Long-Term Goal
 
 AnalystGPT Enterprise will evolve into a production-quality analytics platform demonstrating enterprise software architecture, scalable data engineering, automated testing, documentation excellence, and modern software engineering best practices.
+
+naming commit should be like
+
+release(v0.75.0): Enterprise Engineering Foundation
+
+release(v1.0.0): Upload Module
+
+release(v2.0.0): Cleaning Module
+
+release(v3.0.0): Quality Module
+
+release(v4.0.0): Analytics Module
+
+release(v5.0.0): Reporting Module
+
+release(v6.0.0): SQLite Integration
+
+release(v7.0.0): PostgreSQL Integration
+
+release(v8.0.0): REST API Integration
+
+release(v9.0.0): Power BI Integration
+
+release(v10.0.0): Streamlit Application
+
+release(v11.0.0): AI Insights
+
+release(v12.0.0): Production Deployment

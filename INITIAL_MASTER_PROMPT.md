@@ -600,3 +600,53 @@ ARCHITECTURE.md → System design and architectural decisions
 ROADMAP.md → Sprint planning and progress
 LESSONS_LEARNED.md → Timeless engineering concepts (things that remain true across sprints)
 That separation mirrors the same Separation of Concerns principle we've been applying to the codebase.
+
+---
+
+# Release Commit Naming Standard
+
+Every completed sprint represents an official project release.
+
+After all Definition of Done (DoD) requirements have been satisfied—including implementation, testing, documentation, architecture updates, changelog, roadmap, project state, journal, lessons learned, release report, successful end-to-end execution, and Git verification—the final commit for that sprint must follow the standardized release naming convention.
+
+Format:
+
+release(vX.Y.Z): <Sprint Deliverable>
+
+Examples:
+
+release(v0.75.0): Enterprise Engineering Foundation
+
+release(v1.0.0): Upload Module
+
+release(v2.0.0): Cleaning Module
+
+release(v3.0.0): Quality Module
+
+release(v4.0.0): Analytics Module
+
+release(v5.0.0): Reporting Module
+
+release(v6.0.0): SQLite Integration
+
+release(v7.0.0): PostgreSQL Integration
+
+release(v8.0.0): REST API Integration
+
+release(v9.0.0): Power BI Integration
+
+release(v10.0.0): Streamlit Application
+
+release(v11.0.0): AI Insights
+
+release(v12.0.0): Production Deployment
+
+Rules:
+
+- Every completed sprint must produce exactly one official release commit.
+- The release commit is created only after all sprint objectives and Definition of Done requirements are satisfied.
+- The Git tag must match the release version exactly (e.g., `v3.0.0`).
+- The release commit message and Git tag must always reference the same version.
+- The repository documentation (README, CHANGELOG, ROADMAP, ARCHITECTURE, PROJECT_STATE, PROJECT_JOURNAL, LESSONS_LEARNED, and Sprint Release Report) must reflect the released version before the release commit is created.
+- Release commits serve as permanent project milestones and should remain concise, consistent, and descriptive.
+- Intermediate development commits may follow Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `test`, etc.), but the final sprint milestone must always use the `release(...)` convention.
