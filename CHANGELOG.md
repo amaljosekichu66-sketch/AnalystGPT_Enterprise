@@ -1,135 +1,80 @@
 # Changelog
 
-## Sprint 0.5
+All notable changes to AnalystGPT Enterprise are documented in this file.
 
-### Added
+---
 
-- `src/core/`
-- `constants.py`
-- `config.py`
-- `logger.py`
-- `exceptions.py`
-- Package `__init__.py` files
+# v3.0.0 — Sprint 3 (Quality Module)
+
+**Release Date:** 15 July 2026
+
+## Added
+
+### Quality Module
+
+- QualityManager
+- CompletenessChecker
+- ValidityChecker
+- ConsistencyChecker
+- UniquenessChecker
+- OutlierChecker
+- QualityReport
 
 ### Architecture
 
-- Shared Core Infrastructure
-- Stable DataFrame Contract
-- Main Orchestrator Pattern
-- Shared Logger Architecture
-- Dependency Direction Rules
+- Complete Upload → Cleaning → Quality pipeline
+- Manager-based quality orchestration
+- Dedicated quality assessment workflow
+- Structured quality report generation
+- Stable module contracts for quality assessment
+
+### Logging
+
+- Quality pipeline execution logging
+- Individual checker execution logging
+- Quality report generation logging
+- Pipeline execution timing
 
 ### Testing
 
-- Initial Smoke Test
-## [v0.75.0] - 2026-07-13
+- Automated Pytest suite for Quality Module
+- Unit tests for every quality checker
+- QualityManager integration test
+- QualityReport test
+- End-to-end quality pipeline verification
 
-### Added
+## Improved
 
-- Git version control
-- GitHub integration
-- Engineering Playbook
-- Code Review Checklist
-- Documentation Standards
-- Definition of Done
-- Sprint Retrospective
-- Sprint Release Report
-- ADR-001 to ADR-006
-
-### Changed
-
-- Repository upgraded to enterprise engineering workflow.
-
-### Release
-
-Official Sprint 0.75 Release
-
-# Sprint 1 - Upload Module
-
-## Added
-
-- UploadManager for upload orchestration
-- CSVReader
-- ExcelReader
-- JSONReader
-- Automatic file type detection
-- Standardized pandas DataFrame output
-- Custom SourceFileNotFoundError
-- UnsupportedFileTypeError handling
-- Reader registry architecture
-- Enterprise logging
-
-## Tested
-
-- CSV upload
-- Excel upload
-- JSON upload
-- Unsupported file types
-- Missing file validation
-
-## Status
-
-Sprint 1 completed successfully.# v1.0.0 — Sprint 1 (14 July 2026)
-
-## Added
-
-- UploadManager
-- CSVReader
-- ExcelReader
-- JSONReader
-- Automatic file type detection
-- Standardized Pandas DataFrame output
-- Centralized logging
-- Custom exception hierarchy
-- File existence validation
-- Unsupported file type validation
-
-## Architecture
-
-- Introduced modular Upload Module.
-- Implemented reader registry pattern.
-- Established standardized DataFrame contract for downstream modules.
-
-## Documentation
-
-- Updated PROJECT_STATE.md
-- Updated ROADMAP.md
-- Updated README.md
-- Updated engineering documentation
-
-## Status
-
-✅ Sprint 1 Completed
-## v0.7 - Sprint 2 Complete
-
-### Added
-
-- CleaningManager
-- ColumnCleaner
-- TextCleaner
-- MissingValueCleaner
-- DuplicateCleaner
-- DataTypeCleaner
-- Execution timing
-- Enterprise logging
-- Cleaning module tests
-
-### Improved
-
-- Modular architecture
+- Enterprise architecture consistency
+- Manager orchestration pattern
+- Module separation of responsibilities
 - Type hints
-- Pipeline orchestration
+- Documentation
+- Code readability
+- Test coverage
 
-### Fixed
+## Fixed
 
-- Import issues
-- Package initialization
-- Test execution
+- Pandas compatibility issues
+- Data type validation test compatibility
+- Consistency checker warnings
+- Quality pipeline integration
+
+## Repository Status
+
+- Upload Module → Stable
+- Cleaning Module → Stable
+- Quality Module → Stable
+- Automated Tests → 12 Passed
+- Architecture → Stable
+
+**Release Version:** v3.0.0
+
 ---
 
-# v2.0.0 — Sprint 2 (Data Cleaning Module)
+# v2.0.0 — Sprint 2 (Cleaning Module)
 
-**Release Date:** July 2026
+**Release Date:** 14 July 2026
 
 ## Added
 
@@ -183,7 +128,108 @@ Sprint 1 completed successfully.# v1.0.0 — Sprint 1 (14 July 2026)
 
 - Upload Module → Stable
 - Cleaning Module → Stable
-- Automated Tests → Passing
+- Automated Tests → 5 Passed
 - Architecture → Stable
 
 **Release Version:** v2.0.0
+
+---
+
+# v1.0.0 — Sprint 1 (Upload Module)
+
+**Release Date:** 14 July 2026
+
+## Added
+
+### Upload Module
+
+- UploadManager
+- CSVReader
+- ExcelReader
+- JSONReader
+- Automatic file type detection
+- Standardized Pandas DataFrame output
+- Reader registry architecture
+
+### Validation
+
+- File existence validation
+- Unsupported file type validation
+- Custom exception hierarchy
+
+### Logging
+
+- Centralized enterprise logging
+
+### Testing
+
+- CSV upload
+- Excel upload
+- JSON upload
+- Unsupported file validation
+- Missing file validation
+
+## Architecture
+
+- Introduced modular Upload Module
+- Established standardized DataFrame contract
+- Implemented reader registry pattern
+
+## Repository Status
+
+- Upload Module → Stable
+
+**Release Version:** v1.0.0
+
+---
+
+# v0.75.0 — Engineering Foundation
+
+**Release Date:** 13 July 2026
+
+## Added
+
+- Git version control
+- GitHub integration
+- Engineering Playbook
+- Documentation Standards
+- Code Review Checklist
+- Definition of Done
+- Sprint Retrospective
+- Sprint Release Report
+- Architecture Decision Records (ADR-001 to ADR-006)
+
+## Improved
+
+- Repository upgraded to enterprise engineering workflow
+
+**Release Version:** v0.75.0
+
+---
+
+# v0.5.0 — Core Foundation
+
+## Added
+
+### Core Infrastructure
+
+- src/core/
+- constants.py
+- config.py
+- logger.py
+- exceptions.py
+- Package `__init__.py` files
+
+### Architecture
+
+- Shared Core Infrastructure
+- Stable DataFrame Contract
+- Main Orchestrator Pattern
+- Shared Logger Architecture
+- Dependency Direction Rules
+
+### Testing
+
+- Initial smoke test
+
+**Release Version:** v0.5.0

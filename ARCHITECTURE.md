@@ -6,7 +6,7 @@
 > It defines the responsibilities, boundaries, dependencies, and data flow
 > between modules.
 >
-> This document reflects the current implementation as of **v2.0.0**.
+> This document reflects the current implementation as of **v3.0.0**.
 
 ---
 
@@ -40,14 +40,15 @@ well-defined responsibility.
                        ▼
               Quality Manager
                        │
-                       ▼
-            Validated DataFrame
-                       │
-                       ▼
-             Analytics Manager
-                       │
-                       ▼
-             Reporting Manager
+         ┌─────────────┴─────────────┐
+         ▼                           ▼
+ Quality Assessment Report     Clean DataFrame
+                                       │
+                                       ▼
+                              Analytics Manager
+                                       │
+                                       ▼
+                              Reporting Manager
 ```
 
 ---
@@ -108,6 +109,9 @@ src/
 
 tests/
 
+    cleaning/
+    quality/
+
 main.py
 ```
 
@@ -151,7 +155,7 @@ Pandas DataFrame
 
 ### Responsibility
 
-Normalize uploaded data before quality validation.
+Normalize uploaded data before quality assessment.
 
 ### Components
 
@@ -206,9 +210,9 @@ Clean DataFrame
 
 ### Responsibility
 
-Validate cleaned datasets before analytical processing.
+Assess the quality of cleaned datasets before analytical processing.
 
-### Planned Components
+### Components
 
 - QualityManager
 - CompletenessChecker
@@ -218,19 +222,49 @@ Validate cleaned datasets before analytical processing.
 - OutlierChecker
 - QualityReport
 
-### Planned Output
+### Processing Pipeline
 
 ```
-Validated DataFrame
+Clean DataFrame
 
-+
+↓
 
-Quality Report
+CompletenessChecker
+
+↓
+
+ValidityChecker
+
+↓
+
+ConsistencyChecker
+
+↓
+
+UniquenessChecker
+
+↓
+
+OutlierChecker
+
+↓
+
+QualityReport
+
+↓
+
+Quality Assessment Report
+```
+
+### Output
+
+```
+Quality Assessment Report
 ```
 
 ### Status
 
-🟡 Planned (Sprint 3)
+✅ Stable
 
 ---
 
@@ -238,7 +272,8 @@ Quality Report
 
 ### Responsibility
 
-Generate business insights from validated datasets.
+Generate business insights from cleaned datasets using quality assessment
+results where appropriate.
 
 ### Planned Components
 
@@ -321,7 +356,7 @@ The `core` package must never depend on any business module.
 ```
 Allowed
 
-Cleaning
+Business Module
 
 ↓
 
@@ -333,7 +368,7 @@ core
 
 ↓
 
-Cleaning
+Business Module
 ```
 
 ---
@@ -365,7 +400,7 @@ QualityManager
 
 ↓
 
-Validated DataFrame
+Quality Assessment Report
 
 ↓
 
@@ -439,16 +474,30 @@ Testing is implemented using **Pytest**.
 
 Current automated coverage:
 
+### Cleaning Module
+
 - ColumnCleaner
 - TextCleaner
 - MissingValueCleaner
 - DuplicateCleaner
 - DataTypeCleaner
 
+### Quality Module
+
+- QualityManager
+- CompletenessChecker
+- ValidityChecker
+- ConsistencyChecker
+- UniquenessChecker
+- OutlierChecker
+- QualityReport
+
 Current Result
 
 ```
-5 Tests Passed
+12 Tests Passed
+0 Failed
+0 Errors
 ```
 
 Every new component added to the project must include automated tests before
@@ -479,7 +528,7 @@ The architecture follows these principles:
 |--------|--------|
 | Upload | ✅ Stable |
 | Cleaning | ✅ Stable |
-| Quality | 🟡 Next Sprint |
+| Quality | ✅ Stable |
 | Analytics | ⚪ Planned |
 | Reporting | ⚪ Planned |
 | Core Infrastructure | ✅ Stable |
@@ -495,4 +544,4 @@ This ensures architectural consistency as the project evolves.
 
 ---
 
-**Current Architecture Version:** v2.0.0
+**Current Architecture Version:** **v3.0.0**

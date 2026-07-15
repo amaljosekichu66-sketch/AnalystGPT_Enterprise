@@ -397,3 +397,49 @@ During Sprint 2 I strengthened my understanding of:
 - Engineering documentation
 
 These lessons establish the foundation for implementing the Quality Module in Sprint 3. 
+
+---
+
+# Sprint 3 — Quality Module
+
+## Technical Lessons
+
+- Data cleaning and data quality assessment are separate responsibilities and should remain independent modules.
+- Managers should orchestrate workflows rather than contain business logic.
+- Every checker should perform exactly one responsibility.
+- A dedicated report builder simplifies future expansion and improves maintainability.
+- Enterprise software benefits from small, focused classes rather than large multifunctional components.
+- Automated testing should be developed alongside implementation to validate architecture and behavior.
+
+## Architecture Lessons
+
+- Separating orchestration from execution results in a cleaner and more maintainable design.
+- Returning structured assessment results instead of modifying the DataFrame preserves module boundaries.
+- Designing for extensibility early reduces future refactoring effort.
+- Consistent coding standards across modules improve readability and long-term maintainability.
+
+## Engineering Lessons
+
+- Completing a sprint includes implementation, integration, testing, documentation, and release preparation.
+- Documentation should evolve together with the codebase and accurately reflect the implemented architecture.
+- Passing tests without warnings provides greater confidence in code quality than simply achieving passing assertions.
+
+## Sprint 3 Milestone
+
+Sprint 3 completed the data preparation foundation of AnalystGPT Enterprise.
+
+Current architecture:
+
+```
+Upload
+    ↓
+Cleaning
+    ↓
+Quality
+    ↓
+Analytics
+    ↓
+Reporting
+```
+
+The project is now ready to begin Sprint 4 — Analytics Module.
