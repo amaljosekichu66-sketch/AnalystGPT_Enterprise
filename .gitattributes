@@ -1,38 +1,101 @@
-# Normalize text files to LF in the repository
+# ==========================================================
+# Git Attributes
+# AnalystGPT Enterprise
+# ==========================================================
+
+# Automatically detect text files and normalize to LF
 * text=auto
 
-# Python
-*.py text
+# ==========================================================
+# Source Code
+# ==========================================================
 
-# Markdown
-*.md text
+*.py text eol=lf
+*.pyi text eol=lf
 
+# ==========================================================
+# Documentation
+# ==========================================================
+
+*.md text eol=lf
+*.txt text eol=lf
+*.rst text eol=lf
+
+# ==========================================================
+# Configuration
+# ==========================================================
+
+*.json text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.conf text eol=lf
+*.env text eol=lf
+
+# ==========================================================
 # YAML
-*.yml text
-*.yaml text
+# ==========================================================
 
-# JSON
-*.json text
+*.yml text eol=lf
+*.yaml text eol=lf
 
-# TOML
-*.toml text
+# ==========================================================
+# CSV & Data
+# ==========================================================
 
+*.csv text eol=lf
+
+# ==========================================================
+# SQL
+# ==========================================================
+
+*.sql text eol=lf
+
+# ==========================================================
 # Docker
+# ==========================================================
+
 Dockerfile text eol=lf
 *.dockerfile text eol=lf
 
-# Shell scripts
+# ==========================================================
+# Linux / macOS Scripts
+# ==========================================================
+
 *.sh text eol=lf
 
-# Windows scripts
+# ==========================================================
+# Windows Scripts
+# ==========================================================
+
 *.bat text eol=crlf
+*.cmd text eol=crlf
 *.ps1 text eol=crlf
 
-# Binary files
+# ==========================================================
+# Binary Files
+# ==========================================================
+
 *.png binary
 *.jpg binary
 *.jpeg binary
 *.gif binary
+*.bmp binary
 *.ico binary
-*.zip binary
+*.svg binary
 *.pdf binary
+*.zip binary
+*.7z binary
+*.gz binary
+*.tar binary
+*.xlsx binary
+*.xls binary
+*.docx binary
+*.pptx binary
+*.pyc binary
+
+# ==========================================================
+# Jupyter Notebooks
+# ==========================================================
+
+*.ipynb text eol=lf

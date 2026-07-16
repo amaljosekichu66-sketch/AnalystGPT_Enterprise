@@ -5,8 +5,11 @@ Centralized logging configuration for AnalystGPT Enterprise.
 import logging
 
 from src.core.config import LOG_LEVEL
+from src.core.constants import LOGGER_NAME
 
-logger = logging.getLogger("AnalystGPT")
+
+logger = logging.getLogger(LOGGER_NAME)
+
 logger.setLevel(LOG_LEVEL)
 
 handler = logging.StreamHandler()

@@ -2218,5 +2218,21 @@ Before creating a release:
 
 A sprint is not considered complete until implementation, testing, documentation, repository review, and the release process have all been successfully completed.
 ---
+---
+
+# PERFORMANCE VALIDATION
+
+Performance validation becomes part of the engineering lifecycle once the project reaches production-scale data processing.
+
+Before every official release, verify the application using:
+
+- Representative sample datasets
+- Large datasets
+- Stress-test datasets (when available)
+
+Record significant performance observations in the Sprint Release Report and benchmark documentation rather than in this operating manual.
+
+Performance testing complements functional testing but does not replace automated unit or integration tests.
+---
 
 # END OF MASTER PROMPT

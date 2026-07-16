@@ -6,7 +6,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v4.0.0**.
+> This document reflects the implementation as of **v5.0.0**.
 
 ---
 
@@ -21,6 +21,7 @@ AnalystGPT Enterprise follows a modular, layered architecture built around:
 - Testability
 - Scalability
 - Maintainability
+- Enterprise Modularity
 
 Each business capability is implemented as an independent module with a single, well-defined responsibility.
 
@@ -28,7 +29,6 @@ Each business capability is implemented as an independent module with a single, 
 
 # High-Level Architecture
 
-```text
                      main.py
                         │
                         ▼
@@ -44,9 +44,13 @@ Each business capability is implemented as an independent module with a single, 
               AnalyticsManager
                         │
                         ▼
-         ReportingManager (Sprint 5)
-```
-
+              ReportingManager
+                        │
+                        ▼
+         Structured Business Report
+                        │
+                        ▼
+              Text Report (.txt)
 ---
 
 # Layered Architecture
@@ -54,9 +58,9 @@ Each business capability is implemented as an independent module with a single, 
 ```text
 Presentation Layer
 
-        main.py
+            main.py
 
-────────────────────────────────────
+──────────────────────────────────────────
 
 Business Layer
 
@@ -66,13 +70,13 @@ Quality
 Analytics
 Reporting
 
-────────────────────────────────────
+──────────────────────────────────────────
 
 Shared Infrastructure
 
 core/
 
-────────────────────────────────────
+──────────────────────────────────────────
 
 External Libraries
 
@@ -95,6 +99,10 @@ docs/
 ├── engineering/
 └── sprints/
 
+performance/
+├── datasets/
+└── benchmark_results.md
+
 sample_data/
 
 src/
@@ -103,6 +111,7 @@ src/
 ├── core/
 ├── quality/
 ├── reporting/
+│   └── exporters/
 └── upload/
 
 tests/
@@ -110,7 +119,8 @@ tests/
 ├── cleaning/
 ├── fixtures/
 ├── integration/
-└── quality/
+├── quality/
+└── reporting/
 
 main.py
 ```
@@ -205,7 +215,7 @@ Clean DataFrame
 
 ### Responsibility
 
-Evaluate data quality before analytical processing.
+Evaluate dataset quality before analytical processing.
 
 ### Components
 
@@ -329,20 +339,74 @@ Analytics Report
 
 ### Responsibility
 
-Transform analytical results into business-ready reports.
+Transform analytical results into structured business reports suitable for enterprise users.
 
-### Planned Outputs
+### Components
 
-- Console Reports
-- JSON Reports
-- HTML Reports
-- Excel Reports
-- PDF Reports
+- ReportingManager
+- ExecutiveSummary
+- KPIFormatter
+- ReportBuilder
+- StructuredReport
+- ReportingReport
+- TextReportExporter
+
+### Current Export Format
+
+- Plain Text (.txt)
+
+### Planned Export Formats
+
+- JSON
+- HTML
+- Excel
+- PDF
+
+### Pipeline
+
+```text
+Analytics Report
+
+↓
+
+ExecutiveSummary
+
+↓
+
+KPIFormatter
+
+↓
+
+ReportBuilder
+
+↓
+
+StructuredReport
+
+↓
+
+TextReportExporter
+
+↓
+
+Structured Business Report
+      │
+      ▼
+Text Report (.txt)
+```
+
+### Features
+
+- Executive summary generation
+- KPI extraction
+- Structured business reports
+- Timestamped report exports
+- Configurable export directory
+- Centralized report orchestration
 
 ### Status
 
-🚧 Sprint 5
-
+✅ Stable
 ---
 
 # Shared Infrastructure
@@ -362,7 +426,12 @@ exceptions.py
 
 #### config.py
 
-Application configuration.
+Centralized application configuration including:
+
+- Logging configuration
+- Cleaning configuration
+- Report export configuration
+- Shared application settings
 
 #### constants.py
 
@@ -398,7 +467,7 @@ core
 Business Modules
 ```
 
-Business modules communicate through standardized DataFrames and structured dictionaries rather than direct coupling.
+Business modules communicate through standardized DataFrames and structured report objects rather than tightly coupled implementations.
 
 ---
 
@@ -459,7 +528,25 @@ Analytics Report
 
         ▼
 
-ReportingManager (Sprint 5)
+ReportingManager
+
+        │
+
+        ▼
+
+Structured Report
+
+        │
+
+        ▼
+
+TextReportExporter
+
+        │
+
+        ▼
+
+Timestamped Business Report (.txt)
 ```
 
 ---
@@ -476,9 +563,7 @@ Every business module exposes one manager responsible for orchestration.
 | Analytics | AnalyticsManager |
 | Reporting | ReportingManager |
 
-Managers coordinate workflows.
-
-Business logic remains inside dedicated components.
+Managers coordinate workflows while business logic remains inside dedicated components.
 
 ---
 
@@ -490,14 +575,15 @@ Centralized logging is implemented through:
 core/logger.py
 ```
 
-Every manager should:
+Every manager performs:
 
-- Log pipeline start
-- Log pipeline completion
-- Log execution timing
-- Log warnings
-- Log errors
-- Log important execution metrics
+- Pipeline start logging
+- Pipeline completion logging
+- Execution timing
+- Component execution logging
+- Warning logging
+- Error logging
+- Pipeline summary logging
 
 ---
 
@@ -509,7 +595,7 @@ Custom exceptions are defined in:
 core/exceptions.py
 ```
 
-Business modules raise domain-specific exceptions rather than generic exceptions whenever practical.
+Business modules raise domain-specific exceptions instead of generic exceptions whenever practical.
 
 ---
 
@@ -521,10 +607,14 @@ Current coverage includes:
 
 ### Upload
 
-Covered through pipeline integration.
+- UploadManager
+- CSVReader
+- ExcelReader
+- JSONReader
 
 ### Cleaning
 
+- CleaningManager
 - ColumnCleaner
 - TextCleaner
 - MissingValueCleaner
@@ -551,20 +641,59 @@ Covered through pipeline integration.
 - CorrelationAnalysis
 - DistributionAnalysis
 
+### Reporting
+
+- ReportingManager
+- ExecutiveSummary
+- KPIFormatter
+- ReportBuilder
+- StructuredReport
+- ReportingReport
+- TextReportExporter
+
 ### Integration
 
-- Complete pipeline execution
+- Complete end-to-end pipeline
 
 Current results:
 
 ```text
-60 Tests Passed
+79 Tests Passed
 0 Failed
 0 Errors
 0 Warnings
 ```
 
-Every completed business component must include automated tests before release.
+Every completed component must include automated unit tests before release.
+
+---
+
+# Performance Validation
+
+The platform has been validated using datasets of increasing scale.
+
+| Dataset | Size | Status |
+|---------|------:|--------|
+| Sample Dataset | 500 rows | ✅ Passed |
+| Large Dataset | 100,000 rows | ✅ Passed |
+| Stress Dataset | 1,000,000 rows | ✅ Passed |
+
+Observed characteristics:
+
+- Stable memory usage
+- Successful report generation
+- Complete pipeline execution
+- No runtime failures
+- Timestamped report export
+- End-to-end validation completed
+
+Performance datasets are maintained under:
+
+```text
+performance/
+├── datasets/
+└── benchmark_results.md
+```
 
 ---
 
@@ -582,6 +711,7 @@ The architecture follows:
 - Testability
 - Scalability
 - Maintainability
+- Enterprise Modularity
 
 ---
 
@@ -593,26 +723,59 @@ The architecture follows:
 | Cleaning | ✅ Stable |
 | Quality | ✅ Stable |
 | Analytics | ✅ Stable |
-| Reporting | 🚧 Sprint 5 |
+| Reporting | ✅ Stable |
 | Core Infrastructure | ✅ Stable |
 
 ---
 
 # Future Evolution
 
-The architecture will continue evolving through future sprints:
+The architecture will continue evolving through future releases.
 
-- Reporting Layer
-- SQLite Integration
-- PostgreSQL Integration
-- REST APIs
-- Power BI Integration
-- Streamlit UI
-- AI Insights
-- Production Deployment
+## Sprint 5.5 — Architecture Refactor
 
-Each architectural change affecting module boundaries or dependency direction must be documented through a new Architecture Decision Record (ADR).
+- Introduce Application class
+- Thin `main.py`
+- Strongly typed pipeline contracts
+- Standardized report interfaces
+- Dependency cleanup
+- Integration test simplification
+
+## Sprint 6
+
+SQLite persistence layer
+
+## Sprint 7
+
+PostgreSQL integration
+
+## Sprint 8
+
+REST API layer
+
+## Sprint 9
+
+Power BI integration
+
+## Sprint 10
+
+Interactive Streamlit application
+
+## Sprint 11
+
+AI-generated business insights
+
+## Sprint 12
+
+Production deployment
+
+- Docker
+- CI/CD
+- Monitoring
+- Cloud deployment
+
+Every architectural change affecting module boundaries or dependency direction must be documented through a new Architecture Decision Record (ADR).
 
 ---
 
-**Current Architecture Version:** **v4.0.0**
+**Current Architecture Version:** **v5.0.0**

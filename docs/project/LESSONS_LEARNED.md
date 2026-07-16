@@ -385,4 +385,25 @@ Reporting (Next Sprint)
 
 Sprint 4 established the analytical foundation of AnalystGPT Enterprise.
 
-The next milestone is **Sprint 5 — Reporting Module**, where analytical results will be transformed into reusable enterprise reports.
+
+---
+
+# Sprint 5 — Reporting & Performance Lessons
+
+## Enterprise Reporting
+
+- Reporting is a separate business capability and should remain isolated from analytics logic.
+- Report generation should consume standardized outputs from upstream modules rather than reprocessing datasets.
+- Export functionality should be modular so additional formats can be introduced without affecting existing components.
+
+## Performance Validation
+
+- Functional correctness alone is insufficient; large-scale datasets should be used to validate scalability.
+- Benchmarking with small, large, and stress-test datasets helps identify performance bottlenecks early.
+- Execution time, memory usage, and pipeline stability are valuable engineering metrics for evaluating production readiness.
+
+## Engineering Practice
+
+- Keep permanent engineering guidance separate from sprint-specific implementation details.
+- Update architecture documentation only when architectural boundaries or responsibilities change.
+- Use release documentation to record implementation achievements and benchmark results rather than modifying long-term engineering documents.

@@ -565,6 +565,163 @@ The project is now ready to begin Sprint 5 — Reporting Module.
 
 **Release Version:** v4.0.0
 
+# Sprint 5 — Reporting Module
+
+**Date:** 16 July 2026
+
+## Objective
+
+Develop an enterprise-grade Reporting Module capable of transforming analytical results into structured business reports while preserving the modular architecture, engineering standards, and end-to-end pipeline established in previous sprints.
+
+## Business Context
+
+Analytics produces technical insights, but business users require information presented in a clear, structured, and decision-oriented format.
+
+The Reporting Module bridges the gap between analytical results and business communication by generating professional reports suitable for enterprise environments.
+
+## Completed
+
+### Reporting Module
+
+Implemented:
+
+- ReportingManager
+- ExecutiveSummary
+- KPIFormatter
+- ReportBuilder
+- StructuredReport
+- ReportingReport
+- TextReportExporter
+
+### Pipeline Integration
+
+Successfully integrated the complete enterprise pipeline:
+
+```text
+UploadManager
+      │
+      ▼
+CleaningManager
+      │
+      ▼
+QualityManager
+      │
+      ▼
+AnalyticsManager
+      │
+      ▼
+ReportingManager
+      │
+      ▼
+Business Report
+```
+
+### Reporting Features
+
+Implemented:
+
+- Executive summary generation
+- KPI formatting
+- Structured report creation
+- Timestamped report export
+- Configurable report directory
+- Report metadata
+- End-to-end reporting workflow
+
+### Configuration Improvements
+
+Implemented:
+
+- Centralized reporting configuration
+- Configurable default report location
+- Configurable default datatype mappings
+- Configuration-driven cleaning behavior
+
+### Architecture Improvements
+
+Implemented:
+
+- Explicit `src` package initialization
+- Removal of duplicate cleaner implementation
+- Safer text cleaning for email and identifier fields
+- Improved logging consistency
+- Configuration-driven pipeline behavior
+- Stronger package organization
+
+### Testing
+
+Added complete automated test coverage for:
+
+- ReportingManager
+- ExecutiveSummary
+- KPIFormatter
+- ReportBuilder
+- StructuredReport
+- TextReportExporter
+
+Updated:
+
+- End-to-end integration pipeline
+
+Final Results:
+
+```text
+79 Tests Passed
+0 Failed
+0 Errors
+0 Warnings
+```
+
+### Performance Validation
+
+Successfully validated using:
+
+- Small dataset
+- Large dataset (100,000 rows)
+- Stress dataset (1,000,000 rows)
+
+All datasets completed successfully without architecture changes.
+
+## Challenges
+
+- Designing reporting without coupling it to analytics.
+- Creating reusable report models.
+- Keeping configuration centralized.
+- Maintaining compatibility across the complete pipeline.
+- Preserving enterprise architecture while extending functionality.
+
+## Lessons Learned
+
+- Reporting is an independent business layer rather than an analytics extension.
+- Configuration should replace hardcoded values whenever practical.
+- Performance testing should accompany functional testing.
+- Enterprise software quality depends equally on architecture, testing, documentation, and maintainability.
+- Large datasets often reveal architectural weaknesses that smaller datasets cannot.
+
+## Result
+
+Sprint 5 successfully completed the Reporting Module and delivered the first fully integrated enterprise analytics workflow.
+
+Current pipeline:
+
+```text
+Upload
+    ↓
+Cleaning
+    ↓
+Quality
+    ↓
+Analytics
+    ↓
+Reporting
+```
+
+The project now provides a complete end-to-end analytics pipeline with enterprise architecture, automated testing, centralized configuration, structured reporting, and validated performance on datasets ranging from hundreds to one million records.
+
+**Release Version:** v5.0.0
+
+---
+
 ---
 
 # Journal Summary
@@ -578,7 +735,8 @@ The project is now ready to begin Sprint 5 — Reporting Module.
 | Sprint 2 | v2.0.0 | ✅ |
 | Sprint 3 | v3.0.0 | ✅ |
 | Sprint 4 | v4.0.0 | ✅ |
+| Sprint 5 | v5.0.0 | ✅ |
 
 ---
 
-**Current Journal Version:** **v4.0.0**
+**Current Journal Version:** **v5.0.0**

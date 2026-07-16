@@ -1,7 +1,7 @@
 """
 Duplicate Cleaner Module
 
-Removes duplicate records from a DataFrame.
+Removes duplicate rows from a DataFrame.
 """
 
 from pandas import DataFrame
@@ -11,13 +11,24 @@ from src.core.logger import logger
 
 class DuplicateCleaner:
     """
-    Removes duplicate records from a DataFrame.
+    Removes duplicate rows from a DataFrame.
     """
 
-    def clean(self, dataframe: DataFrame) -> DataFrame:
+    def clean(
+        self,
+        dataframe: DataFrame,
+    ) -> DataFrame:
         """
-        Remove duplicate rows while keeping the first occurrence.
+        Remove duplicate rows.
+
+        Args:
+            dataframe: Input DataFrame.
+
+        Returns:
+            DataFrame with duplicate rows removed.
         """
+
+        logger.info("Removing duplicate rows.")
 
         rows_before = len(dataframe)
 
