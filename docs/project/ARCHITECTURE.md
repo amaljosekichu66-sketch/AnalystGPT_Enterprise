@@ -6,7 +6,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v5.0.0**.
+> This document reflects the implementation as of **v5.5.0**.
 
 ---
 
@@ -22,35 +22,103 @@ AnalystGPT Enterprise follows a modular, layered architecture built around:
 - Scalability
 - Maintainability
 - Enterprise Modularity
+- Enterprise Orchestration
 
-Each business capability is implemented as an independent module with a single, well-defined responsibility.
+Each business capability is implemented as an independent module with a single, well-defined responsibility. As of Sprint 5.5, a dedicated Application layer coordinates these modules; business modules never orchestrate one another.
 
+---
+## Architectural Goals
+
+The architecture is designed to satisfy the following long-term engineering goals:
+
+- Independent module evolution
+- Stable public contracts between modules
+- High testability through isolated business components
+- Clear ownership boundaries
+- Predictable dependency direction
+- Simple integration of future capabilities
+- Enterprise maintainability over long-term development
 ---
 
 # High-Level Architecture
 
+```text
                      main.py
                         │
                         ▼
-               UploadManager
+                Application.run()
                         │
-                        ▼
-              CleaningManager
-                        │
-                        ▼
-               QualityManager
-                        │
-                        ▼
-              AnalyticsManager
-                        │
-                        ▼
-              ReportingManager
-                        │
-                        ▼
-         Structured Business Report
-                        │
-                        ▼
-              Text Report (.txt)
+ ┌──────────────────────┼──────────────────────┐
+ │                      │                      │
+ ▼                      ▼                      ▼
+
+UploadManager → CleaningManager → QualityManager
+                                   │
+                                   ▼
+                          AnalyticsManager
+                                   │
+                                   ▼
+                          ReportingManager
+                                   │
+                                   ▼
+                         ReportingReport
+                                   │
+                                   ▼
+                          PipelineResult
+```
+
+---
+## Architectural Layers
+
+The repository is intentionally organized into four architectural layers.
+
+### Presentation Layer
+
+Responsible for application startup.
+
+Current component:
+
+- main.py
+
+### Application Layer
+
+Responsible for orchestration only.
+
+### Current Components
+
+- Application
+- PipelineResult
+---
+### Architectural Constraints
+
+The Application layer:
+
+- may call any business manager.
+- may build PipelineResult.
+- may log pipeline summaries.
+- may coordinate execution order.
+
+The Application layer must not implement business logic belonging to individual modules.
+---
+
+### Business Layer
+
+Contains independent business modules.
+
+- Upload
+- Cleaning
+- Quality
+- Analytics
+- Reporting
+
+### Infrastructure Layer
+
+Provides reusable services.
+
+- Logger
+- Configuration
+- Constants
+- Exceptions
 ---
 
 # Layered Architecture
@@ -58,11 +126,17 @@ Each business capability is implemented as an independent module with a single, 
 ```text
 Presentation Layer
 
-            main.py
+main.py
 
-──────────────────────────────────────────
+↓
 
-Business Layer
+Application Layer
+
+Application
+
+↓
+
+Business Modules
 
 Upload
 Cleaning
@@ -70,13 +144,16 @@ Quality
 Analytics
 Reporting
 
-──────────────────────────────────────────
+↓
 
 Shared Infrastructure
 
-core/
+Logger
+Configuration
+Exceptions
+Constants
 
-──────────────────────────────────────────
+↓
 
 External Libraries
 
@@ -89,51 +166,41 @@ Logging
 
 ---
 
-# Repository Structure
+# Module Responsibilities
 
-```text
-AnalystGPT_Enterprise/
+## main.py
 
-docs/
-├── adr/
-├── engineering/
-└── sprints/
+Responsibilities
 
-performance/
-├── datasets/
-└── benchmark_results.md
+- Start application
+- Parse input
+- Invoke `Application.run()`
 
-sample_data/
-
-src/
-├── analytics/
-├── cleaning/
-├── core/
-├── quality/
-├── reporting/
-│   └── exporters/
-└── upload/
-
-tests/
-├── analytics/
-├── cleaning/
-├── fixtures/
-├── integration/
-├── quality/
-└── reporting/
-
-main.py
-```
+Must never contain business logic or orchestrate business modules directly.
 
 ---
 
-# Stable Modules
+## Application Layer
+
+Responsibilities
+
+- Pipeline orchestration
+- Workflow sequencing
+- Stage coordination
+- Execution timing
+- Error handling
+- Pipeline summary logging
+- Build `PipelineResult`
+
+The Application layer is the only component allowed to coordinate multiple business modules. Business modules remain independent and unaware of one another.
+
+---
 
 ## Upload Module
 
-### Responsibility
+### Owner
 
-Acquire datasets from supported file formats and convert them into a standardized Pandas DataFrame.
+UploadManager
 
 ### Components
 
@@ -142,17 +209,30 @@ Acquire datasets from supported file formats and convert them into a standardize
 - ExcelReader
 - JSONReader
 
+### Input
+
+Dataset Path
+
 ### Supported Formats
 
 - CSV
 - Excel
 - JSON
 
+### Planned Formats
+
+- SQL Databases
+- REST APIs
+- XML
+- Parquet
+
 ### Output
 
-```text
 Pandas DataFrame
-```
+
+### Responsibility
+
+Acquire data from supported sources and convert it into a standardized DataFrame.
 
 ### Status
 
@@ -162,9 +242,9 @@ Pandas DataFrame
 
 ## Cleaning Module
 
-### Responsibility
+### Owner
 
-Normalize uploaded datasets before quality assessment.
+CleaningManager
 
 ### Components
 
@@ -175,35 +255,35 @@ Normalize uploaded datasets before quality assessment.
 - DuplicateCleaner
 - DataTypeCleaner
 
+### Input
+
+Raw DataFrame
+
 ### Pipeline
 
 ```text
 Raw DataFrame
-
-↓
-
+  ↓
 ColumnCleaner
-
-↓
-
+  ↓
 TextCleaner
-
-↓
-
+  ↓
 MissingValueCleaner
-
-↓
-
+  ↓
 DuplicateCleaner
-
-↓
-
+  ↓
 DataTypeCleaner
-
-↓
-
+  ↓
 Clean DataFrame
 ```
+
+### Output
+
+Cleaned DataFrame
+
+### Responsibility
+
+Normalize datasets before quality assessment.
 
 ### Status
 
@@ -213,9 +293,9 @@ Clean DataFrame
 
 ## Quality Module
 
-### Responsibility
+### Owner
 
-Evaluate dataset quality before analytical processing.
+QualityManager
 
 ### Components
 
@@ -227,45 +307,35 @@ Evaluate dataset quality before analytical processing.
 - OutlierChecker
 - QualityReport
 
+### Input
+
+Cleaned DataFrame
+
 ### Pipeline
 
 ```text
 Clean DataFrame
-
-↓
-
+  ↓
 CompletenessChecker
-
-↓
-
+  ↓
 ValidityChecker
-
-↓
-
+  ↓
 ConsistencyChecker
-
-↓
-
+  ↓
 UniquenessChecker
-
-↓
-
+  ↓
 OutlierChecker
-
-↓
-
+  ↓
 QualityReport
-
-↓
-
-Quality Assessment Report
 ```
 
 ### Output
 
-```text
-Quality Assessment Report
-```
+QualityReport
+
+### Responsibility
+
+Assess dataset quality before analytical processing.
 
 ### Status
 
@@ -275,9 +345,9 @@ Quality Assessment Report
 
 ## Analytics Module
 
-### Responsibility
+### Owner
 
-Generate reusable analytical insights from validated datasets.
+AnalyticsManager
 
 ### Components
 
@@ -289,45 +359,35 @@ Generate reusable analytical insights from validated datasets.
 - DistributionAnalysis
 - AnalyticsReport
 
+### Input
+
+Validated DataFrame
+
 ### Pipeline
 
 ```text
 Validated Data
-
-↓
-
+  ↓
 DescriptiveStatistics
-
-↓
-
+  ↓
 NumericalAnalysis
-
-↓
-
+  ↓
 CategoricalAnalysis
-
-↓
-
+  ↓
 CorrelationAnalysis
-
-↓
-
+  ↓
 DistributionAnalysis
-
-↓
-
+  ↓
 AnalyticsReport
-
-↓
-
-Analytics Summary
 ```
 
 ### Output
 
-```text
-Analytics Report
-```
+AnalyticsReport
+
+### Responsibility
+
+Generate reusable analytical insights from validated datasets.
 
 ### Status
 
@@ -337,9 +397,9 @@ Analytics Report
 
 ## Reporting Module
 
-### Responsibility
+### Owner
 
-Transform analytical results into structured business reports suitable for enterprise users.
+ReportingManager
 
 ### Components
 
@@ -350,6 +410,28 @@ Transform analytical results into structured business reports suitable for enter
 - StructuredReport
 - ReportingReport
 - TextReportExporter
+
+### Input
+
+AnalyticsReport
+
+### Pipeline
+
+```text
+Analytics Report
+  ↓
+ExecutiveSummary
+  ↓
+KPIFormatter
+  ↓
+ReportBuilder
+  ↓
+StructuredReport
+  ↓
+TextReportExporter
+  ↓
+ReportingReport
+```
 
 ### Current Export Format
 
@@ -362,39 +444,6 @@ Transform analytical results into structured business reports suitable for enter
 - Excel
 - PDF
 
-### Pipeline
-
-```text
-Analytics Report
-
-↓
-
-ExecutiveSummary
-
-↓
-
-KPIFormatter
-
-↓
-
-ReportBuilder
-
-↓
-
-StructuredReport
-
-↓
-
-TextReportExporter
-
-↓
-
-Structured Business Report
-      │
-      ▼
-Text Report (.txt)
-```
-
 ### Features
 
 - Executive summary generation
@@ -404,17 +453,26 @@ Text Report (.txt)
 - Configurable export directory
 - Centralized report orchestration
 
+### Output
+
+ReportingReport
+
+### Responsibility
+
+Transform analytical results into structured, professional business reports.
+
 ### Status
 
 ✅ Stable
+
 ---
 
 # Shared Infrastructure
 
-The `core` package provides infrastructure shared across every business module.
+The `core` package provides infrastructure shared across every business module and the Application layer. It remains isolated from business modules — business modules may depend on `core`, but `core` never depends on business modules.
 
 ```text
-core/
+src/core/
 
 config.py
 constants.py
@@ -452,10 +510,13 @@ Custom exception hierarchy.
 ## Allowed
 
 ```text
+Application
+     │
+     ▼
 Business Modules
-        │
-        ▼
-      core
+     │
+     ▼
+    core
 ```
 
 ## Not Allowed
@@ -465,95 +526,76 @@ core
  │
  ▼
 Business Modules
+ │
+ ▼
+Application
 ```
 
-Business modules communicate through standardized DataFrames and structured report objects rather than tightly coupled implementations.
+Dependencies always point downward. Lower layers never depend on higher layers. Business modules communicate through standardized DataFrames and structured report objects rather than tightly coupled implementations, and never orchestrate other business modules directly — only the Application layer does.
 
+---
+
+# Stable Contracts
+
+| Module | Output |
+|---------|--------|
+| Upload | DataFrame |
+| Cleaning | DataFrame |
+| Quality | QualityReport |
+| Analytics | AnalyticsReport |
+| Reporting | ReportingReport |
+| Application | PipelineResult |
+
+Stable contracts reduce coupling and simplify future extensions.
+
+---
+## Contract Stability Policy
+
+Stable contracts are treated as public interfaces.
+
+Internal implementation may evolve without affecting other modules, provided these contracts remain unchanged.
+
+Breaking a contract requires:
+
+- Architecture review
+- Updated ADR
+- Updated tests
+- Updated documentation
 ---
 
 # Data Flow
 
 ```text
-CSV / Excel / JSON
-
-        │
-
-        ▼
-
-UploadManager
-
-        │
-
-        ▼
-
-Pandas DataFrame
-
-        │
-
-        ▼
-
-CleaningManager
-
-        │
-
-        ▼
-
+Dataset Path
+  ↓
+Upload
+  ↓
+Raw DataFrame
+  ↓
+Cleaning
+  ↓
 Clean DataFrame
-
-        │
-
-        ▼
-
-QualityManager
-
-        │
-
-        ▼
-
-Quality Assessment Report
-
-        │
-
-        ▼
-
-AnalyticsManager
-
-        │
-
-        ▼
-
-Analytics Report
-
-        │
-
-        ▼
-
-ReportingManager
-
-        │
-
-        ▼
-
-Structured Report
-
-        │
-
-        ▼
-
-TextReportExporter
-
-        │
-
-        ▼
-
-Timestamped Business Report (.txt)
+  ↓
+Quality
+  ↓
+QualityReport
+  ↓
+Analytics
+  ↓
+AnalyticsReport
+  ↓
+Reporting
+  ↓
+ReportingReport
+  ↓
+PipelineResult
 ```
 
 ---
 
 # Manager-Orchestrator Pattern
 
-Every business module exposes one manager responsible for orchestration.
+Every business module exposes one manager responsible for internal orchestration; the Application layer orchestrates across managers.
 
 | Module | Manager |
 |---------|---------|
@@ -562,9 +604,26 @@ Every business module exposes one manager responsible for orchestration.
 | Quality | QualityManager |
 | Analytics | AnalyticsManager |
 | Reporting | ReportingManager |
+| Application | Application |
 
 Managers coordinate workflows while business logic remains inside dedicated components.
 
+---
+
+## Ownership Principle
+
+Every architectural component has exactly one owner.
+
+Examples:
+
+- UploadManager owns Upload Module orchestration.
+- CleaningManager owns Cleaning Module orchestration.
+- QualityManager owns Quality Module orchestration.
+- AnalyticsManager owns Analytics Module orchestration.
+- ReportingManager owns Reporting Module orchestration.
+- Application owns pipeline orchestration.
+
+Ownership is never shared across modules.
 ---
 
 # Logging Strategy
@@ -572,10 +631,10 @@ Managers coordinate workflows while business logic remains inside dedicated comp
 Centralized logging is implemented through:
 
 ```text
-core/logger.py
+src/core/logger.py
 ```
 
-Every manager performs:
+Every manager, and the Application layer itself, performs:
 
 - Pipeline start logging
 - Pipeline completion logging
@@ -592,10 +651,10 @@ Every manager performs:
 Custom exceptions are defined in:
 
 ```text
-core/exceptions.py
+src/core/exceptions.py
 ```
 
-Business modules raise domain-specific exceptions instead of generic exceptions whenever practical.
+Business modules and the Application layer raise domain-specific exceptions instead of generic exceptions whenever practical. The Application layer is responsible for top-level failure handling across the pipeline.
 
 ---
 
@@ -651,9 +710,19 @@ Current coverage includes:
 - ReportingReport
 - TextReportExporter
 
+### Application Layer
+
+Validated through:
+
+- End-to-end integration testing
+- Complete pipeline execution
+- PipelineResult validation
+
+Dedicated Application unit tests are planned as the Application layer continues to evolve.
+
 ### Integration
 
-- Complete end-to-end pipeline
+- Complete end-to-end pipeline execution
 
 Current results:
 
@@ -664,7 +733,7 @@ Current results:
 0 Warnings
 ```
 
-Every completed component must include automated unit tests before release.
+Every completed component must include automated unit tests before release. Automated testing validates every architectural change.
 
 ---
 
@@ -678,23 +747,64 @@ The platform has been validated using datasets of increasing scale.
 | Large Dataset | 100,000 rows | ✅ Passed |
 | Stress Dataset | 1,000,000 rows | ✅ Passed |
 
-Observed characteristics:
+Observed Results
 
+- Successful execution through Application.run()
+- Successful pipeline orchestration
 - Stable memory usage
 - Successful report generation
-- Complete pipeline execution
+- Successful report export
+- Complete end-to-end validation
 - No runtime failures
-- Timestamped report export
-- End-to-end validation completed
+- 79 / 79 automated tests remained passing after the Sprint 5.5 architecture refactor
 
-Performance datasets are maintained under:
+---
 
+# Repository Structure
 ```text
+AnalystGPT_Enterprise/
+
+docs/
+├── adr/
+├── engineering/
+├── project/
+└── sprints/
+
 performance/
 ├── datasets/
-└── benchmark_results.md
-```
+├── benchmark_results.md
+└── README.md
 
+reports/
+
+sample_data/
+
+src/
+├── application/
+│   ├── app.py
+│   ├── pipeline_result.py
+│   └── __init__.py
+├── upload/
+├── cleaning/
+├── quality/
+├── analytics/
+├── reporting/
+│   └── exporters/
+└── core/
+
+tests/
+├── analytics/
+├── cleaning/
+├── quality/
+├── reporting/
+├── integration/
+└── fixtures/
+
+main.py
+README.md
+CHANGELOG.md
+requirements.txt
+```
 ---
 
 # Design Principles
@@ -712,6 +822,9 @@ The architecture follows:
 - Scalability
 - Maintainability
 - Enterprise Modularity
+- Enterprise Orchestration
+- Typed Domain Models
+- Stable Module Contracts
 
 ---
 
@@ -719,6 +832,7 @@ The architecture follows:
 
 | Layer | Status |
 |--------|--------|
+| Application | ✅ Stable |
 | Upload | ✅ Stable |
 | Cleaning | ✅ Stable |
 | Quality | ✅ Stable |
@@ -728,22 +842,35 @@ The architecture follows:
 
 ---
 
+# Sprint 5.5 Architecture Refactor
+
+Sprint 5.5 introduced the largest architectural improvement since project inception.
+
+Major improvements:
+
+- Introduced dedicated Application layer.
+- Reduced `main.py` to a minimal entry point.
+- Centralized pipeline orchestration.
+- Standardized report models.
+- Introduced `PipelineResult` as the application-level contract.
+- Removed orchestration responsibilities from `main.py`.
+- Improved testability through `Application.run()`.
+- Increased maintainability through clearer ownership boundaries.
+- Preserved backward compatibility across business modules.
+- Maintained 100% passing automated tests throughout the refactor.
+
+---
+
 # Future Evolution
 
-The architecture will continue evolving through future releases.
-
-## Sprint 5.5 — Architecture Refactor
-
-- Introduce Application class
-- Thin `main.py`
-- Strongly typed pipeline contracts
-- Standardized report interfaces
-- Dependency cleanup
-- Integration test simplification
+The current architecture provides a stable foundation for continued, sequenced evolution. The Application layer remains the single orchestration point as the platform grows.
 
 ## Sprint 6
 
 SQLite persistence layer
+
+- Repository Pattern
+- Database abstraction
 
 ## Sprint 7
 
@@ -778,4 +905,4 @@ Every architectural change affecting module boundaries or dependency direction m
 
 ---
 
-**Current Architecture Version:** **v5.0.0**
+**Current Architecture Version:** **v5.5.0**

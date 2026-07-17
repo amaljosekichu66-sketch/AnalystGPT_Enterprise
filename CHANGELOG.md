@@ -95,3 +95,89 @@ performance/
 **Release Version:** v5.0.0
 
 ---
+
+---
+
+# [v5.5.0] — Enterprise Architecture Refactor
+
+**Release Date:** July 2026
+
+## Overview
+
+Sprint 5.5 represents the largest architectural refactor completed
+since the project began.
+
+The primary objective was to separate pipeline orchestration from the
+application entry point while preserving stable business module
+contracts and improving long-term maintainability.
+
+---
+
+## Added
+
+### Application Layer
+
+- Introduced dedicated `Application` class.
+- Introduced reusable `Application.run()` pipeline.
+- Established the Application Layer as the single orchestration point.
+
+### Application Contracts
+
+- Added `PipelineResult`.
+- Standardized application execution result.
+- Improved type safety across the pipeline.
+
+### Architecture
+
+- Introduced enterprise layered architecture.
+- Centralized pipeline orchestration.
+- Improved dependency direction.
+- Reduced orchestration duplication.
+
+### Documentation
+
+Updated:
+
+- README
+- PROJECT_STATE
+- ARCHITECTURE
+- ROADMAP
+- ADRs
+- Sprint documentation
+
+---
+
+## Changed
+
+- `main.py` became a thin application entry point.
+- Pipeline execution moved into `Application.run()`.
+- Report models became standardized contracts.
+- Repository documentation reorganized.
+- Engineering documentation synchronized.
+
+---
+
+## Validation
+
+Successfully validated using:
+
+- ✅ 79 / 79 Automated Tests
+- ✅ Integration Testing
+- ✅ Sample Dataset
+- ✅ Large Dataset (100,000 rows)
+- ✅ Stress Dataset (1,000,000 rows)
+
+---
+
+## Result
+
+Sprint 5.5 establishes the architectural foundation for:
+
+- SQLite
+- PostgreSQL
+- REST APIs
+- Streamlit
+- AI Insights
+- Production Deployment
+
+**Next Release:** v6.0.0 — SQLite Integration

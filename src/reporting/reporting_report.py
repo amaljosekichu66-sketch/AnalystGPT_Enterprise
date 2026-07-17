@@ -7,6 +7,7 @@ Reporting Module.
 
 from typing import Any
 
+from src.core.logger import logger
 from src.reporting.structured_report import StructuredReport
 
 
@@ -28,10 +29,17 @@ class ReportingReport:
         Initialize a ReportingReport instance.
 
         Args:
-            report: Structured business report.
-            export_path: Location of the exported report.
-            execution_time: Total reporting pipeline execution time.
+            report:
+                Structured business report.
+
+            export_path:
+                Location of the exported report.
+
+            execution_time:
+                Total reporting pipeline execution time.
         """
+
+        logger.info("Creating ReportingReport.")
 
         self.report = report
         self.export_path = export_path
@@ -41,7 +49,9 @@ class ReportingReport:
         """
         Convert the reporting result into a serializable dictionary.
 
-        Returns:
+        Returns
+        -------
+        dict[str, Any]
             Dictionary representation of the reporting result.
         """
 

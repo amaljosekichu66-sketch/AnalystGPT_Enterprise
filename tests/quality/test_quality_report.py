@@ -1,7 +1,12 @@
+"""
+Unit tests for the QualityReport module.
+"""
+
 from src.quality.quality_report import QualityReport
 
 
-def test_quality_report_generates_report():
+def test_quality_report():
+
     results = {
         "completeness": {},
         "validity": {},
@@ -10,6 +15,20 @@ def test_quality_report_generates_report():
         "outliers": {},
     }
 
-    report = QualityReport().generate(results)
+    report = QualityReport(
+        report=results,
+        execution_time=0.5,
+    )
 
-    assert report == results
+    assert isinstance(
+        report,
+        QualityReport,
+    )
+
+    assert report.report == results
+
+    report_dict = report.to_dict()
+
+    assert report_dict["report"] == results
+
+    assert report_dict["execution_time"] == 0.5

@@ -7,9 +7,12 @@ from pathlib import Path
 from pandas import DataFrame
 
 from src.analytics.analytics_manager import AnalyticsManager
+from src.analytics.analytics_report import AnalyticsReport
 from src.cleaning.cleaning_manager import CleaningManager
 from src.quality.quality_manager import QualityManager
+from src.quality.quality_report import QualityReport
 from src.reporting.reporting_manager import ReportingManager
+from src.reporting.reporting_report import ReportingReport
 from src.upload.upload_manager import UploadManager
 
 
@@ -54,7 +57,7 @@ def test_complete_pipeline():
 
     assert isinstance(
         quality_report,
-        dict,
+        QualityReport,
     )
 
     # ---------------------------------------------------------
@@ -67,7 +70,7 @@ def test_complete_pipeline():
 
     assert isinstance(
         analytics_report,
-        dict,
+        AnalyticsReport,
     )
 
     expected_sections = [
@@ -79,7 +82,7 @@ def test_complete_pipeline():
     ]
 
     for section in expected_sections:
-        assert section in analytics_report
+        assert section in analytics_report.report
 
     # ---------------------------------------------------------
     # Reporting
@@ -91,20 +94,17 @@ def test_complete_pipeline():
 
     assert isinstance(
         reporting_report,
-        dict,
+        ReportingReport,
     )
 
-    expected_report_sections = [
-        "report",
-        "export_path",
-        "execution_time",
-    ]
+    assert reporting_report.report is not None
 
-    for section in expected_report_sections:
-        assert section in reporting_report
+    assert reporting_report.export_path is not None
+
+    assert reporting_report.execution_time >= 0
 
     report_path = Path(
-        reporting_report["export_path"]
+        reporting_report.export_path
     )
 
     assert report_path.exists()

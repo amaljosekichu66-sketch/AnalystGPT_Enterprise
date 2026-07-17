@@ -407,3 +407,76 @@ Sprint 4 established the analytical foundation of AnalystGPT Enterprise.
 - Keep permanent engineering guidance separate from sprint-specific implementation details.
 - Update architecture documentation only when architectural boundaries or responsibilities change.
 - Use release documentation to record implementation achievements and benchmark results rather than modifying long-term engineering documents.
+
+---
+
+# Sprint 5.5 — Lessons Learned
+
+## Architectural Lessons
+
+Large software systems benefit from separating orchestration from
+business logic.
+
+Introducing a dedicated Application Layer significantly simplified
+pipeline coordination while preserving module independence.
+
+---
+
+## Design Lessons
+
+Stable contracts are more valuable than exposing implementation
+details.
+
+Business modules should communicate only through clearly defined
+interfaces.
+
+---
+
+## Software Engineering Lessons
+
+A thin application entry point improves readability, maintainability,
+and extensibility.
+
+Future presentation layers (CLI, Streamlit, APIs) can now reuse the
+same Application Layer.
+
+---
+
+## Documentation Lessons
+
+Maintaining a clear separation between:
+
+- PROJECT_STATE
+- ARCHITECTURE
+- ROADMAP
+- CHANGELOG
+- PROJECT_JOURNAL
+
+reduces duplication and improves long-term maintainability.
+
+---
+
+## Testing Lessons
+
+Major architectural refactors should always be completed alongside
+comprehensive automated validation.
+
+Successfully preserving 79 / 79 passing tests throughout the refactor
+provided confidence that architectural improvements did not introduce
+functional regressions.
+
+---
+
+## Future Guidance
+
+Future architectural work should continue to prioritize:
+
+- Stable contracts
+- Independent business modules
+- Centralized orchestration
+- Strong typing
+- Enterprise documentation
+- Automated validation
+
+These principles established during Sprint 5.5 should remain guiding
+engineering standards throughout future development.

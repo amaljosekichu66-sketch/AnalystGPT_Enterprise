@@ -5,48 +5,52 @@ Unit tests for the AnalyticsReport module.
 from src.analytics.analytics_report import AnalyticsReport
 
 
-def test_generate_returns_dictionary():
+def build_report():
 
-    report = AnalyticsReport()
+    return AnalyticsReport(
+        report={
+            "descriptive_statistics": {},
+            "numerical_analysis": {},
+            "categorical_analysis": {},
+            "correlation_analysis": {},
+            "distribution_analysis": {},
+        },
+        execution_time=1.25,
+    )
 
-    result = report.generate({})
 
-    assert isinstance(result, dict)
+def test_returns_analytics_report():
+
+    report = build_report()
+
+    assert isinstance(
+        report,
+        AnalyticsReport,
+    )
 
 
 def test_report_contains_all_sections():
 
-    report = AnalyticsReport()
+    report = build_report()
 
-    results = {
-        "descriptive_statistics": {},
-        "numerical_analysis": {},
-        "categorical_analysis": {},
-        "correlation_analysis": {},
-        "distribution_analysis": {},
-    }
+    expected = [
+        "descriptive_statistics",
+        "numerical_analysis",
+        "categorical_analysis",
+        "correlation_analysis",
+        "distribution_analysis",
+    ]
 
-    final_report = report.generate(results)
-
-    assert "descriptive_statistics" in final_report
-    assert "numerical_analysis" in final_report
-    assert "categorical_analysis" in final_report
-    assert "correlation_analysis" in final_report
-    assert "distribution_analysis" in final_report
+    for section in expected:
+        assert section in report.report
 
 
-def test_report_preserves_results():
+def test_to_dict_preserves_results():
 
-    report = AnalyticsReport()
+    report = build_report()
 
-    results = {
-        "descriptive_statistics": {"rows": 100},
-        "numerical_analysis": {"Age": {}},
-        "categorical_analysis": {"Gender": {}},
-        "correlation_analysis": {"matrix": {}},
-        "distribution_analysis": {"Age": {}},
-    }
+    report_dict = report.to_dict()
 
-    final_report = report.generate(results)
+    assert report_dict["report"] == report.report
 
-    assert final_report["descriptive_statistics"]["rows"] == 100
+    assert report_dict["execution_time"] == 1.25

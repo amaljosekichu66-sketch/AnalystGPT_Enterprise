@@ -2,15 +2,40 @@
 
 > **Purpose**
 >
-> This document is the single source of truth for the current state of AnalystGPT Enterprise.
+> This document is the primary engineering context for AnalystGPT Enterprise.
 >
-> It provides enough context for an engineer (or AI assistant) to understand the project in approximately two minutes.
+> It serves as the project's "boot memory" for engineers and AI assistants —
+> read this first, in under two minutes, to know exactly where the project stands.
 >
-> Historical information belongs in:
+> This document intentionally describes the **current** state only.
+>
+> Historical implementation details belong in:
 >
 > - PROJECT_JOURNAL.md
 > - CHANGELOG.md
-> - ROADMAP.md
+> - Sprint Release Reports
+>
+> Full architectural detail (per-module components, pipelines, dependency
+> rules, test coverage, performance data) lives in **ARCHITECTURE.md**.
+> This document is the summary; ARCHITECTURE.md is the reference.
+
+---
+
+# Quick Orientation
+
+AnalystGPT Enterprise is an enterprise-grade analytics pipeline (Upload →
+Cleaning → Quality → Analytics → Reporting), built as a self-directed
+software engineering exercise to develop production-level architecture,
+testing, and delivery skills.
+
+**Standing as of v5.5.0:** all five business modules and the new Application
+orchestration layer are complete and stable, with 79/79 automated tests
+passing and performance validated up to 1,000,000 rows. Sprint 5.5 (the
+biggest refactor to date) just closed — `main.py` is now a thin entry
+point, and `Application.run()` owns pipeline orchestration end-to-end via a
+strongly typed `PipelineResult`. **Next up: Sprint 6, SQLite integration.**
+
+No open blockers. Repository is ready to start Sprint 6.
 
 ---
 
@@ -18,553 +43,243 @@
 
 | Area | Status |
 |------|--------|
-| Version | **v5.0.0** |
-| Repository | 🟢 Active Development |
-| Current Sprint | **Sprint 5 Completed** |
+| Project | AnalystGPT Enterprise |
+| Version | **v5.5.0** (previous: v5.0.0) |
+| Repository Status | 🟢 Active Development |
+| Current Sprint | **Sprint 5.5 – Architecture Refactor Complete** |
 | Sprint Progress | **100%** |
-| Architecture | 🟢 Stable |
+| Architecture | ✅ Enterprise Layered Architecture |
 | Documentation | 🟢 Current |
 | Upload Module | ✅ Complete |
 | Cleaning Module | ✅ Complete |
 | Quality Module | ✅ Complete |
 | Analytics Module | ✅ Complete |
 | Reporting Module | ✅ Complete |
-| Testing | ✅ Automated (Pytest + Integration) |
+| Application Layer | ✅ Complete |
+| PipelineResult | ✅ Complete |
+| Automated Testing | ✅ 79 / 79 Passed |
+| Integration Testing | ✅ Passed |
 | Performance Validation | ✅ Completed |
-| Technical Debt | 🟢 Low |
-| Next Milestone | **Sprint 5.5 – Architecture Refactor** |
+| Technical Debt | 🟢 Very Low |
+| Next Sprint | **Sprint 6 – SQLite Integration** |
 
 ---
 
 # Mission
 
-Build an enterprise-grade analytics platform while becoming capable of independently designing, architecting, developing, testing, documenting, reviewing, optimizing, and deploying production-quality analytics software.
+Build an enterprise-grade analytics platform while developing the ability
+to independently design, architect, implement, test, document, optimize,
+review, and deploy production-quality analytics software.
 
 ---
 
 # Current Architecture
 
 ```text
-                main.py
-                   │
-                   ▼
-           UploadManager
-                   │
-                   ▼
-          CleaningManager
-                   │
-                   ▼
-           QualityManager
-                   │
-                   ▼
-          AnalyticsManager
-                   │
-                   ▼
-         ReportingManager
-                   │
-                   ▼
-      Timestamped Report Export
+                     main.py
+                        │
+                        ▼
+                 Application.run()
+                        │
+        ┌───────────────┼────────────────┐
+        │               │                │
+        ▼               ▼                ▼
+
+ UploadManager → CleaningManager → QualityManager
+                                      │
+                                      ▼
+                            AnalyticsManager
+                                      │
+                                      ▼
+                            ReportingManager
+                                      │
+                                      ▼
+                             ReportingReport
+                                      │
+                                      ▼
+                              PipelineResult
 ```
 
----
-
-# Shared Infrastructure
-
-```text
-core/
-├── __init__.py
-├── config.py
-├── constants.py
-├── logger.py
-└── exceptions.py
-```
-
----
-
-# Architecture Principles
-
-- `main.py` acts only as the application entry point and pipeline orchestrator.
-- Each business module owns a single responsibility.
-- Modules communicate through standardized Pandas DataFrames and structured report models.
-- Shared infrastructure belongs exclusively in `core`.
-- Business modules may depend on `core`.
-- `core` never depends on business modules.
-- Every module exposes a dedicated Manager responsible for orchestration.
-- Business logic remains encapsulated inside individual components.
-- Configuration is centralized.
-- Logging is centralized.
-- Automated testing is mandatory for every completed module.
-- Integration testing validates end-to-end pipeline execution.
+Sprint 5.5 introduced the dedicated **Application Layer**, making `main.py`
+a thin entry point while centralizing workflow orchestration inside
+`Application.run()`. Full component-level breakdown and per-module
+pipelines are in ARCHITECTURE.md.
 
 ---
 
 # Stable Module Contracts
 
-## Upload Module
+| Module | Input | Output |
+|---------|-------|--------|
+| Upload | Dataset Path | Pandas DataFrame |
+| Cleaning | Raw DataFrame | Cleaned DataFrame |
+| Quality | Cleaned DataFrame | QualityReport |
+| Analytics | Cleaned DataFrame | AnalyticsReport |
+| Reporting | AnalyticsReport | ReportingReport |
+| Application | Dataset Path | PipelineResult |
 
-### Purpose
-
-Load datasets from supported sources.
-
-### Supported Inputs
-
-- CSV
-- Excel
-- JSON
-
-### Planned Inputs
-
-- SQL Databases
-- REST APIs
-- XML
-- Parquet
-
-### Components
-
-- UploadManager
-- CSVReader
-- ExcelReader
-- JSONReader
-
-### Output
-
-Standardized Pandas DataFrame
-
-### Status
-
-✅ Stable
+Business modules communicate only through these contracts.
 
 ---
 
-## Cleaning Module
+# Current Engineering Rules
 
-### Purpose
+The following architectural rules are considered stable:
 
-Normalize and clean uploaded datasets.
-
-### Components
-
-- CleaningManager
-- ColumnCleaner
-- TextCleaner
-- MissingValueCleaner
-- DuplicateCleaner
-- DataTypeCleaner
-
-### Output
-
-Cleaned Pandas DataFrame
-
-### Status
-
-✅ Stable
-
----
-
-## Quality Module
-
-### Purpose
-
-Assess dataset quality before analytical processing.
-
-### Components
-
-- QualityManager
-- CompletenessChecker
-- ValidityChecker
-- ConsistencyChecker
-- UniquenessChecker
-- OutlierChecker
-- QualityReport
-
-### Output
-
-Quality Assessment Report
-
-### Status
-
-✅ Stable
-
----
-
-## Analytics Module
-
-### Purpose
-
-Generate analytical insights from validated datasets.
-
-### Components
-
-- AnalyticsManager
-- DescriptiveStatistics
-- NumericalAnalysis
-- CategoricalAnalysis
-- CorrelationAnalysis
-- DistributionAnalysis
-- AnalyticsReport
-
-### Output
-
-Analytics Report
-
-### Status
-
-✅ Stable
-
----
-
-## Reporting Module
-
-### Purpose
-
-Transform analytical insights into professional business reports.
-
-### Components
-
-- ReportingManager
-- ExecutiveSummary
-- KPIFormatter
-- StructuredReport
-- ReportBuilder
-- ReportingReport
-- TextReportExporter
-
-### Current Capabilities
-
-- Professional report generation
-- Timestamped report export
-- Automatic report directory creation
-- Structured reporting pipeline
-- Enterprise logging
-- Configurable output location
-
-### Planned Outputs
-
-- JSON Reports
-- HTML Reports
-- Excel Reports
-- PDF Reports
-
-### Output
-
-Business Report
-
-### Status
-
-✅ Stable
+- `main.py` is an application entry point only.
+- `Application` owns end-to-end pipeline orchestration.
+- Each business capability has a single Manager.
+- Business modules never orchestrate other business modules.
+- Managers communicate using stable contracts.
+- Shared services remain inside `src/core`.
+- Report objects replace loosely typed dictionaries.
+- The application returns a strongly typed `PipelineResult`.
+- Logging is centralized.
+- Configuration is centralized.
+- Automated testing validates every architectural change.
+- Every architectural change to module boundaries or dependency
+  direction requires a new ADR (see ARCHITECTURE.md).
 
 ---
 
 # Repository Structure
 
 ```text
-AnalystGPT_Enterprise/
-
-docs/
-├── adr/
-├── engineering/
-└── sprints/
-
-performance/
-├── datasets/
-└── benchmark_results.md
-
-sample_data/
-
 src/
-├── upload/
-├── cleaning/
-├── quality/
-├── analytics/
-├── reporting/
-└── core/
 
-tests/
-├── analytics/
-├── cleaning/
-├── quality/
-├── reporting/
-├── integration/
-└── fixtures/
+application/
+    app.py
+    pipeline_result.py
 
-main.py
+upload/
+cleaning/
+quality/
+analytics/
+reporting/
 
-README.md
-ARCHITECTURE.md
-CHANGELOG.md
-PROJECT_CONSTITUTION.md
-PROJECT_JOURNAL.md
-PROJECT_STATE.md
-ROADMAP.md
-LESSONS_LEARNED.md
-
-requirements.txt
+core/
 ```
 
----
-
-# Engineering Governance
-
-Current repository standards include:
-
-- Architecture Decision Records (ADR)
-- Engineering Operating Manual
-- Documentation Standards
-- Definition of Done
-- Code Review Checklist
-- Sprint Release Reports
-- Release Management
-- Automated Testing Standards
-- Performance Benchmarking
-
-Engineering governance is complete through Sprint 5.
+Each business module internally contains specialized implementation
+components. Detailed module composition is documented in **ARCHITECTURE.md**.
 
 ---
 
-# Current Engineering Status
+# Validation Status
 
-## Sprint 0
+## Unit Testing
 
-- Project Foundation
-- Repository Structure
-- Core Documentation
-- Development Environment
+- Upload Module
+- Cleaning Module
+- Quality Module
+- Analytics Module
+- Reporting Module
+- Application Layer
 
----
-
-## Sprint 0.5
-
-- Git
-- GitHub
-- Repository Standards
+**Status:** ✅ 79 / 79 Tests Passed
+(Per-component breakdown: see ARCHITECTURE.md → Testing Strategy)
 
 ---
 
-## Sprint 0.75
+## Integration Testing
 
-- Engineering Governance
-- ADR Framework
-- Documentation Standards
-- Definition of Done
+Validated complete pipeline execution:
 
----
+Upload → Cleaning → Quality → Analytics → Reporting → PipelineResult
 
-## Sprint 1
-
-- UploadManager
-- CSVReader
-- ExcelReader
-- JSONReader
-- Upload Pipeline
-- Logging
-- Exceptions
-
----
-
-## Sprint 2
-
-- CleaningManager
-- ColumnCleaner
-- TextCleaner
-- MissingValueCleaner
-- DuplicateCleaner
-- DataTypeCleaner
-- End-to-End Cleaning Pipeline
-- Automated Unit Tests
-
----
-
-## Sprint 3
-
-- QualityManager
-- CompletenessChecker
-- ValidityChecker
-- ConsistencyChecker
-- UniquenessChecker
-- OutlierChecker
-- QualityReport
-- End-to-End Quality Pipeline
-- Automated Unit Tests
-
----
-
-## Sprint 4
-
-- AnalyticsManager
-- DescriptiveStatistics
-- NumericalAnalysis
-- CategoricalAnalysis
-- CorrelationAnalysis
-- DistributionAnalysis
-- AnalyticsReport
-- End-to-End Analytics Pipeline
-- Pipeline Execution Summary
-- Analytics Integration Tests
-- Pandas Compatibility Improvements
-
----
-
-## Sprint 5
-
-- ReportingManager
-- ExecutiveSummary
-- KPIFormatter
-- StructuredReport
-- ReportBuilder
-- ReportingReport
-- TextReportExporter
-- Timestamped Report Export
-- Configurable Export Directory
-- Reporting Integration
-- Performance Validation
-- Large Dataset Validation
-- Stress Testing (1,000,000 Rows)
-- Enterprise Report Generation
-- Complete Reporting Test Suite
-
----
-
-# Testing Status
-
-## Upload Module
-
-✅ Covered through integration pipeline.
-
----
-
-## Cleaning Module
-
-- ✅ ColumnCleaner
-- ✅ TextCleaner
-- ✅ MissingValueCleaner
-- ✅ DuplicateCleaner
-- ✅ DataTypeCleaner
-
----
-
-## Quality Module
-
-- ✅ QualityManager
-- ✅ CompletenessChecker
-- ✅ ValidityChecker
-- ✅ ConsistencyChecker
-- ✅ UniquenessChecker
-- ✅ OutlierChecker
-- ✅ QualityReport
-
----
-
-## Analytics Module
-
-- ✅ AnalyticsManager
-- ✅ AnalyticsReport
-- ✅ DescriptiveStatistics
-- ✅ NumericalAnalysis
-- ✅ CategoricalAnalysis
-- ✅ CorrelationAnalysis
-- ✅ DistributionAnalysis
-
----
-
-## Reporting Module
-
-- ✅ ReportingManager
-- ✅ ExecutiveSummary
-- ✅ KPIFormatter
-- ✅ StructuredReport
-- ✅ ReportBuilder
-- ✅ ReportingReport
-- ✅ TextReportExporter
-
----
-
-## Integration Tests
-
-- ✅ Complete End-to-End Pipeline Execution
+**Status:** ✅ Passed
 
 ---
 
 ## Performance Validation
 
-Validated successfully using multiple datasets:
+Validated successfully using:
 
-| Dataset | Size | Status |
-|---------|------|--------|
-| customer_data.csv | 500 Rows | ✅ Passed |
-| customer_data_large.csv | 100,000 Rows | ✅ Passed |
-| customer_data_stress_test.csv | 1,000,000 Rows (~60 MB) | ✅ Passed |
+| Dataset | Status |
+|----------|--------|
+| `sample_data/customer_data.csv` | ✅ Passed |
+| `performance/datasets/customer_data_large.csv` | ✅ Passed |
+| `performance/datasets/customer_data_stress_test.csv` | ✅ Passed |
+
+Performance benchmarks are maintained in:
+
+```
+performance/benchmark_results.md
+```
+
+(Dataset sizes and detailed characteristics: see ARCHITECTURE.md → Performance Validation)
 
 ---
 
-## Current Test Results
+# Completed Sprint Timeline
 
-```text
-79 Tests Passed
-0 Failed
-0 Errors
-0 Warnings
-```
+Quick-scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
+
+| Sprint | Delivered |
+|--------|-----------|
+| 0 – 0.75 | Project foundation, repo structure, engineering governance, ADR framework |
+| 1 | Upload Module (CSV/Excel/JSON readers) |
+| 2 | Cleaning Module (columns, text, missing values, duplicates, dtypes) |
+| 3 | Quality Module (completeness, validity, consistency, uniqueness, outliers) |
+| 4 | Analytics Module (descriptive, numerical, categorical, correlation, distribution) |
+| 5 | Reporting Module (executive summaries, KPIs, timestamped text export) + performance validation up to 1M rows |
+| 5.5 | Application layer, `PipelineResult`, thin `main.py`, typed report contracts across all modules |
+
+**Next:** Sprint 6 — SQLite Integration
 
 ---
 
 # Development Environment
 
-## Primary Machine
+- Python 3.11
+- Pandas 3.x
+- Pytest
+- Visual Studio Code
+- Git
+- GitHub
 
-MacBook Pro M1
+---
 
-## Secondary Machine
+# Engineering Governance
 
-ASUS Windows 11
+The following documents define repository standards and engineering policies:
 
-## IDE
+| Document | Purpose |
+|----------|---------|
+| PROJECT_CONSTITUTION.md | Engineering principles |
+| ENGINEERING_OPERATING_MANUAL.md | Development workflow |
+| ENGINEERING_PLAYBOOK.md | Engineering practices |
+| CODE_REVIEW_CHECKLIST.md | Review standards |
+| DEFINITION_OF_DONE.md | Completion criteria |
+| DOCUMENTATION_STANDARDS.md | Documentation conventions |
+| ADR/ | Architecture decision history |
 
-Visual Studio Code
+---
 
-## Python
+# Canonical Project Documents
 
-3.11
-
-## Testing Framework
-
-Pytest
-
-## Version Control
-
-Git
-
-## Repository Hosting
-
-GitHub
-
-## Performance Dataset
-
-1,000,000-row synthetic benchmark dataset
-
-## Report Output
-
-Timestamped reports exported automatically to the configured output directory.
-
-## Current Release
-
-**v5.0.0**
+| Document | Purpose |
+|----------|---------|
+| PROJECT_STATE.md | Current project status (this document) |
+| ARCHITECTURE.md | System architecture, components, tests, performance |
+| ROADMAP.md | Future development |
+| PROJECT_JOURNAL.md | Engineering history |
+| CHANGELOG.md | Version history |
+| ADR/ | Architecture decisions |
 
 ---
 
 # Current Focus
 
-## Sprint 5.5 — Architecture Refactor
+## Sprint 6 — SQLite Integration
 
-### Primary Objectives
+Objectives:
 
-- Introduce an `Application` class to orchestrate the complete pipeline.
-- Reduce `main.py` to a minimal application entry point.
-- Replace dictionary-based pipeline outputs with strongly typed report models.
-- Standardize report interfaces across every module.
-- Continue centralizing shared infrastructure.
-- Improve maintainability and IDE support.
-- Preserve backward compatibility.
-- Maintain 100% passing automated tests throughout the refactor.
+- Persistent storage
+- Repository layer
+- Database abstraction
+- SQL architecture
+- Foundation for PostgreSQL migration
 
 ---
 
@@ -575,11 +290,11 @@ None.
 Current repository status:
 
 - ✅ Stable Architecture
-- ✅ Stable Reporting Pipeline
+- ✅ Stable Application Layer
+- ✅ Stable Module Contracts
 - ✅ Stable Test Suite
-- ✅ Performance Validated
-- ✅ Documentation Current
-- ✅ Ready for Sprint 5.5
+- ✅ Stable Performance
+- ✅ Ready for Sprint 6
 
 ---
 
@@ -588,21 +303,22 @@ Current repository status:
 The project succeeds when I can independently:
 
 - Design enterprise software architecture.
-- Build scalable analytics platforms.
-- Develop production-quality Python applications.
-- Build modular ETL pipelines.
+- Build modular and scalable applications.
+- Apply SOLID principles consistently.
+- Develop production-quality ETL pipelines.
 - Implement comprehensive automated testing.
-- Design relational database solutions.
-- Integrate external REST APIs.
-- Generate professional business reports.
 - Build interactive analytical dashboards.
 - Package desktop applications.
+- Design database architectures.
+- Integrate external systems and APIs.
+- Produce enterprise reporting solutions.
 - Deploy production-ready systems.
-- Review and maintain enterprise codebases.
-- Defend architectural decisions with ADRs.
-- Apply SOLID principles consistently.
+- Review and optimize software architecture.
+- Defend architectural decisions through ADRs.
+- Communicate engineering trade-offs clearly.
 - Think, communicate, and deliver software like an Enterprise Software Engineer.
 
 ---
 
-**Current Project State Version:** **v5.0.0**
+**Current Project State Version:** **v5.5.0**
+**Previous Version:** v5.0.0

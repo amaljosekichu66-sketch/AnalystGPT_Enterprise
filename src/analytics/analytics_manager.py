@@ -8,13 +8,12 @@ import time
 
 from pandas import DataFrame
 
-from src.analytics.descriptive_statistics import DescriptiveStatistics
-from src.analytics.numerical_analysis import NumericalAnalysis
+from src.analytics.analytics_report import AnalyticsReport
 from src.analytics.categorical_analysis import CategoricalAnalysis
 from src.analytics.correlation_analysis import CorrelationAnalysis
+from src.analytics.descriptive_statistics import DescriptiveStatistics
 from src.analytics.distribution_analysis import DistributionAnalysis
-from src.analytics.analytics_report import AnalyticsReport
-
+from src.analytics.numerical_analysis import NumericalAnalysis
 from src.core.logger import logger
 
 
@@ -23,7 +22,7 @@ class AnalyticsManager:
     Coordinates the execution of the complete analytics pipeline.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize the analytics pipeline.
         """
@@ -34,63 +33,67 @@ class AnalyticsManager:
         self.correlation_analysis = CorrelationAnalysis()
         self.distribution_analysis = DistributionAnalysis()
 
-        self.analytics_report = AnalyticsReport()
-
-    def analyze(self, dataframe: DataFrame) -> dict:
+    def analyze(
+        self,
+        dataframe: DataFrame,
+    ) -> AnalyticsReport:
         """
         Execute the complete analytics pipeline.
 
         Parameters
         ----------
-        dataframe : DataFrame
+        dataframe:
             Clean and validated dataset.
 
         Returns
         -------
-        dict
-            Enterprise analytics report.
+        AnalyticsReport
+            Final analytics report.
         """
 
         start_time = time.perf_counter()
 
         logger.info("Starting analytics pipeline.")
 
-        results = {}
-
         logger.info("Running DescriptiveStatistics...")
-        results["descriptive_statistics"] = (
+        descriptive_statistics = (
             self.descriptive_statistics.analyze(dataframe)
         )
 
         logger.info("Running NumericalAnalysis...")
-        results["numerical_analysis"] = (
+        numerical_analysis = (
             self.numerical_analysis.analyze(dataframe)
         )
 
         logger.info("Running CategoricalAnalysis...")
-        results["categorical_analysis"] = (
+        categorical_analysis = (
             self.categorical_analysis.analyze(dataframe)
         )
 
         logger.info("Running CorrelationAnalysis...")
-        results["correlation_analysis"] = (
+        correlation_analysis = (
             self.correlation_analysis.analyze(dataframe)
         )
 
         logger.info("Running DistributionAnalysis...")
-        results["distribution_analysis"] = (
+        distribution_analysis = (
             self.distribution_analysis.analyze(dataframe)
         )
-
-        logger.info("Generating AnalyticsReport...")
-
-        report = self.analytics_report.generate(results)
 
         elapsed_time = time.perf_counter() - start_time
 
         logger.info(
-            f"Analytics pipeline completed successfully in "
-            f"{elapsed_time:.4f} seconds."
+            "Analytics pipeline completed successfully in %.4f seconds.",
+            elapsed_time,
         )
 
-        return report
+        return AnalyticsReport(
+            report={
+                "descriptive_statistics": descriptive_statistics,
+                "numerical_analysis": numerical_analysis,
+                "categorical_analysis": categorical_analysis,
+                "correlation_analysis": correlation_analysis,
+                "distribution_analysis": distribution_analysis,
+            },
+            execution_time=elapsed_time,
+        )

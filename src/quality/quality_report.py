@@ -1,30 +1,58 @@
 """
 Quality Report Module
 
-Builds the consolidated quality assessment report.
+Defines the standardized output contract returned by the
+Quality Module.
 """
+
+from typing import Any
 
 from src.core.logger import logger
 
 
 class QualityReport:
     """
-    Builds the final quality assessment report.
+    Represents the final output produced by the Quality Module.
+
+    This object stores the complete quality assessment together
+    with execution metadata.
     """
 
-    def generate(self, results: dict) -> dict:
+    def __init__(
+        self,
+        report: dict[str, Any],
+        execution_time: float,
+    ) -> None:
         """
-        Generate the consolidated quality assessment report.
+        Initialize a QualityReport instance.
 
-        Parameters:
-        - results: Dictionary containing all quality assessment results.
+        Args:
+            report:
+                Consolidated quality assessment.
 
-        Returns:
-        - Consolidated quality assessment report.
+            execution_time:
+                Total quality assessment execution time.
         """
 
-        logger.info("Generating quality assessment report.")
+        logger.info("Creating QualityReport.")
 
-        logger.info("Quality assessment report generated successfully.")
+        self.report = report
+        self.execution_time = execution_time
 
-        return results
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Convert the quality report into a serializable dictionary.
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary representation of the quality report.
+        """
+
+        return {
+            "report": self.report,
+            "execution_time": round(
+                self.execution_time,
+                4,
+            ),
+        }

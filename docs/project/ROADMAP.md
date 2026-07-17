@@ -2,10 +2,23 @@
 
 > **Purpose**
 >
-> This roadmap defines the long-term engineering vision for AnalystGPT Enterprise.
-> Each sprint delivers one stable capability while preserving architecture,
-> software quality, automated testing, documentation, and enterprise engineering
-> standards.
+> This roadmap defines the long-term engineering direction for
+> AnalystGPT Enterprise.
+>
+> Each sprint delivers one stable capability while preserving
+> enterprise architecture, software quality, automated testing,
+> documentation, and engineering standards.
+>
+> This document focuses on future engineering direction.
+>
+> Historical implementation details belong in:
+>
+> - PROJECT_JOURNAL.md
+> - CHANGELOG.md
+> - Sprint Release Reports
+>
+> Current repository status is maintained in PROJECT_STATE.md.
+> Detailed architecture is maintained in ARCHITECTURE.md.
 
 ---
 
@@ -13,13 +26,15 @@
 
 | Item | Status |
 |------|--------|
-| Current Version | **v5.0.0** |
-| Current Sprint | **Sprint 5 Completed** |
+| Current Version | **v5.5.0** |
 | Repository Status | 🟢 Active Development |
-| Current Focus | **Sprint 5.5 – Architecture Refactor** |
-| Architecture | 🟢 Stable |
-| Automated Tests | ✅ 79 Passed |
-| Warnings | ✅ 0 |
+| Current Sprint | ✅ Sprint 5.5 Complete |
+| Current Focus | **Sprint 6 – SQLite Integration** |
+| Architecture | ✅ Enterprise Layered Architecture |
+| Application Layer | ✅ Stable |
+| Automated Testing | ✅ 79 / 79 Passed |
+| Performance Validation | ✅ Completed |
+| Technical Debt | 🟢 Very Low |
 
 ---
 
@@ -27,44 +42,59 @@
 
 Build an enterprise-grade analytics platform capable of:
 
-- Uploading datasets from multiple sources
-- Cleaning and standardizing data
-- Assessing data quality
-- Performing statistical analytics
-- Generating enterprise reports
-- Supporting SQL databases
-- Integrating REST APIs
-- Delivering AI-assisted business insights
-- Deploying as a production-ready application
+- Multi-source dataset ingestion
+- Enterprise data cleaning
+- Data quality assessment
+- Statistical analytics
+- Enterprise reporting
+- SQL database integration
+- REST API integration
+- Business intelligence
+- AI-assisted analytics
+- Production deployment
+
+The long-term objective is to demonstrate production-quality
+software engineering practices while building a complete analytics
+platform.
 
 ---
 
-# Completed Milestones
+# Engineering Philosophy
+
+Every sprint must:
+
+- Preserve modular architecture.
+- Preserve stable module contracts.
+- Follow SOLID principles.
+- Maintain separation of concerns.
+- Include automated testing.
+- Update documentation.
+- Produce a releasable version.
+- Pass the Definition of Done.
+- Maintain enterprise engineering quality.
+
+---
+
+# Completed Engineering Milestones
 
 ## Sprint 0 — Foundation ✅
 
-### Objectives
+### Delivered
 
-- Project initialization
-- Repository structure
+- Repository initialization
 - Development environment
-- Core documentation
-
-### Deliverables
-
 - Initial architecture
-- Project structure
 - Core documentation
-- Python environment
+- Project structure
 
 ---
 
 ## Sprint 0.5 — Core Infrastructure ✅
 
-### Deliverables
+### Delivered
 
-- Core package
-- Configuration
+- Shared Core package
+- Centralized configuration
 - Constants
 - Centralized logging
 - Custom exceptions
@@ -74,12 +104,12 @@ Build an enterprise-grade analytics platform capable of:
 
 ## Sprint 0.75 — Enterprise Engineering Foundation ✅
 
-### Deliverables
+### Delivered
 
-- Git & GitHub
+- Git & GitHub workflow
 - Engineering governance
 - Documentation standards
-- Architecture Decision Records (ADR)
+- Architecture Decision Records
 - Engineering Playbook
 - Engineering Operating Manual
 - Definition of Done
@@ -89,12 +119,13 @@ Build an enterprise-grade analytics platform capable of:
 
 ## Sprint 1 — Upload Module ✅
 
-### Deliverables
+### Delivered
 
 - UploadManager
-- CSVReader
-- ExcelReader
-- JSONReader
+- CSV Reader
+- Excel Reader
+- JSON Reader
+- Standardized DataFrame contract
 - Validation
 - Logging
 - Exception handling
@@ -102,9 +133,9 @@ Build an enterprise-grade analytics platform capable of:
 ### Output
 
 ```text
-Raw Files
-     │
-     ▼
+Dataset Files
+      │
+      ▼
 Standardized DataFrame
 ```
 
@@ -112,7 +143,7 @@ Standardized DataFrame
 
 ## Sprint 2 — Cleaning Module ✅
 
-### Deliverables
+### Delivered
 
 - CleaningManager
 - ColumnCleaner
@@ -123,15 +154,10 @@ Standardized DataFrame
 
 ### Achievements
 
-- End-to-end cleaning pipeline
-- Automated testing
+- Modular cleaning pipeline
 - Enterprise logging
-
-### Testing
-
-```text
-5 Tests Passed
-```
+- Automated testing
+- Stable DataFrame contract
 
 ### Output
 
@@ -146,7 +172,7 @@ Clean DataFrame
 
 ## Sprint 3 — Quality Module ✅
 
-### Deliverables
+### Delivered
 
 - QualityManager
 - CompletenessChecker
@@ -158,16 +184,10 @@ Clean DataFrame
 
 ### Achievements
 
-- Quality assessment pipeline
-- Manager-Orchestrator architecture
-- Structured quality reporting
+- Structured quality assessment
+- Enterprise report model
+- Stable module contracts
 - Complete module integration
-
-### Testing
-
-```text
-12 Tests Passed
-```
 
 ### Output
 
@@ -175,14 +195,14 @@ Clean DataFrame
 Clean DataFrame
       │
       ▼
-Quality Assessment Report
+QualityReport
 ```
 
 ---
 
 ## Sprint 4 — Analytics Module ✅
 
-### Deliverables
+### Delivered
 
 - AnalyticsManager
 - DescriptiveStatistics
@@ -194,23 +214,11 @@ Quality Assessment Report
 
 ### Achievements
 
-- Complete analytics pipeline
+- Statistical analytics pipeline
 - Dataset profiling
-- Numerical summaries
-- Categorical analysis
-- Correlation analysis
-- Distribution analysis
-- Integration testing
-- Pipeline execution summary
-- Zero warning build
-
-### Testing
-
-```text
-60 Tests Passed
-0 Failed
-0 Warnings
-```
+- Structured analytics contract
+- Full module integration
+- Enterprise reporting foundation
 
 ### Output
 
@@ -218,14 +226,14 @@ Quality Assessment Report
 Validated Data
       │
       ▼
-Analytics Report
+AnalyticsReport
 ```
 
 ---
 
 ## Sprint 5 — Reporting Module ✅
 
-### Deliverables
+### Delivered
 
 - ReportingManager
 - ExecutiveSummary
@@ -237,177 +245,63 @@ Analytics Report
 
 ### Achievements
 
-- Complete Upload → Cleaning → Quality → Analytics → Reporting pipeline
-- Structured business reporting
-- Executive summary generation
-- KPI formatting
+- Complete Upload → Reporting pipeline
+- Executive reporting
+- KPI generation
 - Timestamped report export
-- Centralized reporting configuration
 - Performance validation
 - Enterprise reporting architecture
-
-### Testing
-
-```text
-79 Tests Passed
-0 Failed
-0 Warnings
-```
 
 ### Validation
 
 Successfully validated using:
 
-- Small dataset
+- Sample dataset
 - Large dataset (100,000 rows)
 - Stress dataset (1,000,000 rows)
 
 ### Output
 
 ```text
-Validated Data
-      │
-      ▼
-Analytics Report
+AnalyticsReport
       │
       ▼
 Enterprise Business Report
 ```
 
 ---
-# Future Roadmap
 
-## Sprint 5.5 — Architecture Refactor 🚧
+## Sprint 5.5 — Enterprise Architecture Refactor ✅
 
-### Objective
+### Delivered
 
-Strengthen the internal architecture by introducing a dedicated application layer, improving pipeline contracts, reducing orchestration complexity, and preparing the platform for future enterprise capabilities.
+- Dedicated Application layer
+- Thin `main.py`
+- `Application.run()` orchestration
+- `PipelineResult`
+- Strongly typed report contracts
+- Stable module interfaces
+- Centralized pipeline execution
+- Centralized pipeline summary
+- Improved dependency direction
 
-### Application Layer
+### Achievements
 
-- Introduce an `Application` class to orchestrate the complete pipeline.
-- Keep `main.py` as a thin application entry point.
-- Move workflow orchestration into a reusable application layer.
+Sprint 5.5 established the architectural foundation for all future
+development by introducing enterprise orchestration while preserving
+independent business modules.
 
-### Strongly Typed Pipeline Contracts
+### Validation
 
-- Replace dictionary-based pipeline outputs with typed report models where appropriate.
-- Standardize report interfaces across modules.
-- Ensure every report object exposes `to_dict()`.
-- Improve IDE support, maintainability, and contract clarity.
-
-### Shared Infrastructure
-
-- Continue eliminating duplicated configuration.
-- Centralize remaining shared application metadata.
-- Improve dependency management.
-- Reduce orchestration duplication.
-
-### Testing
-
-- Update unit tests to use typed report objects.
-- Update integration tests to execute through the Application layer.
-- Perform architecture validation.
-- Review dependency direction.
-- Improve maintainability.
+- 79 / 79 automated tests passed
+- Integration testing passed
+- Large dataset validation passed
+- Stress dataset validation passed
+- Architecture validation completed
 
 ---
 
-## Sprint 6 — SQLite Integration
-
-### Objectives
-
-- Local database integration
-- Persistence layer
-- Repository pattern
-- CRUD operations
-
----
-
-## Sprint 7 — PostgreSQL Integration
-
-### Objectives
-
-- Enterprise database support
-- Transactions
-- Connection pooling
-- SQL optimization
-
----
-
-## Sprint 8 — REST API Integration
-
-### Objectives
-
-- REST API client
-- Authentication
-- External integrations
-- Robust error handling
-
----
-
-## Sprint 9 — Power BI Integration
-
-### Objectives
-
-- Dashboard datasets
-- Report export
-- Business intelligence integration
-
----
-
-## Sprint 10 — Streamlit Application
-
-### Objectives
-
-- Interactive web interface
-- Dataset upload
-- Report visualization
-- Analytics dashboard
-
----
-
-## Sprint 11 — AI Insights
-
-### Objectives
-
-- AI-generated executive summaries
-- Business recommendations
-- Natural language insights
-- Decision support
-
----
-
-## Sprint 12 — Production Deployment
-
-### Objectives
-
-- Docker support
-- CI/CD pipeline
-- Cloud deployment
-- Monitoring
-- Production logging
-- Executable packaging
-
----
-
-# Engineering Principles
-
-Every sprint must:
-
-- Preserve modular architecture.
-- Follow SOLID principles.
-- Maintain separation of concerns.
-- Include automated unit testing.
-- Include integration testing where applicable.
-- Update project documentation.
-- Pass the Definition of Done.
-- Produce a releasable version.
-- Complete release management before the next sprint begins.
-
----
-
-# Release Plan
+# Release Timeline
 
 | Version | Release |
 |----------|---------|
@@ -417,55 +311,341 @@ Every sprint must:
 | v2.0.0 | Cleaning Module |
 | v3.0.0 | Quality Module |
 | v4.0.0 | Analytics Module |
-| **v5.0.0** | **Reporting Module** |
-| v5.5.0 | Architecture Refactor |
-| v6.0.0 | SQLite Integration |
-| v7.0.0 | PostgreSQL Integration |
-| v8.0.0 | REST API Integration |
-| v9.0.0 | Power BI Integration |
-| v10.0.0 | Streamlit Application |
-| v11.0.0 | AI Insights |
-| v12.0.0 | Production Deployment |
+| v5.0.0 | Reporting Module |
+| **v5.5.0** | **Enterprise Architecture Refactor** ✅ |
 
 ---
 
-# Long-Term Goal
+## Continue
 
-AnalystGPT Enterprise will evolve into a production-ready analytics platform demonstrating:
+# Future Engineering Roadmap
 
-- Enterprise Software Architecture
-- Data Engineering
-- Analytics Engineering
-- Automated Testing
-- Documentation Excellence
-- Enterprise Reporting
-- Database Integration
-- API Development
-- Business Intelligence
-- AI-Assisted Analytics
-- Production Deployment
+The following sprints build upon the enterprise architecture
+established during Sprint 5.5.
 
 ---
 
-# Current Repository Maturity
+# Sprint 6 — SQLite Integration
 
-Current repository capabilities include:
+## Objective
 
-- ✅ Enterprise modular architecture
-- ✅ Upload pipeline
-- ✅ Data cleaning pipeline
-- ✅ Data quality assessment
-- ✅ Statistical analytics
-- ✅ Business reporting
-- ✅ Automated unit testing
-- ✅ End-to-end integration testing
-- ✅ Performance validation (Small, Large & Stress datasets)
-- ✅ Centralized configuration
-- ✅ Centralized logging
-- ✅ Enterprise documentation
-- ✅ Release management
-- ✅ Architecture Decision Records (ADRs)
+Introduce persistent local storage while preserving modular
+architecture and stable module contracts.
+
+## Planned Deliverables
+
+- SQLite database integration
+- Repository layer
+- CRUD operations
+- Database schema
+- Persistence abstraction
+- Repository interfaces
+- Database configuration
+- Migration-ready architecture
+
+## Expected Outcome
+
+```text
+Business Modules
+        │
+        ▼
+ Repository Layer
+        │
+        ▼
+     SQLite
+```
+
+This sprint establishes the persistence foundation for future
+database systems.
 
 ---
 
-**Current Roadmap Version:** **v5.0.0**
+# Sprint 7 — PostgreSQL Integration
+
+## Objective
+
+Extend the persistence layer to support enterprise-grade databases.
+
+## Planned Deliverables
+
+- PostgreSQL support
+- Connection management
+- Transactions
+- Connection pooling
+- SQL optimization
+- Environment-based configuration
+
+## Expected Outcome
+
+```text
+Business Modules
+        │
+        ▼
+ Repository Layer
+        │
+ ┌──────┴──────┐
+ ▼             ▼
+
+SQLite    PostgreSQL
+```
+
+The Repository layer introduced in Sprint 6 should require little
+or no modification to business modules.
+
+---
+
+# Sprint 8 — REST API Integration
+
+## Objective
+
+Enable communication with external services.
+
+## Planned Deliverables
+
+- REST API client
+- Authentication
+- Request validation
+- Response validation
+- Error handling
+- Retry mechanisms
+- API configuration
+
+Expected integrations include external analytics services,
+cloud platforms, and business applications.
+
+---
+
+# Sprint 9 — Power BI Integration
+
+## Objective
+
+Support enterprise business intelligence workflows.
+
+## Planned Deliverables
+
+- Dashboard datasets
+- Business intelligence exports
+- KPI datasets
+- Reporting integration
+- Analytics publishing
+
+Business users should be able to consume AnalystGPT outputs
+directly inside BI platforms.
+
+---
+
+# Sprint 10 — Streamlit Application
+
+## Objective
+
+Provide an interactive user interface.
+
+## Planned Deliverables
+
+- Dataset upload
+- Pipeline execution
+- Interactive analytics
+- Report visualization
+- Dashboard interface
+- User-friendly workflows
+
+Architecture introduced during Sprint 5.5 allows the UI layer
+to invoke `Application.run()` without embedding business logic.
+
+---
+
+# Sprint 11 — AI Insights
+
+## Objective
+
+Introduce AI-assisted analytics.
+
+## Planned Deliverables
+
+- Executive summaries
+- Business recommendations
+- Natural language explanations
+- Automated insight generation
+- Decision-support capabilities
+
+The AI layer will consume structured report objects rather than
+raw datasets, preserving module boundaries.
+
+---
+
+# Sprint 12 — Production Deployment
+
+## Objective
+
+Prepare AnalystGPT Enterprise for production-quality deployment.
+
+## Planned Deliverables
+
+- Docker support
+- CI/CD pipeline
+- Cloud deployment
+- Monitoring
+- Production logging
+- Executable packaging
+- Release automation
+
+This sprint represents the transition from an engineering project
+to a deployable enterprise application.
+
+---
+
+# Engineering Standards
+
+Every future sprint must preserve:
+
+- Enterprise layered architecture
+- Stable module contracts
+- SOLID principles
+- Separation of concerns
+- High cohesion
+- Low coupling
+- Automated unit testing
+- Integration testing
+- Performance validation
+- Documentation quality
+- Engineering governance
+- Architecture Decision Records
+- Definition of Done compliance
+
+No sprint is considered complete until all engineering standards
+are satisfied.
+
+---
+
+# Release Policy
+
+Every release must include:
+
+- Updated documentation
+- Passing automated tests
+- Successful integration tests
+- Performance validation (where applicable)
+- Updated Architecture Decision Records
+- Updated CHANGELOG
+- Updated PROJECT_JOURNAL
+- Updated PROJECT_STATE
+- Updated ARCHITECTURE (if architecture changes)
+
+Only releasable software progresses to the next sprint.
+
+---
+
+# Repository Maturity Goals
+
+The roadmap gradually evolves the repository through the following
+engineering maturity levels:
+
+| Phase | Goal |
+|--------|------|
+| Foundation | ✅ Complete |
+| Core Infrastructure | ✅ Complete |
+| Enterprise Governance | ✅ Complete |
+| Analytics Pipeline | ✅ Complete |
+| Enterprise Reporting | ✅ Complete |
+| Enterprise Architecture | ✅ Complete |
+| Database Layer | 🔄 Sprint 6 |
+| Enterprise Persistence | 🔄 Sprint 7 |
+| External Integrations | 🔄 Sprint 8 |
+| Business Intelligence | 🔄 Sprint 9 |
+| User Interface | 🔄 Sprint 10 |
+| AI-Assisted Analytics | 🔄 Sprint 11 |
+| Production Deployment | 🔄 Sprint 12 |
+
+---
+
+# Long-Term Vision
+
+Upon completion, AnalystGPT Enterprise will demonstrate practical
+experience across multiple software engineering disciplines.
+
+## Software Engineering
+
+- Enterprise architecture
+- Design patterns
+- Modular systems
+- Large-scale documentation
+- Release engineering
+
+---
+
+## Data Engineering
+
+- Data ingestion
+- ETL pipelines
+- Data quality
+- Database engineering
+- Data persistence
+
+---
+
+## Analytics Engineering
+
+- Statistical analytics
+- Reporting
+- Business intelligence
+- Dashboard integration
+- Decision support
+
+---
+
+## Platform Engineering
+
+- REST APIs
+- Desktop application
+- Cloud deployment
+- CI/CD
+- Monitoring
+- Production operations
+
+---
+
+## Artificial Intelligence
+
+- AI-generated reports
+- Business recommendations
+- Executive summaries
+- Natural language analytics
+
+---
+
+# Success Criteria
+
+The project will be considered complete when it demonstrates the
+ability to independently:
+
+- Design enterprise software architecture
+- Build modular and scalable systems
+- Develop production-quality analytics pipelines
+- Engineer database-backed applications
+- Integrate external APIs
+- Produce enterprise reporting solutions
+- Build business intelligence integrations
+- Apply automated testing throughout the system
+- Maintain comprehensive engineering documentation
+- Defend architectural decisions through ADRs
+- Deliver production-ready software
+
+---
+
+# Current Roadmap Status
+
+Current repository state:
+
+- ✅ Stable Enterprise Architecture
+- ✅ Stable Application Layer
+- ✅ Stable Module Contracts
+- ✅ Stable Automated Test Suite
+- ✅ Stable Performance Validation
+- ✅ Stable Engineering Documentation
+- 🚀 Ready for Sprint 6 — SQLite Integration
+
+---
+
+**Current Roadmap Version:** **v5.5.0**
+
+**Next Planned Release:** **v6.0.0 — SQLite Integration**

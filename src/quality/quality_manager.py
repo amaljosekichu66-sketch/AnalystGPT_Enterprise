@@ -8,14 +8,13 @@ import time
 
 from pandas import DataFrame
 
+from src.core.logger import logger
 from src.quality.completeness_checker import CompletenessChecker
-from src.quality.validity_checker import ValidityChecker
 from src.quality.consistency_checker import ConsistencyChecker
-from src.quality.uniqueness_checker import UniquenessChecker
 from src.quality.outlier_checker import OutlierChecker
 from src.quality.quality_report import QualityReport
-
-from src.core.logger import logger
+from src.quality.uniqueness_checker import UniquenessChecker
+from src.quality.validity_checker import ValidityChecker
 
 
 class QualityManager:
@@ -23,7 +22,7 @@ class QualityManager:
     Coordinates the execution of all data quality checks.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the quality assessment pipeline."""
 
         self.completeness_checker = CompletenessChecker()
@@ -31,41 +30,64 @@ class QualityManager:
         self.consistency_checker = ConsistencyChecker()
         self.uniqueness_checker = UniquenessChecker()
         self.outlier_checker = OutlierChecker()
-        self.quality_report = QualityReport()
 
-    def assess(self, dataframe: DataFrame) -> dict:
+    def assess(
+        self,
+        dataframe: DataFrame,
+    ) -> QualityReport:
         """
         Execute the complete data quality assessment pipeline.
+
+        Parameters
+        ----------
+        dataframe:
+            Cleaned dataset.
+
+        Returns
+        -------
+        QualityReport
+            Final quality assessment report.
         """
 
         start_time = time.perf_counter()
 
         logger.info("Starting quality assessment pipeline.")
 
-        results = {}
+        results: dict = {}
 
         logger.info("Running CompletenessChecker...")
-        results["completeness"] = self.completeness_checker.check(dataframe)
+        results["completeness"] = (
+            self.completeness_checker.check(dataframe)
+        )
 
         logger.info("Running ValidityChecker...")
-        results["validity"] = self.validity_checker.check(dataframe)
+        results["validity"] = (
+            self.validity_checker.check(dataframe)
+        )
 
         logger.info("Running ConsistencyChecker...")
-        results["consistency"] = self.consistency_checker.check(dataframe)
+        results["consistency"] = (
+            self.consistency_checker.check(dataframe)
+        )
 
         logger.info("Running UniquenessChecker...")
-        results["uniqueness"] = self.uniqueness_checker.check(dataframe)
+        results["uniqueness"] = (
+            self.uniqueness_checker.check(dataframe)
+        )
 
         logger.info("Running OutlierChecker...")
-        results["outliers"] = self.outlier_checker.check(dataframe)
-
-        logger.info("Generating QualityReport...")
-        report = self.quality_report.generate(results)
+        results["outliers"] = (
+            self.outlier_checker.check(dataframe)
+        )
 
         elapsed_time = time.perf_counter() - start_time
 
         logger.info(
-            f"Quality assessment completed successfully in {elapsed_time:.4f} seconds."
+            "Quality assessment completed successfully in %.4f seconds.",
+            elapsed_time,
         )
 
-        return report
+        return QualityReport(
+            report=results,
+            execution_time=elapsed_time,
+        )
