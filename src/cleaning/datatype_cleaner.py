@@ -1,4 +1,12 @@
+"""
+Data Type Cleaner Module
+
+Converts DataFrame columns to configured data types.
+"""
+
 from pandas import DataFrame
+
+from src.core.logger import logger
 
 
 class DataTypeCleaner:
@@ -25,6 +33,8 @@ class DataTypeCleaner:
         Convert columns to the specified data types.
         """
 
+        logger.info("Converting column data types.")
+
         for column, datatype in self.datatype_map.items():
 
             if column not in dataframe.columns:
@@ -33,13 +43,22 @@ class DataTypeCleaner:
             try:
 
                 if datatype == "datetime":
-                    dataframe[column] = dataframe[column].astype("datetime64[ns]")
-
+                    dataframe[column] = dataframe[column].astype(
+                        "datetime64[ns]"
+                    )
                 else:
-                    dataframe[column] = dataframe[column].astype(datatype)
+                    dataframe[column] = dataframe[column].astype(
+                        datatype
+                    )
 
             except Exception:
 
-                print(f"Could not convert '{column}' to {datatype}")
+                logger.warning(
+                    "Could not convert column '%s' to %s.",
+                    column,
+                    datatype,
+                )
+
+        logger.info("Data type conversion completed.")
 
         return dataframe

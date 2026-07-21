@@ -8,7 +8,7 @@ Application-wide constants for AnalystGPT Enterprise.
 
 APP_NAME = "AnalystGPT Enterprise"
 
-APP_VERSION = "5.0.0"
+APP_VERSION = "6.0.0"
 
 APP_AUTHOR = "Amal Jose"
 
@@ -17,8 +17,6 @@ APP_AUTHOR = "Amal Jose"
 # ==========================================================
 
 REPORT_TITLE = f"{APP_NAME} Report"
-
-DEFAULT_REPORT_FILENAME = "report.txt"
 
 DEFAULT_TEXT_ENCODING = "utf-8"
 

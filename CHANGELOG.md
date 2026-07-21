@@ -179,5 +179,133 @@ Sprint 5.5 establishes the architectural foundation for:
 - Streamlit
 - AI Insights
 - Production Deployment
+# [v6.0.0] — Sprint 6 (SQLite Persistence)
 
-**Next Release:** v6.0.0 — SQLite Integration
+**Release Date:** 21 July 2026
+
+---
+
+## Overview
+
+Sprint 6 introduced the Persistence Layer, enabling AnalystGPT Enterprise
+to persist pipeline execution metadata while preserving the enterprise
+layered architecture established in previous releases.
+
+This release focused on platform capabilities rather than business
+features, laying the foundation for future PostgreSQL support and
+enterprise-scale data management.
+
+---
+
+## Added
+
+### Persistence Module
+
+- PersistenceManager
+- PersistenceResult
+- PersistenceReport
+
+### Database Infrastructure
+
+- SQLiteConnection
+- DatabaseManager
+- SchemaManager
+
+### Repository Layer
+
+- BaseRepository
+- PipelineRunRepository
+- DatasetRepository
+- QualityRepository
+- AnalyticsRepository
+- ReportRepository
+
+### Application Integration
+
+Application.run() now performs:
+
+- Database initialization
+- Pipeline execution registration
+- Dataset persistence
+- Quality report persistence
+- Analytics report persistence
+- Reporting metadata persistence
+- Pipeline completion handling
+- Pipeline failure handling
+- Graceful database shutdown
+
+---
+
+## Changed
+
+### Architecture
+
+- Introduced dedicated Persistence Layer.
+- Extended layered architecture to support database operations.
+- Application layer now coordinates persistence lifecycle.
+- Repository Pattern adopted for all SQL operations.
+- Business modules remain persistence-agnostic.
+- SQL execution isolated within repository classes.
+
+### Database
+
+- Automatic SQLite database creation.
+- Automatic schema initialization.
+- Centralized database lifecycle management.
+
+### Documentation
+
+Updated:
+
+- PROJECT_STATE.md
+- ARCHITECTURE.md
+- PROJECT_JOURNAL.md
+- ROADMAP.md
+- README.md
+- Sprint documentation
+
+---
+
+## Validation
+
+Successfully validated using:
+
+- ✅ 82 / 82 Automated Tests
+- ✅ Integration Testing
+- ✅ SQLite Persistence
+- ✅ Sample Dataset
+- ✅ Large Dataset (100,000 rows)
+- ✅ Stress Dataset (1,000,000 rows)
+
+---
+
+## Performance
+
+Successfully validated:
+
+- Database initialization
+- Repository operations
+- Persistence lifecycle
+- Pipeline execution tracking
+- Report persistence
+- Large dataset execution
+- Stress dataset execution
+
+No architectural regressions observed.
+
+---
+
+## Result
+
+Sprint 6 transforms AnalystGPT Enterprise from an in-memory analytics
+pipeline into a persistence-enabled enterprise platform while preserving
+stable module contracts and layered architecture.
+
+This release establishes the foundation for production database support
+in future releases.
+
+---
+
+## Next Release
+
+**v7.0.0 — PostgreSQL Integration**

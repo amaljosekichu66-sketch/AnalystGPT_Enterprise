@@ -8,7 +8,7 @@
 
 # Last Updated
 
-**Date:** 15 July 2026
+**Date:** 21 July 2026
 
 ---
 
@@ -57,6 +57,8 @@ Release
 - ✅ `core` never depends on business modules
 - ✅ Managers coordinate business workflows
 - ✅ Business modules communicate through stable contracts
+- ✅ Business modules never access the database directly
+- ✅ Persistence belongs in the Infrastructure Layer
 
 ---
 
@@ -369,22 +371,21 @@ Ask:
 
 # Current Engineering Milestone
 
-The project now consists of a complete analytics pipeline:
+The project's architectural layering is now permanent:
 
 ```text
-Upload
+main.py
     ↓
-Cleaning
+Application
     ↓
-Quality
+Business Modules
     ↓
-Analytics
+Persistence Layer
     ↓
-Reporting (Next Sprint)
+Database
 ```
 
-Sprint 4 established the analytical foundation of AnalystGPT Enterprise.
-
+This layered architecture ensures that each component has a single, well‑defined responsibility, and that business logic remains independent of infrastructure concerns. The Persistence Layer abstracts all database access, allowing future database engines (such as PostgreSQL) to be introduced without modifying business modules.
 
 ---
 
@@ -480,3 +481,73 @@ Future architectural work should continue to prioritize:
 
 These principles established during Sprint 5.5 should remain guiding
 engineering standards throughout future development.
+
+---
+
+# Sprint 6 — Persistence & Repository Lessons
+
+## Persistence Architecture
+
+- Persistence is an infrastructure concern and should remain separate from business logic.
+- Business modules should not perform database operations directly.
+- A dedicated Persistence Layer simplifies future database migrations.
+- Database interactions should be centralized behind a single orchestration component.
+
+---
+
+## Repository Pattern
+
+- Repositories isolate SQL from application logic.
+- Each repository should own exactly one database entity.
+- Stable repository interfaces reduce coupling between the application and the database implementation.
+- Database engines can be replaced without affecting business modules when repositories remain stable.
+
+---
+
+## Database Design
+
+- Normalize persistent data into focused tables rather than storing unrelated information together.
+- Database schema creation should be centralized and automated.
+- Database initialization should occur once during application startup.
+- Application shutdown should always release database resources cleanly.
+
+---
+
+## Application Layer
+
+- The Application Layer should orchestrate persistence rather than execute SQL.
+- Pipeline execution should be treated as a business process whose lifecycle can be persisted.
+- Infrastructure services should be coordinated centrally rather than scattered throughout business modules.
+
+---
+
+## Testing Lessons
+
+- Persistence features require both functional testing and integration testing.
+- Repository testing should validate database behavior rather than SQL implementation details.
+- Architectural changes should preserve existing test suites to prevent regressions.
+- Stress testing should include persistence operations, not only in-memory processing.
+
+---
+
+## Engineering Lessons
+
+- Enterprise software evolves by adding architectural capabilities rather than modifying business modules.
+- Introducing new infrastructure should minimize changes to existing components.
+- Stable interfaces make large architectural extensions significantly easier.
+- The Repository Pattern provides a strong foundation for future PostgreSQL integration.
+
+---
+
+## Future Guidance
+
+Future infrastructure work should continue to prioritize:
+
+- Layered Architecture
+- Repository Pattern
+- Stable Interfaces
+- Separation of Concerns
+- Centralized Orchestration
+- Automated Testing
+- Database Independence
+- Enterprise Documentation

@@ -6,7 +6,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v5.5.0**.
+> This document reflects the implementation as of **v6.0.0**.
 
 ---
 
@@ -24,7 +24,9 @@ AnalystGPT Enterprise follows a modular, layered architecture built around:
 - Enterprise Modularity
 - Enterprise Orchestration
 
-Each business capability is implemented as an independent module with a single, well-defined responsibility. As of Sprint 5.5, a dedicated Application layer coordinates these modules; business modules never orchestrate one another.
+Each business capability is implemented as an independent module with a single, well-defined responsibility.
+
+As of Sprint 6, a dedicated Application layer coordinates all business modules while a Persistence layer manages database interactions. Business modules remain persistence-agnostic and never orchestrate one another or execute SQL directly.
 
 ---
 ## Architectural Goals
@@ -61,7 +63,13 @@ UploadManager → CleaningManager → QualityManager
                           ReportingManager
                                    │
                                    ▼
-                         ReportingReport
+                        PersistenceManager
+                                   │
+                                   ▼
+                         Repository Layer
+                                   │
+                                   ▼
+                               SQLite
                                    │
                                    ▼
                           PipelineResult
@@ -70,7 +78,7 @@ UploadManager → CleaningManager → QualityManager
 ---
 ## Architectural Layers
 
-The repository is intentionally organized into four architectural layers.
+The repository is intentionally organized into five architectural layers.
 
 ### Presentation Layer
 
@@ -111,14 +119,31 @@ Contains independent business modules.
 - Analytics
 - Reporting
 
+### Persistence Layer
+
+Responsible for application persistence.
+
+Current components:
+
+- PersistenceManager
+- PersistenceResult
+
+Responsibilities:
+
+- Coordinate persistence workflow
+- Isolate repositories from the Application layer
+- Manage pipeline lifecycle persistence
+- Persist datasets
+- Persist quality reports
+- Persist analytics reports
+- Persist reporting metadata
+
 ### Infrastructure Layer
 
-Provides reusable services.
+Provides reusable infrastructure, configuration, logging,
+exception handling, and database services shared across the
+entire application.
 
-- Logger
-- Configuration
-- Constants
-- Exceptions
 ---
 
 # Layered Architecture
@@ -136,7 +161,7 @@ Application
 
 ↓
 
-Business Modules
+Business Layer
 
 Upload
 Cleaning
@@ -146,8 +171,16 @@ Reporting
 
 ↓
 
-Shared Infrastructure
+Persistence Layer
 
+PersistenceManager
+
+↓
+
+Infrastructure Layer
+
+Repository Layer
+SQLite Database
 Logger
 Configuration
 Exceptions
@@ -158,10 +191,10 @@ Constants
 External Libraries
 
 Pandas
+SQLite3
+Pytest
 OpenPyXL
 JSON
-Pytest
-Logging
 ```
 
 ---
@@ -187,12 +220,22 @@ Responsibilities
 - Pipeline orchestration
 - Workflow sequencing
 - Stage coordination
+- Persistence lifecycle
 - Execution timing
 - Error handling
 - Pipeline summary logging
 - Build `PipelineResult`
 
 The Application layer is the only component allowed to coordinate multiple business modules. Business modules remain independent and unaware of one another.
+
+The Application layer is also responsible for:
+
+- Initializing persistence
+- Starting pipeline execution records
+- Persisting pipeline outputs
+- Marking successful execution
+- Recording failed executions
+- Gracefully shutting down database resources
 
 ---
 
@@ -467,7 +510,54 @@ Transform analytical results into structured, professional business reports.
 
 ---
 
-# Shared Infrastructure
+# Persistence Module
+
+### Owner
+
+PersistenceManager
+
+### Components
+
+- PersistenceManager
+- PersistenceReport
+- PersistenceResult
+
+### Dependencies
+
+- DatabaseManager
+- SchemaManager
+- Repository Layer
+
+### Repository Components
+
+- BaseRepository
+- PipelineRunRepository
+- DatasetRepository
+- QualityRepository
+- AnalyticsRepository
+- ReportRepository
+
+### Input
+
+- QualityReport
+- AnalyticsReport
+- ReportingReport
+
+### Output
+
+PersistenceResult
+
+### Responsibility
+
+Persist application execution metadata while keeping business modules independent from database concerns.
+
+### Status
+
+✅ Stable
+
+---
+
+# Shared Infrastructure and Database Services
 
 The `core` package provides infrastructure shared across every business module and the Application layer. It remains isolated from business modules — business modules may depend on `core`, but `core` never depends on business modules.
 
@@ -479,6 +569,18 @@ constants.py
 logger.py
 exceptions.py
 ```
+
+Database infrastructure now includes:
+
+- SQLiteConnection
+- DatabaseManager
+- SchemaManager
+- BaseRepository
+- PipelineRunRepository
+- DatasetRepository
+- QualityRepository
+- AnalyticsRepository
+- ReportRepository
 
 ### Responsibilities
 
@@ -516,7 +618,16 @@ Application
 Business Modules
      │
      ▼
-    core
+Persistence
+     │
+     ▼
+Repository Layer
+     │
+     ▼
+Database
+     │
+     ▼
+core
 ```
 
 ## Not Allowed
@@ -531,7 +642,14 @@ Business Modules
 Application
 ```
 
-Dependencies always point downward. Lower layers never depend on higher layers. Business modules communicate through standardized DataFrames and structured report objects rather than tightly coupled implementations, and never orchestrate other business modules directly — only the Application layer does.
+Business modules remain completely unaware of persistence.
+
+Only the Application layer communicates with the Persistence layer.
+
+Repositories are the only components permitted to execute SQL.
+
+This separation allows future database technologies (such as PostgreSQL)
+to be introduced without requiring changes to business logic.
 
 ---
 
@@ -544,6 +662,7 @@ Dependencies always point downward. Lower layers never depend on higher layers. 
 | Quality | QualityReport |
 | Analytics | AnalyticsReport |
 | Reporting | ReportingReport |
+| Persistence | PersistenceResult |
 | Application | PipelineResult |
 
 Stable contracts reduce coupling and simplify future extensions.
@@ -561,6 +680,7 @@ Breaking a contract requires:
 - Updated ADR
 - Updated tests
 - Updated documentation
+
 ---
 
 # Data Flow
@@ -588,6 +708,10 @@ Reporting
   ↓
 ReportingReport
   ↓
+Persistence
+  ↓
+PersistenceResult
+  ↓
 PipelineResult
 ```
 
@@ -604,6 +728,7 @@ Every business module exposes one manager responsible for internal orchestration
 | Quality | QualityManager |
 | Analytics | AnalyticsManager |
 | Reporting | ReportingManager |
+| Persistence | PersistenceManager |
 | Application | Application |
 
 Managers coordinate workflows while business logic remains inside dedicated components.
@@ -621,9 +746,11 @@ Examples:
 - QualityManager owns Quality Module orchestration.
 - AnalyticsManager owns Analytics Module orchestration.
 - ReportingManager owns Reporting Module orchestration.
+- PersistenceManager owns Persistence Module orchestration.
 - Application owns pipeline orchestration.
 
 Ownership is never shared across modules.
+
 ---
 
 # Logging Strategy
@@ -710,6 +837,16 @@ Current coverage includes:
 - ReportingReport
 - TextReportExporter
 
+### Persistence
+
+- PersistenceManager
+- PersistenceResult
+- PipelineRunRepository
+- DatasetRepository
+- QualityRepository
+- AnalyticsRepository
+- ReportRepository
+
 ### Application Layer
 
 Validated through:
@@ -727,7 +864,7 @@ Dedicated Application unit tests are planned as the Application layer continues 
 Current results:
 
 ```text
-79 Tests Passed
+82 Tests Passed
 0 Failed
 0 Errors
 0 Warnings
@@ -747,7 +884,7 @@ The platform has been validated using datasets of increasing scale.
 | Large Dataset | 100,000 rows | ✅ Passed |
 | Stress Dataset | 1,000,000 rows | ✅ Passed |
 
-Observed Results
+## Observed Results
 
 - Successful execution through Application.run()
 - Successful pipeline orchestration
@@ -756,7 +893,15 @@ Observed Results
 - Successful report export
 - Complete end-to-end validation
 - No runtime failures
-- 79 / 79 automated tests remained passing after the Sprint 5.5 architecture refactor
+- 82 / 82 automated tests remained passing after the Sprint 6 persistence integration.
+
+The platform successfully completed:
+
+- Standard dataset execution
+- Large dataset execution (~100K rows)
+- Stress dataset execution (~1M rows)
+- SQLite persistence validation
+- Report generation validation
 
 ---
 
@@ -790,13 +935,33 @@ src/
 ├── analytics/
 ├── reporting/
 │   └── exporters/
+├── persistence/
+│   ├── persistence_manager.py
+│   ├── persistence_result.py
+│   ├── persistence_report.py
+│   └── __init__.py
+├── database/
+│   ├── sqlite_connection.py
+│   ├── database_manager.py
+│   ├── schema_manager.py
+│   ├── __init__.py
+│   └── repositories/
+│       ├── base_repository.py
+│       ├── pipeline_run_repository.py
+│       ├── dataset_repository.py
+│       ├── quality_repository.py
+│       ├── analytics_repository.py
+│       ├── report_repository.py
+│       └── __init__.py
 └── core/
 
 tests/
 ├── analytics/
+├── application/
 ├── cleaning/
 ├── quality/
 ├── reporting/
+├── persistence/
 ├── integration/
 └── fixtures/
 
@@ -832,32 +997,36 @@ The architecture follows:
 
 | Layer | Status |
 |--------|--------|
+| Presentation | ✅ Stable |
 | Application | ✅ Stable |
 | Upload | ✅ Stable |
 | Cleaning | ✅ Stable |
 | Quality | ✅ Stable |
 | Analytics | ✅ Stable |
 | Reporting | ✅ Stable |
+| Persistence | ✅ Stable |
+| Database Infrastructure | ✅ Stable |
 | Core Infrastructure | ✅ Stable |
 
 ---
 
-# Sprint 5.5 Architecture Refactor
+# Sprint 6 — SQLite Persistence
 
-Sprint 5.5 introduced the largest architectural improvement since project inception.
+Sprint 6 introduced a dedicated persistence layer that stores pipeline execution metadata, datasets, and reports in SQLite.
 
 Major improvements:
 
-- Introduced dedicated Application layer.
-- Reduced `main.py` to a minimal entry point.
-- Centralized pipeline orchestration.
-- Standardized report models.
-- Introduced `PipelineResult` as the application-level contract.
-- Removed orchestration responsibilities from `main.py`.
-- Improved testability through `Application.run()`.
-- Increased maintainability through clearer ownership boundaries.
-- Preserved backward compatibility across business modules.
-- Maintained 100% passing automated tests throughout the refactor.
+- Introduced Persistence module and PersistenceManager.
+- Added SQLite database infrastructure.
+- Added SchemaManager for automated schema initialization.
+- Added Repository pattern to abstract database operations.
+- Added DatabaseManager lifecycle management.
+- Isolated all SQL execution inside repositories.
+- Integrated persistence into Application.run().
+- Preserved business module persistence-agnostic design.
+- Extended automated testing to 82 passing tests.
+- Successfully validated large and stress datasets.
+- Established the foundation for PostgreSQL migration.
 
 ---
 
@@ -865,24 +1034,33 @@ Major improvements:
 
 The current architecture provides a stable foundation for continued, sequenced evolution. The Application layer remains the single orchestration point as the platform grows.
 
-## Sprint 6
-
-SQLite persistence layer
-
-- Repository Pattern
-- Database abstraction
-
 ## Sprint 7
 
-PostgreSQL integration
+Production PostgreSQL integration
+
+- PostgreSQL connection management
+- Repository compatibility
+- Transaction support
+- Environment-based configuration
+- Database migration preparation
 
 ## Sprint 8
 
-REST API layer
+Production REST API
+
+- FastAPI
+- REST endpoints
+- OpenAPI documentation
+- Authentication preparation
 
 ## Sprint 9
 
-Power BI integration
+Power BI Integration
+
+- Dashboard publishing
+- KPI visualization
+- Interactive reporting
+- Enterprise reporting connectors
 
 ## Sprint 10
 
@@ -905,4 +1083,6 @@ Every architectural change affecting module boundaries or dependency direction m
 
 ---
 
-**Current Architecture Version:** **v5.5.0**
+**Current Architecture Version:** **v6.0.0**
+
+**Previous Version:** **v5.5.0**

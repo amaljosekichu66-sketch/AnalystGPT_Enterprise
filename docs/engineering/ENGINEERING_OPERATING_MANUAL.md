@@ -535,6 +535,23 @@ Cleaning should never care whether Upload used CSV or an API.
 
 Contracts reduce coupling.
 
+Persistence
+
+Input
+
+- Dataset Metadata
+- QualityReport
+- AnalyticsReport
+- ReportingReport
+- Pipeline Status
+
+Output
+
+- SQLite Database Records
+
+Business modules should not know how persistence is implemented.
+They communicate only through stable report contracts.
+
 ---
 
 ## Dependency Direction
@@ -585,6 +602,10 @@ Always ask:
 "If another feature is added next year, will this design still work?"
 
 Design should evolve naturally without requiring major rewrites.
+
+Future infrastructure components (PostgreSQL, REST APIs, dashboards, AI services)
+should extend the existing layered architecture rather than bypass the
+Application and Persistence layers.
 
 ---
 
@@ -1423,6 +1444,16 @@ A sprint is complete only when all applicable items below are satisfied.
 
 □ Smoke testing completed
 
+□ Infrastructure components validated
+
+□ Persistence layer validated (if applicable)
+
+□ External integrations validated (if applicable)
+
+□ New module contracts verified
+
+□ Architecture changes documented (if applicable)
+
 □ Documentation updated
 
 □ Lessons learned recorded
@@ -2099,7 +2130,7 @@ release(v4.0.0): Analytics Module
 
 release(v5.0.0): Reporting Module
 
-release(v6.0.0): SQLite Integration
+release(v6.0.0): SQLite Persistence
 
 release(v7.0.0): PostgreSQL Integration
 
@@ -2176,6 +2207,9 @@ Verify that all architecture diagrams and documentation accurately reflect the i
 - □ Manager Orchestration
 - □ Stable Module Contracts
 - □ Repository Structure
+- □ Persistence Layer
+- □ Repository Layer
+- □ Database Schema
 
 ---
 
@@ -2187,6 +2221,8 @@ Verify that:
 - □ Integration tests pass (where applicable).
 - □ No unexpected warnings remain.
 - □ Test results are reflected in documentation.
+- □ Infrastructure integration tests pass.
+- □ Performance validation completed (when applicable).
 
 ---
 
@@ -2199,6 +2235,9 @@ Verify repository quality before release.
 - □ No temporary or generated files are committed.
 - □ Version numbers are synchronized across documentation.
 - □ Git status contains only intended changes.
+- □ Database file excluded from Git (.gitignore)
+- □ Repository interfaces remain consistent
+- □ Database migrations/schema reviewed
 
 ---
 
@@ -2210,6 +2249,9 @@ Before creating a release:
 - □ Execute the complete automated test suite.
 - □ Review all documentation.
 - □ Complete repository review.
+- □ Verify infrastructure initialization.
+- □ Verify pipeline execution records.
+- □ Verify metadata persistence (if applicable).
 - □ Create release commit.
 - □ Create Git tag.
 - □ Push commit and tag to GitHub.
@@ -2233,6 +2275,8 @@ Before every official release, verify the application using:
 Record significant performance observations in the Sprint Release Report and benchmark documentation rather than in this operating manual.
 
 Performance testing complements functional testing but does not replace automated unit or integration tests.
+
+Persistence performance should also be validated to ensure database operations do not introduce significant pipeline overhead.
 ---
 
 # END OF MASTER PROMPT

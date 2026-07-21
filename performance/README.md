@@ -146,7 +146,7 @@ Current validation includes:
 - ✅ Sample dataset
 - ✅ Large dataset (100K rows)
 - ✅ Stress dataset (1M rows)
-- ✅ 79 automated tests
+- ✅ 82 automated tests
 - ✅ Integration testing
 - ✅ Architecture validation
 
@@ -154,4 +154,4 @@ Current validation includes:
 
 Current benchmark version:
 
-**v5.5.0**
+**v6.0.0**

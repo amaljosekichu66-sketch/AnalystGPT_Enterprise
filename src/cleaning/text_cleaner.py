@@ -30,7 +30,8 @@ class TextCleaner:
 
     def clean(self, dataframe: DataFrame) -> DataFrame:
         """
-        Standardize text values while preserving structured fields.
+        Standardize text values while preserving structured fields
+        and missing values.
 
         Args:
             dataframe: Input DataFrame.
@@ -49,7 +50,8 @@ class TextCleaner:
 
             column_name = column.lower()
 
-            series = dataframe[column].astype(str).str.strip()
+            # Preserve missing values (NaN/None)
+            series = dataframe[column].str.strip()
 
             if any(
                 keyword in column_name

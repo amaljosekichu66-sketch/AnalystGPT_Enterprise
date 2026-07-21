@@ -16,7 +16,7 @@ def main() -> None:
     application = Application()
 
     result = application.run(
-        "sample_data/customer_data.csv"
+        "sample_data\customer_data.csv"
     )
 
     if not result.success:

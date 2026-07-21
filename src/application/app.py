@@ -6,6 +6,7 @@ processing pipeline.
 """
 
 import time
+from pathlib import Path
 
 from pandas import DataFrame
 
@@ -13,6 +14,7 @@ from src.analytics.analytics_manager import AnalyticsManager
 from src.analytics.analytics_report import AnalyticsReport
 from src.cleaning.cleaning_manager import CleaningManager
 from src.core.logger import logger
+from src.persistence.persistence_manager import PersistenceManager
 from src.quality.quality_manager import QualityManager
 from src.quality.quality_report import QualityReport
 from src.reporting.reporting_manager import ReportingManager
@@ -41,6 +43,12 @@ class Application:
         self.analytics_manager = AnalyticsManager()
         self.reporting_manager = ReportingManager()
 
+        # --------------------------------------------
+        # Persistence Layer
+        # --------------------------------------------
+
+        self.persistence = PersistenceManager()
+
     def run(
         self,
         input_path: str,
@@ -67,12 +75,22 @@ class Application:
 
         try:
 
+            self.persistence.initialize()
+
+            self.persistence.start_pipeline()
+
             # -------------------------------------------------
             # Upload
             # -------------------------------------------------
 
             raw_dataframe = self._upload_dataset(
                 input_path
+            )
+
+            self.persistence.save_dataset(
+                dataset_name=Path(input_path).name,
+                row_count=len(raw_dataframe),
+                column_count=len(raw_dataframe.columns),
             )
 
             # -------------------------------------------------
@@ -91,6 +109,10 @@ class Application:
                 cleaned_dataframe
             )
 
+            self.persistence.save_quality(
+                quality_report,
+            )
+
             # -------------------------------------------------
             # Analytics
             # -------------------------------------------------
@@ -101,6 +123,10 @@ class Application:
                 )
             )
 
+            self.persistence.save_analytics(
+                analytics_report,
+            )
+
             # -------------------------------------------------
             # Reporting
             # -------------------------------------------------
@@ -109,6 +135,10 @@ class Application:
                 self._generate_report(
                     analytics_report
                 )
+            )
+
+            self.persistence.save_report(
+                reporting_report,
             )
 
             # -------------------------------------------------
@@ -125,6 +155,8 @@ class Application:
                 time.perf_counter() - start_time
             )
 
+            self.persistence.finish_pipeline()
+
             return self._build_pipeline_result(
                 reporting_report,
                 execution_time,
@@ -136,6 +168,13 @@ class Application:
                 "Pipeline execution failed."
             )
 
+            try:
+                self.persistence.fail_pipeline()
+            except Exception:
+                logger.exception(
+                    "Unable to mark pipeline as FAILED."
+                )
+
             execution_time = (
                 time.perf_counter() - start_time
             )
@@ -145,6 +184,10 @@ class Application:
                 execution_time=execution_time,
                 error=error,
             )
+
+        finally:
+
+            self.persistence.shutdown()
 
     def _upload_dataset(
         self,
@@ -293,9 +336,22 @@ class Application:
         logger.info("REPORTING STAGE")
         logger.info("-" * 60)
 
-        return self.reporting_manager.generate_report(
-            analytics_report
+        reporting_report = (
+            self.reporting_manager.generate_report(
+                analytics_report
+            )
         )
+
+        logger.info(
+            "Report successfully generated."
+        )
+
+        logger.info(
+            "Export Location: %s",
+            reporting_report.export_path,
+        )
+
+        return reporting_report
 
     def _log_pipeline_summary(
         self,
@@ -305,6 +361,17 @@ class Application:
     ) -> None:
         """
         Log the final pipeline execution summary.
+
+        Parameters
+        ----------
+        quality_report:
+            Final quality assessment.
+
+        analytics_report:
+            Final analytics results.
+
+        reporting_report:
+            Final reporting results.
         """
 
         descriptive = analytics_report.report[
@@ -384,6 +451,10 @@ class Application:
         logger.info("=" * 60)
 
         logger.info(
+            "Pipeline persisted successfully."
+        )
+
+        logger.info(
             "AnalystGPT Enterprise completed successfully."
         )
 
@@ -401,7 +472,7 @@ class Application:
             Final reporting result.
 
         execution_time:
-            Total application execution time.
+            Total pipeline execution time.
 
         Returns
         -------
