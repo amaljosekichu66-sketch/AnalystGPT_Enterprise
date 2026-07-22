@@ -23,7 +23,7 @@ class AnalyticsRepository(BaseRepository):
         VALUES (?, ?, ?, ?);
         """
 
-        cursor = self.execute(
+        return self.insert_and_return_id(
             query,
             (
                 pipeline_run_id,
@@ -32,5 +32,3 @@ class AnalyticsRepository(BaseRepository):
                 correlation_summary,
             ),
         )
-
-        return cursor.lastrowid

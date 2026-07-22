@@ -22,13 +22,13 @@ class ReportRepository(BaseRepository):
         VALUES (?, ?, ?);
         """
 
-        cursor = self.execute(
+        return self.insert_and_return_id(
             query,
             (
                 pipeline_run_id,
                 report_path,
-                datetime.now().isoformat(timespec="seconds"),
+                datetime.now().isoformat(
+                    timespec="seconds"
+                ),
             ),
         )
-
-        return cursor.lastrowid

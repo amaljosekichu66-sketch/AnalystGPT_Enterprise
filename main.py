@@ -4,6 +4,8 @@ AnalystGPT Enterprise
 Application entry point.
 """
 
+from pathlib import Path
+
 from src.application.app import Application
 from src.core.logger import logger
 
@@ -15,8 +17,12 @@ def main() -> None:
 
     application = Application()
 
+    sample_file = (
+        Path("sample_data") / "customer_data.csv"
+    )
+
     result = application.run(
-        "sample_data\customer_data.csv"
+        str(sample_file)
     )
 
     if not result.success:

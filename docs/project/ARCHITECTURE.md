@@ -6,7 +6,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v6.0.0**.
+> This document reflects the implementation as of **v7.0.0**.
 
 ---
 
@@ -26,10 +26,11 @@ AnalystGPT Enterprise follows a modular, layered architecture built around:
 
 Each business capability is implemented as an independent module with a single, well-defined responsibility.
 
-As of Sprint 6, a dedicated Application layer coordinates all business modules while a Persistence layer manages database interactions. Business modules remain persistence-agnostic and never orchestrate one another or execute SQL directly.
+As of Sprint 7, a dedicated Application layer coordinates all business modules while a Database Abstraction Layer manages database engine selection and connection lifecycle. Business modules remain persistence-agnostic and never orchestrate one another or execute SQL directly.
 
 ---
-## Architectural Goals
+
+# Architectural Goals
 
 The architecture is designed to satisfy the following long-term engineering goals:
 
@@ -40,6 +41,9 @@ The architecture is designed to satisfy the following long-term engineering goal
 - Predictable dependency direction
 - Simple integration of future capabilities
 - Enterprise maintainability over long-term development
+- Database independence across relational engines
+- Interface-driven infrastructure for runtime interchangeability
+
 ---
 
 # High-Level Architecture
@@ -48,35 +52,50 @@ The architecture is designed to satisfy the following long-term engineering goal
                      main.py
                         │
                         ▼
-                Application.run()
+                 Application.run()
                         │
- ┌──────────────────────┼──────────────────────┐
- │                      │                      │
- ▼                      ▼                      ▼
-
-UploadManager → CleaningManager → QualityManager
-                                   │
-                                   ▼
-                          AnalyticsManager
-                                   │
-                                   ▼
-                          ReportingManager
-                                   │
-                                   ▼
-                        PersistenceManager
-                                   │
-                                   ▼
-                         Repository Layer
-                                   │
-                                   ▼
-                               SQLite
-                                   │
-                                   ▼
-                          PipelineResult
+        ┌───────────────┼────────────────┐
+        │               │                │
+        ▼               ▼                ▼
+ UploadManager → CleaningManager → QualityManager
+                                      │
+                                      ▼
+                            AnalyticsManager
+                                      │
+                                      ▼
+                            ReportingManager
+                                      │
+                                      ▼
+                          PersistenceManager
+                                      │
+                                      ▼
+                            DatabaseManager
+                                      │
+                                      ▼
+                            ConnectionFactory
+                                      │
+                                      ▼
+                            DatabaseConnection
+                                      │
+                        ┌───────────────┴───────────────┐
+                        ▼                               ▼
+                 SQLiteConnection            PostgreSQLConnection
+                        │                               │
+                        ▼                               ▼
+                     sqlite3                       psycopg
+                        │                               │
+                        └───────────────┬───────────────┘
+                                        │
+                                        ▼
+                              Repository Layer
+                                        │
+                                        ▼
+                              PipelineResult
 ```
 
 ---
-## Architectural Layers
+
+# Architectural Layers
 
 The repository is intentionally organized into five architectural layers.
 
@@ -96,7 +115,9 @@ Responsible for orchestration only.
 
 - Application
 - PipelineResult
+
 ---
+
 ### Architectural Constraints
 
 The Application layer:
@@ -107,6 +128,7 @@ The Application layer:
 - may coordinate execution order.
 
 The Application layer must not implement business logic belonging to individual modules.
+
 ---
 
 ### Business Layer
@@ -180,7 +202,11 @@ PersistenceManager
 Infrastructure Layer
 
 Repository Layer
-SQLite Database
+DatabaseManager
+ConnectionFactory
+DatabaseConnection
+SQLiteConnection
+PostgreSQLConnection
 Logger
 Configuration
 Exceptions
@@ -192,6 +218,7 @@ External Libraries
 
 Pandas
 SQLite3
+psycopg 3
 Pytest
 OpenPyXL
 JSON
@@ -525,6 +552,8 @@ PersistenceManager
 ### Dependencies
 
 - DatabaseManager
+- ConnectionFactory
+- DatabaseConnection
 - SchemaManager
 - Repository Layer
 
@@ -572,7 +601,10 @@ exceptions.py
 
 Database infrastructure now includes:
 
+- DatabaseConnection
 - SQLiteConnection
+- PostgreSQLConnection
+- ConnectionFactory
 - DatabaseManager
 - SchemaManager
 - BaseRepository
@@ -592,6 +624,8 @@ Centralized application configuration including:
 - Cleaning configuration
 - Report export configuration
 - Shared application settings
+- Database engine selection
+- Connection parameters
 
 #### constants.py
 
@@ -624,7 +658,13 @@ Persistence
 Repository Layer
      │
      ▼
-Database
+DatabaseConnection
+     │
+     ▼
+SQLiteConnection / PostgreSQLConnection
+     │
+     ▼
+Database Engine
      │
      ▼
 core
@@ -646,9 +686,9 @@ Business modules remain completely unaware of persistence.
 
 Only the Application layer communicates with the Persistence layer.
 
-Repositories are the only components permitted to execute SQL.
+Repositories are the only components permitted to execute SQL, and they operate through the DatabaseConnection abstraction.
 
-This separation allows future database technologies (such as PostgreSQL)
+This separation allows future database technologies (such as MySQL or SQL Server)
 to be introduced without requiring changes to business logic.
 
 ---
@@ -668,6 +708,7 @@ to be introduced without requiring changes to business logic.
 Stable contracts reduce coupling and simplify future extensions.
 
 ---
+
 ## Contract Stability Policy
 
 Stable contracts are treated as public interfaces.
@@ -893,7 +934,7 @@ The platform has been validated using datasets of increasing scale.
 - Successful report export
 - Complete end-to-end validation
 - No runtime failures
-- 82 / 82 automated tests remained passing after the Sprint 6 persistence integration.
+- 82 / 82 automated tests remained passing after the Sprint 7 persistence abstraction.
 
 The platform successfully completed:
 
@@ -901,11 +942,13 @@ The platform successfully completed:
 - Large dataset execution (~100K rows)
 - Stress dataset execution (~1M rows)
 - SQLite persistence validation
+- PostgreSQL architecture validation
 - Report generation validation
 
 ---
 
 # Repository Structure
+
 ```text
 AnalystGPT_Enterprise/
 
@@ -941,7 +984,10 @@ src/
 │   ├── persistence_report.py
 │   └── __init__.py
 ├── database/
+│   ├── database_connection.py
 │   ├── sqlite_connection.py
+│   ├── postgresql_connection.py
+│   ├── connection_factory.py
 │   ├── database_manager.py
 │   ├── schema_manager.py
 │   ├── __init__.py
@@ -970,6 +1016,7 @@ README.md
 CHANGELOG.md
 requirements.txt
 ```
+
 ---
 
 # Design Principles
@@ -979,6 +1026,9 @@ The architecture follows:
 - Single Responsibility Principle (SRP)
 - Open / Closed Principle (OCP)
 - Dependency Inversion Principle (DIP)
+- Dependency Injection
+- Database Abstraction
+- Interface Segregation
 - Separation of Concerns (SoC)
 - High Cohesion
 - Low Coupling
@@ -1005,7 +1055,7 @@ The architecture follows:
 | Analytics | ✅ Stable |
 | Reporting | ✅ Stable |
 | Persistence | ✅ Stable |
-| Database Infrastructure | ✅ Stable |
+| Database Abstraction Layer | ✅ Stable |
 | Core Infrastructure | ✅ Stable |
 
 ---
@@ -1030,49 +1080,49 @@ Major improvements:
 
 ---
 
+# Sprint 7 — Database Abstraction & PostgreSQL Integration
+
+Sprint 7 transformed the persistence layer into a database-agnostic architecture, enabling interchangeable SQLite and PostgreSQL backends.
+
+Major improvements:
+
+- Introduced DatabaseConnection abstraction and common interface.
+- Added PostgreSQLConnection with psycopg 3 integration.
+- Added ConnectionFactory for runtime database engine selection.
+- Refactored SQLiteConnection to implement DatabaseConnection.
+- Extended SchemaManager to support multiple SQL dialects.
+- Made repositories cross-database compatible with placeholder conversion.
+- Updated PersistenceManager to use dependency injection.
+- Centralized database configuration for engine selection.
+- Preserved all stable module contracts and business logic.
+- Maintained 82 passing automated tests.
+- Validated SQLite runtime and PostgreSQL architecture.
+
+---
+
 # Future Evolution
 
 The current architecture provides a stable foundation for continued, sequenced evolution. The Application layer remains the single orchestration point as the platform grows.
 
-## Sprint 7
+## Sprint 8 – REST API
 
-Production PostgreSQL integration
-
-- PostgreSQL connection management
-- Repository compatibility
-- Transaction support
-- Environment-based configuration
-- Database migration preparation
-
-## Sprint 8
-
-Production REST API
-
-- FastAPI
+- FastAPI integration
 - REST endpoints
 - OpenAPI documentation
 - Authentication preparation
 
-## Sprint 9
-
-Power BI Integration
+## Sprint 9 – Power BI Integration
 
 - Dashboard publishing
 - KPI visualization
 - Interactive reporting
 - Enterprise reporting connectors
 
-## Sprint 10
+## Sprint 10 – Interactive Streamlit application
 
-Interactive Streamlit application
+## Sprint 11 – AI-generated business insights
 
-## Sprint 11
-
-AI-generated business insights
-
-## Sprint 12
-
-Production deployment
+## Sprint 12 – Production deployment
 
 - Docker
 - CI/CD
@@ -1083,6 +1133,6 @@ Every architectural change affecting module boundaries or dependency direction m
 
 ---
 
-**Current Architecture Version:** **v6.0.0**
+**Current Architecture Version:** **v7.0.0**
 
-**Previous Version:** **v5.5.0**
+**Previous Version:** **v6.0.0**

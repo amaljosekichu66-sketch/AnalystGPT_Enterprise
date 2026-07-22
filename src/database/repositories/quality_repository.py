@@ -25,7 +25,7 @@ class QualityRepository(BaseRepository):
         VALUES (?, ?, ?, ?, ?);
         """
 
-        cursor = self.execute(
+        return self.insert_and_return_id(
             query,
             (
                 pipeline_run_id,
@@ -35,5 +35,3 @@ class QualityRepository(BaseRepository):
                 uniqueness_score,
             ),
         )
-
-        return cursor.lastrowid

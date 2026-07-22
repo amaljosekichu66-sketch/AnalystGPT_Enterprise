@@ -1,5 +1,8 @@
+from src.core.logger import logger
+
 from src.database.database_manager import DatabaseManager
 from src.database.schema_manager import SchemaManager
+from src.database.connection_factory import ConnectionFactory
 
 from src.database.repositories.pipeline_run_repository import (
     PipelineRunRepository,
@@ -25,11 +28,9 @@ class PersistenceManager:
     Coordinates all persistence operations for AnalystGPT Enterprise.
     """
 
-    def __init__(self, database_path: str = "analystgpt.db"):
-
-        self._database_path = database_path
-
+    def __init__(self):
         self._database_manager = None
+        self._database_connection = None
 
         self._pipeline_repository = None
         self._dataset_repository = None
@@ -50,36 +51,68 @@ class PersistenceManager:
         Initialize database infrastructure.
         """
 
+        # Create the configured database connection.
+        self._database_connection = (
+            ConnectionFactory.create_connection()
+        )
+
+        # Log the active database engine.
+        engine_name = {
+            "sqlite": "SQLite",
+            "postgresql": "PostgreSQL",
+        }.get(
+            self._database_connection.database_type(),
+            self._database_connection.database_type(),
+        )
+
+        logger.info(
+            "Database Engine          : %s",
+            engine_name,
+        )
+
+        # Create and initialize the database manager.
         self._database_manager = DatabaseManager(
-            self._database_path
+            self._database_connection
         )
 
         self._database_manager.initialize()
 
-        connection = self._database_manager.get_connection()
-
-        schema = SchemaManager(connection)
+        # Initialize the database schema.
+        schema = SchemaManager(
+            self._database_connection
+        )
 
         schema.initialize_schema()
 
-        self._pipeline_repository = PipelineRunRepository(
-            connection
+        # Initialize repositories.
+        self._pipeline_repository = (
+            PipelineRunRepository(
+                self._database_connection
+            )
         )
 
-        self._dataset_repository = DatasetRepository(
-            connection
+        self._dataset_repository = (
+            DatasetRepository(
+                self._database_connection
+            )
         )
 
-        self._quality_repository = QualityRepository(
-            connection
+        self._quality_repository = (
+            QualityRepository(
+                self._database_connection
+            )
         )
 
-        self._analytics_repository = AnalyticsRepository(
-            connection
+        self._analytics_repository = (
+            AnalyticsRepository(
+                self._database_connection
+            )
         )
 
-        self._report_repository = ReportRepository(
-            connection
+        self._report_repository = (
+            ReportRepository(
+                self._database_connection
+            )
         )
 
     # ---------------------------------------------------------
@@ -119,12 +152,15 @@ class PersistenceManager:
         """
         Persist the quality assessment.
         """
+
         quality = quality_report.report
 
         self._quality_report_id = (
             self._quality_repository.create(
                 self._pipeline_run_id,
-                quality["completeness"]["complete_percentage"],
+                quality["completeness"][
+                    "complete_percentage"
+                ],
                 None,
                 None,
                 None,
@@ -152,8 +188,12 @@ class PersistenceManager:
         self._analytics_report_id = (
             self._analytics_repository.create(
                 self._pipeline_run_id,
-                descriptive["numeric_column_count"],
-                descriptive["categorical_column_count"],
+                descriptive[
+                    "numeric_column_count"
+                ],
+                descriptive[
+                    "categorical_column_count"
+                ],
                 str(correlation),
             )
         )

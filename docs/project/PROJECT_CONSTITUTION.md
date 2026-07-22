@@ -20,6 +20,8 @@ Build an enterprise-grade analytics platform while learning software engineering
 10. Think Like an Engineer
 11. Test Before Release
 12. Documentation is Part of the Product
+13. Preserve Stable Module Contracts
+14. Design for Change
 
 ---
 
@@ -29,6 +31,8 @@ Every lesson follows:
 
 ```text
 Business Problem
+        ↓
+Business Value
         ↓
 Architecture
         ↓
@@ -73,6 +77,12 @@ Managers coordinate business modules.
 
 Business modules never call sibling modules directly.
 
+Dependencies must always point toward stable abstractions.
+
+Business logic must remain independent of infrastructure.
+
+Infrastructure should be replaceable without modifying business modules.
+
 Logging is mandatory for every manager.
 
 Every module must include independent automated tests.
@@ -94,5 +104,5 @@ A sprint is considered complete only when:
 - No known warnings remain unresolved without documentation.
 - Documentation is updated.
 - Architecture documentation reflects the implementation.
-- Version numbers are updated.
+- Project documentation and version information remain synchronized.
 - The repository is ready for release.

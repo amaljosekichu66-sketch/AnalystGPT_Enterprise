@@ -8,7 +8,7 @@
 
 # Last Updated
 
-**Date:** 21 July 2026
+**Date:** 22 July 2026
 
 ---
 
@@ -59,6 +59,8 @@ Release
 - ✅ Business modules communicate through stable contracts
 - ✅ Business modules never access the database directly
 - ✅ Persistence belongs in the Infrastructure Layer
+- ✅ Infrastructure communicates through stable abstractions
+- ✅ Business modules remain independent of database implementations
 
 ---
 
@@ -122,6 +124,8 @@ Examples:
 - Debug Mode
 - Logging Level
 - Upload Limits
+- Database Engine Selection (SQLite / PostgreSQL)
+- Connection Parameters
 
 ---
 
@@ -382,10 +386,12 @@ Business Modules
     ↓
 Persistence Layer
     ↓
-Database
+Database Abstraction
+    ↓
+SQLite / PostgreSQL
 ```
 
-This layered architecture ensures that each component has a single, well‑defined responsibility, and that business logic remains independent of infrastructure concerns. The Persistence Layer abstracts all database access, allowing future database engines (such as PostgreSQL) to be introduced without modifying business modules.
+This layered architecture ensures that each component has a single, well‑defined responsibility, and that business logic remains independent of infrastructure concerns. The Database Abstraction Layer isolates the application from concrete database implementations, allowing runtime engine selection without modifying business modules.
 
 ---
 
@@ -551,3 +557,57 @@ Future infrastructure work should continue to prioritize:
 - Automated Testing
 - Database Independence
 - Enterprise Documentation
+
+---
+
+# Sprint 7 — Database Abstraction Lessons
+
+## Database Abstraction
+
+- Infrastructure should depend on abstractions rather than concrete database implementations.
+- Business modules should remain completely unaware of the underlying database engine.
+- Runtime database selection enables infrastructure flexibility without affecting business logic.
+- A single abstraction can support multiple database engines when responsibilities are clearly defined.
+
+---
+
+## Interface Design
+
+- Stable interfaces simplify large architectural changes.
+- Design abstractions around responsibilities rather than implementations.
+- A single interface can support multiple infrastructure providers when responsibilities are well defined.
+- Concrete implementations should be selected at runtime through a factory pattern.
+
+---
+
+## Cross-Database Architecture
+
+- SQL dialect differences should be isolated within the infrastructure layer.
+- Database-specific behavior should never leak into business modules.
+- Centralized connection management simplifies future expansion to additional database engines.
+- Automatic placeholder conversion (e.g., `?` vs `%s`) keeps repositories database‑agnostic.
+
+---
+
+## Engineering Lessons
+
+- Large architectural improvements should minimize changes to existing business modules.
+- Dependency inversion enables infrastructure evolution without breaking application logic.
+- Enterprise software grows through abstraction rather than duplication.
+- Comprehensive testing across abstraction boundaries ensures compatibility.
+
+---
+
+## Future Guidance
+
+Future infrastructure should continue to prioritize:
+
+- Stable Interfaces
+- Dependency Inversion
+- Database Independence
+- Replaceable Infrastructure
+- Centralized Configuration
+- Automated Validation
+- Runtime Engine Selection
+
+These principles established during Sprint 7 ensure that future database additions (MySQL, SQL Server, etc.) can be integrated without altering business logic, preserving the long-term maintainability of the platform.

@@ -23,7 +23,7 @@ class DatasetRepository(BaseRepository):
         VALUES (?, ?, ?, ?);
         """
 
-        cursor = self.execute(
+        return self.insert_and_return_id(
             query,
             (
                 pipeline_run_id,
@@ -32,5 +32,3 @@ class DatasetRepository(BaseRepository):
                 column_count,
             ),
         )
-
-        return cursor.lastrowid

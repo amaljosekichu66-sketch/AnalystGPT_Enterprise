@@ -7,7 +7,10 @@ class PipelineRunRepository(BaseRepository):
 
     TABLE_NAME = "pipeline_runs"
 
-    def create(self, status: str) -> int:
+    def create(
+        self,
+        status: str,
+    ) -> int:
 
         query = """
         INSERT INTO pipeline_runs (
@@ -17,12 +20,12 @@ class PipelineRunRepository(BaseRepository):
         VALUES (?, ?);
         """
 
-        cursor = self.execute(
+        return self.insert_and_return_id(
             query,
             (
-                datetime.now().isoformat(timespec="seconds"),
+                datetime.now().isoformat(
+                    timespec="seconds"
+                ),
                 status,
             ),
         )
-
-        return cursor.lastrowid

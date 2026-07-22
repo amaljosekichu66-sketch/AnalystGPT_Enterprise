@@ -31,7 +31,9 @@ Every contribution should follow:
 Every feature follows the same engineering lifecycle.
 
 ```text
-Business Requirement
+Business Problem
+        ↓
+Business Value
         ↓
 Architecture Design
         ↓
@@ -54,7 +56,7 @@ Merge
 
 # Git Workflow
 
-Typical Git workflow:
+Typical development workflow:
 
 ```text
 Create Branch
@@ -69,7 +71,29 @@ Commit
         ↓
 Push
         ↓
+Open Pull Request
+        ↓
+Code Review
+        ↓
 Merge
+```
+
+Release workflow (at sprint conclusion):
+
+```text
+Run Application (end-to-end)
+        ↓
+Run Full Test Suite
+        ↓
+Review Documentation Updates
+        ↓
+Repository Review (status, branch, tags)
+        ↓
+Create Release Commit
+        ↓
+Create Git Tag
+        ↓
+Push to GitHub
 ```
 
 ---
@@ -134,6 +158,20 @@ changes
 
 ---
 
+# Release Commit Convention
+
+For sprint releases, use a consistent release commit message.
+
+Example:
+
+```text
+release(v7.0.0): PostgreSQL Integration
+```
+
+This helps identify releases in the commit history.
+
+---
+
 # Pull Request Expectations
 
 Every Pull Request should:
@@ -141,6 +179,10 @@ Every Pull Request should:
 - Solve one logical problem.
 - Pass all automated tests.
 - Preserve existing architecture.
+- Maintain stable module contracts.
+- Respect dependency direction (business modules → core; never the reverse).
+- Ensure backward compatibility where applicable.
+- Separate business logic from infrastructure (no SQL in business modules).
 - Include documentation updates when required.
 - Avoid unrelated changes.
 - Be understandable without external explanation.
@@ -173,7 +215,22 @@ Cleaning
 Quality
         ↓
 Analytics
+        ↓
+Reporting
+        ↓
+Persistence
+        ↓
+Database (SQLite / PostgreSQL)
 ```
+
+### Infrastructure Validation
+
+When database or persistence changes occur, additional validation is required:
+
+- Database initialization and connection lifecycle.
+- Schema creation and migration (where applicable).
+- Repository integration and CRUD operations.
+- Cross-database compatibility (placeholder conversion, dialect support).
 
 ---
 
@@ -190,9 +247,26 @@ Potential documents include:
 - PROJECT_JOURNAL.md
 - ROADMAP.md
 - LESSONS_LEARNED.md
-- ADRs
+- ADRs (Architecture Decision Records)
+- Sprint Release Reports
+- ENGINEERING_OPERATING_MANUAL.md (when workflow changes)
 
 Avoid duplicating information across documents.
+
+---
+
+# Code Review Checklist
+
+Reviewers should consider the following:
+
+- **Single Responsibility Principle** – Does each component have one clear responsibility?
+- **Separation of Concerns** – Are business logic, orchestration, and infrastructure properly separated?
+- **Open/Closed Principle** – Can the component be extended without modifying its source?
+- **Stable Module Contracts** – Are public interfaces stable and well-defined?
+- **Low Coupling** – Are dependencies minimal and explicitly declared?
+- **High Cohesion** – Are related responsibilities grouped together?
+- **Readability** – Is the code easy to understand and maintain?
+- **Testability** – Is the code structured to allow effective unit testing?
 
 ---
 
@@ -201,6 +275,7 @@ Avoid duplicating information across documents.
 A feature is complete only when:
 
 - Business problem is understood.
+- Business value is articulated.
 - Architecture is reviewed.
 - Code is implemented.
 - Unit tests pass.
@@ -208,6 +283,8 @@ A feature is complete only when:
 - No unintended warnings remain.
 - Documentation is updated.
 - Code review is completed.
+- Repository review (branch, tags) is completed.
+- Version synchronization across all documentation is verified.
 - Feature is ready for release.
 
 ---
@@ -217,21 +294,21 @@ A feature is complete only when:
 Every sprint should conclude with the following activities:
 
 ```text
-Run Application
+Run Application (end-to-end)
         ↓
-Run Test Suite
+Run Full Test Suite
         ↓
 Resolve Warnings
         ↓
 Update Documentation
         ↓
-Repository Review
+Repository Review (status, branches, tags)
         ↓
-Version Update
+Version Update (sync all docs)
         ↓
-Git Commit
+Create Release Commit
         ↓
-Git Tag
+Create Git Tag
         ↓
 Push to GitHub
 ```

@@ -1,41 +1,54 @@
-import sqlite3
+import psycopg
+from psycopg.rows import dict_row
 
 from src.database.database_connection import DatabaseConnection
 
 
-class SQLiteConnection(DatabaseConnection):
+class PostgreSQLConnection(DatabaseConnection):
     """
-    SQLite implementation of the DatabaseConnection contract.
+    PostgreSQL implementation of the DatabaseConnection contract.
+    Uses dict_row row factory for dictionary-like row access.
     """
 
-    def __init__(self, database_path: str):
-        self._database_path = database_path
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        database: str,
+        user: str,
+        password: str,
+    ):
+        self._host = host
+        self._port = port
+        self._database = database
+        self._user = user
+        self._password = password
+
         self._connection = None
 
     # ---------------------------------------------------------
 
     def connect(self):
         """
-        Establish a connection to the SQLite database.
+        Establish a connection to PostgreSQL with dict_row row factory.
         """
-
         if self._connection is None:
-
-            self._connection = sqlite3.connect(
-                self._database_path
+            self._connection = psycopg.connect(
+                host=self._host,
+                port=self._port,
+                dbname=self._database,
+                user=self._user,
+                password=self._password,
+                row_factory=dict_row,   # ← ensures rows are dict-like
             )
-
-            self._connection.row_factory = sqlite3.Row
 
     # ---------------------------------------------------------
 
     def disconnect(self):
         """
-        Close the SQLite connection.
+        Close the PostgreSQL connection.
         """
-
         if self._connection is not None:
-
             self._connection.close()
             self._connection = None
 
@@ -43,9 +56,8 @@ class SQLiteConnection(DatabaseConnection):
 
     def get_connection(self):
         """
-        Return the active SQLite connection.
+        Return the active PostgreSQL connection.
         """
-
         return self._connection
 
     # ---------------------------------------------------------
@@ -54,7 +66,6 @@ class SQLiteConnection(DatabaseConnection):
         """
         Commit the current transaction.
         """
-
         if self._connection is not None:
             self._connection.commit()
 
@@ -64,7 +75,6 @@ class SQLiteConnection(DatabaseConnection):
         """
         Roll back the current transaction.
         """
-
         if self._connection is not None:
             self._connection.rollback()
 
@@ -74,5 +84,4 @@ class SQLiteConnection(DatabaseConnection):
         """
         Return the database engine type.
         """
-
-        return "sqlite"
+        return "postgresql"
