@@ -1271,6 +1271,207 @@ Sprint 7 establishes the foundation for future database support (MySQL, SQL Serv
 
 ---
 
+# Sprint 8 — REST API Integration
+
+**Date:** 23 July 2026
+
+## Objective
+
+Transform AnalystGPT Enterprise from a command-line analytics application into a service-oriented enterprise analytics platform by introducing a dedicated REST API layer while preserving the existing layered architecture, stable module contracts, and separation of concerns.
+
+Unlike Sprint 7, which focused on database abstraction, Sprint 8 focuses on exposing the complete analytics pipeline through well-defined HTTP endpoints suitable for external integrations, business intelligence platforms, user interfaces, and future cloud deployment.
+
+## Business Context
+
+Before Sprint 8, AnalystGPT Enterprise could only be executed locally through Python.
+
+Although the internal architecture was modular and enterprise-grade, external applications had no standardized way to invoke the analytics pipeline.
+
+Modern enterprise software exposes business capabilities through APIs rather than direct code execution.
+
+Sprint 8 addresses this limitation by introducing a dedicated REST API Layer built on FastAPI while keeping all business logic inside the Application Layer.
+
+## Completed
+
+### REST API Layer
+
+Implemented:
+
+- FastAPI Server
+- REST API Layer
+- API Routing
+- Root Endpoint
+- Health Endpoint
+- Version Endpoint
+- Pipeline Endpoint
+
+### API Contracts
+
+Implemented:
+
+- APIResponse
+- RootResponse
+- HealthResponse
+- VersionResponse
+- PipelineRequest
+- PipelineResponse
+
+### Infrastructure
+
+Implemented:
+
+- Dependency Injection
+- Application Dependency Provider
+- Global Exception Handlers
+- Request Validation
+- Response Validation
+- OpenAPI 3.1 Specification
+- Swagger UI Documentation
+
+### Application Integration
+
+Successfully integrated the REST API with the existing enterprise pipeline.
+
+Pipeline execution now follows:
+
+```text
+Client
+      │
+      ▼
+FastAPI Server
+      │
+      ▼
+API Routes
+      │
+      ▼
+Dependency Injection
+      │
+      ▼
+Application.run()
+      │
+      ▼
+Upload
+      ▼
+Cleaning
+      ▼
+Quality
+      ▼
+Analytics
+      ▼
+Reporting
+      ▼
+Persistence
+      ▼
+PipelineResponse
+```
+
+Business modules remain completely independent of the API Layer.
+
+### Documentation
+
+Updated:
+
+- README.md
+- CHANGELOG.md
+- PROJECT_STATE.md
+- ROADMAP.md
+- PROJECT_JOURNAL.md
+- ARCHITECTURE.md
+
+Added:
+
+- API_REFERENCE.md
+- API documentation
+- Swagger documentation
+
+### Testing
+
+Added automated integration tests for:
+
+- Root Endpoint
+- Health Endpoint
+- Version Endpoint
+- Pipeline Endpoint
+
+Validated:
+
+- Swagger UI
+- OpenAPI Generation
+- REST Pipeline Execution
+- Dependency Injection
+- End-to-End API Execution
+
+Final Results:
+
+```text
+90 Tests Passed
+0 Failed
+0 Errors
+0 Warnings
+```
+
+### Performance Validation
+
+Successfully validated using:
+
+- Sample dataset
+- Large dataset (100,000 rows)
+- Stress dataset (1,000,000 rows)
+
+Additional validation included:
+
+- REST API endpoint execution
+- Swagger UI validation
+- OpenAPI generation
+- Request validation
+- Response serialization
+- Pipeline execution through REST API
+
+No architectural regressions were observed.
+
+## Challenges
+
+- Designing a REST API without introducing business logic into the API layer.
+- Preserving separation of concerns.
+- Designing reusable request and response contracts.
+- Maintaining backward compatibility with Application.run().
+- Introducing Dependency Injection while preserving loose coupling.
+- Standardizing error handling across API endpoints.
+- Maintaining complete test compatibility while expanding the architecture.
+
+## Lessons Learned
+
+- REST APIs are an interface layer rather than a business layer.
+- API routes should remain thin and delegate work to the Application Layer.
+- Dependency Injection simplifies application lifecycle management.
+- Pydantic provides reliable request validation and response serialization.
+- OpenAPI documentation improves discoverability and developer experience.
+- Enterprise APIs depend on stable contracts rather than implementation details.
+- Automated integration testing increases confidence in service-oriented architectures.
+
+## Result
+
+Sprint 8 successfully transformed AnalystGPT Enterprise into a service-oriented enterprise analytics platform.
+
+The repository now includes:
+
+- Enterprise REST API Layer
+- FastAPI Server
+- Dependency Injection
+- Standardized API Contracts
+- OpenAPI 3.1 Specification
+- Swagger UI Documentation
+- Global Exception Handling
+- REST API Integration Tests
+- 90 Automated Tests
+- Live Endpoint Validation
+
+Sprint 8 establishes the foundation for Power BI integration, frontend development, AI services, and production deployment while preserving stable business module contracts.
+
+**Release Version:** v8.0.0
+
+---
+
 # Journal Summary
 
 | Sprint | Version | Primary Achievement | Status |
@@ -1286,7 +1487,8 @@ Sprint 7 establishes the foundation for future database support (MySQL, SQL Serv
 | Sprint 5.5 | v5.5.0 | Enterprise Architecture Refactor | ✅ |
 | Sprint 6 | v6.0.0 | SQLite Persistence | ✅ |
 | Sprint 7 | v7.0.0 | Database Abstraction & PostgreSQL Integration | ✅ |
+| Sprint 8 | v8.0.0 | REST API Integration | ✅ |
 
 ---
 
-**Current Journal Version:** **v7.0.0**
+**Current Journal Version:** **v8.0.0**

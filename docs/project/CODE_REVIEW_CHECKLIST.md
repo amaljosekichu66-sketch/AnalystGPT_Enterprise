@@ -43,6 +43,21 @@ Every Pull Request should be reviewed against these criteria before approval.
 
 ---
 
+# 3.5. REST API
+
+- Are API routes thin and free of business logic?
+- Is all business logic delegated to the Application Layer?
+- Are request models strongly typed?
+- Are response models strongly typed?
+- Are HTTP status codes appropriate?
+- Are request validations implemented using Pydantic?
+- Are API contracts backward compatible?
+- Are endpoints documented with summary and description?
+- Is OpenAPI documentation generated correctly?
+- Are dependency injection patterns used instead of direct object creation
+
+---
+
 # 4. Error Handling
 
 - Are expected failures handled appropriately?

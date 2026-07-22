@@ -1,11 +1,12 @@
 # AnalystGPT Enterprise
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
-![Tests](https://img.shields.io/badge/Tests-82%20Passed-brightgreen)
-![Architecture](https://img.shields.io/badge/Architecture-Layered-success)
+![Tests](https://img.shields.io/badge/Tests-90%20Passed-brightgreen)
+![Architecture](https://img.shields.io/badge/Architecture-Layered%20%2B%20REST%20API-success)
 ![Database](https://img.shields.io/badge/Database-SQLite%20%2B%20PostgreSQL-blue)
+![REST API](https://img.shields.io/badge/REST%20API-FastAPI%20%2F%20OpenAPI%203.1-blueviolet)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-v7.0.0-blue)
+![Version](https://img.shields.io/badge/Version-v8.0.0-blue)
 
 > **Enterprise-Grade Analytics Platform**
 >
@@ -21,6 +22,7 @@
 - [Architecture](#architecture-principles)
 - [Installation](#installation)
 - [Running the Project](#running-the-project)
+- [REST API](#rest-api)
 - [Testing](#running-tests)
 - [Documentation](#documentation)
 - [Roadmap](#project-roadmap)
@@ -46,6 +48,12 @@ The platform processes datasets through a modular pipeline that performs:
 The persistence layer now supports multiple relational database engines
 through a unified abstraction layer, enabling interchangeable SQLite
 and PostgreSQL backends without changing business logic.
+
+The platform is now accessible through a **REST API** built with **FastAPI**,
+providing interactive documentation via **Swagger UI** and a standard
+**OpenAPI 3.1** specification. The REST API Layer delegates all operations
+to the Application Layer, preserving the separation of concerns and
+layered architecture established in previous sprints.
 
 The project is intentionally developed sprint-by-sprint to simulate the
 evolution of a production enterprise application.
@@ -88,7 +96,14 @@ and extensibility.
 - ConnectionFactory
 - Cross-database repository architecture
 - SQLite and PostgreSQL support
-- Automated testing (82 tests)
+- **REST API Layer** with FastAPI
+- **OpenAPI 3.1** specification
+- **Swagger UI** interactive documentation
+- **Dependency Injection** for application lifecycle
+- **Pydantic** request validation and response serialization
+- **Global Exception Handling** with consistent error responses
+- **Service-Oriented Architecture**
+- Automated testing (90 tests)
 - Performance validation up to 1,000,000 rows
 - Modular business pipeline
 - Architecture Decision Records (ADRs)
@@ -100,17 +115,20 @@ and extensibility.
 
 | Item | Status |
 |------|--------|
-| **Current Version** | **v7.0.0** |
+| **Current Version** | **v8.0.0** |
 | **Development Status** | 🟢 Active Development |
-| **Current Sprint** | ✅ Sprint 7 – PostgreSQL Integration Complete |
-| **Architecture** | 🟢 Enterprise Layered Architecture |
+| **Current Sprint** | ✅ Sprint 8 – REST API Integration Complete |
+| **Architecture** | 🟢 Enterprise Layered Architecture + REST API Layer |
 | **Application Layer** | ✅ Stable |
 | **Persistence Layer** | ✅ Stable |
 | **Database Abstraction Layer** | ✅ Stable |
 | **Repository Layer** | ✅ Stable |
-| **Automated Tests** | ✅ 82 / 82 Passed |
+| **REST API Layer** | ✅ Stable |
+| **OpenAPI** | ✅ Operational |
+| **Swagger** | ✅ Operational |
+| **Automated Tests** | ✅ 90 / 90 Passed |
 | **Performance Validation** | ✅ Completed |
-| **Next Sprint** | 🚀 Sprint 8 – REST API |
+| **Next Sprint** | 🚀 Sprint 9 – Power BI Integration |
 
 ---
 
@@ -129,10 +147,19 @@ and extensibility.
 - ✅ SQLite Support
 - ✅ PostgreSQL Support
 - ✅ Repository Layer
+- ✅ **REST API Layer**
+- ✅ **FastAPI Server**
+- ✅ **Root Endpoint**
+- ✅ **Health Endpoint**
+- ✅ **Version Endpoint**
+- ✅ **Pipeline Endpoint**
+- ✅ **Swagger UI**
+- ✅ **OpenAPI 3.1**
+- ✅ **API Models**
+- ✅ **Global Exception Handlers**
 
 ## Upcoming Modules
 
-- ⏳ REST API
 - ⏳ Power BI Integration
 - ⏳ Streamlit Application
 - ⏳ AI Insights
@@ -160,64 +187,70 @@ The project follows modern enterprise engineering practices:
 - Dependency Injection
 - Database Abstraction
 - Interface-driven Design
+- REST API Design
+- API-first Architecture
+- Service-oriented Architecture
 
 ---
 
 # Enterprise Architecture
 
 ```text
-                     main.py
-                        │
-                        ▼
-                 Application.run()
-                        │
-                        ▼
-                 UploadManager
-                        │
-                  DataFrame
-                        ▼
-                CleaningManager
-                        │
-                  DataFrame
-                        ▼
-                 QualityManager
-                        │
-                 QualityReport
-                        ▼
-                AnalyticsManager
-                        │
-               AnalyticsReport
-                        ▼
-                ReportingManager
-                        │
-               ReportingReport
-                        ▼
-              PersistenceManager
-                        │
-                        ▼
-                DatabaseManager
-                        │
-                        ▼
+Client (Browser / API Client)
+                │
+                ▼
+          FastAPI Server
+                │
+                ▼
+           API Routes
+                │
+                ▼
+        Dependency Injection
+                │
+                ▼
+         Application.run()
+                │
+        ┌───────┼───────┐
+        │       │       │
+        ▼       ▼       ▼
+  Upload → Cleaning → Quality
+                       │
+                       ▼
+              AnalyticsManager
+                       │
+                       ▼
+              ReportingManager
+                       │
+                       ▼
+             PersistenceManager
+                       │
+                       ▼
+              DatabaseManager
+                       │
+                       ▼
               ConnectionFactory
-                        │
-                        ▼
+                       │
+                       ▼
               DatabaseConnection
-                    ▲          ▲
-                    │          │
+                  ▲         ▲
+                  │         │
         SQLiteConnection PostgreSQLConnection
-                    │          │
-                 sqlite3     psycopg
-                    │          │
-                    └──────────┘
-                         │
-                         ▼
-               Repository Layer
-                         │
-                         ▼
-                PipelineResult
+                  │         │
+               sqlite3   psycopg
+                  │         │
+                  └────┬────┘
+                       │
+                       ▼
+              Repository Layer
+                       │
+                       ▼
+              PipelineResult
+                       │
+                       ▼
+              PipelineResponse
 ```
 
-Business modules remain independent of the underlying database engine,
+Business modules remain independent of the underlying database engine and the REST API Layer,
 communicating only through stable contracts and abstractions.
 
 ---
@@ -230,6 +263,9 @@ communicating only through stable contracts and abstractions.
 | Data Processing | Pandas |
 | Database | SQLite, PostgreSQL |
 | Database Drivers | sqlite3, psycopg 3 |
+| **REST API** | FastAPI |
+| **Validation** | Pydantic |
+| **API Documentation** | OpenAPI 3.1, Swagger UI |
 | Testing | Pytest |
 | Architecture | Layered Architecture, Repository Pattern, Manager-Orchestrator Pattern |
 | Version Control | Git, GitHub |
@@ -253,6 +289,40 @@ AnalystGPT Enterprise currently supports:
 - Repository abstraction
 - End-to-end automated testing
 - Performance validation up to 1,000,000 rows
+- **REST API execution**
+- **Interactive Swagger UI**
+- **OpenAPI specification**
+- **Typed request validation**
+- **Typed response serialization**
+- **API integration testing**
+- **Dependency Injection**
+- **Global exception handling**
+
+---
+
+# REST API
+
+AnalystGPT Enterprise exposes its analytics pipeline through a REST API built with FastAPI.
+
+**Available endpoints:**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API root information |
+| GET | `/api/v1/health` | Health check |
+| GET | `/api/v1/version` | Version information |
+| POST | `/api/v1/pipeline` | Execute the analytics pipeline |
+
+**Interactive documentation:**
+
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- ReDoc: `http://127.0.0.1:8000/redoc`
+
+**OpenAPI specification:**
+
+- `http://127.0.0.1:8000/openapi.json`
+
+The REST API Layer contains no business logic, delegates all operations to the Application Layer through dependency injection, and provides enterprise-grade error handling and request validation.
 
 ---
 
@@ -260,6 +330,12 @@ AnalystGPT Enterprise currently supports:
 
 ```text
 src/
+├── api/
+│   ├── server.py
+│   ├── routes/
+│   ├── models/
+│   ├── dependencies/
+│   └── exceptions/
 ├── application/
 ├── upload/
 ├── cleaning/
@@ -288,9 +364,9 @@ analytics pipeline into a complete enterprise analytics platform supporting
 relational databases, REST APIs, dashboards, AI-assisted insights, and
 production deployment.
 
-With the database abstraction layer in place, future work can focus on
-delivering REST APIs, interactive dashboards, AI-assisted insights, and
-enterprise deployment infrastructure.
+With the database abstraction layer and REST API layer in place, future work can focus on
+delivering business intelligence integrations, interactive dashboards, AI-assisted insights,
+and enterprise deployment infrastructure.
 
 Each sprint builds upon stable architectural foundations while preserving
 backward compatibility and maintainable module contracts.
@@ -309,8 +385,8 @@ backward compatibility and maintainable module contracts.
 | Sprint 5.5 – Architecture Refactor | ✅ Complete |
 | Sprint 6 – SQLite Persistence | ✅ Complete |
 | Sprint 7 – PostgreSQL Integration | ✅ Complete |
-| Sprint 8 – REST API | 🚀 Next |
-| Sprint 9 – Power BI | Planned |
+| **Sprint 8 – REST API** | ✅ **Complete** |
+| **Sprint 9 – Power BI** | 🚀 **Next** |
 | Sprint 10 – Streamlit | Planned |
 | Sprint 11 – AI Insights | Planned |
 | Sprint 12 – Production Deployment | Planned |
@@ -321,8 +397,11 @@ backward compatibility and maintainable module contracts.
 
 | Validation | Status |
 |-----------|--------|
-| Unit Tests | ✅ 82 / 82 Passed |
+| Unit Tests | ✅ 90 / 90 Passed |
 | Integration Tests | ✅ Passed |
+| REST API Integration Tests | ✅ Passed |
+| Swagger Validation | ✅ Passed |
+| OpenAPI Validation | ✅ Passed |
 | Sample Dataset | ✅ Passed |
 | Large Dataset (100,000 rows) | ✅ Passed |
 | Stress Dataset (1,000,000 rows) | ✅ Passed |
@@ -350,9 +429,20 @@ For PostgreSQL, configure the database connection settings in
 
 # Running the Project
 
+## Command-Line Interface
+
 ```bash
 python main.py
 ```
+
+## REST API Server
+
+```bash
+python -m uvicorn src.api.server:app --reload
+```
+
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- OpenAPI: `http://127.0.0.1:8000/openapi.json`
 
 ---
 
@@ -365,7 +455,7 @@ python -m pytest
 Current Result:
 
 ```
-82 tests passed
+90 tests passed
 0 failures
 0 warnings
 ```
@@ -380,6 +470,7 @@ Detailed engineering documentation is available under:
 - `docs/engineering/`
 - `docs/adr/`
 - `docs/sprints/`
+- `docs/api/` (API reference and testing)
 
 These documents describe the project's architecture, engineering decisions,
 release history, and development roadmap, including:
@@ -390,6 +481,8 @@ release history, and development roadmap, including:
 - Sprint Reports
 - Project State
 - Release History
+- API Reference
+- API Testing Guide
 
 ---
 
@@ -405,6 +498,6 @@ and design decisions, see the documentation under `docs/`.
 AnalystGPT Enterprise continues to evolve through incremental,
 well-tested engineering sprints.
 
-**Current Release:** v7.0.0
+**Current Release:** v8.0.0
 
-**Next Milestone:** Sprint 8 – REST API
+**Next Milestone:** Sprint 9 – Power BI Integration

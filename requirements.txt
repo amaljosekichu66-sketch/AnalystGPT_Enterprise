@@ -1,4 +1,39 @@
+# Core data processing
 pandas
 openpyxl
-pytest==9.1.1
+
+# REST API
+fastapi
+uvicorn[standard]
+
+# Database driver (PostgreSQL)
 psycopg[binary]
+
+# Testing
+pytest==9.1.1
+httpx
+```
+
+### 📦 What's included
+
+| Package | Purpose |
+|---------|---------|
+| `pandas` | Data processing |
+| `openpyxl` | Excel file support |
+| `fastapi` | REST API framework |
+| `uvicorn[standard]` | ASGI server with extra features |
+| `psycopg[binary]` | PostgreSQL driver (binary version) |
+| `pytest==9.1.1` | Testing framework |
+| `httpx` | HTTP client for API integration tests |
+
+### 🚀 Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+### ▶️ Running the API server
+
+```bash
+uvicorn src.api.server:app --reload
+```

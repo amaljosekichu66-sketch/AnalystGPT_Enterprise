@@ -8,7 +8,7 @@
 
 # Last Updated
 
-**Date:** 22 July 2026
+**Date:** 23 July 2026
 
 ---
 
@@ -61,6 +61,13 @@ Release
 - ✅ Persistence belongs in the Infrastructure Layer
 - ✅ Infrastructure communicates through stable abstractions
 - ✅ Business modules remain independent of database implementations
+- ✅ REST APIs belong to the Presentation Layer
+- ✅ Business logic must never exist inside API routes
+- ✅ HTTP concerns must remain isolated from business modules
+- ✅ Application Layer owns all orchestration
+- ✅ API Layers should remain stateless
+- ✅ Dependency Injection improves modularity and testability
+- ✅ API contracts should remain stable across releases
 
 ---
 
@@ -83,6 +90,22 @@ Release
 ### Rule
 
 Downstream modules should never know where the data originated.
+
+---
+
+## REST API
+
+### Input
+
+- PipelineRequest
+
+### Output
+
+- PipelineResponse
+
+### Rule
+
+Clients should depend only on stable API contracts rather than internal implementation.
 
 ---
 
@@ -112,6 +135,8 @@ Examples:
 - Application Name
 - Version
 - Encoding
+- API Prefix
+- API Documentation URLs
 
 ---
 
@@ -126,6 +151,7 @@ Examples:
 - Upload Limits
 - Database Engine Selection (SQLite / PostgreSQL)
 - Connection Parameters
+- API Settings
 
 ---
 
@@ -174,12 +200,24 @@ Examples:
 Correct
 
 ```text
+REST API
+    ↓
+Application
+    ↓
 Business Modules
-        ↓
-      Core
+    ↓
+Persistence
+    ↓
+Core
 ```
 
 Incorrect
+
+```text
+REST API
+    ↓
+Business Modules
+```
 
 ```text
 Core
@@ -190,6 +228,8 @@ Business Modules
 Reason
 
 Prevents circular dependencies and preserves modular architecture.
+
+Business logic and HTTP concerns must remain separated.
 
 ---
 
@@ -206,6 +246,13 @@ Prevents circular dependencies and preserves modular architecture.
 - Extensibility
 - Reusability
 - Testability
+- API-first Architecture
+- Service-oriented Architecture
+- Dependency Injection
+- Request Validation
+- Response Validation
+- Backward Compatibility
+- Contract-driven Development
 
 ---
 
@@ -220,6 +267,12 @@ Before writing code ask:
 - □ Can this be extended later?
 - □ Does this violate SRP?
 - □ Can another engineer understand this quickly?
+- □ Does this endpoint contain business logic?
+- □ Should this responsibility belong to the Application Layer instead?
+- □ Is the request model strongly typed?
+- □ Is the response contract stable?
+- □ Can this endpoint evolve without breaking existing clients?
+- □ Is this API stateless?
 
 ---
 
@@ -231,6 +284,12 @@ Before writing code ask:
 - Avoid hardcoding.
 - Configuration is not Constants.
 - One responsibility per file.
+- API routes should delegate all work.
+- Keep FastAPI endpoints thin.
+- Validate requests using Pydantic.
+- Return typed response models.
+- Centralize exception handling.
+- Use dependency injection instead of manual object creation.
 
 ---
 
@@ -256,6 +315,14 @@ Ask:
 
 > "How should this system be designed?"
 
+Don't ask:
+
+> "How do I expose this feature?"
+
+Ask:
+
+> "What is the correct architectural boundary for this feature?"
+
 ---
 
 # One-Line Reminders
@@ -270,6 +337,14 @@ Ask:
 - Understand before implementing.
 - Small modules scale better.
 - Documentation preserves engineering knowledge.
+- APIs expose capabilities—not implementations.
+- HTTP is an interface, not business logic.
+- Thin endpoints scale better.
+- Stable contracts outlive implementations.
+- Dependency Injection reduces coupling.
+- Good APIs are predictable.
+- Validation belongs at the system boundary.
+- Documentation is part of the API.
 
 ---
 
@@ -378,7 +453,9 @@ Ask:
 The project's architectural layering is now permanent:
 
 ```text
-main.py
+Client
+    ↓
+REST API Layer
     ↓
 Application
     ↓
@@ -391,7 +468,7 @@ Database Abstraction
 SQLite / PostgreSQL
 ```
 
-This layered architecture ensures that each component has a single, well‑defined responsibility, and that business logic remains independent of infrastructure concerns. The Database Abstraction Layer isolates the application from concrete database implementations, allowing runtime engine selection without modifying business modules.
+This layered architecture ensures that each component has a single, well‑defined responsibility, and that business logic remains independent of infrastructure concerns. The Database Abstraction Layer isolates the application from concrete database implementations, allowing runtime engine selection without modifying business modules. The REST API Layer provides a clean HTTP interface while delegating all business operations to the Application Layer.
 
 ---
 
@@ -611,3 +688,122 @@ Future infrastructure should continue to prioritize:
 - Runtime Engine Selection
 
 These principles established during Sprint 7 ensure that future database additions (MySQL, SQL Server, etc.) can be integrated without altering business logic, preserving the long-term maintainability of the platform.
+
+---
+
+# Sprint 8 — REST API Lessons
+
+## REST API Design
+
+- REST APIs expose services rather than business logic.
+- Resource-oriented endpoints improve long-term maintainability.
+- A thin API Layer simplifies future integrations.
+- Stable endpoints reduce client-side changes.
+- HTTP methods should align with operations.
+- Status codes should communicate intent clearly.
+- API versioning should be planned from the beginning.
+
+---
+
+## Dependency Injection
+
+- Dependency Injection improves testability.
+- Dependencies should be provided rather than constructed.
+- Lifecycle management belongs to infrastructure.
+- Business modules should not manage dependencies.
+- Application dependencies should be centralized.
+- Dependency Injection reduces global state.
+- Explicit dependencies improve code clarity.
+
+---
+
+## Request & Response Contracts
+
+- Validate input before business execution.
+- Strong typing improves reliability.
+- Request models define system boundaries.
+- Response models improve consistency.
+- Public contracts should evolve carefully.
+- Pydantic provides robust validation.
+- Contracts should be stable across releases.
+- Breaking changes require careful planning.
+
+---
+
+## OpenAPI & Documentation
+
+- Documentation should be generated whenever possible.
+- Interactive documentation improves developer experience.
+- API documentation must stay synchronized with implementation.
+- Well-documented APIs reduce onboarding time.
+- OpenAPI provides a standard specification format.
+- Swagger UI enables API exploration.
+- Documentation is part of the API contract.
+
+---
+
+## Exception Handling
+
+- Errors should be standardized.
+- Global exception handlers improve consistency.
+- HTTP status codes communicate intent.
+- Internal exceptions should not leak implementation details.
+- Error responses should include actionable information.
+- Consistent error formats simplify client handling.
+- Logging should capture error context.
+
+---
+
+## API Testing
+
+- Test endpoints independently.
+- Validate request models.
+- Validate response models.
+- Verify OpenAPI generation.
+- Verify Swagger documentation.
+- Integration tests provide confidence across architectural boundaries.
+- Endpoint tests should cover both success and failure cases.
+- Performance testing should include HTTP endpoints.
+
+---
+
+## Architecture Lessons
+
+- REST APIs are Presentation Layer components.
+- Business logic belongs only in the Application Layer.
+- Stable interfaces enable external integrations.
+- Enterprise architecture evolves by adding layers instead of modifying business modules.
+- HTTP concerns should never leak into business logic.
+- API Layers should remain stateless and thin.
+- The Application Layer owns orchestration.
+
+---
+
+## Engineering Lessons
+
+- API-first thinking simplifies future integrations.
+- External consumers should never depend on internal implementation.
+- Architecture should remain technology-independent.
+- Contracts are more important than frameworks.
+- Service-oriented architecture improves modularity.
+- FastAPI accelerates development without sacrificing quality.
+- OpenAPI provides enterprise-grade documentation automatically.
+
+---
+
+## Future Guidance
+
+Future API work should continue to prioritize:
+
+- Thin Controllers
+- Stable Contracts
+- Dependency Injection
+- Stateless Services
+- OpenAPI Compliance
+- Backward Compatibility
+- Automated API Testing
+- Enterprise Documentation
+- Service-Oriented Architecture
+- External Integration Readiness
+
+These principles established during Sprint 8 ensure that the platform's REST API remains stable, well-documented, and ready for integrations with business intelligence platforms, frontend applications, and external services. The REST API Layer transforms AnalystGPT Enterprise from an internal analytics application into a service-oriented enterprise analytics platform capable of serving external consumers through well-defined, stable, and documented HTTP endpoints.

@@ -8,6 +8,14 @@ Its purpose is to ensure every feature is designed, implemented, tested, documen
 
 ---
 
+# Last Updated
+
+**Version:** v8.0.0
+
+**Date:** 23 July 2026
+
+---
+
 # Engineering Principles
 
 Every contribution should follow:
@@ -51,6 +59,55 @@ Release Review
         ↓
 Merge
 ```
+
+---
+
+# Module Development Workflow
+
+Before creating a new module:
+
+1. Define responsibility.
+2. Define owner.
+3. Define inputs.
+4. Define outputs.
+5. Define dependencies.
+6. Define public contracts.
+7. Create tests.
+8. Implement.
+9. Update documentation.
+
+---
+
+# API Development Workflow
+
+Every REST endpoint follows:
+
+```text
+HTTP Request
+      ↓
+Request Model
+      ↓
+API Route
+      ↓
+Dependency Injection
+      ↓
+Application Layer
+      ↓
+Business Modules
+      ↓
+Response Model
+      ↓
+HTTP Response
+```
+
+**Rules:**
+
+- Routes must remain thin.
+- No business logic inside routes.
+- Validate requests using Pydantic.
+- Return typed responses.
+- Delegate work to Application Layer.
+- Centralize exception handling.
 
 ---
 
@@ -165,7 +222,7 @@ For sprint releases, use a consistent release commit message.
 Example:
 
 ```text
-release(v7.0.0): PostgreSQL Integration
+release(v8.0.0): REST API Integration
 ```
 
 This helps identify releases in the commit history.
@@ -222,6 +279,17 @@ Persistence
         ↓
 Database (SQLite / PostgreSQL)
 ```
+
+### API Tests
+
+Required for all REST endpoints:
+
+- Endpoint responses
+- Request validation
+- Response validation
+- OpenAPI generation
+- Swagger documentation
+- Error handling
 
 ### Infrastructure Validation
 

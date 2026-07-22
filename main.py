@@ -18,8 +18,10 @@ def main() -> None:
     application = Application()
 
     sample_file = (
-        Path("sample_data") / "customer_data.csv"
-    )
+    Path("performance")
+    / "datasets"
+    / "customer_data_stress_test.csv"
+)
 
     result = application.run(
         str(sample_file)

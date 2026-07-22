@@ -1,197 +1,216 @@
-# AnalystGPT Enterprise Performance Benchmark Results
+# Performance Benchmark Results
 
-**Version:** v7.0.0  
-**Sprint:** 7 – PostgreSQL Integration  
-**Benchmark Date:** 22 July 2026
-
----
-
-# Objective
-
-Validate that the introduction of the Database Abstraction Layer and
-PostgreSQL integration preserves the functional correctness, stability,
-and performance of the AnalystGPT Enterprise pipeline.
-
-The benchmark verifies that supporting multiple relational database
-engines through a shared abstraction introduces no measurable
-performance regression while maintaining stable business module
-contracts and enterprise architecture.
+> **Purpose**
+>
+> This document records performance validation results for AnalystGPT Enterprise.
+> It tracks execution benchmarks across representative datasets and validates
+> scalability, stability, and architectural performance for each release.
 
 ---
 
-# Test Environment
+# Last Updated
+
+**Version:** v8.0.0
+
+**Date:** 23 July 2026
+
+---
+
+# Benchmark Environment
 
 | Item | Value |
 |------|-------|
+| Application | AnalystGPT Enterprise |
+| Version | v8.0.0 |
 | Python | 3.11.9 |
-| Pandas | 2.x |
-| Database Engines | SQLite, PostgreSQL |
-| Database Driver | psycopg 3 |
-| Test Framework | Pytest |
-| Platform | Windows 11 |
-| IDE | Visual Studio Code |
+| Architecture | Enterprise Layered Architecture + REST API |
+| Database | SQLite |
+| REST Framework | FastAPI |
+| API Specification | OpenAPI 3.1 |
+| Report Export | Plain Text |
+| Test Type | End-to-End Pipeline |
+| Operating System | Windows |
 
 ---
 
-# Benchmark Datasets
+# Benchmark Methodology
 
-| Dataset | Input Rows | Output Rows | Pipeline Status |
-|----------|-----------:|------------:|-----------------|
-| customer_data.csv | 500 | 394 | ✅ Passed |
-| customer_data_large.csv | 100,000 | 87,049 | ✅ Passed |
-| customer_data_stress_test.csv | 1,000,000 | 869,917 | ✅ Passed |
-
----
-
-# Performance Results
-
-| Dataset | Cleaning | Quality | Analytics | Reporting | Memory Usage |
-|----------|---------:|--------:|----------:|----------:|-------------:|
-| customer_data.csv | 0.0093 s | 0.0117 s | 0.0206 s | 0.0050 s | 0.09 MB |
-| customer_data_large.csv | 0.2627 s | 0.2959 s | 0.3902 s | 0.0561 s | 24.51 MB |
-| customer_data_stress_test.csv | 1.5333 s | 1.7954 s | 2.3775 s | 0.2310 s | 194.27 MB |
-
----
-
-# Validation Scope
-
-The following components were validated during benchmarking:
-
-- Upload Module
-- Cleaning Module
-- Quality Module
-- Analytics Module
-- Reporting Module
-- Application Layer
-- Persistence Layer
-- Database Abstraction Layer
-- DatabaseManager
-- DatabaseConnection
-- ConnectionFactory
-- SQLiteConnection
-- PostgreSQLConnection
-- Repository Layer
-- SchemaManager
-- PipelineResult
-
----
-
-# Functional Validation
-
-The following pipeline stages completed successfully:
-
-- Dataset ingestion
-- Data cleaning
-- Quality assessment
-- Analytics generation
-- Business report generation
-- Report export
-- Database initialization
-- Runtime database selection
-- SQLite validation
-- PostgreSQL validation
-- Automatic schema initialization
-- Pipeline execution persistence
-- Dataset persistence
-- Quality metrics persistence
-- Analytics persistence
-- Report metadata persistence
-- Pipeline completion
-- Graceful database shutdown
-
----
-
-# Database Validation
-
-The database infrastructure successfully validated:
-
-## SQLite
-
-- Database initialization
-- Automatic schema creation
-- Repository operations
-- Pipeline persistence
-- Transaction management
-- Graceful shutdown
-
-## PostgreSQL
-
-- Connection establishment
-- Authentication
-- Automatic schema creation
-- Repository operations
-- Transaction management
-- Pipeline persistence
-- Graceful shutdown
-
-## Database Abstraction
-
-- Runtime database selection
-- DatabaseConnection abstraction
-- ConnectionFactory
-- Cross-database repository compatibility
-- SQL placeholder conversion
-- Shared persistence lifecycle
-
----
-
-# Automated Testing
+Each benchmark executes the complete analytics pipeline:
 
 ```text
-82 / 82 Tests Passed
-0 Failed
-0 Errors
-0 Warnings
+Upload
+    ↓
+Cleaning
+    ↓
+Quality
+    ↓
+Analytics
+    ↓
+Reporting
+    ↓
+Persistence
 ```
+
+The reported execution time represents complete pipeline execution, including:
+
+- Dataset loading
+- Data cleaning
+- Data quality assessment
+- Statistical analytics
+- Report generation
+- Report export
+- SQLite persistence
+- Pipeline completion
+
+---
+
+# Benchmark Results
+
+| Dataset | Rows | Execution Mode | Execution Time | Status |
+|---------|------:|----------------|---------------:|--------|
+| Sample Dataset | 500 | CLI | < 1 second | ✅ Passed |
+| Large Dataset | ~100,000 | CLI | Successfully Validated | ✅ Passed |
+| Stress Dataset | 1,000,000 | CLI | ~8.64 seconds | ✅ Passed |
+| Stress Dataset | 1,000,000 | REST API | **7.72 seconds** | ✅ Passed |
+
+---
+
+# Detailed Stage Timings (Stress Dataset – CLI)
+
+| Stage | Time |
+|------|------:|
+| Cleaning | 1.52 s |
+| Quality Assessment | 1.76 s |
+| Analytics | 2.54 s |
+| Reporting | 0.24 s |
+| Total Pipeline | ~8.64 s |
+
+---
+
+# Stress Test Summary
+
+| Metric | Value |
+|------|------:|
+| Input Rows | 1,000,000 |
+| Output Rows | 869,917 |
+| Missing Rows Removed | 97,513 |
+| Duplicate Rows Removed | 32,570 |
+| Final Columns | 5 |
+| Numeric Columns | 2 |
+| Categorical Columns | 3 |
+| Memory Usage | 194.27 MB |
+
+---
+
+# REST API Performance
+
+The REST API was validated using FastAPI and Swagger UI.
+
+## Endpoint
+
+```
+POST /api/pipeline
+```
+
+## Dataset
+
+```
+performance/datasets/customer_data_stress_test.csv
+```
+
+## Result
+
+```json
+{
+    "success": true,
+    "execution_time": 7.7205129000030865,
+    "error": null
+}
+```
+
+Validation:
+
+- REST endpoint operational
+- OpenAPI specification generated
+- Swagger UI operational
+- Request validation successful
+- Response serialization successful
+- End-to-end pipeline completed
+- SQLite persistence completed
+
+---
+
+# Scalability Validation
+
+| Capability | Status |
+|------------|--------|
+| Sample Dataset | ✅ |
+| Large Dataset | ✅ |
+| One Million Rows | ✅ |
+| REST API Execution | ✅ |
+| SQLite Persistence | ✅ |
+| Report Generation | ✅ |
+| Automated Pipeline | ✅ |
 
 ---
 
 # Performance Observations
 
-- Successfully processed datasets ranging from **500** to **1,000,000** rows.
-- SQLite and PostgreSQL both executed the complete analytics pipeline successfully.
-- Database abstraction introduced no measurable performance regression.
-- Runtime database selection operated correctly through the ConnectionFactory.
-- Repository Pattern introduced negligible runtime overhead.
-- Memory usage remained proportional to dataset size.
-- Report generation completed successfully for every benchmark.
-- Database initialization completed successfully before pipeline execution.
-- All persistence operations completed without runtime errors.
-- Business modules remained completely independent of the underlying database engine.
+The platform successfully processed datasets ranging from hundreds of rows to one million rows without architectural changes.
+
+Observed characteristics:
+
+- Stable memory utilization
+- Consistent execution times
+- Successful report generation
+- Successful database persistence
+- Stable REST API execution
+- No runtime failures
+- No pipeline interruptions
+
+The layered architecture introduced in previous sprints did not introduce measurable functional bottlenecks during stress validation.
 
 ---
 
-# Architecture Validation
+# Engineering Conclusions
 
-Sprint 7 successfully validated:
+Sprint 8 performance validation confirms:
 
-- Enterprise Layered Architecture
-- Database Abstraction Layer
-- Stable Module Contracts
-- Dependency Inversion
-- Repository Pattern
-- Runtime infrastructure selection
-- Configuration-driven database engine selection
-- Infrastructure replacement without business module modification
+- Enterprise architecture scales to one million records.
+- REST API introduces minimal overhead.
+- Database persistence remains stable.
+- Layered architecture remains performant.
+- Module boundaries do not negatively impact execution.
+- Complete pipeline executes successfully through both CLI and REST API.
 
 ---
 
-# Conclusion
+# Benchmark Status
 
-Sprint 7 successfully introduced a complete database abstraction layer
-and PostgreSQL support while preserving the stability, scalability,
-maintainability, and performance established in previous releases.
-
-The benchmark confirms that AnalystGPT Enterprise now supports multiple
-relational database engines through a shared abstraction without
-requiring changes to business logic or pipeline orchestration.
-
-The application has been successfully validated using SQLite,
-PostgreSQL, large datasets, stress datasets, and automated testing.
-
-AnalystGPT Enterprise is validated for continued development toward
-Sprint 8 — REST API.
+| Validation | Status |
+|------------|--------|
+| Sample Dataset | ✅ Passed |
+| Large Dataset | ✅ Passed |
+| Stress Dataset | ✅ Passed |
+| REST API Benchmark | ✅ Passed |
+| SQLite Persistence | ✅ Passed |
+| Report Export | ✅ Passed |
+| End-to-End Pipeline | ✅ Passed |
 
 ---
 
-**Benchmark Version:** **v7.0.0**
+# Future Benchmarks
+
+Sprint 9 will introduce additional benchmark scenarios including:
+
+- Power BI dashboard refresh performance
+- REST API concurrent request handling
+- Multi-client API consumption
+- Dashboard rendering latency
+- End-to-end BI integration performance
+
+---
+
+**Benchmark Version:** v8.0.0
+
+**Status:** ✅ Performance Validation Complete

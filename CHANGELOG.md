@@ -483,3 +483,167 @@ This release establishes the foundation for:
 ### Next Release
 
 **v8.0.0 — REST API**
+
+---
+
+---
+
+## [v8.0.0] — Sprint 8 (REST API Integration)
+
+**Release Date:** 23 July 2026
+
+---
+
+### Overview
+
+Sprint 8 introduces the REST API Layer, transforming AnalystGPT Enterprise
+from a command-line analytics application into an enterprise service capable
+of exposing its analytics pipeline through standardized HTTP endpoints.
+
+This release focuses on service-oriented architecture, API contracts,
+request validation, response serialization, dependency injection, and
+enterprise-grade documentation while preserving the existing layered
+architecture and business module contracts.
+
+---
+
+### Added
+
+#### REST API Layer
+
+- FastAPI server
+- API routing infrastructure
+- Root endpoint
+- Health endpoint
+- Version endpoint
+- Pipeline execution endpoint
+
+#### Request & Response Contracts
+
+- PipelineRequest
+- PipelineResponse
+- RootResponse
+- HealthResponse
+- VersionResponse
+- APIResponse base model
+
+#### API Infrastructure
+
+- Dependency Injection
+- Application dependency provider
+- Global exception handlers
+- Standardized API error responses
+- OpenAPI 3.1 specification
+- Swagger UI documentation
+
+#### API Validation
+
+- Request validation
+- Response validation
+- Automatic OpenAPI schema generation
+- Interactive API documentation
+
+#### Testing
+
+- REST API integration tests
+- Root endpoint tests
+- Health endpoint tests
+- Version endpoint tests
+- Pipeline endpoint tests
+
+---
+
+### Changed
+
+#### Architecture
+
+- Introduced dedicated API Layer.
+- Application layer exposed through REST endpoints.
+- API layer remains independent of business logic.
+- Dependency Injection adopted for application orchestration.
+- Request/Response contracts standardized using Pydantic models.
+- Global exception handling centralized.
+- API routing organized into modular packages.
+
+#### Documentation
+
+Updated:
+
+- README.md
+- CHANGELOG.md
+- PROJECT_STATE.md
+- PROJECT_JOURNAL.md
+- ROADMAP.md
+- ARCHITECTURE.md
+- Sprint documentation
+
+---
+
+### Improved
+
+- Enterprise architecture
+- API maintainability
+- Request validation
+- Response serialization
+- Dependency Injection
+- Documentation quality
+- API discoverability
+- Developer experience
+- Service extensibility
+
+---
+
+### Validation
+
+Successfully validated using:
+
+- ✅ 90 / 90 Automated Tests
+- ✅ REST API Integration Tests
+- ✅ Swagger UI Validation
+- ✅ OpenAPI 3.1 Generation
+- ✅ Live Endpoint Validation
+- ✅ Pipeline Execution through REST API
+- ✅ Sample Dataset
+- ✅ Large Dataset (100,000 rows)
+- ✅ Stress Dataset (1,000,000 rows)
+
+---
+
+### Performance
+
+Successfully validated:
+
+- API startup
+- Endpoint routing
+- Request validation
+- Response serialization
+- Dependency Injection
+- Pipeline execution
+- Report generation
+- End-to-end REST pipeline execution
+
+No architectural regressions observed.
+
+---
+
+### Result
+
+Sprint 8 transforms AnalystGPT Enterprise from a persistence-enabled
+analytics platform into a service-oriented enterprise analytics platform
+capable of exposing its complete processing pipeline through a documented,
+tested, and production-ready REST API.
+
+This release establishes the foundation for:
+
+- Power BI Integration
+- React Frontend
+- External client applications
+- Authentication & Authorization
+- Cloud deployment
+- Enterprise integrations
+
+---
+
+### Next Release
+
+**v9.0.0 — Power BI Integration**

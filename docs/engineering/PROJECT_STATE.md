@@ -24,26 +24,28 @@
 # Quick Orientation
 
 AnalystGPT Enterprise is an enterprise-grade analytics pipeline (Upload →
-Cleaning → Quality → Analytics → Reporting), built as a self-directed
+Cleaning → Quality → Analytics → Reporting → REST API), built as a self-directed
 software engineering exercise to develop production-level architecture,
 testing, and delivery skills.
 
-**Standing as of v7.0.0:** all five business modules, the Application
-orchestration layer, and the enterprise-grade Database Abstraction Layer
-are complete and stable. The project now supports multiple database engines
-through a clean abstraction while preserving strict separation between
-business logic and data access.
+**Standing as of v8.0.0:** all five business modules, the Application
+orchestration layer, the enterprise-grade Database Abstraction Layer,
+and the REST API Layer are complete and stable. The project now exposes
+its complete analytics pipeline through a documented, tested, and
+production-ready REST API built with FastAPI.
 
-Sprint 7 introduced comprehensive Database Abstraction Layer through
-DatabaseConnection and ConnectionFactory, enabling interchangeable
-SQLite and PostgreSQL support without changing business modules or the
-repository layer. The architecture is now fully database-agnostic.
+Sprint 8 introduced the REST API Layer, providing enterprise service
+capabilities through standardized HTTP endpoints, OpenAPI 3.1 documentation,
+Swagger UI, and dependency injection. The API layer remains thin and
+contains no business logic, delegating all operations to the Application
+Layer through a clean dependency injection pattern.
 
 The application has been validated through automated testing
-(82/82 tests passing), integration testing, large dataset validation,
-and stress testing up to approximately one million rows.
+(90/90 tests passing), integration testing, REST API testing,
+Swagger validation, large dataset validation, and stress testing
+up to approximately one million rows.
 
-No open blockers. Repository is ready to begin Sprint 8 — REST API.
+No open blockers. Repository is ready to begin Sprint 9 — Power BI Integration.
 
 ---
 
@@ -52,11 +54,11 @@ No open blockers. Repository is ready to begin Sprint 8 — REST API.
 | Area | Status |
 |------|--------|
 | Project | AnalystGPT Enterprise |
-| Version | **v7.0.0** (previous: v6.0.0) |
+| Version | **v8.0.0** (previous: v7.0.0) |
 | Repository Status | 🟢 Active Development |
-| Current Sprint | **Sprint 7 – PostgreSQL Integration Complete** |
+| Current Sprint | **Sprint 8 – REST API Integration Complete** |
 | Sprint Progress | **100%** |
-| Architecture | ✅ Enterprise Layered Architecture |
+| Architecture | ✅ Enterprise Layered Architecture + REST API Layer |
 | Documentation | 🟢 Current |
 | Upload Module | ✅ Complete |
 | Cleaning Module | ✅ Complete |
@@ -68,12 +70,16 @@ No open blockers. Repository is ready to begin Sprint 8 — REST API.
 | SQLite Support | ✅ Complete |
 | PostgreSQL Integration | ✅ Implemented |
 | Repository Layer | ✅ Complete |
-| Automated Testing | ✅ 82 / 82 Passed |
+| API Layer | ✅ Complete |
+| REST API | ✅ Complete |
+| Swagger Documentation | ✅ Complete |
+| OpenAPI Generation | ✅ Complete |
+| Automated Testing | ✅ 90 / 90 Passed |
 | Integration Testing | ✅ Passed |
 | Large Dataset Validation | ✅ Passed |
 | Stress Testing | ✅ Passed |
 | Technical Debt | 🟢 Very Low |
-| Next Sprint | **Sprint 8 – REST API** |
+| Next Sprint | **Sprint 9 – Power BI Integration** |
 
 ---
 
@@ -88,58 +94,58 @@ review, and deploy production-quality analytics software.
 # Current Architecture
 
 ```
-                     main.py
-                        │
-                        ▼
-                 Application.run()
-                        │
-        ┌───────────────┼────────────────┐
-        │               │                │
-        ▼               ▼                ▼
- UploadManager → CleaningManager → QualityManager
-                                      │
-                                      ▼
-                            AnalyticsManager
-                                      │
-                                      ▼
-                            ReportingManager
-                                      │
-                                      ▼
-                          PersistenceManager
-                                      │
-                                      ▼
-                            DatabaseManager
-                                      │
-                                      ▼
-                            ConnectionFactory
-                                      │
-                                      ▼
-                            DatabaseConnection
-                                      │
-                        ┌───────────────┴───────────────┐
-                        ▼                               ▼
-                 SQLiteConnection            PostgreSQLConnection
-                        │                               │
-                        ▼                               ▼
-                     sqlite3                       psycopg
-                        │                               │
-                        └───────────────┬───────────────┘
-                                        │
-                                        ▼
-                              Repository Layer
-                                        │
-                                        ▼
-                              PipelineResult
+Client (Browser / API Client)
+                │
+                ▼
+          FastAPI Server
+                │
+                ▼
+           API Routes
+                │
+                ▼
+        Dependency Injection
+                │
+                ▼
+         Application.run()
+                │
+        ┌───────┼───────┐
+        │       │       │
+        ▼       ▼       ▼
+  Upload → Cleaning → Quality
+                       │
+                       ▼
+              AnalyticsManager
+                       │
+                       ▼
+              ReportingManager
+                       │
+                       ▼
+             PersistenceManager
+                       │
+                       ▼
+              DatabaseManager
+                       │
+                       ▼
+              ConnectionFactory
+                       │
+                       ▼
+              DatabaseConnection
+                  ▲         ▲
+                  │         │
+        SQLiteConnection PostgreSQLConnection
+                  │         │
+               sqlite3   psycopg
+                  │         │
+                  └────┬────┘
+                       │
+                       ▼
+              Repository Layer
+                       │
+                       ▼
+              PipelineResult
 ```
 
-Sprint 7 introduced a fully abstracted Database Abstraction Layer.
-The DatabaseConnection abstraction allows interchangeable database engines
-through a consistent interface. Business modules remain completely
-persistence-agnostic and are unaware of the underlying database engine.
-Repository classes operate against the abstraction, never concrete
-implementations. ConnectionFactory handles engine selection based on
-configuration. SchemaManager supports multiple SQL dialects for
-cross-engine compatibility.
+Sprint 8 introduced the REST API Layer on top of the existing enterprise architecture. The API layer is thin and contains no business logic—it delegates all operations to the Application Layer through dependency injection. FastAPI provides automatic OpenAPI 3.1 documentation, Swagger UI, request validation, and response serialization. The API routes communicate only with the Application Layer, preserving the separation of concerns established in previous sprints.
 
 Detailed architecture is documented in ARCHITECTURE.md.
 
@@ -156,6 +162,7 @@ Detailed architecture is documented in ARCHITECTURE.md.
 | Reporting | AnalyticsReport | ReportingReport |
 | Persistence | Report Objects | PersistenceResult |
 | Application | Dataset Path | PipelineResult |
+| API Layer | HTTP Request | HTTP Response |
 
 Business modules communicate only through these contracts.
 
@@ -189,6 +196,15 @@ The following architectural rules are considered stable:
 - SchemaManager supports multiple SQL dialects.
 - Repository classes never know concrete database engines.
 - Business logic remains database-independent.
+- API layer contains no business logic.
+- API routes communicate only with Application Layer.
+- Dependency Injection owns Application lifecycle.
+- Request validation handled by Pydantic.
+- Response serialization handled by Pydantic.
+- Global exception handling centralized.
+- OpenAPI generated automatically.
+- Swagger documentation must remain operational.
+- REST API contracts remain backward compatible.
 
 ---
 
@@ -204,6 +220,13 @@ cleaning/
 quality/
 analytics/
 reporting/
+
+api/
+    server.py
+    routes/
+    models/
+    dependencies/
+    exceptions/
 
 database/
     database_connection.py
@@ -238,8 +261,9 @@ core/
 - Analytics Module
 - Reporting Module
 - Application Layer
+- API Layer
 
-**Status:** ✅ 82 / 82 Tests Passed
+**Status:** ✅ 90 / 90 Tests Passed
 (Per-component breakdown: see ARCHITECTURE.md → Testing Strategy)
 
 ---
@@ -248,11 +272,12 @@ core/
 
 Validated complete pipeline execution:
 
-Upload
-→ Cleaning
-→ Quality
-→ Analytics
-→ Reporting
+REST API
+→ Swagger Validation
+→ OpenAPI Validation
+→ Pipeline Endpoint
+→ Dependency Injection
+→ End-to-end Pipeline
 → Persistence Layer
 → Database Abstraction Layer
 → PipelineResult
@@ -280,6 +305,10 @@ Validation included:
 - PostgreSQL architecture validation
 - Report generation
 - Pipeline stability
+- REST API validation
+- Swagger documentation validation
+- OpenAPI generation
+- Pipeline execution through REST API
 
 Performance benchmarks are maintained in:
 
@@ -302,8 +331,9 @@ Quick-scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 | 5.5 | Application layer, `PipelineResult`, thin `main.py`, typed report contracts across all modules |
 | 6 | SQLite persistence, repository layer, database schema, PersistenceManager, Application integration, stress testing, 82 automated tests |
 | 7 | Database Abstraction Layer, DatabaseConnection, ConnectionFactory, PostgreSQL implementation, SchemaManager dialect support, repository compatibility, persistence refactoring, 82 automated tests, SQLite validation |
+| 8 | REST API Layer, FastAPI, Dependency Injection, Request/Response Models, Swagger, OpenAPI, REST API Testing, Live Endpoint Validation, 90 automated tests |
 
-**Next:** Sprint 8 — REST API
+**Next:** Sprint 9 — Power BI Integration
 
 ---
 
@@ -312,6 +342,10 @@ Quick-scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 - Python 3.11
 - Pandas 3.x
 - Pytest
+- FastAPI
+- Uvicorn
+- Pydantic
+- HTTPX (testing)
 - SQLite
 - PostgreSQL
 - psycopg 3
@@ -352,20 +386,18 @@ The following documents define repository standards and engineering policies:
 
 # Current Focus
 
-Sprint 7 has been completed and released.
+Sprint 8 has been completed and released.
 
-## Sprint 8 — REST API
+## Sprint 9 — Power BI Integration
 
 Objectives:
 
-- REST API design
-- FastAPI integration
-- API architecture
-- OpenAPI documentation
-- Endpoint layer
-- API testing
-- HTTP endpoints for pipeline execution
-- Asynchronous support preparation
+- Power BI Integration
+- Power BI connector
+- REST API consumption
+- Dashboard support
+- Report publishing
+- External analytics integration
 
 ---
 
@@ -380,8 +412,10 @@ Current repository status:
 - ✅ Stable Module Contracts
 - ✅ Stable Test Suite
 - ✅ Stable Performance
-- ✅ Sprint 7 Completed
-- ✅ Ready for Sprint 8
+- ✅ Stable REST API
+- ✅ Stable Documentation
+- ✅ Sprint 8 Completed
+- ✅ Ready for Sprint 9
 
 ---
 
@@ -403,10 +437,15 @@ The project succeeds when I can independently:
 - Review and optimize software architecture.
 - Defend architectural decisions through ADRs.
 - Communicate engineering trade-offs clearly.
+- Design enterprise REST APIs.
+- Build service-oriented architectures.
+- Design API contracts.
+- Build production-ready backend services.
+- Integrate analytics platforms through REST APIs.
 - Think, communicate, and deliver software like an Enterprise Software Engineer.
 
 ---
 
-**Current Project State Version:** **v7.0.0**
+**Current Project State Version:** **v8.0.0**
 
-**Previous Version:** **v6.0.0**
+**Previous Version:** **v7.0.0**

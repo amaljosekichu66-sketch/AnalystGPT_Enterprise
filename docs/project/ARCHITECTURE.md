@@ -6,7 +6,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v7.0.0**.
+> This document reflects the implementation as of **v8.0.0**.
 
 ---
 
@@ -28,6 +28,8 @@ Each business capability is implemented as an independent module with a single, 
 
 As of Sprint 7, a dedicated Application layer coordinates all business modules while a Database Abstraction Layer manages database engine selection and connection lifecycle. Business modules remain persistence-agnostic and never orchestrate one another or execute SQL directly.
 
+Sprint 8 introduced a dedicated REST API Layer that exposes the Application Layer through HTTP endpoints while preserving existing business module independence. The API layer is built on FastAPI, uses dependency injection for application lifecycle management, and provides OpenAPI 3.1 documentation and Swagger UI. The API layer remains thin, containing no business logic, and delegates all operations to the Application Layer.
+
 ---
 
 # Architectural Goals
@@ -43,61 +45,76 @@ The architecture is designed to satisfy the following long-term engineering goal
 - Enterprise maintainability over long-term development
 - Database independence across relational engines
 - Interface-driven infrastructure for runtime interchangeability
+- Service-oriented architecture
+- Stable REST API contracts
+- External analytics integration
+- API-first architecture
+- HTTP interface abstraction
 
 ---
 
 # High-Level Architecture
 
 ```text
-                     main.py
-                        │
-                        ▼
-                 Application.run()
-                        │
-        ┌───────────────┼────────────────┐
-        │               │                │
-        ▼               ▼                ▼
- UploadManager → CleaningManager → QualityManager
-                                      │
-                                      ▼
-                            AnalyticsManager
-                                      │
-                                      ▼
-                            ReportingManager
-                                      │
-                                      ▼
-                          PersistenceManager
-                                      │
-                                      ▼
-                            DatabaseManager
-                                      │
-                                      ▼
-                            ConnectionFactory
-                                      │
-                                      ▼
-                            DatabaseConnection
-                                      │
-                        ┌───────────────┴───────────────┐
-                        ▼                               ▼
-                 SQLiteConnection            PostgreSQLConnection
-                        │                               │
-                        ▼                               ▼
-                     sqlite3                       psycopg
-                        │                               │
-                        └───────────────┬───────────────┘
-                                        │
-                                        ▼
-                              Repository Layer
-                                        │
-                                        ▼
-                              PipelineResult
+Client (Browser / API Client)
+                │
+                ▼
+          FastAPI Server
+                │
+                ▼
+           API Routes
+                │
+                ▼
+        Dependency Injection
+                │
+                ▼
+         Application.run()
+                │
+        ┌───────┼───────┐
+        │       │       │
+        ▼       ▼       ▼
+  Upload → Cleaning → Quality
+                       │
+                       ▼
+              AnalyticsManager
+                       │
+                       ▼
+              ReportingManager
+                       │
+                       ▼
+             PersistenceManager
+                       │
+                       ▼
+              DatabaseManager
+                       │
+                       ▼
+              ConnectionFactory
+                       │
+                       ▼
+              DatabaseConnection
+                  ▲         ▲
+                  │         │
+        SQLiteConnection PostgreSQLConnection
+                  │         │
+               sqlite3   psycopg
+                  │         │
+                  └────┬────┘
+                       │
+                       ▼
+              Repository Layer
+                       │
+                       ▼
+              PipelineResult
+                       │
+                       ▼
+              PipelineResponse
 ```
 
 ---
 
 # Architectural Layers
 
-The repository is intentionally organized into five architectural layers.
+The repository is intentionally organized into six architectural layers.
 
 ### Presentation Layer
 
@@ -106,6 +123,18 @@ Responsible for application startup.
 Current component:
 
 - main.py
+
+### REST API Layer
+
+Responsible for exposing the application through HTTP endpoints.
+
+Current components:
+
+- FastAPI Server
+- API Routes
+- Dependency Injection
+- Request/Response Models
+- Exception Handlers
 
 ### Application Layer
 
@@ -168,12 +197,53 @@ entire application.
 
 ---
 
+# REST API Layer
+
+### Responsibilities
+
+- Expose REST endpoints
+- Validate requests
+- Serialize responses
+- Delegate to Application Layer
+- Generate OpenAPI
+- Serve Swagger UI
+
+### Components
+
+- FastAPI Server
+- API Routes
+- Dependency Injection
+- Request Models
+- Response Models
+- Exception Handlers
+
+### Architectural Constraints
+
+The REST API Layer:
+
+- may communicate only with the Application Layer.
+- must never implement business logic.
+- must never communicate directly with business modules.
+- must remain stateless.
+
+---
+
 # Layered Architecture
 
 ```text
 Presentation Layer
 
 main.py
+
+↓
+
+REST API Layer
+
+FastAPI Server
+API Routes
+Dependency Injection
+Request/Response Models
+Exception Handlers
 
 ↓
 
@@ -216,10 +286,13 @@ Constants
 
 External Libraries
 
+FastAPI
+Pydantic
+Uvicorn
+Pytest
 Pandas
 SQLite3
 psycopg 3
-Pytest
 OpenPyXL
 JSON
 ```
@@ -237,6 +310,28 @@ Responsibilities
 - Invoke `Application.run()`
 
 Must never contain business logic or orchestrate business modules directly.
+
+---
+
+## REST API Layer
+
+### Owner
+
+FastAPI Server
+
+### Responsibilities
+
+- HTTP Interface
+- Request Validation
+- Response Serialization
+- Endpoint Routing
+- Dependency Injection
+- OpenAPI
+- Swagger
+
+### Status
+
+✅ Stable
 
 ---
 
@@ -614,6 +709,14 @@ Database infrastructure now includes:
 - AnalyticsRepository
 - ReportRepository
 
+REST infrastructure now includes:
+
+- API Server
+- Dependency Provider
+- Request Models
+- Response Models
+- Exception Handlers
+
 ### Responsibilities
 
 #### config.py
@@ -629,7 +732,11 @@ Centralized application configuration including:
 
 #### constants.py
 
-Application-wide constants.
+Application-wide constants including:
+
+- Application identity
+- API configuration
+- Endpoint paths
 
 #### logger.py
 
@@ -646,50 +753,82 @@ Custom exception hierarchy.
 ## Allowed
 
 ```text
+Client
+   │
+   ▼
+REST API
+   │
+   ▼
 Application
-     │
-     ▼
+   │
+   ▼
 Business Modules
-     │
-     ▼
+   │
+   ▼
 Persistence
-     │
-     ▼
+   │
+   ▼
 Repository Layer
-     │
-     ▼
+   │
+   ▼
 DatabaseConnection
-     │
-     ▼
+   │
+   ▼
 SQLiteConnection / PostgreSQLConnection
-     │
-     ▼
+   │
+   ▼
 Database Engine
-     │
-     ▼
+   │
+   ▼
 core
 ```
 
 ## Not Allowed
 
 ```text
-core
- │
- ▼
+REST API
+   │
+   ▼
 Business Modules
- │
- ▼
+```
+
+```text
+REST API
+   │
+   ▼
+Persistence
+```
+
+```text
+REST API
+   │
+   ▼
+Repositories
+```
+
+```text
+core
+   │
+   ▼
+Business Modules
+```
+
+```text
+core
+   │
+   ▼
 Application
 ```
 
-Business modules remain completely unaware of persistence.
+Business modules remain completely unaware of persistence and HTTP concerns.
 
 Only the Application layer communicates with the Persistence layer.
 
 Repositories are the only components permitted to execute SQL, and they operate through the DatabaseConnection abstraction.
 
-This separation allows future database technologies (such as MySQL or SQL Server)
-to be introduced without requiring changes to business logic.
+The REST API Layer communicates only with the Application Layer through dependency injection.
+
+This separation allows future database technologies and API changes to be introduced without requiring changes to business logic.
 
 ---
 
@@ -704,6 +843,7 @@ to be introduced without requiring changes to business logic.
 | Reporting | ReportingReport |
 | Persistence | PersistenceResult |
 | Application | PipelineResult |
+| REST API | PipelineResponse |
 
 Stable contracts reduce coupling and simplify future extensions.
 
@@ -727,33 +867,43 @@ Breaking a contract requires:
 # Data Flow
 
 ```text
-Dataset Path
-  ↓
+HTTP Request
+   │
+   ▼
+PipelineRequest
+   │
+   ▼
+REST API
+   │
+   ▼
+Application.run()
+   │
+   ▼
 Upload
-  ↓
-Raw DataFrame
-  ↓
+   │
+   ▼
 Cleaning
-  ↓
-Clean DataFrame
-  ↓
+   │
+   ▼
 Quality
-  ↓
-QualityReport
-  ↓
+   │
+   ▼
 Analytics
-  ↓
-AnalyticsReport
-  ↓
+   │
+   ▼
 Reporting
-  ↓
-ReportingReport
-  ↓
+   │
+   ▼
 Persistence
-  ↓
-PersistenceResult
-  ↓
+   │
+   ▼
 PipelineResult
+   │
+   ▼
+PipelineResponse
+   │
+   ▼
+HTTP Response
 ```
 
 ---
@@ -789,6 +939,7 @@ Examples:
 - ReportingManager owns Reporting Module orchestration.
 - PersistenceManager owns Persistence Module orchestration.
 - Application owns pipeline orchestration.
+- FastAPI Server owns REST API Layer.
 
 Ownership is never shared across modules.
 
@@ -812,6 +963,12 @@ Every manager, and the Application layer itself, performs:
 - Error logging
 - Pipeline summary logging
 
+REST API logging includes:
+
+- Request logging
+- Response logging
+- Endpoint execution logging
+
 ---
 
 # Exception Strategy
@@ -823,6 +980,12 @@ src/core/exceptions.py
 ```
 
 Business modules and the Application layer raise domain-specific exceptions instead of generic exceptions whenever practical. The Application layer is responsible for top-level failure handling across the pipeline.
+
+Global REST exception handlers provide:
+
+- Consistent HTTP error responses
+- Standardized error format
+- Proper HTTP status codes
 
 ---
 
@@ -888,6 +1051,15 @@ Current coverage includes:
 - AnalyticsRepository
 - ReportRepository
 
+### API Layer
+
+- Root Endpoint
+- Health Endpoint
+- Version Endpoint
+- Pipeline Endpoint
+- Swagger Validation
+- OpenAPI Validation
+
 ### Application Layer
 
 Validated through:
@@ -895,17 +1067,17 @@ Validated through:
 - End-to-end integration testing
 - Complete pipeline execution
 - PipelineResult validation
-
-Dedicated Application unit tests are planned as the Application layer continues to evolve.
+- REST API execution validation
 
 ### Integration
 
 - Complete end-to-end pipeline execution
+- REST API integration testing
 
 Current results:
 
 ```text
-82 Tests Passed
+90 Tests Passed
 0 Failed
 0 Errors
 0 Warnings
@@ -934,7 +1106,11 @@ The platform has been validated using datasets of increasing scale.
 - Successful report export
 - Complete end-to-end validation
 - No runtime failures
-- 82 / 82 automated tests remained passing after the Sprint 7 persistence abstraction.
+- 90 / 90 automated tests remained passing after the Sprint 8 API integration.
+- REST API execution validated
+- Swagger validation passed
+- OpenAPI generation validated
+- HTTP request/response validation passed
 
 The platform successfully completed:
 
@@ -944,6 +1120,8 @@ The platform successfully completed:
 - SQLite persistence validation
 - PostgreSQL architecture validation
 - Report generation validation
+- REST API validation
+- End-to-end HTTP pipeline execution
 
 ---
 
@@ -968,6 +1146,25 @@ reports/
 sample_data/
 
 src/
+├── api/
+│   ├── server.py
+│   ├── routes/
+│   │   ├── root.py
+│   │   ├── health.py
+│   │   ├── version.py
+│   │   ├── pipeline.py
+│   │   └── __init__.py
+│   ├── models/
+│   │   ├── request_models.py
+│   │   ├── response_models.py
+│   │   └── __init__.py
+│   ├── dependencies/
+│   │   ├── app_dependency.py
+│   │   └── __init__.py
+│   ├── exceptions/
+│   │   ├── exception_handlers.py
+│   │   └── __init__.py
+│   └── __init__.py
 ├── application/
 │   ├── app.py
 │   ├── pipeline_result.py
@@ -1008,6 +1205,12 @@ tests/
 ├── quality/
 ├── reporting/
 ├── persistence/
+├── api/
+│   ├── test_root.py
+│   ├── test_health.py
+│   ├── test_version.py
+│   ├── test_pipeline.py
+│   └── __init__.py
 ├── integration/
 └── fixtures/
 
@@ -1040,6 +1243,10 @@ The architecture follows:
 - Enterprise Orchestration
 - Typed Domain Models
 - Stable Module Contracts
+- REST API Design
+- API-first Architecture
+- Service-oriented Architecture
+- Request/Response Contracts
 
 ---
 
@@ -1048,6 +1255,7 @@ The architecture follows:
 | Layer | Status |
 |--------|--------|
 | Presentation | ✅ Stable |
+| REST API Layer | ✅ Stable |
 | Application | ✅ Stable |
 | Upload | ✅ Stable |
 | Cleaning | ✅ Stable |
@@ -1057,6 +1265,8 @@ The architecture follows:
 | Persistence | ✅ Stable |
 | Database Abstraction Layer | ✅ Stable |
 | Core Infrastructure | ✅ Stable |
+| OpenAPI | ✅ Stable |
+| Swagger | ✅ Stable |
 
 ---
 
@@ -1100,29 +1310,42 @@ Major improvements:
 
 ---
 
+# Sprint 8 — REST API Integration
+
+Sprint 8 introduced a dedicated REST API Layer that exposes the complete analytics pipeline through HTTP endpoints.
+
+Major improvements:
+
+- Introduced FastAPI server and REST API Layer.
+- Added API routing infrastructure with root, health, version, and pipeline endpoints.
+- Implemented dependency injection for Application lifecycle management.
+- Created standardized request and response contracts using Pydantic.
+- Added global exception handlers for consistent error responses.
+- Generated OpenAPI 3.1 specification automatically.
+- Served Swagger UI for interactive API documentation.
+- Preserved all stable module contracts and business logic.
+- Extended automated testing to 90 passing tests.
+- Validated REST API execution, Swagger UI, and OpenAPI generation.
+- Successfully validated large and stress datasets through HTTP endpoints.
+
+---
+
 # Future Evolution
 
-The current architecture provides a stable foundation for continued, sequenced evolution. The Application layer remains the single orchestration point as the platform grows.
+The current architecture provides a stable foundation for continued, sequenced evolution. The Application layer remains the single orchestration point as the platform grows, while the REST API Layer provides the interface for external integrations.
 
-## Sprint 8 – REST API
-
-- FastAPI integration
-- REST endpoints
-- OpenAPI documentation
-- Authentication preparation
-
-## Sprint 9 – Power BI Integration
+## Sprint 9 — Power BI Integration
 
 - Dashboard publishing
 - KPI visualization
 - Interactive reporting
 - Enterprise reporting connectors
 
-## Sprint 10 – Interactive Streamlit application
+## Sprint 10 — Interactive Streamlit application
 
-## Sprint 11 – AI-generated business insights
+## Sprint 11 — AI-generated business insights
 
-## Sprint 12 – Production deployment
+## Sprint 12 — Production deployment
 
 - Docker
 - CI/CD
@@ -1133,6 +1356,6 @@ Every architectural change affecting module boundaries or dependency direction m
 
 ---
 
-**Current Architecture Version:** **v7.0.0**
+**Current Architecture Version:** **v8.0.0**
 
-**Previous Version:** **v6.0.0**
+**Previous Version:** **v7.0.0**
