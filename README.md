@@ -1,12 +1,13 @@
 # AnalystGPT Enterprise
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
-![Tests](https://img.shields.io/badge/Tests-90%20Passed-brightgreen)
-![Architecture](https://img.shields.io/badge/Architecture-Layered%20%2B%20REST%20API-success)
+![Tests](https://img.shields.io/badge/Tests-98%20Passed-brightgreen)
+![Architecture](https://img.shields.io/badge/Architecture-Layered%20%2B%20REST%20API%20%2B%20Power%20BI-success)
 ![Database](https://img.shields.io/badge/Database-SQLite%20%2B%20PostgreSQL-blue)
 ![REST API](https://img.shields.io/badge/REST%20API-FastAPI%20%2F%20OpenAPI%203.1-blueviolet)
+![Power BI](https://img.shields.io/badge/Power%20BI-Integration-yellow)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-v8.0.0-blue)
+![Version](https://img.shields.io/badge/Version-v9.0.0-blue)
 
 > **Enterprise-Grade Analytics Platform**
 >
@@ -23,6 +24,7 @@
 - [Installation](#installation)
 - [Running the Project](#running-the-project)
 - [REST API](#rest-api)
+- [Business Intelligence API](#business-intelligence-api)
 - [Testing](#running-tests)
 - [Documentation](#documentation)
 - [Roadmap](#project-roadmap)
@@ -44,6 +46,8 @@ The platform processes datasets through a modular pipeline that performs:
 - Business report generation
 - Persistent execution tracking
 - Database-agnostic persistence
+- **Business Intelligence integration**
+- **Power BI dashboard generation**
 
 The persistence layer now supports multiple relational database engines
 through a unified abstraction layer, enabling interchangeable SQLite
@@ -54,6 +58,14 @@ providing interactive documentation via **Swagger UI** and a standard
 **OpenAPI 3.1** specification. The REST API Layer delegates all operations
 to the Application Layer, preserving the separation of concerns and
 layered architecture established in previous sprints.
+
+**Sprint 9 extends the platform with a dedicated Business Intelligence
+Integration Layer that exposes dashboard-ready analytics through
+Power BI-compatible REST endpoints.**
+
+The Business Intelligence layer remains independent from the business
+modules and communicates only with the Application Layer, preserving
+the existing layered architecture.
 
 The project is intentionally developed sprint-by-sprint to simulate the
 evolution of a production enterprise application.
@@ -72,6 +84,10 @@ into an enterprise platform through incremental architectural improvements,
 showing how clean interfaces and abstraction layers enable adaptability
 and extensibility.
 
+The project now demonstrates enterprise backend development,
+database abstraction, REST API engineering, and Business
+Intelligence integration suitable for external analytics platforms.
+
 ---
 
 # Project Goals
@@ -83,6 +99,9 @@ and extensibility.
 - Incrementally evolve through engineering sprints with stable, tested releases
 - Apply SOLID principles and enterprise patterns consistently
 - Create maintainable, extensible, and well-documented software
+- **Build reusable Business Intelligence services**
+- **Deliver dashboard-ready APIs**
+- **Support enterprise reporting platforms**
 
 ---
 
@@ -96,18 +115,26 @@ and extensibility.
 - ConnectionFactory
 - Cross-database repository architecture
 - SQLite and PostgreSQL support
-- **REST API Layer** with FastAPI
-- **OpenAPI 3.1** specification
-- **Swagger UI** interactive documentation
-- **Dependency Injection** for application lifecycle
-- **Pydantic** request validation and response serialization
-- **Global Exception Handling** with consistent error responses
-- **Service-Oriented Architecture**
-- Automated testing (90 tests)
+- REST API Layer with FastAPI
+- OpenAPI 3.1 specification
+- Swagger UI interactive documentation
+- Dependency Injection for application lifecycle
+- Pydantic request validation and response serialization
+- Global Exception Handling with consistent error responses
+- Service-Oriented Architecture
+- Automated testing (98 tests)
 - Performance validation up to 1,000,000 rows
 - Modular business pipeline
 - Architecture Decision Records (ADRs)
 - Comprehensive engineering documentation
+- **Business Intelligence Layer**
+- **DashboardService**
+- **Power BI Integration**
+- **Dashboard Response Models**
+- **Dashboard APIs**
+- **Performance Benchmark Framework**
+- **Stress Testing Framework**
+- **REST Dashboard Endpoints**
 
 ---
 
@@ -115,20 +142,24 @@ and extensibility.
 
 | Item | Status |
 |------|--------|
-| **Current Version** | **v8.0.0** |
+| **Current Version** | **v9.0.0** |
 | **Development Status** | 🟢 Active Development |
-| **Current Sprint** | ✅ Sprint 8 – REST API Integration Complete |
-| **Architecture** | 🟢 Enterprise Layered Architecture + REST API Layer |
+| **Current Sprint** | ✅ Sprint 9 – Power BI Integration Complete |
+| **Architecture** | 🟢 Enterprise Layered Architecture + REST API + Business Intelligence Layer |
 | **Application Layer** | ✅ Stable |
 | **Persistence Layer** | ✅ Stable |
 | **Database Abstraction Layer** | ✅ Stable |
 | **Repository Layer** | ✅ Stable |
 | **REST API Layer** | ✅ Stable |
+| **Business Intelligence Layer** | ✅ Stable |
+| **Power BI Integration** | ✅ Complete |
+| **Dashboard Services** | ✅ Complete |
+| **Performance Benchmarking** | ✅ Complete |
 | **OpenAPI** | ✅ Operational |
 | **Swagger** | ✅ Operational |
-| **Automated Tests** | ✅ 90 / 90 Passed |
+| **Automated Tests** | ✅ 98 / 98 Passed |
 | **Performance Validation** | ✅ Completed |
-| **Next Sprint** | 🚀 Sprint 9 – Power BI Integration |
+| **Next Sprint** | 🚀 Sprint 10 – Streamlit Frontend |
 
 ---
 
@@ -147,20 +178,26 @@ and extensibility.
 - ✅ SQLite Support
 - ✅ PostgreSQL Support
 - ✅ Repository Layer
-- ✅ **REST API Layer**
-- ✅ **FastAPI Server**
-- ✅ **Root Endpoint**
-- ✅ **Health Endpoint**
-- ✅ **Version Endpoint**
-- ✅ **Pipeline Endpoint**
-- ✅ **Swagger UI**
-- ✅ **OpenAPI 3.1**
-- ✅ **API Models**
-- ✅ **Global Exception Handlers**
+- ✅ REST API Layer
+- ✅ FastAPI Server
+- ✅ Root Endpoint
+- ✅ Health Endpoint
+- ✅ Version Endpoint
+- ✅ Pipeline Endpoint
+- ✅ Swagger UI
+- ✅ OpenAPI 3.1
+- ✅ API Models
+- ✅ Global Exception Handlers
+- ✅ **Business Intelligence Layer**
+- ✅ **DashboardService**
+- ✅ **Power BI Integration**
+- ✅ **Dashboard Models**
+- ✅ **Dashboard Endpoints**
+- ✅ **Performance Benchmark Framework**
+- ✅ **Stress Testing Framework**
 
 ## Upcoming Modules
 
-- ⏳ Power BI Integration
 - ⏳ Streamlit Application
 - ⏳ AI Insights
 - ⏳ Production Deployment
@@ -190,13 +227,16 @@ The project follows modern enterprise engineering practices:
 - REST API Design
 - API-first Architecture
 - Service-oriented Architecture
+- **Business Intelligence Layer**
+- **Integration Layer**
+- **Dashboard Service Pattern**
 
 ---
 
 # Enterprise Architecture
 
 ```text
-Client (Browser / API Client)
+Power BI / Browser / REST Client
                 │
                 ▼
           FastAPI Server
@@ -247,11 +287,16 @@ Client (Browser / API Client)
               PipelineResult
                        │
                        ▼
-              PipelineResponse
+          (DashboardService)
+                       │
+                       ▼
+         Power BI Models
+                       │
+                       ▼
+         REST API Response
 ```
 
-Business modules remain independent of the underlying database engine and the REST API Layer,
-communicating only through stable contracts and abstractions.
+Business modules remain independent of the underlying database engine, the REST API Layer, and the Business Intelligence Layer, communicating only through stable contracts and abstractions.
 
 ---
 
@@ -263,9 +308,11 @@ communicating only through stable contracts and abstractions.
 | Data Processing | Pandas |
 | Database | SQLite, PostgreSQL |
 | Database Drivers | sqlite3, psycopg 3 |
-| **REST API** | FastAPI |
-| **Validation** | Pydantic |
-| **API Documentation** | OpenAPI 3.1, Swagger UI |
+| REST API | FastAPI |
+| Validation | Pydantic |
+| API Documentation | OpenAPI 3.1, Swagger UI |
+| **Business Intelligence** | **Power BI** |
+| **Performance** | **Benchmark Framework** |
 | Testing | Pytest |
 | Architecture | Layered Architecture, Repository Pattern, Manager-Orchestrator Pattern |
 | Version Control | Git, GitHub |
@@ -289,14 +336,24 @@ AnalystGPT Enterprise currently supports:
 - Repository abstraction
 - End-to-end automated testing
 - Performance validation up to 1,000,000 rows
-- **REST API execution**
-- **Interactive Swagger UI**
-- **OpenAPI specification**
-- **Typed request validation**
-- **Typed response serialization**
-- **API integration testing**
-- **Dependency Injection**
-- **Global exception handling**
+- REST API execution
+- Interactive Swagger UI
+- OpenAPI specification
+- Typed request validation
+- Typed response serialization
+- API integration testing
+- Dependency Injection
+- Global exception handling
+- **Power BI dashboard endpoints**
+- **Dashboard-ready JSON**
+- **Summary APIs**
+- **Statistics APIs**
+- **Correlation APIs**
+- **Distribution APIs**
+- **Categorical APIs**
+- **Business Intelligence integration**
+- **Performance benchmarking**
+- **Stress testing**
 
 ---
 
@@ -326,6 +383,28 @@ The REST API Layer contains no business logic, delegates all operations to the A
 
 ---
 
+# Business Intelligence API
+
+Sprint 9 introduces a dedicated Business Intelligence Layer that exposes
+dashboard-ready analytics through Power BI-compatible REST endpoints.
+
+Available endpoints:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/powerbi/dashboard` | GET | Complete dashboard payload |
+| `/powerbi/summary` | GET | Executive summary |
+| `/powerbi/statistics` | GET | Descriptive statistics |
+| `/powerbi/correlation` | GET | Correlation analysis |
+| `/powerbi/distribution` | GET | Distribution analysis |
+| `/powerbi/categorical` | GET | Categorical analysis |
+| `/powerbi/report` | GET | Full report |
+| `/powerbi/pipeline` | POST | Execute pipeline and return dashboard data |
+
+All endpoints are documented in OpenAPI 3.1 and accessible via Swagger UI.
+
+---
+
 # Repository Structure
 
 ```text
@@ -351,8 +430,18 @@ src/
 │   ├── database_manager.py
 │   ├── schema_manager.py
 │   └── repositories/
+├── integrations/
+│   └── powerbi/
+│       ├── dashboard_service.py
+│       └── powerbi_models.py
 ├── core/
 └── ... (tests, docs, performance, sample_data)
+
+performance/
+├── benchmark_results.md
+├── stress_test.py
+├── benchmark_results.csv
+└── performance_report.md
 ```
 
 ---
@@ -364,9 +453,9 @@ analytics pipeline into a complete enterprise analytics platform supporting
 relational databases, REST APIs, dashboards, AI-assisted insights, and
 production deployment.
 
-With the database abstraction layer and REST API layer in place, future work can focus on
-delivering business intelligence integrations, interactive dashboards, AI-assisted insights,
-and enterprise deployment infrastructure.
+With the database abstraction layer, REST API layer, and Business Intelligence
+layer in place, future work now focuses on delivering **Streamlit frontend**,
+**AI-assisted insights**, and **cloud deployment infrastructure**.
 
 Each sprint builds upon stable architectural foundations while preserving
 backward compatibility and maintainable module contracts.
@@ -385,9 +474,9 @@ backward compatibility and maintainable module contracts.
 | Sprint 5.5 – Architecture Refactor | ✅ Complete |
 | Sprint 6 – SQLite Persistence | ✅ Complete |
 | Sprint 7 – PostgreSQL Integration | ✅ Complete |
-| **Sprint 8 – REST API** | ✅ **Complete** |
-| **Sprint 9 – Power BI** | 🚀 **Next** |
-| Sprint 10 – Streamlit | Planned |
+| Sprint 8 – REST API | ✅ Complete |
+| **Sprint 9 – Power BI Integration** | ✅ **Complete** |
+| **Sprint 10 – Streamlit Frontend** | 🚀 **Next** |
 | Sprint 11 – AI Insights | Planned |
 | Sprint 12 – Production Deployment | Planned |
 
@@ -397,11 +486,19 @@ backward compatibility and maintainable module contracts.
 
 | Validation | Status |
 |-----------|--------|
-| Unit Tests | ✅ 90 / 90 Passed |
+| Unit Tests | ✅ 98 / 98 Passed |
 | Integration Tests | ✅ Passed |
 | REST API Integration Tests | ✅ Passed |
+| Power BI Endpoint Tests | ✅ Passed |
+| Dashboard Tests | ✅ Passed |
+| Summary Tests | ✅ Passed |
+| Statistics Tests | ✅ Passed |
+| Correlation Tests | ✅ Passed |
+| Distribution Tests | ✅ Passed |
+| Categorical Tests | ✅ Passed |
 | Swagger Validation | ✅ Passed |
 | OpenAPI Validation | ✅ Passed |
+| Performance Validation | ✅ Passed |
 | Sample Dataset | ✅ Passed |
 | Large Dataset (100,000 rows) | ✅ Passed |
 | Stress Dataset (1,000,000 rows) | ✅ Passed |
@@ -441,8 +538,23 @@ python main.py
 python -m uvicorn src.api.server:app --reload
 ```
 
-- Swagger UI: `http://127.0.0.1:8000/docs`
-- OpenAPI: `http://127.0.0.1:8000/openapi.json`
+Swagger UI: `http://127.0.0.1:8000/docs`  
+OpenAPI: `http://127.0.0.1:8000/openapi.json`
+
+## Power BI Endpoints
+
+The following endpoints are available for Power BI consumption:
+
+```
+GET /powerbi/dashboard
+GET /powerbi/summary
+GET /powerbi/statistics
+GET /powerbi/correlation
+GET /powerbi/distribution
+GET /powerbi/categorical
+GET /powerbi/report
+POST /powerbi/pipeline
+```
 
 ---
 
@@ -455,7 +567,7 @@ python -m pytest
 Current Result:
 
 ```
-90 tests passed
+98 tests passed
 0 failures
 0 warnings
 ```
@@ -470,7 +582,8 @@ Detailed engineering documentation is available under:
 - `docs/engineering/`
 - `docs/adr/`
 - `docs/sprints/`
-- `docs/api/` (API reference and testing)
+- `docs/api/`
+- `performance/` (benchmark results and performance reports)
 
 These documents describe the project's architecture, engineering decisions,
 release history, and development roadmap, including:
@@ -483,6 +596,10 @@ release history, and development roadmap, including:
 - Release History
 - API Reference
 - API Testing Guide
+- **Performance Documentation**
+- **Benchmark Reports**
+- **Business Intelligence Documentation**
+- **Power BI Integration Guide**
 
 ---
 
@@ -498,6 +615,6 @@ and design decisions, see the documentation under `docs/`.
 AnalystGPT Enterprise continues to evolve through incremental,
 well-tested engineering sprints.
 
-**Current Release:** v8.0.0
+**Current Release:** v9.0.0
 
-**Next Milestone:** Sprint 9 – Power BI Integration
+**Next Milestone:** Sprint 10 – Streamlit Frontend

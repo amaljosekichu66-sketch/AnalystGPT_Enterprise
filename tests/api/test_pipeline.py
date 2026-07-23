@@ -14,15 +14,63 @@ from src.api.server import app
 # Fake Application
 # ==========================================================
 
+class FakeAnalytics:
+    """
+    Fake analytics payload.
+    """
+
+    def __init__(self):
+        self.analytics = {
+            "descriptive_statistics": {
+                "total_rows": 100,
+                "total_columns": 5,
+                "numeric_column_count": 2,
+                "categorical_column_count": 3,
+                "datetime_column_count": 0,
+                "memory_usage_mb": 0.01,
+            },
+            "correlation_analysis": {},
+            "distribution_analysis": {},
+            "categorical_analysis": {},
+        }
+
+
+class FakeStructuredReport:
+    """
+    Fake structured report.
+    """
+
+    def __init__(self):
+        self.analytics = FakeAnalytics().analytics
+
+
+class FakeReportingReport:
+    """
+    Fake reporting report.
+    """
+
+    def __init__(self):
+        self.report = FakeStructuredReport()
+
+    def to_dict(self):
+        return {
+            "report": self.report.analytics,
+            "export_path": "reports/report.txt",
+            "execution_time": 1.25,
+        }
+
+
 class FakePipelineResult:
     """
     Fake pipeline execution result.
     """
 
-    success = True
-    output_path = "reports/report.txt"
-    execution_time = 1.25
-    error = None
+    def __init__(self):
+        self.success = True
+        self.output_path = "reports/report.txt"
+        self.execution_time = 1.25
+        self.error = None
+        self.reporting_report = FakeReportingReport()
 
 
 class FakeApplication:

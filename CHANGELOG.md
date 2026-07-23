@@ -1,61 +1,3 @@
-# CHANGELOG
-
-## v5.0.0 — Sprint 5 (Reporting Module)
-
-**Release Date:** 16 July 2026
-
-### Added
-
-#### Reporting Module
-
-- ReportingManager
-- ExecutiveSummary
-- KPIFormatter
-- ReportBuilder
-- StructuredReport
-- ReportingReport
-- TextReportExporter
-
-#### Architecture
-
-- Complete Upload → Cleaning → Quality → Analytics → Reporting pipeline
-- End-to-end reporting orchestration
-- Structured reporting workflow
-- Timestamped report generation
-- Centralized reporting configuration
-
-#### Configuration
-
-- Default report directory configuration
-- Default report filename configuration
-- Centralized data type configuration
-- Config-driven DataTypeCleaner
-- Configurable pipeline behavior
-
-#### Testing
-
-- Full Reporting Module unit tests
-- ReportingManager tests
-- ReportBuilder tests
-- StructuredReport tests
-- ExecutiveSummary tests
-- KPIFormatter tests
-- TextReportExporter tests
-- Updated end-to-end integration pipeline
-
-#### Performance Validation
-
-Successfully validated using:
-
-- Small sample dataset
-- Large dataset (100,000 rows)
-- Stress dataset (1,000,000 rows)
-
-Performance benchmark assets added under:
-
-```
-performance/
-```
 
 ### Improved
 
@@ -647,3 +589,184 @@ This release establishes the foundation for:
 ### Next Release
 
 **v9.0.0 — Power BI Integration**
+
+---
+
+## [v9.0.0] — Sprint 9 (Power BI Integration)
+
+**Release Date:** 23 July 2026
+
+---
+
+### Overview
+
+Sprint 9 introduces the Business Intelligence Integration Layer,
+transforming AnalystGPT Enterprise into a platform capable of exposing
+analytics results through Power BI–ready REST endpoints.
+
+The release focuses on enterprise dashboard integration, standardized
+dashboard contracts, business intelligence services, API extensibility,
+and production-grade validation while preserving the layered architecture
+established in previous releases.
+
+---
+
+### Added
+
+#### Business Intelligence Layer
+
+- Power BI Integration package
+- DashboardService
+- Power BI dashboard orchestration
+- Dashboard data extraction
+- Dashboard response generation
+
+#### Dashboard Models
+
+- DashboardSummary
+- DashboardStatistics
+- DashboardCorrelation
+- DashboardDistribution
+- DashboardCategorical
+
+#### Power BI API
+
+- Dashboard endpoint
+- Summary endpoint
+- Statistics endpoint
+- Correlation endpoint
+- Distribution endpoint
+- Categorical endpoint
+- Report endpoint
+- Pipeline endpoint
+
+#### API Integration
+
+- Power BI router
+- Dashboard service integration
+- Standardized dashboard responses
+- Business Intelligence response contracts
+
+#### Performance Engineering
+
+- Benchmark framework
+- Stress testing framework
+- Benchmark result generation
+- Performance reporting
+
+#### Testing
+
+- Power BI endpoint integration tests
+- Dashboard endpoint tests
+- Summary endpoint tests
+- Statistics endpoint tests
+- Correlation endpoint tests
+- Distribution endpoint tests
+- Categorical endpoint tests
+- Report endpoint tests
+
+---
+
+### Changed
+
+#### Architecture
+
+- Introduced dedicated Business Intelligence Integration Layer.
+- Dashboard generation separated from REST API routing.
+- Dashboard services isolated from business logic.
+- Standardized dashboard response models.
+- API routing extended for Power BI consumption.
+- Integration layer remains independent of analytics modules.
+
+#### Performance
+
+- Added automated benchmarking framework.
+- Added enterprise stress testing framework.
+- Added performance reporting assets.
+- Improved validation workflow.
+
+#### Documentation
+
+Updated:
+
+- README.md
+- CHANGELOG.md
+- PROJECT_STATE.md
+- PROJECT_JOURNAL.md
+- ARCHITECTURE.md
+- ENGINEERING_OPERATING_MANUAL.md
+- Performance documentation
+- Sprint documentation
+
+---
+
+### Improved
+
+- Business Intelligence integration
+- API extensibility
+- Dashboard maintainability
+- Performance validation
+- Enterprise architecture
+- Documentation quality
+- Testing coverage
+- Service organization
+- Release validation
+
+---
+
+### Validation
+
+Successfully validated using:
+
+- ✅ 98 / 98 Automated Tests
+- ✅ Power BI Endpoint Validation
+- ✅ Swagger UI Validation
+- ✅ SQLite Runtime Validation
+- ✅ PostgreSQL Runtime Validation
+- ✅ Sample Dataset
+- ✅ Large Dataset (100,000 rows)
+- ✅ Stress Dataset (1,000,000 rows)
+- ✅ End-to-End Pipeline Validation
+
+---
+
+### Performance
+
+Successfully validated:
+
+- Power BI dashboard generation
+- Dashboard service execution
+- REST endpoint execution
+- SQLite persistence
+- PostgreSQL persistence
+- Benchmark framework
+- Stress testing framework
+- Large dataset execution
+- One million row execution
+
+No architectural regressions observed.
+
+---
+
+### Result
+
+Sprint 9 transforms AnalystGPT Enterprise from a REST-enabled analytics
+platform into a Business Intelligence platform capable of serving
+Power BI dashboards through standardized enterprise APIs while
+maintaining clean architecture, database independence, and production-
+ready validation.
+
+This release establishes the foundation for:
+
+- Streamlit Frontend
+- Interactive dashboards
+- Executive reporting
+- AI Insights
+- Cloud deployment
+- Enterprise BI integrations
+
+---
+
+### Next Release
+
+**v10.0.0 — Streamlit Frontend**

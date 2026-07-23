@@ -30,6 +30,7 @@ from src.api.routes import (
     root_router,
     version_router,
 )
+from src.api.routes.powerbi import router as powerbi_router  # <-- NEW
 from src.core.constants import (
     APP_DESCRIPTION,
     APP_NAME,
@@ -78,4 +79,6 @@ app.include_router(
 app.include_router(
     pipeline_router,
     prefix=API_PREFIX,
-)  # <-- No trailing comma after the closing parenthesis
+)
+
+app.include_router(powerbi_router)  # <-- NEW (with or without prefix)

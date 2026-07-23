@@ -1,3 +1,4 @@
+```markdown
 # AnalystGPT Enterprise Architecture
 
 > **Purpose**
@@ -6,7 +7,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v8.0.0**.
+> This document reflects the implementation as of **v9.0.0**.
 
 ---
 
@@ -30,6 +31,13 @@ As of Sprint 7, a dedicated Application layer coordinates all business modules w
 
 Sprint 8 introduced a dedicated REST API Layer that exposes the Application Layer through HTTP endpoints while preserving existing business module independence. The API layer is built on FastAPI, uses dependency injection for application lifecycle management, and provides OpenAPI 3.1 documentation and Swagger UI. The API layer remains thin, containing no business logic, and delegates all operations to the Application Layer.
 
+Sprint 9 introduced a dedicated Business Intelligence Integration Layer
+that exposes dashboard-ready analytics through Power BI endpoints.
+
+The Business Intelligence Layer remains an integration layer rather than
+a business layer. It communicates only with the Application Layer,
+preserving existing module independence and stable business contracts.
+
 ---
 
 # Architectural Goals
@@ -50,71 +58,68 @@ The architecture is designed to satisfy the following long-term engineering goal
 - External analytics integration
 - API-first architecture
 - HTTP interface abstraction
+- Business Intelligence integration
+- Dashboard abstraction
+- Standardized dashboard contracts
+- Visualization-ready data services
+- External BI platform compatibility
 
 ---
 
 # High-Level Architecture
 
 ```text
-Client (Browser / API Client)
-                │
-                ▼
-          FastAPI Server
-                │
-                ▼
-           API Routes
-                │
-                ▼
-        Dependency Injection
-                │
-                ▼
-         Application.run()
-                │
-        ┌───────┼───────┐
-        │       │       │
-        ▼       ▼       ▼
-  Upload → Cleaning → Quality
-                       │
-                       ▼
-              AnalyticsManager
-                       │
-                       ▼
-              ReportingManager
-                       │
-                       ▼
-             PersistenceManager
-                       │
-                       ▼
-              DatabaseManager
-                       │
-                       ▼
-              ConnectionFactory
-                       │
-                       ▼
-              DatabaseConnection
-                  ▲         ▲
-                  │         │
-        SQLiteConnection PostgreSQLConnection
-                  │         │
-               sqlite3   psycopg
-                  │         │
-                  └────┬────┘
-                       │
-                       ▼
-              Repository Layer
-                       │
-                       ▼
-              PipelineResult
-                       │
-                       ▼
-              PipelineResponse
+Client / Power BI
+        │
+        ▼
+   FastAPI Server
+        │
+        ▼
+     API Routes
+        │
+        ▼
+Dependency Injection
+        │
+        ▼
+  Application.run()
+        │
+ ┌──────┼───────┐
+ │      │       │
+ ▼      ▼       ▼
+Upload → Cleaning → Quality
+                    │
+                    ▼
+            AnalyticsManager
+                    │
+                    ▼
+            ReportingManager
+                    │
+                    ▼
+           DashboardService
+                    │
+          ┌─────────┼─────────┐
+          ▼         ▼         ▼
+     Summary   Statistics   Correlation
+          │         │
+          └────┬────┘
+               ▼
+        Power BI Models
+               │
+               ▼
+        REST API Response
+               │
+               ▼
+      PersistenceManager
+               │
+               ▼
+      Database Layer
 ```
 
 ---
 
 # Architectural Layers
 
-The repository is intentionally organized into six architectural layers.
+The repository is intentionally organized into seven architectural layers.
 
 ### Presentation Layer
 
@@ -135,6 +140,26 @@ Current components:
 - Dependency Injection
 - Request/Response Models
 - Exception Handlers
+
+### Business Intelligence Layer
+
+Responsible for exposing dashboard-ready analytical data.
+
+Current components:
+
+- DashboardService
+- DashboardSummary
+- DashboardStatistics
+- DashboardCorrelation
+- DashboardDistribution
+- DashboardCategorical
+
+Responsibilities:
+
+- Transform reporting output into dashboard models
+- Prepare visualization-ready responses
+- Remain independent from analytics implementation
+- Support external BI platforms
 
 ### Application Layer
 
@@ -247,6 +272,13 @@ Exception Handlers
 
 ↓
 
+Business Intelligence Layer
+
+DashboardService
+Dashboard Models
+
+↓
+
 Application Layer
 
 Application
@@ -328,6 +360,40 @@ FastAPI Server
 - Dependency Injection
 - OpenAPI
 - Swagger
+
+### Status
+
+✅ Stable
+
+---
+
+## Business Intelligence Module
+
+### Owner
+
+DashboardService
+
+### Components
+
+- DashboardService
+- DashboardSummary
+- DashboardStatistics
+- DashboardCorrelation
+- DashboardDistribution
+- DashboardCategorical
+
+### Input
+
+ReportingReport
+
+### Output
+
+Dashboard Models
+
+### Responsibility
+
+Prepare standardized, visualization-ready dashboard data
+for Power BI and future Business Intelligence clients.
 
 ### Status
 
@@ -717,6 +783,12 @@ REST infrastructure now includes:
 - Response Models
 - Exception Handlers
 
+Business Intelligence infrastructure includes:
+
+- DashboardService
+- Dashboard Models
+- Power BI Router
+
 ### Responsibilities
 
 #### config.py
@@ -757,6 +829,9 @@ Client
    │
    ▼
 REST API
+   │
+   ▼
+Business Intelligence
    │
    ▼
 Application
@@ -807,6 +882,13 @@ Repositories
 ```
 
 ```text
+Business Intelligence
+   │
+   ▼
+Business Modules (directly)
+```
+
+```text
 core
    │
    ▼
@@ -828,6 +910,10 @@ Repositories are the only components permitted to execute SQL, and they operate 
 
 The REST API Layer communicates only with the Application Layer through dependency injection.
 
+The Business Intelligence Layer communicates only with the
+Application Layer and must never access business modules
+or persistence components directly.
+
 This separation allows future database technologies and API changes to be introduced without requiring changes to business logic.
 
 ---
@@ -844,6 +930,8 @@ This separation allows future database technologies and API changes to be introd
 | Persistence | PersistenceResult |
 | Application | PipelineResult |
 | REST API | PipelineResponse |
+| DashboardService | Dashboard Models |
+| Power BI API | Dashboard Responses |
 
 Stable contracts reduce coupling and simplify future extensions.
 
@@ -868,42 +956,30 @@ Breaking a contract requires:
 
 ```text
 HTTP Request
-   │
-   ▼
-PipelineRequest
-   │
-   ▼
-REST API
-   │
-   ▼
+      │
+      ▼
+Power BI Endpoint
+      │
+      ▼
+DashboardService
+      │
+      ▼
 Application.run()
-   │
-   ▼
+      │
+      ▼
 Upload
-   │
-   ▼
+      ▼
 Cleaning
-   │
-   ▼
+      ▼
 Quality
-   │
-   ▼
+      ▼
 Analytics
-   │
-   ▼
+      ▼
 Reporting
-   │
-   ▼
-Persistence
-   │
-   ▼
-PipelineResult
-   │
-   ▼
-PipelineResponse
-   │
-   ▼
-HTTP Response
+      ▼
+Dashboard Models
+      ▼
+REST Response
 ```
 
 ---
@@ -921,6 +997,7 @@ Every business module exposes one manager responsible for internal orchestration
 | Reporting | ReportingManager |
 | Persistence | PersistenceManager |
 | Application | Application |
+| Business Intelligence | DashboardService |
 
 Managers coordinate workflows while business logic remains inside dedicated components.
 
@@ -940,6 +1017,7 @@ Examples:
 - PersistenceManager owns Persistence Module orchestration.
 - Application owns pipeline orchestration.
 - FastAPI Server owns REST API Layer.
+- DashboardService owns Business Intelligence orchestration.
 
 Ownership is never shared across modules.
 
@@ -1060,6 +1138,17 @@ Current coverage includes:
 - Swagger Validation
 - OpenAPI Validation
 
+### Business Intelligence
+
+- Dashboard endpoint
+- Summary endpoint
+- Statistics endpoint
+- Correlation endpoint
+- Distribution endpoint
+- Categorical endpoint
+- Report endpoint
+- Pipeline endpoint
+
 ### Application Layer
 
 Validated through:
@@ -1077,7 +1166,7 @@ Validated through:
 Current results:
 
 ```text
-90 Tests Passed
+98 Tests Passed
 0 Failed
 0 Errors
 0 Warnings
@@ -1106,11 +1195,17 @@ The platform has been validated using datasets of increasing scale.
 - Successful report export
 - Complete end-to-end validation
 - No runtime failures
-- 90 / 90 automated tests remained passing after the Sprint 8 API integration.
+- 98 / 98 automated tests remained passing after Business Intelligence integration.
 - REST API execution validated
 - Swagger validation passed
 - OpenAPI generation validated
 - HTTP request/response validation passed
+- Power BI endpoint validation
+- Dashboard generation validation
+- SQLite runtime validation
+- PostgreSQL runtime validation
+- Benchmark execution validation
+- Stress testing validation
 
 The platform successfully completed:
 
@@ -1196,6 +1291,12 @@ src/
 │       ├── analytics_repository.py
 │       ├── report_repository.py
 │       └── __init__.py
+├── integrations/
+│   ├── __init__.py
+│   └── powerbi/
+│       ├── __init__.py
+│       ├── dashboard_service.py
+│       └── powerbi_models.py
 └── core/
 
 tests/
@@ -1210,6 +1311,7 @@ tests/
 │   ├── test_health.py
 │   ├── test_version.py
 │   ├── test_pipeline.py
+│   ├── test_powerbi.py
 │   └── __init__.py
 ├── integration/
 └── fixtures/
@@ -1256,6 +1358,7 @@ The architecture follows:
 |--------|--------|
 | Presentation | ✅ Stable |
 | REST API Layer | ✅ Stable |
+| Business Intelligence Layer | ✅ Stable |
 | Application | ✅ Stable |
 | Upload | ✅ Stable |
 | Cleaning | ✅ Stable |
@@ -1330,18 +1433,37 @@ Major improvements:
 
 ---
 
+# Sprint 9 — Power BI Integration
+
+Sprint 9 introduced a dedicated Business Intelligence Integration Layer
+that exposes dashboard-ready analytics through Power BI endpoints.
+
+Major improvements:
+
+- Introduced Business Intelligence Layer.
+- Added DashboardService.
+- Added dashboard response models.
+- Added Power BI REST endpoints.
+- Added benchmark framework.
+- Added stress testing framework.
+- Extended automated testing to 98 passing tests.
+- Validated SQLite runtime.
+- Validated PostgreSQL runtime.
+- Successfully validated one million row datasets.
+
+---
+
 # Future Evolution
 
 The current architecture provides a stable foundation for continued, sequenced evolution. The Application layer remains the single orchestration point as the platform grows, while the REST API Layer provides the interface for external integrations.
 
-## Sprint 9 — Power BI Integration
+## Sprint 10 — Streamlit Frontend
 
-- Dashboard publishing
-- KPI visualization
-- Interactive reporting
-- Enterprise reporting connectors
-
-## Sprint 10 — Interactive Streamlit application
+- Interactive dashboards
+- File upload interface
+- KPI widgets
+- Visualization layer
+- Enterprise frontend
 
 ## Sprint 11 — AI-generated business insights
 
@@ -1356,6 +1478,7 @@ Every architectural change affecting module boundaries or dependency direction m
 
 ---
 
-**Current Architecture Version:** **v8.0.0**
+**Current Architecture Version:** **v9.0.0**
 
-**Previous Version:** **v7.0.0**
+**Previous Version:** **v8.0.0**
+```

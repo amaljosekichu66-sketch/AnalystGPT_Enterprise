@@ -1,157 +1,219 @@
-# Performance Testing
+# Performance Framework
 
 > **Purpose**
 >
-> This directory contains performance validation assets for
-> AnalystGPT Enterprise.
->
-> Performance testing verifies that architectural changes preserve
-> functional correctness, scalability, and acceptable execution
-> characteristics across datasets of different sizes.
+> This directory contains the performance engineering assets used to
+> validate AnalystGPT Enterprise under realistic workloads.
+
+The framework measures scalability, execution stability, and overall
+system performance as the platform evolves through each engineering sprint.
+
+---
+
+# Directory Structure
+
+```text
+performance/
+
+datasets/
+    customer_data_large.csv
+    customer_data_stress_test.csv
+
+benchmark.py
+stress_test.py
+
+benchmark_results.csv
+benchmark_results.md
+performance_report.md
+
+README.md
+```
 
 ---
 
 # Objectives
 
-Performance validation is performed to ensure:
+The performance framework validates:
 
-- Pipeline stability
-- Scalability
-- No functional regressions
-- Architecture changes do not reduce performance
-- Enterprise readiness
-
----
-
-# Dataset Categories
-
-## Sample Dataset
-
-Purpose
-
-- Functional validation
-- Developer testing
-- Rapid debugging
-
-File
-
-```text
-sample_data/customer_data.csv
-```
+- Pipeline execution
+- Memory stability
+- Database persistence
+- REST API execution
+- Dashboard generation
+- Business Intelligence integration
+- End-to-end scalability
 
 ---
 
-## Large Dataset
-
-Purpose
-
-- Scalability validation
-
-File
-
-```text
-performance/datasets/customer_data_large.csv
-```
-
-Approximately:
-
-- 100,000 rows
-
----
-
-## Stress Dataset
-
-Purpose
-
-- Architecture validation
-- Memory validation
-- Long-running execution
-
-File
-
-```text
-performance/datasets/customer_data_stress_test.csv
-```
-
-Approximately:
-
-- 1,000,000 rows
-
----
-
-# Validation Process
-
-Each benchmark validates the complete pipeline:
+# Validation Pipeline
 
 ```text
 Dataset
-    │
-    ▼
+
+↓
+
 Upload
-    ▼
+
+↓
+
 Cleaning
-    ▼
+
+↓
+
 Quality
-    ▼
+
+↓
+
 Analytics
-    ▼
+
+↓
+
 Reporting
-    ▼
-PipelineResult
+
+↓
+
+Persistence
+
+↓
+
+Business Intelligence
+
+↓
+
+Performance Metrics
 ```
 
-The application must complete successfully while maintaining
-stable module contracts.
+---
+
+# Supported Dataset Sizes
+
+| Dataset | Approximate Size |
+|----------|-----------------:|
+| Sample | 500 rows |
+| Large | 100,000 rows |
+| Stress | 1,000,000 rows |
 
 ---
 
-# Benchmark Results
+# Benchmark Coverage
 
-Historical benchmark records are maintained in:
+The framework validates:
 
-```text
-benchmark_results.md
-```
-
-Each benchmark records:
-
-- Version
-- Environment
-- Dataset
-- Validation scope
-- Test results
-- Performance observations
+- CLI execution
+- REST API execution
+- SQLite
+- PostgreSQL
+- Dashboard generation
+- Report generation
+- Stress execution
 
 ---
 
-# Engineering Policy
+# Performance Assets
 
-Performance testing is required whenever:
+## benchmark.py
 
-- Architecture changes
-- Pipeline contracts change
-- New modules are introduced
-- Dependency direction changes
-- Performance-sensitive features are added
-
-No release is considered complete until functional validation,
-automated testing, and performance validation have all succeeded.
+Measures execution performance of the complete analytics pipeline.
 
 ---
 
-# Current Status
+## stress_test.py
 
-Current validation includes:
-
-- ✅ Sample dataset
-- ✅ Large dataset (100K rows)
-- ✅ Stress dataset (1M rows)
-- ✅ 82 automated tests
-- ✅ Integration testing
-- ✅ Architecture validation
+Executes large-scale datasets to verify scalability and platform stability.
 
 ---
 
-Current benchmark version:
+## benchmark_results.csv
 
-**v6.0.0**
+Stores benchmark timing results.
+
+---
+
+## benchmark_results.md
+
+Human-readable benchmark documentation.
+
+---
+
+## performance_report.md
+
+Engineering performance observations and release validation.
+
+---
+
+# Validation Checklist
+
+Each release validates:
+
+- Sample dataset
+- Large dataset
+- Stress dataset
+- SQLite execution
+- PostgreSQL execution
+- REST API execution
+- Power BI execution
+- Automated tests
+
+---
+
+# Sprint 9 Results
+
+Sprint 9 successfully validated:
+
+- 98 / 98 automated tests
+- SQLite runtime
+- PostgreSQL runtime
+- REST API execution
+- Swagger UI
+- OpenAPI specification
+- Power BI endpoints
+- Dashboard generation
+- One million row execution
+- End-to-end analytics pipeline
+
+---
+
+# Future Evolution
+
+Future performance validation will include:
+
+## Sprint 10
+
+- Streamlit UI responsiveness
+- Dashboard rendering latency
+
+## Sprint 11
+
+- AI insight generation latency
+- Large Language Model response timing
+
+## Sprint 12
+
+- Docker container startup
+- Cloud deployment benchmarks
+- CI/CD performance
+- Concurrent user testing
+- Production monitoring
+
+---
+
+# Engineering Philosophy
+
+Performance validation is considered a mandatory engineering activity.
+
+Every release must demonstrate:
+
+- Stable execution
+- Passing automated tests
+- No architectural regressions
+- Scalable performance
+- Production-ready behavior
+
+Performance benchmarks accompany every official release of
+AnalystGPT Enterprise.
+
+---
+
+**Current Version:** v9.0.0
+
+**Status:** ✅ Active
