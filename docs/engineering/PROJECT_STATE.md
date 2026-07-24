@@ -25,31 +25,32 @@
 # Quick Orientation
 
 AnalystGPT Enterprise is an enterprise-grade analytics pipeline (Upload →
-Cleaning → Quality → Analytics → Reporting → REST API → Power BI), built as a self-directed
-software engineering exercise to develop production-level architecture,
-testing, and delivery skills.
+Cleaning → Quality → Analytics → Reporting → REST API → Power BI → Streamlit Frontend),
+built as a self-directed software engineering exercise to develop production-level
+architecture, testing, and delivery skills.
 
-**Standing as of v9.0.0:** all five business modules, the Application
-orchestration layer, the enterprise-grade Database Abstraction Layer,
-the REST API Layer, and the Business Intelligence Integration Layer
-are complete and stable. The project now exposes its complete analytics
-pipeline through Power BI‑ready endpoints, enabling dashboard consumption.
+**Standing as of v10.0.0:** all business modules, the Application orchestration layer,
+the enterprise-grade Database Abstraction Layer, the REST API Layer, the Business
+Intelligence Integration Layer, and the enterprise Streamlit frontend are complete
+and stable. The project now exposes its complete analytics pipeline through both
+a Power BI‑ready REST API and a fully interactive enterprise web interface.
 
-Sprint 9 introduced the Business Intelligence Integration Layer,
-allowing the analytics pipeline to expose dashboard-ready data through
-dedicated Power BI endpoints.
+Sprint 10 introduced the Enterprise Streamlit Frontend, delivering a modern,
+React‑ready web application that consumes the existing REST API without
+modifying backend infrastructure. The frontend follows a service-oriented
+architecture with strict separation of concerns, preparing the codebase for
+future React migration.
 
-The integration layer remains independent of the business modules and
-communicates exclusively with the Application Layer through standardized
-contracts, preserving the enterprise layered architecture established
-in previous sprints.
+All existing backend contracts remain unchanged. The frontend interacts
+exclusively through the established REST API, preserving the integrity of
+the enterprise layered architecture.
 
-The application has been validated through automated testing
-(98/98 tests passing), integration testing, REST API testing,
-Swagger validation, large dataset validation, and stress testing
-up to approximately one million rows.
+The application has been validated through automated testing, integration
+testing, REST API testing, Swagger validation, large dataset validation,
+stress testing up to approximately one million rows, and comprehensive
+frontend validation.
 
-No open blockers. Repository is ready to begin Sprint 10 — Streamlit Frontend.
+No open blockers. Repository is ready to begin Sprint 11 — AI Insight Engine.
 
 ---
 
@@ -58,11 +59,11 @@ No open blockers. Repository is ready to begin Sprint 10 — Streamlit Frontend.
 | Area | Status |
 |------|--------|
 | Project | AnalystGPT Enterprise |
-| Version | **v9.0.0** (previous: v8.0.0) |
+| Version | **v10.0.0** (previous: v9.0.0) |
 | Repository Status | 🟢 Active Development |
-| Current Sprint | **Sprint 9 – Power BI Integration Complete** |
+| Current Sprint | **Sprint 10 – Enterprise Streamlit Frontend (Completed)** |
 | Sprint Progress | **100%** |
-| Architecture | ✅ Enterprise Layered Architecture + REST API Layer + Business Intelligence Layer |
+| Architecture | ✅ Enterprise Layered Architecture + REST API + Power BI Integration + Streamlit Frontend |
 | Documentation | 🟢 Current |
 | Upload Module | ✅ Complete |
 | Cleaning Module | ✅ Complete |
@@ -81,12 +82,22 @@ No open blockers. Repository is ready to begin Sprint 10 — Streamlit Frontend.
 | Power BI Integration | ✅ Complete |
 | Dashboard Service | ✅ Complete |
 | Dashboard Models | ✅ Complete |
-| Automated Testing | ✅ 98 / 98 Passed |
+| Streamlit Frontend | ✅ Complete |
+| Dashboard View | ✅ Complete |
+| Upload Interface | ✅ Complete |
+| Reports Centre | ✅ Complete |
+| About Page | ✅ Complete |
+| Frontend Components | ✅ Complete |
+| Frontend Services | ✅ Complete |
+| Session Management | ✅ Complete |
+| Enterprise Navigation | ✅ Complete |
+| Automated Testing | ✅ All available automated tests passing |
 | Integration Testing | ✅ Passed |
+| Frontend Validation | ✅ Passed |
 | Large Dataset Validation | ✅ Passed |
 | Stress Testing | ✅ Passed |
 | Technical Debt | 🟢 Very Low |
-| Next Sprint | **Sprint 10 – Streamlit Frontend** |
+| Next Sprint | **Sprint 11 – AI Insight Engine** |
 
 ---
 
@@ -101,75 +112,64 @@ review, and deploy production-quality analytics software.
 # Current Architecture
 
 ```
-Client / Power BI
-                │
-                ▼
-          FastAPI Server
-                │
-                ▼
-           API Routes
-                │
-                ▼
-        Dependency Injection
-                │
-                ▼
-         Application.run()
-                │
-        ┌───────┼───────┐
-        │       │       │
-        ▼       ▼       ▼
-  Upload → Cleaning → Quality
-                       │
-                       ▼
-              AnalyticsManager
-                       │
-                       ▼
-              ReportingManager
-                       │
-                       ▼
-             PersistenceManager
-                       │
-                       ▼
-              DatabaseManager
-                       │
-                       ▼
-              ConnectionFactory
-                       │
-                       ▼
-              DatabaseConnection
-                  ▲         ▲
-                  │         │
-        SQLiteConnection PostgreSQLConnection
-                  │         │
-               sqlite3   psycopg
-                  │         │
-                  └────┬────┘
-                       │
-                       ▼
-              Repository Layer
-                       │
-                       ▼
-              PipelineResult
-                       │
-                       ▼
-             DashboardService
-                       │
-                       ▼
-              Power BI Models
-                       │
-                       ▼
-             Power BI Dashboard
+Browser
+   │
+   ▼
+Streamlit Frontend
+   │
+   ▼
+Views (Dashboard, Upload, Reports, About)
+   │
+   ▼
+Components (Reusable UI Library)
+   │
+   ▼
+Frontend Services (API Client, Session Manager)
+   │
+   ▼
+REST API (FastAPI)
+   │
+   ▼
+Application Layer
+   │
+   ▼
+Application.run()
+   │
+   ▼
+Upload
+   ▼
+Cleaning
+   ▼
+Quality
+   ▼
+Analytics
+   ▼
+Reporting
+   ▼
+Persistence
+   │
+   ▼
+Database Abstraction Layer
+   │
+   ├── SQLite
+   └── PostgreSQL
+   │
+   ▼
+Repository Layer
+   │
+   ▼
+DashboardService
+   │
+   ▼
+Power BI Models
+   │
+   ▼
+Power BI Dashboard
 ```
 
-Sprint 9 extends the REST API Layer by introducing a dedicated
-Business Intelligence Integration Layer.
-
-Dashboard generation is isolated inside DashboardService and exposes
-analytics results through Power BI endpoints without modifying the
-existing analytics or reporting modules.
-
-Business Intelligence remains an integration layer rather than a
-business layer, preserving strict separation of concerns.
+The architecture emphasises that **all orchestration is owned by Application.run()**,
+consistent with the enterprise layered design. The frontend communicates solely
+via the REST API, preserving the integrity of the backend contracts.
 
 Detailed architecture is documented in ARCHITECTURE.md.
 
@@ -189,8 +189,11 @@ Detailed architecture is documented in ARCHITECTURE.md.
 | API Layer | HTTP Request | HTTP Response |
 | DashboardService | ReportingReport | Dashboard Models |
 | Power BI API | HTTP Request | Dashboard Response |
+| Frontend Views | User Interaction | UI Render |
+| Frontend Components | Props | UI Elements |
+| Frontend Services | API Request | API Response |
 
-Business modules communicate only through these contracts.
+All contracts are stable and backward‑compatible.
 
 ---
 
@@ -199,7 +202,7 @@ Business modules communicate only through these contracts.
 The following architectural rules are considered stable:
 
 - `main.py` is an application entry point only.
-- `Application` owns end-to-end pipeline orchestration.
+- `Application` owns end‑to‑end pipeline orchestration.
 - Each business capability has a single Manager.
 - Business modules never orchestrate other business modules.
 - Managers communicate using stable contracts.
@@ -210,7 +213,7 @@ The following architectural rules are considered stable:
 - Configuration is centralized.
 - Automated testing validates every architectural change.
 - Every architectural change to module boundaries or dependency
-- direction requires a new ADR (see ARCHITECTURE.md).
+  direction requires a new ADR (see ARCHITECTURE.md).
 - Application owns persistence lifecycle.
 - Business modules never execute SQL.
 - Repository classes own all database operations.
@@ -221,7 +224,7 @@ The following architectural rules are considered stable:
 - DatabaseManager owns connection lifecycle.
 - SchemaManager supports multiple SQL dialects.
 - Repository classes never know concrete database engines.
-- Business logic remains database-independent.
+- Business logic remains database‑independent.
 - API layer contains no business logic.
 - API routes communicate only with Application Layer.
 - Dependency Injection owns Application lifecycle.
@@ -236,6 +239,34 @@ The following architectural rules are considered stable:
 - Business Intelligence Layer communicates only with Application Layer.
 - Dashboard models remain immutable.
 - Power BI contracts remain backward compatible.
+- **Views contain no business logic.**
+- **Components are presentation‑only.**
+- **Frontend Services communicate with Application Layer through REST API.**
+- **Views never access persistence.**
+- **Frontend remains backend‑independent.**
+- **React migration must not require backend changes.**
+- **Business logic remains outside Streamlit.**
+- **Navigation is centralized.**
+- **Session State stores presentation state only.**
+
+---
+
+## Sprint 15 Design Constraint
+
+The Streamlit frontend serves as the MVP presentation layer.
+
+Future React migration must preserve:
+
+- REST API contracts
+- Application Layer
+- Business modules
+- Persistence Layer
+
+**Only the presentation layer is expected to change.**
+
+This constraint ensures that the architectural integrity of the backend
+and the service boundaries remain intact, allowing a smooth transition
+to a modern React frontend when the time comes.
 
 ---
 
@@ -243,46 +274,61 @@ The following architectural rules are considered stable:
 
 ```
 src/
+├── application/
+├── upload/
+├── cleaning/
+├── quality/
+├── analytics/
+├── reporting/
+├── api/
+│   ├── server.py
+│   ├── routes/
+│   ├── models/
+│   ├── dependencies/
+│   └── exceptions/
+├── database/
+│   ├── database_connection.py
+│   ├── sqlite_connection.py
+│   ├── postgresql_connection.py
+│   ├── connection_factory.py
+│   ├── database_manager.py
+│   ├── schema_manager.py
+│   └── repositories/
+│       ├── base_repository.py
+│       ├── pipeline_run_repository.py
+│       ├── dataset_repository.py
+│       ├── quality_repository.py
+│       ├── analytics_repository.py
+│       └── report_repository.py
+├── persistence/
+├── core/
+└── integrations/
+    └── powerbi/
+        ├── dashboard_service.py
+        └── powerbi_models.py
 
-application/
-
-upload/
-cleaning/
-quality/
-analytics/
-reporting/
-
-api/
-    server.py
-    routes/
-    models/
-    dependencies/
-    exceptions/
-
-database/
-    database_connection.py
-    sqlite_connection.py
-    postgresql_connection.py
-    connection_factory.py
-    database_manager.py
-    schema_manager.py
-
-    repositories/
-        base_repository.py
-        pipeline_run_repository.py
-        dataset_repository.py
-        quality_repository.py
-        analytics_repository.py
-        report_repository.py
-
-persistence/
-
-core/
-
-integrations/
-    powerbi/
-        dashboard_service.py
-        powerbi_models.py
+frontend/
+├── streamlit_app.py
+├── views/
+│   ├── dashboard_page.py
+│   ├── upload_page.py
+│   ├── report_page.py
+│   └── about_page.py
+├── components/
+│   ├── charts.py
+│   ├── metrics.py
+│   ├── tables.py
+│   ├── navigation.py
+│   └── uploader.py
+├── services/
+│   ├── api_client.py
+│   └── session_manager.py
+├── config/
+│   └── settings.py
+├── theme/
+│   └── styles.py
+├── assets/
+└── static/
 ```
 
 ---
@@ -291,16 +337,10 @@ integrations/
 
 ## Unit Testing
 
-- Upload Module
-- Cleaning Module
-- Quality Module
-- Analytics Module
-- Reporting Module
-- Application Layer
-- API Layer
+All modules and layers are covered by an automated test suite.
 
-**Status:** ✅ 98 / 98 Tests Passed
-(Per-component breakdown: see ARCHITECTURE.md → Testing Strategy)
+**Status:** ✅ All available automated tests passing  
+(Per‑component breakdown: see ARCHITECTURE.md → Testing Strategy)
 
 ---
 
@@ -313,17 +353,32 @@ REST API
 → OpenAPI Validation
 → Pipeline Endpoint
 → Dependency Injection
-→ End-to-end Pipeline
+→ End‑to‑end Pipeline
 → Persistence Layer
 → Database Abstraction Layer
 → PipelineResult
 → Power BI API
 → Dashboard Endpoints
-→ Summary Endpoint
-→ Statistics Endpoint
-→ Correlation Endpoint
-→ Distribution Endpoint
-→ Categorical Endpoint
+→ Summary, Statistics, Correlation, Distribution, Categorical endpoints
+
+**Status:** ✅ Passed
+
+---
+
+## Frontend Validation
+
+- Dashboard view renders correctly
+- Upload interface processes files
+- Reports centre displays results
+- About page loads
+- Navigation operates correctly
+- Session state persists
+- API client communicates with backend
+- REST API compatibility verified
+- Power BI compatibility verified
+- Large dataset validation passes
+- Stress testing passes
+- Performance validation passes
 
 **Status:** ✅ Passed
 
@@ -354,8 +409,9 @@ Validation included:
 - Pipeline execution through REST API
 - Power BI endpoint validation
 - Dashboard service validation
-- SQLite runtime validation
-- PostgreSQL runtime validation
+- Frontend rendering performance
+- API response times
+- Session state management
 
 Performance benchmarks are maintained in:
 
@@ -365,7 +421,7 @@ performance/benchmark_results.md
 
 # Completed Sprint Timeline
 
-Quick-scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
+Quick‑scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 
 | Sprint | Delivered |
 |--------|-----------|
@@ -376,12 +432,11 @@ Quick-scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 | 4 | Analytics Module (descriptive, numerical, categorical, correlation, distribution) |
 | 5 | Reporting Module (executive summaries, KPIs, timestamped text export) + performance validation up to 1M rows |
 | 5.5 | Application layer, `PipelineResult`, thin `main.py`, typed report contracts across all modules |
-| 6 | SQLite persistence, repository layer, database schema, PersistenceManager, Application integration, stress testing, 82 automated tests |
-| 7 | Database Abstraction Layer, DatabaseConnection, ConnectionFactory, PostgreSQL implementation, SchemaManager dialect support, repository compatibility, persistence refactoring, 82 automated tests, SQLite validation |
-| 8 | REST API Layer, FastAPI, Dependency Injection, Request/Response Models, Swagger, OpenAPI, REST API Testing, Live Endpoint Validation, 90 automated tests |
-| 9 | Power BI Integration, DashboardService, Dashboard Models, Power BI REST Endpoints, PostgreSQL Runtime Validation, SQLite Runtime Validation, Stress Testing, Performance Benchmarking, 98 automated tests |
-
-**Next:** Sprint 10 — Streamlit Frontend
+| 6 | SQLite persistence, repository layer, database schema, PersistenceManager, Application integration, stress testing |
+| 7 | Database Abstraction Layer, DatabaseConnection, ConnectionFactory, PostgreSQL implementation, SchemaManager dialect support, repository compatibility, persistence refactoring |
+| 8 | REST API Layer, FastAPI, Dependency Injection, Request/Response Models, Swagger, OpenAPI, REST API Testing, Live Endpoint Validation |
+| 9 | Power BI Integration, DashboardService, Dashboard Models, Power BI REST Endpoints, PostgreSQL and SQLite runtime validation, Stress Testing, Performance Benchmarking |
+| 10 | Enterprise Streamlit Frontend, Dashboard View, Upload Interface, Reports Centre, About Page, Reusable Component Library, Frontend Services, Session Management, Enterprise Navigation, Backend Integration, React‑ready Architecture |
 
 ---
 
@@ -397,6 +452,8 @@ Quick-scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 - SQLite
 - PostgreSQL
 - psycopg 3
+- Streamlit
+- Plotly
 - Visual Studio Code
 - Git
 - GitHub
@@ -433,20 +490,35 @@ The following documents define repository standards and engineering policies:
 
 ---
 
+# Current Engineering Maturity
+
+| Area | Maturity Level |
+|------|----------------|
+| Architecture | Production Ready |
+| Backend | Production Ready |
+| Frontend | MVP Complete |
+| Database | Production Ready |
+| REST API | Production Ready |
+| Power BI Integration | Production Ready |
+| AI Layer | Planned |
+| Deployment | Planned |
+
+---
+
 # Current Focus
 
-Sprint 9 has been completed and released.
+Sprint 10 has been completed and released.
 
-## Sprint 10 — Streamlit Frontend
+## Sprint 11 — AI Insight Engine
 
 Objectives:
 
-- Interactive web interface
-- Dashboard visualization
-- File upload UI
-- KPI widgets
-- Charts
-- Enterprise frontend
+- Executive Summary Generator
+- Recommendation Engine
+- Narrative Generation
+- Explainable Analytics
+- Dashboard AI
+- Report AI
 
 ---
 
@@ -462,9 +534,11 @@ Current repository status:
 - ✅ Stable Test Suite
 - ✅ Stable Performance
 - ✅ Stable REST API
+- ✅ Stable Power BI Integration
+- ✅ Stable Streamlit Frontend
 - ✅ Stable Documentation
-- ✅ Sprint 9 Completed
-- ✅ Ready for Sprint 10
+- ✅ Sprint 10 Completed
+- ✅ Ready for Sprint 11
 
 ---
 
@@ -475,30 +549,36 @@ The project succeeds when I can independently:
 - Design enterprise software architecture.
 - Build modular and scalable applications.
 - Apply SOLID principles consistently.
-- Develop production-quality ETL pipelines.
+- Develop production‑quality ETL pipelines.
 - Implement comprehensive automated testing.
 - Build interactive analytical dashboards.
 - Package desktop applications.
 - Design database architectures.
 - Integrate external systems and APIs.
 - Produce enterprise reporting solutions.
-- Deploy production-ready systems.
+- Deploy production‑ready systems.
 - Review and optimize software architecture.
 - Defend architectural decisions through ADRs.
-- Communicate engineering trade-offs clearly.
+- Communicate engineering trade‑offs clearly.
 - Design enterprise REST APIs.
-- Build service-oriented architectures.
+- Build service‑oriented architectures.
 - Design API contracts.
-- Build production-ready backend services.
+- Build production‑ready backend services.
 - Integrate analytics platforms through REST APIs.
 - Build enterprise dashboard applications.
 - Design Business Intelligence integrations.
-- Deliver production-ready analytics dashboards.
-- Think, communicate, and deliver software like an Enterprise Software Engineer.
+- Deliver production‑ready analytics dashboards.
+- Design enterprise frontend architectures.
+- Build service‑oriented UI applications.
+- Implement AI‑assisted analytics.
+- Lead React migration projects.
+- Develop enterprise dashboard solutions.
+- Demonstrate software architecture leadership.
+- Deliver production‑quality software engineering.
 
 ---
 
-**Current Project State Version:** **v9.0.0**
+**Current Project State Version:** **v10.0.0**
 
-**Previous Version:** **v8.0.0**
+**Previous Version:** **v9.0.0**
 ```

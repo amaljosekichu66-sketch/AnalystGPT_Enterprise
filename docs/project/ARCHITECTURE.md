@@ -7,7 +7,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v9.0.0**.
+> This document reflects the implementation as of **v10.0.0**.
 
 ---
 
@@ -38,6 +38,15 @@ The Business Intelligence Layer remains an integration layer rather than
 a business layer. It communicates only with the Application Layer,
 preserving existing module independence and stable business contracts.
 
+Sprint 10 introduced a dedicated Enterprise Streamlit Frontend Layer
+that provides an interactive web interface for the analytics pipeline.
+
+The Frontend Layer is built using Streamlit with a React-ready architecture,
+consuming the REST API as its sole backend interface. It contains zero
+business logic and communicates exclusively through the established REST API,
+preserving the integrity of the enterprise layered architecture and enabling
+future migration to React without backend changes.
+
 ---
 
 # Architectural Goals
@@ -63,73 +72,119 @@ The architecture is designed to satisfy the following long-term engineering goal
 - Standardized dashboard contracts
 - Visualization-ready data services
 - External BI platform compatibility
+- Frontend-backend separation
+- React-ready presentation layer
+- Future migration without backend changes
 
 ---
 
 # High-Level Architecture
 
 ```text
-Client / Power BI
-        │
-        ▼
-   FastAPI Server
-        │
-        ▼
-     API Routes
-        │
-        ▼
-Dependency Injection
-        │
-        ▼
-  Application.run()
-        │
- ┌──────┼───────┐
- │      │       │
- ▼      ▼       ▼
-Upload → Cleaning → Quality
-                    │
-                    ▼
-            AnalyticsManager
-                    │
-                    ▼
-            ReportingManager
-                    │
-                    ▼
-           DashboardService
-                    │
-          ┌─────────┼─────────┐
-          ▼         ▼         ▼
-     Summary   Statistics   Correlation
-          │         │
-          └────┬────┘
-               ▼
-        Power BI Models
-               │
-               ▼
-        REST API Response
-               │
-               ▼
-      PersistenceManager
-               │
-               ▼
-      Database Layer
+Browser
+   │
+   ▼
+Enterprise Streamlit Frontend
+   │
+   ▼
+Views
+   │
+   ▼
+Components
+   │
+   ▼
+Frontend Services
+   │
+   ▼
+REST API (FastAPI)
+   │
+   ▼
+Application Layer
+   │
+   ▼
+Application.run()
+   │
+   ▼
+Upload
+   ▼
+Cleaning
+   ▼
+Quality
+   ▼
+Analytics
+   ▼
+Reporting
+   ▼
+Persistence
+   │
+   ▼
+Database Abstraction Layer
+   │
+   ├── SQLite
+   └── PostgreSQL
+   │
+   ▼
+Repository Layer
+   │
+   ▼
+DashboardService
+   │
+   ▼
+Power BI Models
+   │
+   ▼
+Power BI Dashboard
 ```
 
 ---
 
 # Architectural Layers
 
-The repository is intentionally organized into seven architectural layers.
+The repository is intentionally organized into eight architectural layers.
 
-### Presentation Layer
+## Frontend Layer
 
-Responsible for application startup.
+Responsible for the user interface and client-side interaction.
+
+Current components:
+
+- Streamlit Application
+- Views
+- Components
+- Frontend Services
+- Theme
+- Session Management
+
+Responsibilities:
+
+- Render interactive dashboards
+- Provide file upload interface
+- Display reports and analytics
+- Manage session state
+- Handle navigation
+- Communicate with REST API
+
+Architectural constraints:
+
+- Views contain no business logic.
+- Components are presentation-only.
+- Frontend Services communicate only with the REST API.
+- Views never access persistence.
+- Frontend remains backend-independent.
+- React migration must not require backend changes.
+- Business logic remains outside Streamlit.
+- Navigation is centralized.
+- Session State stores presentation state only.
+
+## Presentation Layer
+
+Responsible for application startup (legacy CLI entry point).
 
 Current component:
 
 - main.py
 
-### REST API Layer
+## REST API Layer
 
 Responsible for exposing the application through HTTP endpoints.
 
@@ -141,7 +196,7 @@ Current components:
 - Request/Response Models
 - Exception Handlers
 
-### Business Intelligence Layer
+## Business Intelligence Layer
 
 Responsible for exposing dashboard-ready analytical data.
 
@@ -161,7 +216,7 @@ Responsibilities:
 - Remain independent from analytics implementation
 - Support external BI platforms
 
-### Application Layer
+## Application Layer
 
 Responsible for orchestration only.
 
@@ -169,8 +224,6 @@ Responsible for orchestration only.
 
 - Application
 - PipelineResult
-
----
 
 ### Architectural Constraints
 
@@ -183,9 +236,7 @@ The Application layer:
 
 The Application layer must not implement business logic belonging to individual modules.
 
----
-
-### Business Layer
+## Business Layer
 
 Contains independent business modules.
 
@@ -195,7 +246,7 @@ Contains independent business modules.
 - Analytics
 - Reporting
 
-### Persistence Layer
+## Persistence Layer
 
 Responsible for application persistence.
 
@@ -214,7 +265,7 @@ Responsibilities:
 - Persist analytics reports
 - Persist reporting metadata
 
-### Infrastructure Layer
+## Infrastructure Layer
 
 Provides reusable infrastructure, configuration, logging,
 exception handling, and database services shared across the
@@ -253,12 +304,45 @@ The REST API Layer:
 
 ---
 
+# Frontend Layer
+
+### Responsibilities
+
+- Render user interface
+- Handle user interactions
+- Display dashboards and reports
+- Manage file uploads
+- Maintain session state
+- Navigate between views
+- Communicate with backend via REST API
+
+### Components
+
+- Streamlit Application
+- Views (Dashboard, Upload, Reports, About)
+- Reusable Components (charts, metrics, tables, navigation, uploader)
+- Frontend Services (API client, session manager)
+- Configuration (settings)
+- Theme (styles)
+
+### Architectural Constraints
+
+The Frontend Layer:
+
+- may communicate only with the REST API Layer.
+- must never implement business logic.
+- must never communicate directly with business modules, persistence, or repositories.
+- must remain independent of backend implementation details.
+- must preserve REST API contracts during future migration.
+
+---
+
 # Layered Architecture
 
 ```text
-Presentation Layer
+Frontend Layer
 
-main.py
+Browser → Streamlit → Views → Components → Frontend Services
 
 ↓
 
@@ -327,17 +411,36 @@ SQLite3
 psycopg 3
 OpenPyXL
 JSON
+Streamlit
+Plotly
 ```
 
 ---
 
 # Module Responsibilities
 
+## Frontend Layer
+
+### Owner
+
+Streamlit Application
+
+### Components
+
+- Views
+- Components
+- Frontend Services
+- Session Manager
+
+### Status
+
+✅ Stable (MVP)
+
 ## main.py
 
 Responsibilities
 
-- Start application
+- Start application (CLI)
 - Parse input
 - Invoke `Application.run()`
 
@@ -825,7 +928,10 @@ Custom exception hierarchy.
 ## Allowed
 
 ```text
-Client
+Browser
+   │
+   ▼
+Frontend Layer
    │
    ▼
 REST API
@@ -859,6 +965,27 @@ core
 ```
 
 ## Not Allowed
+
+```text
+Frontend Layer
+   │
+   ▼
+Business Modules
+```
+
+```text
+Frontend Layer
+   │
+   ▼
+Persistence
+```
+
+```text
+Frontend Layer
+   │
+   ▼
+Repositories
+```
 
 ```text
 REST API
@@ -902,7 +1029,7 @@ core
 Application
 ```
 
-Business modules remain completely unaware of persistence and HTTP concerns.
+Business modules remain completely unaware of persistence, HTTP, and UI concerns.
 
 Only the Application layer communicates with the Persistence layer.
 
@@ -914,7 +1041,9 @@ The Business Intelligence Layer communicates only with the
 Application Layer and must never access business modules
 or persistence components directly.
 
-This separation allows future database technologies and API changes to be introduced without requiring changes to business logic.
+The Frontend Layer communicates only with the REST API Layer.
+
+This separation allows future frontend technologies, database technologies, and API changes to be introduced without requiring changes to business logic.
 
 ---
 
@@ -932,6 +1061,9 @@ This separation allows future database technologies and API changes to be introd
 | REST API | PipelineResponse |
 | DashboardService | Dashboard Models |
 | Power BI API | Dashboard Responses |
+| Frontend Views | UI Render |
+| Frontend Components | UI Elements |
+| Frontend Services | API Requests |
 
 Stable contracts reduce coupling and simplify future extensions.
 
@@ -955,13 +1087,16 @@ Breaking a contract requires:
 # Data Flow
 
 ```text
-HTTP Request
+Browser Interaction
       │
       ▼
-Power BI Endpoint
+Frontend View
       │
       ▼
-DashboardService
+Frontend Service (API Client)
+      │
+      ▼
+REST API Endpoint
       │
       ▼
 Application.run()
@@ -980,6 +1115,8 @@ Reporting
 Dashboard Models
       ▼
 REST Response
+      ▼
+Frontend Render
 ```
 
 ---
@@ -998,6 +1135,7 @@ Every business module exposes one manager responsible for internal orchestration
 | Persistence | PersistenceManager |
 | Application | Application |
 | Business Intelligence | DashboardService |
+| Frontend | Streamlit Application |
 
 Managers coordinate workflows while business logic remains inside dedicated components.
 
@@ -1018,6 +1156,7 @@ Examples:
 - Application owns pipeline orchestration.
 - FastAPI Server owns REST API Layer.
 - DashboardService owns Business Intelligence orchestration.
+- Streamlit Application owns Frontend Layer.
 
 Ownership is never shared across modules.
 
@@ -1047,6 +1186,12 @@ REST API logging includes:
 - Response logging
 - Endpoint execution logging
 
+Frontend logging includes:
+
+- User actions
+- Navigation events
+- API request/response logging (development)
+
 ---
 
 # Exception Strategy
@@ -1064,6 +1209,12 @@ Global REST exception handlers provide:
 - Consistent HTTP error responses
 - Standardized error format
 - Proper HTTP status codes
+
+Frontend error handling:
+
+- Display user-friendly error messages
+- Log errors for debugging
+- Graceful degradation
 
 ---
 
@@ -1149,6 +1300,17 @@ Current coverage includes:
 - Report endpoint
 - Pipeline endpoint
 
+### Frontend
+
+- Dashboard view
+- Upload interface
+- Reports view
+- About page
+- Navigation
+- Session state
+- Frontend services
+- API client integration
+
 ### Application Layer
 
 Validated through:
@@ -1157,20 +1319,17 @@ Validated through:
 - Complete pipeline execution
 - PipelineResult validation
 - REST API execution validation
+- Frontend-to-backend integration testing
 
 ### Integration
 
 - Complete end-to-end pipeline execution
 - REST API integration testing
+- Frontend-backend integration testing
 
 Current results:
 
-```text
-98 Tests Passed
-0 Failed
-0 Errors
-0 Warnings
-```
+All available automated tests passing.
 
 Every completed component must include automated unit tests before release. Automated testing validates every architectural change.
 
@@ -1195,7 +1354,7 @@ The platform has been validated using datasets of increasing scale.
 - Successful report export
 - Complete end-to-end validation
 - No runtime failures
-- 98 / 98 automated tests remained passing after Business Intelligence integration.
+- All automated tests remained passing after Business Intelligence and Frontend integration.
 - REST API execution validated
 - Swagger validation passed
 - OpenAPI generation validated
@@ -1206,6 +1365,9 @@ The platform has been validated using datasets of increasing scale.
 - PostgreSQL runtime validation
 - Benchmark execution validation
 - Stress testing validation
+- Frontend rendering performance
+- API response times
+- Session state management
 
 The platform successfully completed:
 
@@ -1217,6 +1379,7 @@ The platform successfully completed:
 - Report generation validation
 - REST API validation
 - End-to-end HTTP pipeline execution
+- Frontend interface validation
 
 ---
 
@@ -1297,6 +1460,28 @@ src/
 │       ├── __init__.py
 │       ├── dashboard_service.py
 │       └── powerbi_models.py
+├── frontend/
+│   ├── streamlit_app.py
+│   ├── views/
+│   │   ├── dashboard_page.py
+│   │   ├── upload_page.py
+│   │   ├── report_page.py
+│   │   └── about_page.py
+│   ├── components/
+│   │   ├── charts.py
+│   │   ├── metrics.py
+│   │   ├── tables.py
+│   │   ├── navigation.py
+│   │   └── uploader.py
+│   ├── services/
+│   │   ├── api_client.py
+│   │   └── session_manager.py
+│   ├── config/
+│   │   └── settings.py
+│   ├── theme/
+│   │   └── styles.py
+│   ├── assets/
+│   └── static/
 └── core/
 
 tests/
@@ -1312,6 +1497,10 @@ tests/
 │   ├── test_version.py
 │   ├── test_pipeline.py
 │   ├── test_powerbi.py
+│   └── __init__.py
+├── frontend/
+│   ├── test_views.py
+│   ├── test_services.py
 │   └── __init__.py
 ├── integration/
 └── fixtures/
@@ -1349,6 +1538,8 @@ The architecture follows:
 - API-first Architecture
 - Service-oriented Architecture
 - Request/Response Contracts
+- Frontend-Backend Separation
+- React-ready Architecture
 
 ---
 
@@ -1356,6 +1547,7 @@ The architecture follows:
 
 | Layer | Status |
 |--------|--------|
+| Frontend | ✅ MVP Complete |
 | Presentation | ✅ Stable |
 | REST API Layer | ✅ Stable |
 | Business Intelligence Layer | ✅ Stable |
@@ -1387,7 +1579,7 @@ Major improvements:
 - Isolated all SQL execution inside repositories.
 - Integrated persistence into Application.run().
 - Preserved business module persistence-agnostic design.
-- Extended automated testing to 82 passing tests.
+- Extended automated testing.
 - Successfully validated large and stress datasets.
 - Established the foundation for PostgreSQL migration.
 
@@ -1408,7 +1600,7 @@ Major improvements:
 - Updated PersistenceManager to use dependency injection.
 - Centralized database configuration for engine selection.
 - Preserved all stable module contracts and business logic.
-- Maintained 82 passing automated tests.
+- Maintained automated test passing.
 - Validated SQLite runtime and PostgreSQL architecture.
 
 ---
@@ -1427,7 +1619,7 @@ Major improvements:
 - Generated OpenAPI 3.1 specification automatically.
 - Served Swagger UI for interactive API documentation.
 - Preserved all stable module contracts and business logic.
-- Extended automated testing to 90 passing tests.
+- Extended automated testing.
 - Validated REST API execution, Swagger UI, and OpenAPI generation.
 - Successfully validated large and stress datasets through HTTP endpoints.
 
@@ -1446,10 +1638,56 @@ Major improvements:
 - Added Power BI REST endpoints.
 - Added benchmark framework.
 - Added stress testing framework.
-- Extended automated testing to 98 passing tests.
+- Extended automated testing.
 - Validated SQLite runtime.
 - Validated PostgreSQL runtime.
 - Successfully validated one million row datasets.
+
+---
+
+# Sprint 10 — Enterprise Streamlit Frontend
+
+Sprint 10 introduced a dedicated Enterprise Streamlit Frontend Layer
+that provides an interactive web interface for the analytics pipeline.
+
+Major improvements:
+
+- Added Frontend Layer with Streamlit.
+- Implemented Dashboard view.
+- Added Upload interface.
+- Added Reports Centre.
+- Added About page.
+- Created reusable component library.
+- Implemented Frontend Services (API client, session manager).
+- Added enterprise navigation.
+- Integrated with REST API.
+- Ensured React-ready architecture.
+- Preserved all stable module contracts and business logic.
+- Extended automated testing (frontend validation).
+- Validated frontend-backend integration.
+- Prepared for future React migration.
+
+---
+
+# React Migration Constraint
+
+The Streamlit frontend serves as the MVP presentation layer.
+
+Future React migration shall preserve:
+
+- REST API contracts
+- Application Layer
+- Business modules
+- Persistence Layer
+- Database Abstraction Layer
+
+Only the Presentation Layer (Frontend) may be replaced.
+
+All backend infrastructure and contracts must remain unchanged during the migration.
+
+This constraint ensures that the architectural integrity of the backend
+and the service boundaries remain intact, allowing a smooth transition
+to a modern React frontend when the time comes.
 
 ---
 
@@ -1457,28 +1695,33 @@ Major improvements:
 
 The current architecture provides a stable foundation for continued, sequenced evolution. The Application layer remains the single orchestration point as the platform grows, while the REST API Layer provides the interface for external integrations.
 
-## Sprint 10 — Streamlit Frontend
+## Sprint 11 — AI Insight Engine
 
-- Interactive dashboards
-- File upload interface
-- KPI widgets
-- Visualization layer
-- Enterprise frontend
+- Executive Summary Generator
+- Recommendation Engine
+- Narrative Generation
+- Explainable Analytics
+- Dashboard AI
+- Report AI
 
-## Sprint 11 — AI-generated business insights
-
-## Sprint 12 — Production deployment
+## Sprint 12 — Production Deployment
 
 - Docker
 - CI/CD
 - Monitoring
 - Cloud deployment
 
+## Sprint 15 — React Migration
+
+- Replace Streamlit with React
+- Preserve all backend contracts
+- Maintain service boundaries
+
 Every architectural change affecting module boundaries or dependency direction must be documented through a new Architecture Decision Record (ADR).
 
 ---
 
-**Current Architecture Version:** **v9.0.0**
+**Current Architecture Version:** **v10.0.0**
 
-**Previous Version:** **v8.0.0**
+**Previous Version:** **v9.0.0**
 ```

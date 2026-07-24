@@ -3,43 +3,78 @@ FastAPI server configuration for AnalystGPT Enterprise.
 
 Responsibilities
 ----------------
-- Create and configure the FastAPI application.
+- Configure the FastAPI application.
+- Register middleware.
+- Register exception handlers.
 - Register API routers.
-- Expose the FastAPI application instance.
+- Configure application lifespan.
 
-Design Principles
------------------
-- Single Responsibility Principle (SRP)
-- Loose Coupling
-- High Cohesion
-- Dependency Inversion
-
-This module intentionally contains NO business logic.
-Business operations are delegated to the Application Layer
-through the API route modules.
+Sprint 10 Release Candidate
 """
 
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.exceptions.exception_handlers import (
     register_exception_handlers,
 )
+
 from src.api.routes import (
     health_router,
     pipeline_router,
     root_router,
     version_router,
 )
-from src.api.routes.powerbi import router as powerbi_router  # <-- NEW
+
+from src.api.routes.dashboard import (
+    router as dashboard_router,
+)
+
+from src.api.routes.powerbi import (
+    router as powerbi_router,
+)
+
+from src.api.routes.reports import (
+    router as reports_router,
+)
+
 from src.core.constants import (
-    APP_DESCRIPTION,
-    APP_NAME,
-    APP_VERSION,
     API_DOCS_URL,
     API_OPENAPI_URL,
     API_PREFIX,
     API_REDOC_URL,
+    APP_DESCRIPTION,
+    APP_NAME,
+    APP_VERSION,
 )
+
+from src.core.logger import logger
+
+
+# ==========================================================
+# Application Lifespan
+# ==========================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Startup / Shutdown lifecycle.
+    """
+
+    logger.info(
+        "Starting AnalystGPT Enterprise API..."
+    )
+
+    yield
+
+    logger.info(
+        "Stopping AnalystGPT Enterprise API..."
+    )
+
 
 # ==========================================================
 # FastAPI Application
@@ -52,6 +87,25 @@ app = FastAPI(
     docs_url=API_DOCS_URL,
     redoc_url=API_REDOC_URL,
     openapi_url=API_OPENAPI_URL,
+    lifespan=lifespan,
+    contact={
+        "name": "Amal Jose",
+    },
+    license_info={
+        "name": "MIT",
+    },
+)
+
+# ==========================================================
+# Middleware
+# ==========================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ==========================================================
@@ -61,24 +115,51 @@ app = FastAPI(
 register_exception_handlers(app)
 
 # ==========================================================
-# Router Registration
+# API Routers
 # ==========================================================
 
-app.include_router(root_router)
+logger.info(
+    "Registering API routers..."
+)
+
+app.include_router(
+    root_router,
+    tags=["Root"],
+)
 
 app.include_router(
     health_router,
     prefix=API_PREFIX,
+    tags=["Health"],
 )
 
 app.include_router(
     version_router,
     prefix=API_PREFIX,
+    tags=["Version"],
 )
 
 app.include_router(
     pipeline_router,
     prefix=API_PREFIX,
+    tags=["Pipeline"],
 )
 
-app.include_router(powerbi_router)  # <-- NEW (with or without prefix)
+app.include_router(
+    dashboard_router,
+    tags=["Dashboard"],
+)
+
+app.include_router(
+    reports_router,
+    tags=["Reports"],
+)
+
+app.include_router(
+    powerbi_router,
+    tags=["Power BI"],
+)
+
+logger.info(
+    "FastAPI server initialized successfully."
+)
