@@ -1,268 +1,108 @@
+```markdown
 # AnalystGPT Enterprise
 
-![Python](https://img.shields.io/badge/Python-3.11-blue)
-![Tests](https://img.shields.io/badge/Tests-98%20Passed-brightgreen)
-![Architecture](https://img.shields.io/badge/Architecture-Layered%20%2B%20REST%20API%20%2B%20Power%20BI-success)
-![Database](https://img.shields.io/badge/Database-SQLite%20%2B%20PostgreSQL-blue)
-![REST API](https://img.shields.io/badge/REST%20API-FastAPI%20%2F%20OpenAPI%203.1-blueviolet)
-![Power BI](https://img.shields.io/badge/Power%20BI-Integration-yellow)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Version](https://img.shields.io/badge/Version-v9.0.0-blue)
+![Python Version](https://img.shields.io/badge/python-3.11-blue)
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
+![Architecture](https://img.shields.io/badge/architecture-layered%20%2B%20REST%20%2B%20BI-success)
+![Database](https://img.shields.io/badge/database-SQLite%20%2B%20PostgreSQL-blueviolet)
+![REST API](https://img.shields.io/badge/REST%20API-FastAPI%20%2F%20OpenAPI%203.1-informational)
+![Power BI](https://img.shields.io/badge/Power%20BI-integration-yellow)
+![Frontend](https://img.shields.io/badge/frontend-Streamlit%20%2B%20React--ready-orange)
+![Version](https://img.shields.io/badge/version-v10.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-> **Enterprise-Grade Analytics Platform**
->
-> AnalystGPT Enterprise is a modular analytics platform built using enterprise software engineering principles. The project demonstrates how a production-quality analytics application can be designed through clean architecture, layered architecture, automated testing, documentation, and scalable software engineering practices.
+> **Enterprise‑grade analytics pipeline with a modern UI, REST API, and business intelligence ready for production.**
+
+AnalystGPT Enterprise is a fully functional analytics platform built from the ground up with enterprise software engineering principles. It ingests datasets, cleans and validates data, runs statistical analytics, generates structured reports, persists execution metadata, exposes everything through a REST API (with OpenAPI/Swagger), integrates with Power BI, and now provides an interactive web interface powered by Streamlit. The architecture is modular, layered, and ready for AI enhancements and cloud deployment.
 
 ---
 
-## Quick Links
+## 📌 Quick Links
 
-- [Project Overview](#project-overview)
-- [Project Goals](#project-goals)
-- [Features](#features)
-- [Architecture](#architecture-principles)
-- [Installation](#installation)
-- [Running the Project](#running-the-project)
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Modules](#implemented-modules)
 - [REST API](#rest-api)
-- [Business Intelligence API](#business-intelligence-api)
-- [Testing](#running-tests)
+- [Frontend](#streamlit-frontend)
+- [Database & Persistence](#database-layer)
+- [Business Intelligence](#business-intelligence)
+- [Testing & Performance](#testing--performance)
+- [Roadmap](#roadmap)
+- [Installation & Running](#installation--running)
 - [Documentation](#documentation)
-- [Roadmap](#project-roadmap)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-# Project Overview
+## Overview
 
-AnalystGPT Enterprise is an enterprise-grade analytics platform designed to
-demonstrate modern software engineering practices while solving a complete
-analytics workflow.
+AnalystGPT Enterprise solves a common problem: **turning raw data into actionable business insights** through a repeatable, auditable, and scalable analytics pipeline. It is designed for data engineers, analysts, and software architects who need a production‑ready reference implementation of a modern analytics platform.
 
-The platform processes datasets through a modular pipeline that performs:
+The project demonstrates:
 
-- Data ingestion
-- Data cleaning
-- Data quality assessment
-- Statistical analytics
-- Business report generation
-- Persistent execution tracking
-- Database-agnostic persistence
-- **Business Intelligence integration**
-- **Power BI dashboard generation**
+- **Clean architecture** with strict separation of concerns
+- **Database abstraction** supporting SQLite and PostgreSQL
+- **REST API** with OpenAPI 3.1 and Swagger UI
+- **Business Intelligence** integration (Power BI)
+- **Enterprise frontend** built with Streamlit and designed for React migration
+- **Comprehensive testing** (unit, integration, stress, large dataset)
+- **Engineering governance** via ADRs and documentation standards
 
-The persistence layer now supports multiple relational database engines
-through a unified abstraction layer, enabling interchangeable SQLite
-and PostgreSQL backends without changing business logic.
-
-The platform is now accessible through a **REST API** built with **FastAPI**,
-providing interactive documentation via **Swagger UI** and a standard
-**OpenAPI 3.1** specification. The REST API Layer delegates all operations
-to the Application Layer, preserving the separation of concerns and
-layered architecture established in previous sprints.
-
-**Sprint 9 extends the platform with a dedicated Business Intelligence
-Integration Layer that exposes dashboard-ready analytics through
-Power BI-compatible REST endpoints.**
-
-The Business Intelligence layer remains independent from the business
-modules and communicates only with the Application Layer, preserving
-the existing layered architecture.
-
-The project is intentionally developed sprint-by-sprint to simulate the
-evolution of a production enterprise application.
+> **Current Release:** v10.0.0 (Sprint 10 completed – Enterprise Streamlit Frontend)  
+> **Status:** Active development – ready for AI Insight Engine (Sprint 11)
 
 ---
 
-# Why This Project?
+## Key Features
 
-AnalystGPT Enterprise was built as a long-term software engineering project
-to progressively implement enterprise architecture, scalable analytics
-workflows, automated testing, database persistence, and production-ready
-engineering practices through iterative sprint-based development.
-
-The project demonstrates the evolution from a simple analytics application
-into an enterprise platform through incremental architectural improvements,
-showing how clean interfaces and abstraction layers enable adaptability
-and extensibility.
-
-The project now demonstrates enterprise backend development,
-database abstraction, REST API engineering, and Business
-Intelligence integration suitable for external analytics platforms.
+| Category | Features |
+|----------|----------|
+| **Data Pipeline** | Upload (CSV/Excel/JSON) → Cleaning (columns, text, missing, duplicates) → Quality (completeness, validity, consistency, outliers) → Analytics (descriptive, correlation, distribution) → Reporting (executive summaries, KPIs) |
+| **Persistence** | SQLite (development) and PostgreSQL (production) via a unified abstraction layer; repository pattern for all database operations |
+| **REST API** | FastAPI with dependency injection, Pydantic models, global exception handlers, OpenAPI 3.1, and Swagger UI |
+| **Business Intelligence** | Dedicated DashboardService with Power‑BI‑ready endpoints (summary, statistics, correlation, distribution, categorical) |
+| **Frontend** | Enterprise Streamlit application with dashboard, upload interface, reports centre, about page, reusable components, session management, and centralised navigation |
+| **Testing & Quality** | Automated pytest suite, integration tests, stress testing, performance validation on datasets up to 1M rows |
+| **Engineering** | Layered architecture, SOLID principles, ADRs, comprehensive documentation, CI/CD ready |
 
 ---
 
-# Project Goals
+## Architecture
 
-- Demonstrate enterprise software engineering through practical implementation
-- Build production-quality analytics architecture with clear separation of concerns
-- Practice scalable system design and modular component development
-- Maintain high automated test coverage across all modules
-- Incrementally evolve through engineering sprints with stable, tested releases
-- Apply SOLID principles and enterprise patterns consistently
-- Create maintainable, extensible, and well-documented software
-- **Build reusable Business Intelligence services**
-- **Deliver dashboard-ready APIs**
-- **Support enterprise reporting platforms**
+The system follows a strict layered architecture, where each layer has a single responsibility and communicates only through stable contracts.
 
----
-
-# Key Engineering Highlights
-
-- Enterprise layered architecture
-- Repository Pattern
-- Manager-Orchestrator Pattern
-- Database Abstraction Layer
-- DatabaseConnection abstraction
-- ConnectionFactory
-- Cross-database repository architecture
-- SQLite and PostgreSQL support
-- REST API Layer with FastAPI
-- OpenAPI 3.1 specification
-- Swagger UI interactive documentation
-- Dependency Injection for application lifecycle
-- Pydantic request validation and response serialization
-- Global Exception Handling with consistent error responses
-- Service-Oriented Architecture
-- Automated testing (98 tests)
-- Performance validation up to 1,000,000 rows
-- Modular business pipeline
-- Architecture Decision Records (ADRs)
-- Comprehensive engineering documentation
-- **Business Intelligence Layer**
-- **DashboardService**
-- **Power BI Integration**
-- **Dashboard Response Models**
-- **Dashboard APIs**
-- **Performance Benchmark Framework**
-- **Stress Testing Framework**
-- **REST Dashboard Endpoints**
-
----
-
-# Current Status
-
-| Item | Status |
-|------|--------|
-| **Current Version** | **v9.0.0** |
-| **Development Status** | 🟢 Active Development |
-| **Current Sprint** | ✅ Sprint 9 – Power BI Integration Complete |
-| **Architecture** | 🟢 Enterprise Layered Architecture + REST API + Business Intelligence Layer |
-| **Application Layer** | ✅ Stable |
-| **Persistence Layer** | ✅ Stable |
-| **Database Abstraction Layer** | ✅ Stable |
-| **Repository Layer** | ✅ Stable |
-| **REST API Layer** | ✅ Stable |
-| **Business Intelligence Layer** | ✅ Stable |
-| **Power BI Integration** | ✅ Complete |
-| **Dashboard Services** | ✅ Complete |
-| **Performance Benchmarking** | ✅ Complete |
-| **OpenAPI** | ✅ Operational |
-| **Swagger** | ✅ Operational |
-| **Automated Tests** | ✅ 98 / 98 Passed |
-| **Performance Validation** | ✅ Completed |
-| **Next Sprint** | 🚀 Sprint 10 – Streamlit Frontend |
-
----
-
-# Features
-
-## Completed Modules
-
-- ✅ Upload Module
-- ✅ Cleaning Module
-- ✅ Quality Module
-- ✅ Analytics Module
-- ✅ Reporting Module
-- ✅ Application Layer
-- ✅ Persistence Layer
-- ✅ Database Abstraction Layer
-- ✅ SQLite Support
-- ✅ PostgreSQL Support
-- ✅ Repository Layer
-- ✅ REST API Layer
-- ✅ FastAPI Server
-- ✅ Root Endpoint
-- ✅ Health Endpoint
-- ✅ Version Endpoint
-- ✅ Pipeline Endpoint
-- ✅ Swagger UI
-- ✅ OpenAPI 3.1
-- ✅ API Models
-- ✅ Global Exception Handlers
-- ✅ **Business Intelligence Layer**
-- ✅ **DashboardService**
-- ✅ **Power BI Integration**
-- ✅ **Dashboard Models**
-- ✅ **Dashboard Endpoints**
-- ✅ **Performance Benchmark Framework**
-- ✅ **Stress Testing Framework**
-
-## Upcoming Modules
-
-- ⏳ Streamlit Application
-- ⏳ AI Insights
-- ⏳ Production Deployment
-
----
-
-# Architecture Principles
-
-The architecture emphasizes maintainability, extensibility, and clear separation
-of responsibilities so that new capabilities can be introduced with minimal
-impact on existing business modules.
-
-The project follows modern enterprise engineering practices:
-
-- Layered Architecture
-- Repository Pattern
-- Manager-Orchestrator Pattern
-- Separation of Concerns (SoC)
-- SOLID Principles
-- Stable Module Contracts
-- High Cohesion
-- Low Coupling
-- Automated Testing
-- Dependency Injection
-- Database Abstraction
-- Interface-driven Design
-- REST API Design
-- API-first Architecture
-- Service-oriented Architecture
-- **Business Intelligence Layer**
-- **Integration Layer**
-- **Dashboard Service Pattern**
-
----
-
-# Enterprise Architecture
-
-```text
-Power BI / Browser / REST Client
-                │
-                ▼
-          FastAPI Server
-                │
-                ▼
-           API Routes
-                │
-                ▼
-        Dependency Injection
-                │
-                ▼
-         Application.run()
-                │
-        ┌───────┼───────┐
-        │       │       │
-        ▼       ▼       ▼
+```
+Browser / Power BI / REST Client
+               │
+               ▼
+         Streamlit Frontend
+               │
+               ▼
+     Views → Components → Services
+               │
+               ▼
+         FastAPI REST API
+               │
+               ▼
+        Application Layer (Application.run())
+               │
+       ┌───────┼───────┐
+       │       │       │
+       ▼       ▼       ▼
   Upload → Cleaning → Quality
                        │
                        ▼
-              AnalyticsManager
+               AnalyticsManager
                        │
                        ▼
-              ReportingManager
+               ReportingManager
                        │
                        ▼
-             PersistenceManager
+              PersistenceManager
                        │
                        ▼
               DatabaseManager
@@ -272,349 +112,357 @@ Power BI / Browser / REST Client
                        │
                        ▼
               DatabaseConnection
-                  ▲         ▲
-                  │         │
-        SQLiteConnection PostgreSQLConnection
-                  │         │
-               sqlite3   psycopg
-                  │         │
-                  └────┬────┘
+                   ▲        ▲
+                   │        │
+         SQLiteConnection  PostgreSQLConnection
+                   │        │
+                sqlite3    psycopg
+                   │        │
+                   └───┬────┘
                        │
                        ▼
-              Repository Layer
+               Repository Layer
                        │
                        ▼
-              PipelineResult
+               PipelineResult
                        │
                        ▼
-          (DashboardService)
+              DashboardService
                        │
                        ▼
-         Power BI Models
-                       │
-                       ▼
-         REST API Response
+              Power BI Models
 ```
 
-Business modules remain independent of the underlying database engine, the REST API Layer, and the Business Intelligence Layer, communicating only through stable contracts and abstractions.
+**Key architectural principles:**
+
+- **Layered separation:** Business logic is isolated in the Application Layer and business modules; persistence, API, and UI layers are independent.
+- **Repository Pattern:** All SQL is encapsulated in repositories, making database engines interchangeable.
+- **Database Abstraction:** `DatabaseConnection` and `ConnectionFactory` allow runtime switching between SQLite and PostgreSQL.
+- **Dependency Injection:** The REST API uses DI to manage Application lifecycle.
+- **Service‑Oriented Frontend:** Streamlit views delegate to service classes that call the REST API; no business logic in the UI.
+- **React‑ready:** The frontend architecture is designed to allow future replacement of Streamlit with React without backend changes.
 
 ---
 
-# Technology Stack
+## Technology Stack
 
 | Category | Technologies |
 |----------|--------------|
-| Language | Python 3.11 |
-| Data Processing | Pandas |
-| Database | SQLite, PostgreSQL |
-| Database Drivers | sqlite3, psycopg 3 |
-| REST API | FastAPI |
-| Validation | Pydantic |
-| API Documentation | OpenAPI 3.1, Swagger UI |
-| **Business Intelligence** | **Power BI** |
-| **Performance** | **Benchmark Framework** |
-| Testing | Pytest |
-| Architecture | Layered Architecture, Repository Pattern, Manager-Orchestrator Pattern |
-| Version Control | Git, GitHub |
-| Development | Visual Studio Code |
-| Documentation | Markdown |
+| **Language** | Python 3.11 |
+| **Data Processing** | Pandas |
+| **Web Framework** | FastAPI, Uvicorn |
+| **Validation** | Pydantic |
+| **API Docs** | OpenAPI 3.1, Swagger UI, ReDoc |
+| **Frontend** | Streamlit, Plotly |
+| **Database** | SQLite (built‑in), PostgreSQL (psycopg 3) |
+| **Testing** | Pytest, pytest‑cov, HTTPX |
+| **Performance** | Custom stress and benchmark framework |
+| **Version Control** | Git, GitHub |
+| **Documentation** | Markdown, ADRs |
 
 ---
 
-# Current Capabilities
+## Project Structure
 
-AnalystGPT Enterprise currently supports:
-
-- Multi-format dataset ingestion (CSV, Excel, JSON)
-- Enterprise data cleaning pipeline
-- Automated data quality assessment
-- Statistical analytics
-- Business report generation
-- Database-agnostic metadata persistence
-- SQLite and PostgreSQL support
-- Automatic database engine selection
-- Repository abstraction
-- End-to-end automated testing
-- Performance validation up to 1,000,000 rows
-- REST API execution
-- Interactive Swagger UI
-- OpenAPI specification
-- Typed request validation
-- Typed response serialization
-- API integration testing
-- Dependency Injection
-- Global exception handling
-- **Power BI dashboard endpoints**
-- **Dashboard-ready JSON**
-- **Summary APIs**
-- **Statistics APIs**
-- **Correlation APIs**
-- **Distribution APIs**
-- **Categorical APIs**
-- **Business Intelligence integration**
-- **Performance benchmarking**
-- **Stress testing**
+```
+AnalystGPT_Enterprise/
+├── src/
+│   ├── api/                # REST API Layer (FastAPI)
+│   │   ├── server.py
+│   │   ├── routes/
+│   │   ├── models/
+│   │   ├── dependencies/
+│   │   └── exceptions/
+│   ├── application/        # Application Layer & PipelineResult
+│   ├── upload/             # Upload Module
+│   ├── cleaning/           # Cleaning Module
+│   ├── quality/            # Quality Module
+│   ├── analytics/          # Analytics Module
+│   ├── reporting/          # Reporting Module
+│   ├── persistence/        # Persistence Manager
+│   ├── database/           # Database Abstraction & Repositories
+│   │   ├── database_connection.py
+│   │   ├── sqlite_connection.py
+│   │   ├── postgresql_connection.py
+│   │   ├── connection_factory.py
+│   │   ├── database_manager.py
+│   │   ├── schema_manager.py
+│   │   └── repositories/
+│   ├── integrations/       # External integrations
+│   │   └── powerbi/        # Power BI Dashboard Service & Models
+│   ├── frontend/           # Streamlit Frontend
+│   │   ├── streamlit_app.py
+│   │   ├── views/
+│   │   ├── components/
+│   │   ├── services/
+│   │   ├── config/
+│   │   ├── theme/
+│   │   └── assets/
+│   └── core/               # Shared infrastructure (config, logging, exceptions)
+├── tests/                  # Pytest test suite
+├── docs/                   # Architecture, ADRs, engineering manuals, sprint reports
+├── performance/            # Benchmark results, stress test scripts
+├── sample_data/            # Example datasets
+├── reports/                # Generated reports (output)
+├── main.py                 # CLI entry point
+├── requirements.txt
+└── README.md
+```
 
 ---
 
-# REST API
+## Implemented Modules
 
-AnalystGPT Enterprise exposes its analytics pipeline through a REST API built with FastAPI.
+| Module | Purpose | Status | Sprint |
+|--------|---------|--------|--------|
+| **Upload** | Import CSV/Excel/JSON into Pandas DataFrame | ✅ Stable | 1 |
+| **Cleaning** | Column, text, missing values, duplicates, data types | ✅ Stable | 2 |
+| **Quality** | Completeness, validity, consistency, uniqueness, outliers | ✅ Stable | 3 |
+| **Analytics** | Descriptive, numerical, categorical, correlation, distribution | ✅ Stable | 4 |
+| **Reporting** | Executive summary, KPIs, structured reports, text export | ✅ Stable | 5 |
+| **Application Layer** | Orchestration, PipelineResult, thin main.py | ✅ Stable | 5.5 |
+| **Persistence** | Execution metadata, repositories, SQLite | ✅ Stable | 6 |
+| **Database Abstraction** | ConnectionFactory, PostgreSQL support, dialect‑aware schemas | ✅ Stable | 7 |
+| **REST API** | FastAPI, OpenAPI, Swagger, dependency injection | ✅ Stable | 8 |
+| **Power BI Integration** | DashboardService, dashboard endpoints, benchmarking | ✅ Stable | 9 |
+| **Streamlit Frontend** | Dashboard, upload, reports, about, components, services, session | ✅ Stable | 10 |
+| **AI Insight Engine** | Executive summary generator, recommendations, narratives | 🔄 Planned | 11 |
+| **Production Deployment** | Docker, CI/CD, monitoring | 🔄 Planned | 12 |
 
-**Available endpoints:**
+---
+
+## REST API
+
+The REST API is built with FastAPI and exposes the analytics pipeline through HTTP endpoints. All endpoints are documented interactively via Swagger UI and ReDoc.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/` | API root information |
+| GET | `/` | API root info |
 | GET | `/api/v1/health` | Health check |
-| GET | `/api/v1/version` | Version information |
-| POST | `/api/v1/pipeline` | Execute the analytics pipeline |
+| GET | `/api/v1/version` | Version info |
+| POST | `/api/v1/pipeline` | Execute the full pipeline and return results |
 
-**Interactive documentation:**
+- **OpenAPI 3.1** specification available at `/openapi.json`
+- **Swagger UI:** `http://127.0.0.1:8000/docs`
+- **ReDoc:** `http://127.0.0.1:8000/redoc`
 
-- Swagger UI: `http://127.0.0.1:8000/docs`
-- ReDoc: `http://127.0.0.1:8000/redoc`
-
-**OpenAPI specification:**
-
-- `http://127.0.0.1:8000/openapi.json`
-
-The REST API Layer contains no business logic, delegates all operations to the Application Layer through dependency injection, and provides enterprise-grade error handling and request validation.
+The API layer is thin: it validates requests, delegates to the Application Layer, and serializes responses. It contains no business logic.
 
 ---
 
-# Business Intelligence API
+## Streamlit Frontend
 
-Sprint 9 introduces a dedicated Business Intelligence Layer that exposes
-dashboard-ready analytics through Power BI-compatible REST endpoints.
+The enterprise frontend is built with **Streamlit** and provides:
 
-Available endpoints:
+- **Dashboard** – KPI cards, pipeline status, dataset preview, quick actions.
+- **Upload** – Drag‑and‑drop or file browser, with validation and preview.
+- **Reports Centre** – List of generated reports with metadata and export.
+- **About** – Project overview, tech stack, architecture summary.
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/powerbi/dashboard` | GET | Complete dashboard payload |
-| `/powerbi/summary` | GET | Executive summary |
-| `/powerbi/statistics` | GET | Descriptive statistics |
-| `/powerbi/correlation` | GET | Correlation analysis |
-| `/powerbi/distribution` | GET | Distribution analysis |
-| `/powerbi/categorical` | GET | Categorical analysis |
-| `/powerbi/report` | GET | Full report |
-| `/powerbi/pipeline` | POST | Execute pipeline and return dashboard data |
+### Frontend Architecture
 
-All endpoints are documented in OpenAPI 3.1 and accessible via Swagger UI.
+- **Views** – Page‑level components (dashboard_page.py, upload_page.py, etc.)
+- **Components** – Reusable UI elements (metrics, charts, tables, navigation)
+- **Services** – API client and session manager that handle all backend communication
+- **Session State** – Stores presentation state only; no business data.
+- **Navigation** – Centralised sidebar navigation.
 
----
-
-# Repository Structure
-
-```text
-src/
-├── api/
-│   ├── server.py
-│   ├── routes/
-│   ├── models/
-│   ├── dependencies/
-│   └── exceptions/
-├── application/
-├── upload/
-├── cleaning/
-├── quality/
-├── analytics/
-├── reporting/
-├── persistence/
-├── database/
-│   ├── database_connection.py
-│   ├── sqlite_connection.py
-│   ├── postgresql_connection.py
-│   ├── connection_factory.py
-│   ├── database_manager.py
-│   ├── schema_manager.py
-│   └── repositories/
-├── integrations/
-│   └── powerbi/
-│       ├── dashboard_service.py
-│       └── powerbi_models.py
-├── core/
-└── ... (tests, docs, performance, sample_data)
-
-performance/
-├── benchmark_results.md
-├── stress_test.py
-├── benchmark_results.csv
-└── performance_report.md
-```
+The frontend is designed to be **React‑ready**: all business logic remains in the backend, and the UI can be replaced with React without changing REST API contracts or backend modules.
 
 ---
 
-# Future Vision
+## Database Layer
 
-The long-term objective is to evolve AnalystGPT Enterprise from a modular
-analytics pipeline into a complete enterprise analytics platform supporting
-relational databases, REST APIs, dashboards, AI-assisted insights, and
-production deployment.
+The persistence layer abstracts database engines via:
 
-With the database abstraction layer, REST API layer, and Business Intelligence
-layer in place, future work now focuses on delivering **Streamlit frontend**,
-**AI-assisted insights**, and **cloud deployment infrastructure**.
+- **`DatabaseConnection`** – Abstract interface for all database operations.
+- **`ConnectionFactory`** – Chooses the engine at runtime based on configuration.
+- **`SchemaManager`** – Generates SQL schemas with dialect‑specific syntax.
+- **Repositories** – CRUD operations for pipeline runs, datasets, quality, analytics, and reports.
 
-Each sprint builds upon stable architectural foundations while preserving
-backward compatibility and maintainable module contracts.
+**Supported databases:** SQLite (default) and PostgreSQL.  
+Engine can be switched via environment variable `DATABASE_ENGINE=postgresql` (with proper credentials in `config.py`).
 
 ---
 
-# Project Roadmap
+## Business Intelligence
 
-| Sprint | Status |
-|---------|--------|
-| Sprint 1 – Upload | ✅ Complete |
-| Sprint 2 – Cleaning | ✅ Complete |
-| Sprint 3 – Quality | ✅ Complete |
-| Sprint 4 – Analytics | ✅ Complete |
-| Sprint 5 – Reporting | ✅ Complete |
-| Sprint 5.5 – Architecture Refactor | ✅ Complete |
-| Sprint 6 – SQLite Persistence | ✅ Complete |
-| Sprint 7 – PostgreSQL Integration | ✅ Complete |
-| Sprint 8 – REST API | ✅ Complete |
-| **Sprint 9 – Power BI Integration** | ✅ **Complete** |
-| **Sprint 10 – Streamlit Frontend** | 🚀 **Next** |
-| Sprint 11 – AI Insights | Planned |
-| Sprint 12 – Production Deployment | Planned |
+The **Business Intelligence Layer** provides Power‑BI‑ready endpoints:
 
----
+| Endpoint | Description |
+|----------|-------------|
+| `/powerbi/dashboard` | Complete dashboard payload |
+| `/powerbi/summary` | Executive summary |
+| `/powerbi/statistics` | Descriptive statistics |
+| `/powerbi/correlation` | Correlation matrix |
+| `/powerbi/distribution` | Distribution analysis |
+| `/powerbi/categorical` | Categorical summary |
+| `/powerbi/report` | Full structured report |
+| `/powerbi/pipeline` | Execute pipeline and return dashboard data (POST) |
 
-# Testing Status
-
-| Validation | Status |
-|-----------|--------|
-| Unit Tests | ✅ 98 / 98 Passed |
-| Integration Tests | ✅ Passed |
-| REST API Integration Tests | ✅ Passed |
-| Power BI Endpoint Tests | ✅ Passed |
-| Dashboard Tests | ✅ Passed |
-| Summary Tests | ✅ Passed |
-| Statistics Tests | ✅ Passed |
-| Correlation Tests | ✅ Passed |
-| Distribution Tests | ✅ Passed |
-| Categorical Tests | ✅ Passed |
-| Swagger Validation | ✅ Passed |
-| OpenAPI Validation | ✅ Passed |
-| Performance Validation | ✅ Passed |
-| Sample Dataset | ✅ Passed |
-| Large Dataset (100,000 rows) | ✅ Passed |
-| Stress Dataset (1,000,000 rows) | ✅ Passed |
-| SQLite Runtime Validation | ✅ Passed |
-| Database Abstraction Validation | ✅ Passed |
+All endpoints are documented in OpenAPI and can be consumed directly by Power BI or other BI tools.
 
 ---
 
-# Installation
+## Testing & Performance
+
+### Testing Strategy
+
+- **Unit tests** – All modules covered with pytest.
+- **Integration tests** – End‑to‑end pipeline execution, REST API, and Power BI endpoints.
+- **Frontend validation** – Manual and automated checks for rendering, navigation, and API integration.
+
+All tests are passing. The suite is continuously maintained as the project evolves.
+
+### Performance Validation
+
+The platform has been validated on datasets of varying sizes:
+
+- **Small** – 500 rows (sample dataset)
+- **Large** – 100,000 rows
+- **Stress** – 1,000,000 rows
+
+Validation includes pipeline execution, persistence (SQLite/PostgreSQL), REST API throughput, and frontend rendering. All tests passed without architectural regressions.
+
+Performance benchmarks are documented in `performance/benchmark_results.md`.
+
+---
+
+## Roadmap
+
+| Sprint | Focus | Status |
+|--------|-------|--------|
+| 1–5.5 | Core analytics pipeline (Upload → Reporting) | ✅ Complete |
+| 6 | SQLite Persistence | ✅ Complete |
+| 7 | Database Abstraction & PostgreSQL | ✅ Complete |
+| 8 | REST API | ✅ Complete |
+| 9 | Power BI Integration | ✅ Complete |
+| 10 | **Enterprise Streamlit Frontend** | ✅ **Complete** |
+| 11 | **AI Insight Engine** – executive summaries, recommendations, narratives | 🔄 Current |
+| 12 | **Production Deployment** – Docker, CI/CD, cloud, monitoring | 🔄 Planned |
+
+---
+
+## Installation & Running
+
+### Prerequisites
+
+- Python 3.11
+- Git
+- (Optional) PostgreSQL server for production mode
+
+### Installation
 
 ```bash
 git clone https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise.git
-
 cd AnalystGPT_Enterprise
-
 pip install -r requirements.txt
 ```
 
-For SQLite, no additional setup is required.
-
-For PostgreSQL, configure the database connection settings in
-`src/core/config.py` before switching `DATABASE_ENGINE` to `"postgresql"`.
-
----
-
-# Running the Project
-
-## Command-Line Interface
+### Running the CLI (Command‑Line Pipeline)
 
 ```bash
 python main.py
 ```
 
-## REST API Server
+This executes the pipeline on the default dataset in `sample_data/`.
+
+### Running the REST API
 
 ```bash
 python -m uvicorn src.api.server:app --reload
 ```
 
-Swagger UI: `http://127.0.0.1:8000/docs`  
-OpenAPI: `http://127.0.0.1:8000/openapi.json`
+Then open `http://127.0.0.1:8000/docs` for Swagger UI.
 
-## Power BI Endpoints
-
-The following endpoints are available for Power BI consumption:
-
-```
-GET /powerbi/dashboard
-GET /powerbi/summary
-GET /powerbi/statistics
-GET /powerbi/correlation
-GET /powerbi/distribution
-GET /powerbi/categorical
-GET /powerbi/report
-POST /powerbi/pipeline
-```
-
----
-
-# Running Tests
+### Running the Streamlit Frontend
 
 ```bash
-python -m pytest
+streamlit run src/frontend/streamlit_app.py
 ```
 
-Current Result:
+The frontend will be available at `http://localhost:8501`.
 
-```
-98 tests passed
-0 failures
-0 warnings
+### Running Tests
+
+```bash
+pytest
 ```
 
 ---
 
-# Documentation
+## Documentation
 
-Detailed engineering documentation is available under:
+Extensive documentation is maintained in the `docs/` directory:
 
-- `docs/project/`
-- `docs/engineering/`
-- `docs/adr/`
-- `docs/sprints/`
-- `docs/api/`
-- `performance/` (benchmark results and performance reports)
-
-These documents describe the project's architecture, engineering decisions,
-release history, and development roadmap, including:
-
-- Architecture Design
-- Architecture Decision Records
-- Engineering Standards
-- Sprint Reports
-- Project State
-- Release History
-- API Reference
-- API Testing Guide
-- **Performance Documentation**
-- **Benchmark Reports**
-- **Business Intelligence Documentation**
-- **Power BI Integration Guide**
+- **`PROJECT_STATE.md`** – Current project status, health dashboard, version.
+- **`ARCHITECTURE.md`** – Detailed system architecture, layers, modules, dependencies.
+- **`ROADMAP.md`** – Long‑term engineering direction and release planning.
+- **`PROJECT_JOURNAL.md`** – Engineering journey per sprint (decisions, lessons, milestones).
+- **`CHANGELOG.md`** – Release notes.
+- **`docs/adr/`** – Architecture Decision Records (e.g., DataFrame contract, REST API design, Streamlit choice).
+- **`docs/engineering/`** – Engineering Playbook, Operating Manual, Code Review Checklist, Definition of Done.
+- **`docs/sprints/`** – Sprint reports and retrospectives.
 
 ---
 
-# License
+## Engineering Principles
 
-This project is licensed under the MIT License.
+- **Layered Architecture** – Clear separation: Frontend → API → Application → Business → Persistence.
+- **SOLID** – Each module has a single responsibility; interfaces and abstractions decouple dependencies.
+- **Repository Pattern** – Encapsulates all SQL; database engines can be swapped.
+- **Dependency Injection** – Used in the REST API for testability and flexibility.
+- **Stable Contracts** – Module inputs/outputs are typed and versioned; changes require ADR review.
+- **Automated Testing** – Every feature includes unit and integration tests.
+- **Documentation as Code** – ADRs, architecture docs, and journal entries evolve with the codebase.
 
 ---
 
-For detailed architecture, engineering standards, sprint history,
-and design decisions, see the documentation under `docs/`.
+## Lessons Learned
 
-AnalystGPT Enterprise continues to evolve through incremental,
-well-tested engineering sprints.
+- **Start with architecture, not code** – Early design decisions (like the Application Layer) saved significant refactoring later.
+- **Stable contracts enable evolution** – Business modules remained unchanged while persistence and APIs were added.
+- **Database abstraction pays off** – Switching from SQLite to PostgreSQL required minimal changes.
+- **Performance testing from day one** – Validating on large datasets uncovered bottlenecks early.
+- **Frontend as an independent layer** – Streamlit proved to be an effective MVP, and the service‑based architecture simplifies React migration.
+- **ADRs are invaluable** – They capture context and rationale for decisions, aiding future developers.
 
-**Current Release:** v9.0.0
+---
 
-**Next Milestone:** Sprint 10 – Streamlit Frontend
+## Future Work
+
+- **Sprint 11 – AI Insight Engine**  
+  Generate executive summaries, business recommendations, and natural‑language narratives from analytics outputs, using a prompt‑abstraction layer to remain model‑agnostic.
+
+- **Sprint 12 – Production Deployment**  
+  Dockerize the application, set up CI/CD pipelines, implement monitoring and logging, and deploy to cloud platforms (AWS/Azure/GCP).
+
+- **React Migration (planned Sprint 15)**  
+  Replace Streamlit with React to provide a more performant and flexible UI while preserving all backend contracts.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read our [Contribution Guidelines](docs/engineering/CONTRIBUTING.md) and follow the [Code Review Checklist](docs/engineering/CODE_REVIEW_CHECKLIST.md). All changes should include tests and documentation updates.
+
+---
+
+## License
+
+This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Author
+
+**Amal Jose Kichu**  
+Principal Software Architect & Developer  
+[GitHub](https://github.com/amaljosekichu66-sketch) · [LinkedIn](https://www.linkedin.com/in/mr-amaljose)
+
+---
+
+**Built with engineering discipline, tested with rigour, and documented for enterprise.**  
+*AnalystGPT Enterprise – turning data into decisions.*
+```
+ 

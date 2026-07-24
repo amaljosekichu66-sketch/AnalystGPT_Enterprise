@@ -9,12 +9,21 @@ Responsibilities
 This module intentionally contains no business logic.
 """
 
-from fastapi import APIRouter, status
+from __future__ import annotations
 
-from src.api.models.response_models import HealthResponse
+from fastapi import APIRouter
+from fastapi import status
+
+from src.api.models.response_models import (
+    HealthResponse,
+)
 
 from src.core.constants import (
     HEALTH_STATUS,
+)
+
+from src.core.logger import (
+    logger,
 )
 
 # ==========================================================
@@ -34,12 +43,19 @@ router = APIRouter(
     response_model=HealthResponse,
     status_code=status.HTTP_200_OK,
     summary="Health Check",
-    description="Returns the current health status of the AnalystGPT Enterprise API.",
+    description=(
+        "Returns the current health status "
+        "of the AnalystGPT Enterprise API."
+    ),
 )
 def get_health() -> HealthResponse:
     """
     Return the current API health status.
     """
+
+    logger.info(
+        "Health endpoint requested."
+    )
 
     return HealthResponse(
         status=HEALTH_STATUS,
