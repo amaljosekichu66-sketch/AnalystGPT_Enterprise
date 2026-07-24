@@ -1,15 +1,15 @@
 ```markdown
 # AnalystGPT Enterprise
 
-![Python Version](https://img.shields.io/badge/python-3.11-blue)
-![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-![Architecture](https://img.shields.io/badge/architecture-layered%20%2B%20REST%20%2B%20BI-success)
-![Database](https://img.shields.io/badge/database-SQLite%20%2B%20PostgreSQL-blueviolet)
-![REST API](https://img.shields.io/badge/REST%20API-FastAPI%20%2F%20OpenAPI%203.1-informational)
-![Power BI](https://img.shields.io/badge/Power%20BI-integration-yellow)
-![Frontend](https://img.shields.io/badge/frontend-Streamlit%20%2B%20React--ready-orange)
-![Version](https://img.shields.io/badge/version-v10.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+[Python Version](https://img.shields.io/badge/python-3.11-blue)
+[Tests](https://img.shields.io/badge/tests-passing-brightgreen)
+[Architecture](https://img.shields.io/badge/architecture-layered%20%2B%20REST%20%2B%20BI-success)
+[Database](https://img.shields.io/badge/database-SQLite%20%2B%20PostgreSQL-blueviolet)
+[REST API](https://img.shields.io/badge/REST%20API-FastAPI%20%2F%20OpenAPI%203.1-informational)
+[Power BI](https://img.shields.io/badge/Power%20BI-integration-yellow)
+[Frontend](https://img.shields.io/badge/frontend-Streamlit%20%2B%20React--ready-orange)
+[Version](https://img.shields.io/badge/version-v10.0.0-blue)
+[License](https://img.shields.io/badge/license-MIT-green)
 
 > **Enterprise‑grade analytics pipeline with a modern UI, REST API, and business intelligence ready for production.**
 
