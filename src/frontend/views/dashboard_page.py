@@ -3,7 +3,7 @@ Enterprise Dashboard Page
 
 AnalystGPT Enterprise
 
-Sprint 10
+Sprint 11
 """
 
 from __future__ import annotations
@@ -14,34 +14,27 @@ from src.core.config import (
     DATAFRAME_PREVIEW_ROWS,
 )
 
+from src.frontend.components.ai_insights import (
+    render_ai_insights,
+)
 from src.frontend.components.dashboard_summary import (
     render_dashboard_summary,
 )
-
 from src.frontend.components.empty_state import (
     render_empty_state,
 )
-
-from src.frontend.components.footer import (
-    render_footer,
-)
-
 from src.frontend.components.kpi_cards import (
     render_kpi_cards,
 )
-
 from src.frontend.components.loading_state import (
     loading,
 )
-
 from src.frontend.components.pipeline_status import (
     render_pipeline_status,
 )
-
 from src.frontend.components.quick_actions import (
     render_quick_actions,
 )
-
 from src.frontend.services.dashboard_service import (
     get_dashboard_data,
 )
@@ -52,14 +45,17 @@ def render() -> None:
     Render the enterprise dashboard.
     """
 
-    st.title("📊 Enterprise Dashboard")
-
-    st.caption(
-        "Enterprise overview of the current "
-        "analytics pipeline."
+    st.title(
+        "📊 Enterprise Dashboard"
     )
 
-    with loading("Loading dashboard..."):
+    st.caption(
+        "Enterprise overview of the current analytics pipeline."
+    )
+
+    with loading(
+        "Loading dashboard..."
+    ):
 
         dashboard_data = get_dashboard_data()
 
@@ -73,12 +69,10 @@ def render() -> None:
             title="No Dataset Loaded",
             message=(
                 "Upload a CSV, Excel or JSON dataset "
-                "from the Upload page to begin."
+                "from the Upload page."
             ),
             button_label="Go to Upload",
         )
-
-        render_footer()
 
         return
 
@@ -103,21 +97,21 @@ def render() -> None:
     st.divider()
 
     # ==========================================================
-    # Pipeline + Summary
+    # Status + Summary
     # ==========================================================
 
-    col1, col2 = st.columns(
+    left, right = st.columns(
         2,
         gap="large",
     )
 
-    with col1:
+    with left:
 
         render_pipeline_status(
             dashboard_data,
         )
 
-    with col2:
+    with right:
 
         render_dashboard_summary(
             dashboard_data,
@@ -126,32 +120,43 @@ def render() -> None:
     st.divider()
 
     # ==========================================================
+    # AI Insights
+    # ==========================================================
+
+    render_ai_insights(
+        dashboard_data.get(
+            "ai_report",
+        )
+    )
+
+    st.divider()
+
+    # ==========================================================
     # Quick Actions + Preview
     # ==========================================================
 
-    col1, col2 = st.columns(
+    left, right = st.columns(
         [1, 2],
         gap="large",
     )
 
-    with col1:
+    with left:
 
         render_quick_actions()
 
-    with col2:
+    with right:
 
-        st.subheader("🔍 Dataset Preview")
-
-        st.caption(
-            f"Showing first "
-            f"{DATAFRAME_PREVIEW_ROWS:,} rows."
+        st.subheader(
+            "🔍 Dataset Preview"
         )
 
         st.dataframe(
-            dashboard_data["dataframe"].head(
-                DATAFRAME_PREVIEW_ROWS,
+            dashboard_data[
+                "dataframe"
+            ].head(
+                DATAFRAME_PREVIEW_ROWS
             ),
-            use_container_width=True,
+            width="stretch",
         )
 
     st.divider()
@@ -160,25 +165,27 @@ def render() -> None:
     # Dataset Schema
     # ==========================================================
 
-    st.subheader("📋 Dataset Schema")
+    st.subheader(
+        "📋 Dataset Schema"
+    )
 
-    datatype_summary = (
-        dashboard_data["dataframe"]
+    schema = (
+        dashboard_data[
+            "dataframe"
+        ]
         .dtypes
         .astype(str)
         .rename("Data Type")
         .reset_index()
     )
 
-    datatype_summary.columns = [
+    schema.columns = [
         "Column",
         "Data Type",
     ]
 
     st.dataframe(
-        datatype_summary,
+        schema,
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
     )
-
-    render_footer()

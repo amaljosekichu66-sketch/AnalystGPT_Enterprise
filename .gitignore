@@ -1,4 +1,9 @@
 # ==========================================================
+# AnalystGPT Enterprise
+# .gitignore
+# ==========================================================
+
+# ==========================================================
 # Python
 # ==========================================================
 
@@ -18,7 +23,7 @@ env/
 ENV/
 
 # ==========================================================
-# IDE
+# IDE / Editors
 # ==========================================================
 
 .vscode/
@@ -46,6 +51,13 @@ logs/
 
 .env
 .env.*
+!.env.example
+
+# ==========================================================
+# Streamlit Secrets
+# ==========================================================
+
+.streamlit/secrets.toml
 
 # ==========================================================
 # Jupyter
@@ -54,14 +66,24 @@ logs/
 .ipynb_checkpoints/
 
 # ==========================================================
-# Testing
+# Testing & Coverage
 # ==========================================================
 
 .pytest_cache/
 .coverage
+.coverage.*
 coverage.xml
 htmlcov/
 .cache/
+
+# ==========================================================
+# Static Analysis
+# ==========================================================
+
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
 
 # ==========================================================
 # Build & Distribution
@@ -74,15 +96,6 @@ dist/
 pip-wheel-metadata/
 
 # ==========================================================
-# Type Checking / Linters
-# ==========================================================
-
-.mypy_cache/
-.ruff_cache/
-.pyre/
-.pytype/
-
-# ==========================================================
 # Generated Reports
 # ==========================================================
 
@@ -90,29 +103,15 @@ reports/*
 !reports/.gitkeep
 
 # ==========================================================
-# Performance Outputs
+# Runtime Output
 # ==========================================================
 
-performance/results/
-performance/output/
-performance/*.csv
-
-# Keep datasets tracked
-!performance/datasets/
+*.out
+*.pid
+*.seed
 
 # ==========================================================
-# Temporary Files
-# ==========================================================
-
-*.tmp
-*.temp
-*.bak
-*.swp
-*.swo
-*.orig
-
-# ==========================================================
-# SQLite Databases
+# SQLite / Local Databases
 # ==========================================================
 
 *.db
@@ -121,7 +120,38 @@ performance/*.csv
 *.sqlite3
 
 # ==========================================================
-# VSCode Test Artifacts
+# Performance Outputs
+# ==========================================================
+
+# Ignore generated output folders
+performance/output/
+performance/results/
+
+# Ignore generated CSV outputs
+performance/*.csv
+
+# Keep benchmark documentation
+!performance/benchmark_results.md
+!performance/performance_report.md
+!performance/README.md
+
+# Keep benchmark datasets
+!performance/datasets/
+!performance/datasets/**
+
+# ==========================================================
+# Temporary Files
+# ==========================================================
+
+*.tmp
+*.temp
+*.bak
+*.orig
+*.swp
+*.swo
+
+# ==========================================================
+# Python Version Files
 # ==========================================================
 
 .python-version
@@ -133,8 +163,42 @@ performance/*.csv
 *.spec
 
 # ==========================================================
-# Miscellaneous
+# Node (Future React Frontend)
 # ==========================================================
 
-*.pid
-*.seed
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================================================
+# macOS Resource Forks
+# ==========================================================
+
+._*
+
+# ==========================================================
+# Archives
+# ==========================================================
+
+*.zip
+*.tar
+*.gz
+*.7z
+
+# ==========================================================
+# Keep Important Project Assets
+# ==========================================================
+
+!docs/**
+!sample_data/**
+!scripts/**
+!src/**
+!tests/**
+!README.md
+!CHANGELOG.md
+!requirements.txt
+!main.py
+!.gitattributes
+!.gitignore

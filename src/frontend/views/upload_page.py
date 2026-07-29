@@ -1,6 +1,10 @@
 """
 Upload page for AnalystGPT Enterprise.
+
+Sprint 11
 """
+
+from __future__ import annotations
 
 import streamlit as st
 
@@ -18,6 +22,8 @@ from src.frontend.components.uploader import (
     render_uploader,
 )
 from src.frontend.services.session_manager import (
+    clear_dataset,
+    get_dataset_path,
     store_dataset,
 )
 
@@ -39,12 +45,25 @@ def render() -> None:
         return
 
     # ==========================================================
-    # Store dataset in session
+    # Preserve Temporary Dataset Path
+    # ==========================================================
+
+    dataset_path = get_dataset_path()
+
+    # ==========================================================
+    # Reset Previous Session
+    # ==========================================================
+
+    clear_dataset()
+
+    # ==========================================================
+    # Restore Dataset
     # ==========================================================
 
     store_dataset(
-        uploaded_file,
-        dataframe,
+        uploaded_file=uploaded_file,
+        dataframe=dataframe,
+        dataset_path=dataset_path,
     )
 
     # ==========================================================
@@ -100,22 +119,55 @@ def render() -> None:
     # Dataset Preview
     # ==========================================================
 
-    st.subheader("🔍 Preview")
+    st.subheader("🔍 Dataset Preview")
 
     st.dataframe(
         dataframe.head(20),
-        use_container_width=True,
+        width="stretch",
     )
 
     # ==========================================================
     # Session Status
     # ==========================================================
 
-    st.info(
-        "📌 Dataset has been stored in the current session "
-        "and is available to the Dashboard and Reports."
+    st.divider()
+
+    st.success(
+        "✅ Dataset uploaded successfully."
     )
 
     st.success(
-        "✅ Dataset is ready for backend processing."
+        "✅ Dataset stored in the current session."
+    )
+
+    if dataset_path:
+
+        st.caption(
+            f"Dataset Path: {dataset_path}"
+        )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.metric(
+            "Rows",
+            f"{len(dataframe):,}",
+        )
+
+    with col2:
+
+        st.metric(
+            "Columns",
+            len(dataframe.columns),
+        )
+
+    st.info(
+        "The dataset is now available to the Dashboard, "
+        "Reports, Power BI endpoints, and the AI Insight "
+        "Engine."
+    )
+
+    st.success(
+        "🚀 Dataset is ready for enterprise pipeline execution."
     )

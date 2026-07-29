@@ -3,14 +3,22 @@ AnalystGPT Enterprise
 
 Enterprise Streamlit Frontend Entry Point
 
-Sprint 10
+Sprint 11
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
+from src.core.constants import (
+    APP_NAME,
+)
+
 from src.core.logger import logger
+
+from src.frontend.components.footer import (
+    render_footer,
+)
 
 from src.frontend.views import (
     about_page,
@@ -23,7 +31,7 @@ from src.frontend.views import (
 # Constants
 # ==========================================================
 
-APP_TITLE = "AnalystGPT Enterprise"
+APP_TITLE = APP_NAME
 
 DEFAULT_PAGE = "Dashboard"
 
@@ -33,7 +41,6 @@ PAGES = {
     "Reports": report_page.render,
     "About": about_page.render,
 }
-
 
 # ==========================================================
 # Page Configuration
@@ -54,7 +61,6 @@ if "current_page" not in st.session_state:
 
     st.session_state.current_page = DEFAULT_PAGE
 
-# Future Sprint 11
 if "backend_connected" not in st.session_state:
 
     st.session_state.backend_connected = True
@@ -75,27 +81,35 @@ with st.sidebar:
 
     if st.button(
         "🏠 Dashboard",
-        use_container_width=True,
+        width="stretch",
     ):
-        st.session_state.current_page = "Dashboard"
+        st.session_state.current_page = (
+            "Dashboard"
+        )
 
     if st.button(
         "📁 Upload Dataset",
-        use_container_width=True,
+        width="stretch",
     ):
-        st.session_state.current_page = "Upload"
+        st.session_state.current_page = (
+            "Upload"
+        )
 
     if st.button(
         "📄 Reports",
-        use_container_width=True,
+        width="stretch",
     ):
-        st.session_state.current_page = "Reports"
+        st.session_state.current_page = (
+            "Reports"
+        )
 
     if st.button(
         "ℹ️ About",
-        use_container_width=True,
+        width="stretch",
     ):
-        st.session_state.current_page = "About"
+        st.session_state.current_page = (
+            "About"
+        )
 
     st.divider()
 
@@ -111,8 +125,8 @@ with st.sidebar:
             "Backend Offline"
         )
 
-    st.info(
-        "Sprint 10"
+    st.success(
+        "AI Insight Engine Enabled"
     )
 
 # ==========================================================
@@ -162,35 +176,7 @@ except Exception as error:
         )
 
 # ==========================================================
-# Footer
+# Global Footer
 # ==========================================================
 
-st.divider()
-
-left, middle, right = st.columns(3)
-
-with left:
-
-    st.caption(
-        "AnalystGPT Enterprise"
-    )
-
-    st.caption(
-        "v10.0.0"
-    )
-
-with middle:
-
-    st.caption(
-        "Python • Streamlit • FastAPI • PostgreSQL • SQLite • Pandas"
-    )
-
-with right:
-
-    st.caption(
-        "MIT License"
-    )
-
-    st.caption(
-        "© 2026 Amal Jose"
-    )
+render_footer()

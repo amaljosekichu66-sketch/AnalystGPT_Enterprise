@@ -1,3 +1,9 @@
+We need to update the `ARCHITECTURE.md` to reflect the completion of Sprint 11 and the introduction of the AI Insight Engine. The current document states "as of v10.0.0" and lacks any mention of the AI layer, LLM abstraction, or related components.
+
+Below is the updated **ARCHITECTURE.md** for **v11.0.0**, which now includes the AI layer, all new modules, updated diagrams, and revised sections to align with the current project state.
+
+---
+
 ```markdown
 # AnalystGPT Enterprise Architecture
 
@@ -7,7 +13,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v10.0.0**.
+> This document reflects the implementation as of **v11.0.0**.
 
 ---
 
@@ -31,21 +37,11 @@ As of Sprint 7, a dedicated Application layer coordinates all business modules w
 
 Sprint 8 introduced a dedicated REST API Layer that exposes the Application Layer through HTTP endpoints while preserving existing business module independence. The API layer is built on FastAPI, uses dependency injection for application lifecycle management, and provides OpenAPI 3.1 documentation and Swagger UI. The API layer remains thin, containing no business logic, and delegates all operations to the Application Layer.
 
-Sprint 9 introduced a dedicated Business Intelligence Integration Layer
-that exposes dashboard-ready analytics through Power BI endpoints.
+Sprint 9 introduced a dedicated Business Intelligence Integration Layer that exposes dashboard-ready analytics through Power BI endpoints. The Business Intelligence Layer remains an integration layer rather than a business layer. It communicates only with the Application Layer, preserving existing module independence and stable business contracts.
 
-The Business Intelligence Layer remains an integration layer rather than
-a business layer. It communicates only with the Application Layer,
-preserving existing module independence and stable business contracts.
+Sprint 10 introduced a dedicated Enterprise Streamlit Frontend Layer that provides an interactive web interface for the analytics pipeline. The Frontend Layer is built using Streamlit with a React-ready architecture, consuming the REST API as its sole backend interface. It contains zero business logic and communicates exclusively through the established REST API, preserving the integrity of the enterprise layered architecture and enabling future migration to React without backend changes.
 
-Sprint 10 introduced a dedicated Enterprise Streamlit Frontend Layer
-that provides an interactive web interface for the analytics pipeline.
-
-The Frontend Layer is built using Streamlit with a React-ready architecture,
-consuming the REST API as its sole backend interface. It contains zero
-business logic and communicates exclusively through the established REST API,
-preserving the integrity of the enterprise layered architecture and enabling
-future migration to React without backend changes.
+Sprint 11 introduced an AI Insight Engine that enriches the reporting output with intelligent narratives, executive summaries, recommendations, and explanations. The AI layer is built on a local LLM (Ollama with Qwen3:8B) and follows a pluggable architecture via `BaseLLM` and `LLMFactory`. It consumes the `ReportingReport` and produces an `AIResult`, which is then attached to the `PipelineReport`. The AI layer is completely isolated from business logic, uses only stable contracts, and preserves the existing layered architecture.
 
 ---
 
@@ -75,6 +71,11 @@ The architecture is designed to satisfy the following long-term engineering goal
 - Frontend-backend separation
 - React-ready presentation layer
 - Future migration without backend changes
+- AI-assisted analytics
+- Local LLM integration
+- Pluggable LLM providers
+- Explainable AI outputs
+- Enterprise prompt engineering
 
 ---
 
@@ -118,13 +119,33 @@ Reporting
 Persistence
    │
    ▼
-Database Abstraction Layer
-   │
-   ├── SQLite
-   └── PostgreSQL
+PipelineReport
    │
    ▼
-Repository Layer
+AI Insight Engine
+   │
+   ├── Executive Summary Engine
+   ├── Recommendation Engine
+   ├── Explanation Engine
+   └── Narrative Engine
+   │
+   ▼
+BaseLLM
+   │
+   ▼
+LLMFactory
+   │
+   ▼
+OllamaClient
+   │
+   ▼
+Ollama (Qwen3:8B)
+   │
+   ▼
+AIResult
+   │
+   ▼
+REST API / Streamlit / Power BI
    │
    ▼
 DashboardService
@@ -140,7 +161,7 @@ Power BI Dashboard
 
 # Architectural Layers
 
-The repository is intentionally organized into eight architectural layers.
+The repository is intentionally organized into nine architectural layers.
 
 ## Frontend Layer
 
@@ -216,6 +237,52 @@ Responsibilities:
 - Remain independent from analytics implementation
 - Support external BI platforms
 
+## AI Insight Engine Layer
+
+Responsible for generating intelligent narratives, executive summaries, recommendations, and explanations from reporting data.
+
+Current components:
+
+- AIManager
+- AIReport
+- AIResult
+- ExecutiveSummaryEngine
+- RecommendationEngine
+- ExplanationEngine
+- NarrativeEngine
+- PromptBuilder
+- ReportSerializer
+- ResponseParser
+
+**LLM Infrastructure:**
+
+- BaseLLM (abstract interface)
+- LLMFactory
+- OllamaClient
+- (future) OpenAIClient, etc.
+
+Responsibilities:
+
+- Transform structured reporting data into human-readable insights
+- Generate executive summaries
+- Produce actionable recommendations
+- Explain key metrics and outliers
+- Compose coherent narratives
+- Manage prompt engineering
+- Serialize reports for LLM context
+- Parse LLM responses into structured objects
+- Support multiple LLM providers via factory pattern
+
+Architectural constraints:
+
+- AI layer consumes only ReportingReport (via PipelineReport).
+- AI layer never accesses raw data, persistence, or business modules.
+- AI engines are isolated and single-responsibility.
+- LLM clients are pluggable via LLMFactory.
+- Prompt engineering is abstracted in PromptBuilder.
+- All AI outputs are validated and parsed into strongly typed objects.
+- AI never mutates business data or persists state.
+
 ## Application Layer
 
 Responsible for orchestration only.
@@ -224,13 +291,16 @@ Responsible for orchestration only.
 
 - Application
 - PipelineResult
+- PipelineReport
 
 ### Architectural Constraints
 
 The Application layer:
 
 - may call any business manager.
-- may build PipelineResult.
+- may call PersistenceManager.
+- may call AIManager.
+- may build PipelineReport and PipelineResult.
 - may log pipeline summaries.
 - may coordinate execution order.
 
@@ -337,6 +407,47 @@ The Frontend Layer:
 
 ---
 
+# AI Insight Engine Layer
+
+### Responsibilities
+
+- Generate executive summary from reporting data
+- Produce actionable recommendations
+- Provide explanations for key metrics
+- Create coherent narratives
+- Manage prompt construction and response parsing
+- Interface with local LLM via Ollama
+- Support pluggable LLM providers
+
+### Components
+
+- AIManager
+- AIReport
+- AIResult
+- ExecutiveSummaryEngine
+- RecommendationEngine
+- ExplanationEngine
+- NarrativeEngine
+- PromptBuilder
+- ReportSerializer
+- ResponseParser
+- BaseLLM (abstract)
+- LLMFactory
+- OllamaClient
+
+### Architectural Constraints
+
+The AI Layer:
+
+- consumes only PipelineReport (via ReportingReport).
+- must never access raw datasets or business logic.
+- must never persist state.
+- must remain pluggable for different LLM providers.
+- must validate and parse all LLM responses.
+- must use stable contracts (AIResult, AIReport).
+
+---
+
 # Layered Architecture
 
 ```text
@@ -366,6 +477,26 @@ Dashboard Models
 Application Layer
 
 Application
+PipelineResult
+PipelineReport
+
+↓
+
+AI Insight Engine Layer
+
+AIManager
+Engines (Executive Summary, Recommendation, Explanation, Narrative)
+PromptBuilder
+ReportSerializer
+ResponseParser
+
+↓
+
+LLM Infrastructure
+
+BaseLLM
+LLMFactory
+OllamaClient
 
 ↓
 
@@ -413,6 +544,7 @@ OpenPyXL
 JSON
 Streamlit
 Plotly
+Ollama (ollama SDK)
 ```
 
 ---
@@ -504,6 +636,73 @@ for Power BI and future Business Intelligence clients.
 
 ---
 
+## AI Insight Engine Module
+
+### Owner
+
+AIManager
+
+### Components
+
+- AIManager
+- AIReport
+- AIResult
+- ExecutiveSummaryEngine
+- RecommendationEngine
+- ExplanationEngine
+- NarrativeEngine
+- PromptBuilder
+- ReportSerializer
+- ResponseParser
+
+### Input
+
+PipelineReport (containing ReportingReport)
+
+### Output
+
+AIResult (with summary, recommendations, explanations, narrative)
+
+### Responsibility
+
+Transform structured reporting data into intelligent, human-readable insights using local LLM.
+
+### Status
+
+✅ Stable
+
+---
+
+## LLM Infrastructure
+
+### Owner
+
+LLMFactory, BaseLLM
+
+### Components
+
+- BaseLLM (abstract)
+- LLMFactory
+- OllamaClient
+
+### Input
+
+Prompt (string), model parameters
+
+### Output
+
+Generated text (string)
+
+### Responsibility
+
+Provide a pluggable interface to various LLM providers, currently supporting local Ollama with Qwen3:8B.
+
+### Status
+
+✅ Stable
+
+---
+
 ## Application Layer
 
 Responsibilities
@@ -512,18 +711,21 @@ Responsibilities
 - Workflow sequencing
 - Stage coordination
 - Persistence lifecycle
+- AI orchestration
 - Execution timing
 - Error handling
 - Pipeline summary logging
 - Build `PipelineResult`
 
-The Application layer is the only component allowed to coordinate multiple business modules. Business modules remain independent and unaware of one another.
+The Application layer is the only component allowed to coordinate multiple business modules, the persistence layer, and the AI layer. Business modules remain independent and unaware of one another.
 
 The Application layer is also responsible for:
 
 - Initializing persistence
 - Starting pipeline execution records
 - Persisting pipeline outputs
+- Calling AIManager with PipelineReport
+- Building final PipelineResult
 - Marking successful execution
 - Recording failed executions
 - Gracefully shutting down database resources
@@ -892,6 +1094,15 @@ Business Intelligence infrastructure includes:
 - Dashboard Models
 - Power BI Router
 
+AI infrastructure includes:
+
+- BaseLLM
+- LLMFactory
+- OllamaClient
+- PromptBuilder
+- ReportSerializer
+- ResponseParser
+
 ### Responsibilities
 
 #### config.py
@@ -904,6 +1115,7 @@ Centralized application configuration including:
 - Shared application settings
 - Database engine selection
 - Connection parameters
+- **LLM settings (model, provider, timeouts)**
 
 #### constants.py
 
@@ -942,26 +1154,48 @@ Business Intelligence
    ▼
 Application
    │
-   ▼
-Business Modules
+   ├── Business Modules
+   │   │
+   │   ├── Upload
+   │   ├── Cleaning
+   │   ├── Quality
+   │   ├── Analytics
+   │   └── Reporting
+   │   │
+   │   ▼
+   │   Persistence
+   │   │
+   │   ▼
+   │   Repository Layer
+   │   │
+   │   ▼
+   │   DatabaseConnection
+   │   │
+   │   ├── SQLiteConnection
+   │   └── PostgreSQLConnection
+   │   │
+   │   ▼
+   │   Database Engine
+   │   │
+   │   ▼
+   │   core
    │
-   ▼
-Persistence
-   │
-   ▼
-Repository Layer
-   │
-   ▼
-DatabaseConnection
-   │
-   ▼
-SQLiteConnection / PostgreSQLConnection
-   │
-   ▼
-Database Engine
-   │
-   ▼
-core
+   └── AI Insight Engine
+        │
+        ├── Engines
+        ├── PromptBuilder
+        ├── ReportSerializer
+        ├── ResponseParser
+        │
+        ▼
+        LLM Infrastructure
+        │
+        ├── BaseLLM
+        ├── LLMFactory
+        └── OllamaClient
+        │
+        ▼
+        Ollama (external)
 ```
 
 ## Not Allowed
@@ -984,7 +1218,7 @@ Persistence
 Frontend Layer
    │
    ▼
-Repositories
+AI Layer
 ```
 
 ```text
@@ -1005,7 +1239,7 @@ Persistence
 REST API
    │
    ▼
-Repositories
+AI Layer
 ```
 
 ```text
@@ -1013,6 +1247,20 @@ Business Intelligence
    │
    ▼
 Business Modules (directly)
+```
+
+```text
+AI Layer
+   │
+   ▼
+Business Modules (directly)
+```
+
+```text
+AI Layer
+   │
+   ▼
+Persistence
 ```
 
 ```text
@@ -1029,35 +1277,42 @@ core
 Application
 ```
 
-Business modules remain completely unaware of persistence, HTTP, and UI concerns.
+Business modules remain completely unaware of persistence, HTTP, AI, and UI concerns.
 
-Only the Application layer communicates with the Persistence layer.
+Only the Application layer communicates with the Persistence layer and the AI layer.
 
 Repositories are the only components permitted to execute SQL, and they operate through the DatabaseConnection abstraction.
 
 The REST API Layer communicates only with the Application Layer through dependency injection.
 
-The Business Intelligence Layer communicates only with the
-Application Layer and must never access business modules
-or persistence components directly.
+The Business Intelligence Layer communicates only with the Application Layer and must never access business modules or persistence components directly.
+
+The AI Layer communicates only with the Application Layer and consumes only `PipelineReport` (via `ReportingReport`). It never accesses business modules or persistence.
 
 The Frontend Layer communicates only with the REST API Layer.
 
-This separation allows future frontend technologies, database technologies, and API changes to be introduced without requiring changes to business logic.
+This separation allows future frontend technologies, database technologies, LLM providers, and API changes to be introduced without requiring changes to business logic.
 
 ---
 
 # Stable Contracts
 
 | Module | Output |
-|---------|--------|
+|--------|--------|
 | Upload | DataFrame |
 | Cleaning | DataFrame |
 | Quality | QualityReport |
 | Analytics | AnalyticsReport |
 | Reporting | ReportingReport |
 | Persistence | PersistenceResult |
-| Application | PipelineResult |
+| AI Manager | AIResult |
+| Executive Summary Engine | str |
+| Recommendation Engine | list[str] |
+| Explanation Engine | list[str] |
+| Narrative Engine | str |
+| LLMFactory | BaseLLM |
+| OllamaClient | str |
+| Application | PipelineResult (with PipelineReport) |
 | REST API | PipelineResponse |
 | DashboardService | Dashboard Models |
 | Power BI API | Dashboard Responses |
@@ -1112,9 +1367,31 @@ Analytics
       ▼
 Reporting
       ▼
-Dashboard Models
+Persistence
+      │
+      ▼
+PipelineReport
+      │
+      ▼
+AI Insight Engine
+      │
+      ├── Executive Summary
+      ├── Recommendations
+      ├── Explanations
+      └── Narrative
+      │
+      ▼
+AIResult
+      │
+      ▼
+PipelineResult
+      │
+      ▼
+Dashboard Models (via DashboardService)
+      │
       ▼
 REST Response
+      │
       ▼
 Frontend Render
 ```
@@ -1126,16 +1403,18 @@ Frontend Render
 Every business module exposes one manager responsible for internal orchestration; the Application layer orchestrates across managers.
 
 | Module | Manager |
-|---------|---------|
+|--------|---------|
 | Upload | UploadManager |
 | Cleaning | CleaningManager |
 | Quality | QualityManager |
 | Analytics | AnalyticsManager |
 | Reporting | ReportingManager |
 | Persistence | PersistenceManager |
+| AI Insight Engine | AIManager |
 | Application | Application |
 | Business Intelligence | DashboardService |
 | Frontend | Streamlit Application |
+| LLM | LLMFactory (factory, not manager) |
 
 Managers coordinate workflows while business logic remains inside dedicated components.
 
@@ -1153,6 +1432,7 @@ Examples:
 - AnalyticsManager owns Analytics Module orchestration.
 - ReportingManager owns Reporting Module orchestration.
 - PersistenceManager owns Persistence Module orchestration.
+- AIManager owns AI Insight Engine orchestration.
 - Application owns pipeline orchestration.
 - FastAPI Server owns REST API Layer.
 - DashboardService owns Business Intelligence orchestration.
@@ -1180,6 +1460,13 @@ Every manager, and the Application layer itself, performs:
 - Error logging
 - Pipeline summary logging
 
+AI layer logging includes:
+
+- Prompt generation logging
+- LLM request logging
+- Response parsing logging
+- Generation time logging
+
 REST API logging includes:
 
 - Request logging
@@ -1204,7 +1491,7 @@ src/core/exceptions.py
 
 Business modules and the Application layer raise domain-specific exceptions instead of generic exceptions whenever practical. The Application layer is responsible for top-level failure handling across the pipeline.
 
-Global REST exception handlers provide:
+AI-specific exceptions are defined in `src/ai/exceptions.py` (or `src/core/exceptions.py`). Global REST exception handlers provide:
 
 - Consistent HTTP error responses
 - Standardized error format
@@ -1300,6 +1587,21 @@ Current coverage includes:
 - Report endpoint
 - Pipeline endpoint
 
+### AI Insight Engine
+
+- AIManager
+- AIReport
+- AIResult
+- ExecutiveSummaryEngine
+- RecommendationEngine
+- ExplanationEngine
+- NarrativeEngine
+- PromptBuilder
+- ReportSerializer
+- ResponseParser
+- LLMFactory
+- OllamaClient (mocked)
+
 ### Frontend
 
 - Dashboard view
@@ -1326,10 +1628,11 @@ Validated through:
 - Complete end-to-end pipeline execution
 - REST API integration testing
 - Frontend-backend integration testing
+- AI pipeline integration testing
 
 Current results:
 
-All available automated tests passing.
+**133 automated tests passing** (as of Sprint 11).
 
 Every completed component must include automated unit tests before release. Automated testing validates every architectural change.
 
@@ -1368,6 +1671,8 @@ The platform has been validated using datasets of increasing scale.
 - Frontend rendering performance
 - API response times
 - Session state management
+- **AI generation with large reports**
+- **LLM response times (acceptable for local inference)**
 
 The platform successfully completed:
 
@@ -1380,6 +1685,7 @@ The platform successfully completed:
 - REST API validation
 - End-to-end HTTP pipeline execution
 - Frontend interface validation
+- AI pipeline validation with various report sizes
 
 ---
 
@@ -1426,6 +1732,7 @@ src/
 ├── application/
 │   ├── app.py
 │   ├── pipeline_result.py
+│   ├── pipeline_report.py
 │   └── __init__.py
 ├── upload/
 ├── cleaning/
@@ -1433,6 +1740,24 @@ src/
 ├── analytics/
 ├── reporting/
 │   └── exporters/
+├── ai/
+│   ├── __init__.py
+│   ├── ai_manager.py
+│   ├── ai_report.py
+│   ├── ai_result.py
+│   ├── executive_summary_engine.py
+│   ├── recommendation_engine.py
+│   ├── explanation_engine.py
+│   ├── narrative_engine.py
+│   └── exceptions.py  (optional)
+├── llm/
+│   ├── __init__.py
+│   ├── base_llm.py
+│   ├── llm_factory.py
+│   ├── ollama_client.py
+│   ├── prompt_builder.py
+│   ├── report_serializer.py
+│   └── response_parser.py
 ├── persistence/
 │   ├── persistence_manager.py
 │   ├── persistence_result.py
@@ -1498,6 +1823,15 @@ tests/
 │   ├── test_pipeline.py
 │   ├── test_powerbi.py
 │   └── __init__.py
+├── ai/
+│   ├── test_ai_manager.py
+│   ├── test_ai_result.py
+│   ├── test_engines.py
+│   ├── test_prompt_builder.py
+│   ├── test_report_serializer.py
+│   ├── test_response_parser.py
+│   ├── test_llm_factory.py
+│   └── __init__.py
 ├── frontend/
 │   ├── test_views.py
 │   ├── test_services.py
@@ -1540,6 +1874,10 @@ The architecture follows:
 - Request/Response Contracts
 - Frontend-Backend Separation
 - React-ready Architecture
+- LLM Abstraction
+- Provider Pluggability
+- Prompt Engineering Isolation
+- Structured AI Outputs
 
 ---
 
@@ -1551,6 +1889,7 @@ The architecture follows:
 | Presentation | ✅ Stable |
 | REST API Layer | ✅ Stable |
 | Business Intelligence Layer | ✅ Stable |
+| AI Insight Engine | ✅ Stable |
 | Application | ✅ Stable |
 | Upload | ✅ Stable |
 | Cleaning | ✅ Stable |
@@ -1669,6 +2008,27 @@ Major improvements:
 
 ---
 
+# Sprint 11 — AI Insight Engine
+
+Sprint 11 introduced a dedicated AI Insight Engine that enriches reporting data with intelligent narratives, executive summaries, recommendations, and explanations using a local LLM.
+
+Major improvements:
+
+- Added AI Layer with AIManager, AIReport, AIResult.
+- Implemented ExecutiveSummaryEngine, RecommendationEngine, ExplanationEngine, NarrativeEngine.
+- Added PromptBuilder for prompt engineering.
+- Added ReportSerializer for converting reporting data to LLM context.
+- Added ResponseParser for validating and parsing LLM responses.
+- Added LLM infrastructure: BaseLLM, LLMFactory, OllamaClient.
+- Integrated AI layer into Application orchestration (via PipelineReport).
+- Preserved all stable module contracts and business logic.
+- Extended automated testing (AI unit and integration tests).
+- Validated AI pipeline with various report sizes.
+- Ensured pluggable LLM provider architecture.
+- Maintained separation of concerns: AI layer never accesses raw data or persistence.
+
+---
+
 # React Migration Constraint
 
 The Streamlit frontend serves as the MVP presentation layer.
@@ -1680,6 +2040,7 @@ Future React migration shall preserve:
 - Business modules
 - Persistence Layer
 - Database Abstraction Layer
+- AI Insight Engine contracts
 
 Only the Presentation Layer (Frontend) may be replaced.
 
@@ -1694,15 +2055,6 @@ to a modern React frontend when the time comes.
 # Future Evolution
 
 The current architecture provides a stable foundation for continued, sequenced evolution. The Application layer remains the single orchestration point as the platform grows, while the REST API Layer provides the interface for external integrations.
-
-## Sprint 11 — AI Insight Engine
-
-- Executive Summary Generator
-- Recommendation Engine
-- Narrative Generation
-- Explainable Analytics
-- Dashboard AI
-- Report AI
 
 ## Sprint 12 — Production Deployment
 
@@ -1721,7 +2073,7 @@ Every architectural change affecting module boundaries or dependency direction m
 
 ---
 
-**Current Architecture Version:** **v10.0.0**
+**Current Architecture Version:** **v11.0.0**
 
-**Previous Version:** **v9.0.0**
+**Previous Version:** **v10.0.0**
 ```

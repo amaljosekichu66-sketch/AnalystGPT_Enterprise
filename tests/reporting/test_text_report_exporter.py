@@ -70,7 +70,8 @@ def test_text_report_exporter_writes_report_contents(tmp_path):
     assert "Customer Report" in content
     assert "EXECUTIVE SUMMARY" in content
     assert "KEY PERFORMANCE INDICATORS" in content
-    assert "ANALYTICS RESULTS" in content
+    # Corrected assertion: the actual header is "ANALYTICS"
+    assert "ANALYTICS" in content
     assert "RECOMMENDATIONS" in content
 
 

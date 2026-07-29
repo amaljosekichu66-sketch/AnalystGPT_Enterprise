@@ -10,7 +10,11 @@ Responsibilities
 This module intentionally contains no business logic.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+)
 
 
 # ==========================================================
@@ -22,10 +26,19 @@ class PipelineRequest(BaseModel):
     Request model for pipeline execution.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        frozen=True,
+        str_strip_whitespace=True,
+    )
 
     input_path: str = Field(
         ...,
-        description="Path to the input dataset.",
         min_length=1,
+        description=(
+            "Absolute or relative path to the "
+            "input dataset."
+        ),
+        examples=[
+            "sample_data/sales.csv",
+        ],
     )

@@ -10,7 +10,13 @@ Responsibilities
 This module intentionally contains no business logic.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Any
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+)
 
 
 # ==========================================================
@@ -19,17 +25,29 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class APIResponse(BaseModel):
     """
-    Base envelope for all API responses.
-
-    Provides a consistent structure for success indicators,
-    timestamps, and request tracking.
+    Standard API response envelope.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
     success: bool = Field(
         default=True,
-        description="Indicates whether the request completed successfully."
+        description=(
+            "Indicates whether the request "
+            "completed successfully."
+        ),
+    )
+
+    message: str = Field(
+        default="Request completed successfully.",
+        description="Human-readable response message.",
+    )
+
+    data: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Endpoint-specific response payload.",
     )
 
 
@@ -44,22 +62,22 @@ class RootResponse(APIResponse):
 
     application: str = Field(
         ...,
-        description="Application name."
+        description="Application name.",
     )
 
     version: str = Field(
         ...,
-        description="Current API version."
+        description="Current application version.",
     )
 
     status: str = Field(
         ...,
-        description="Current application status."
+        description="Current application status.",
     )
 
     documentation: str = Field(
         ...,
-        description="URL to API documentation."
+        description="URL to API documentation.",
     )
 
 
@@ -74,32 +92,9 @@ class HealthResponse(APIResponse):
 
     status: str = Field(
         ...,
-        description="Current health status of the API."
+        description="Current API health status.",
     )
 
-# ==========================================================
-# Pipeline Endpoint Response
-# ==========================================================
-
-class PipelineResponse(APIResponse):
-    """
-    Response model for pipeline execution.
-    """
-
-    output_path: str | None = Field(
-        default=None,
-        description="Location of the generated report."
-    )
-
-    execution_time: float = Field(
-        ...,
-        description="Total pipeline execution time in seconds."
-    )
-
-    error: str | None = Field(
-        default=None,
-        description="Error message if pipeline execution failed."
-    )
 
 # ==========================================================
 # Version Endpoint Response
@@ -112,5 +107,55 @@ class VersionResponse(APIResponse):
 
     version: str = Field(
         ...,
-        description="Current API version."
+        description="Current application version.",
     )
+
+
+# ==========================================================
+# AI Report Response
+# ==========================================================
+
+class AIReportResponse(BaseModel):
+    """
+    AI-generated business insights.
+    """
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+    executive_summary: str
+
+    recommendations: list[str] = Field(
+        default_factory=list,
+    )
+
+    explanations: list[str] = Field(
+        default_factory=list,
+    )
+
+    narrative: str
+
+    model: str
+
+    provider: str
+
+    execution_time: float
+
+
+# ==========================================================
+# Pipeline Response
+# ==========================================================
+
+class PipelineResponse(APIResponse):
+    """
+    Response returned after pipeline execution.
+    """
+
+    output_path: str | None = None
+
+    execution_time: float = 0.0
+
+    ai_report: AIReportResponse | None = None
+
+    error: str | None = None

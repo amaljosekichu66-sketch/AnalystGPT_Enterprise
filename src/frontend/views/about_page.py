@@ -3,7 +3,7 @@ Enterprise About Page
 
 AnalystGPT Enterprise
 
-Sprint 10
+Sprint 11
 """
 
 from __future__ import annotations
@@ -12,10 +12,6 @@ import streamlit as st
 
 from src.frontend.components.about_card import (
     render_about_card,
-)
-
-from src.frontend.components.footer import (
-    render_footer,
 )
 
 from src.frontend.components.loading_state import (
@@ -35,17 +31,16 @@ def render() -> None:
         "a modular, production-oriented architecture."
     )
 
-    with loading("Loading application information..."):
-
+    with loading(
+        "Loading application information..."
+    ):
         render_about_card()
 
     st.divider()
 
     st.info(
-        "Sprint 10 focuses on delivering a polished "
-        "enterprise frontend while preserving backend "
-        "architecture and enabling a smooth migration "
-        "to the planned React frontend."
+        "Sprint 11 extends the enterprise platform with "
+        "AI Insight Engine integration, backend pipeline "
+        "execution from Streamlit, REST API reporting, "
+        "and Power BI-ready dashboard services."
     )
-
-    render_footer()

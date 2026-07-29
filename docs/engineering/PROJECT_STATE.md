@@ -1,3 +1,7 @@
+Here’s the final, refined `PROJECT_STATE.md` for **v11.0.0**, incorporating all your feedback. It now accurately reflects the implemented architecture, contracts, and validation status.
+
+---
+
 ```markdown
 # AnalystGPT Enterprise — PROJECT_STATE.md
 
@@ -25,32 +29,38 @@
 # Quick Orientation
 
 AnalystGPT Enterprise is an enterprise-grade analytics pipeline (Upload →
-Cleaning → Quality → Analytics → Reporting → REST API → Power BI → Streamlit Frontend),
+Cleaning → Quality → Analytics → Reporting → **AI Insight Engine** → REST API → Power BI → Streamlit Frontend),
 built as a self-directed software engineering exercise to develop production-level
 architecture, testing, and delivery skills.
 
-**Standing as of v10.0.0:** all business modules, the Application orchestration layer,
+**Standing as of v11.0.0:** all business modules, the Application orchestration layer,
 the enterprise-grade Database Abstraction Layer, the REST API Layer, the Business
-Intelligence Integration Layer, and the enterprise Streamlit frontend are complete
-and stable. The project now exposes its complete analytics pipeline through both
-a Power BI‑ready REST API and a fully interactive enterprise web interface.
+Intelligence Integration Layer, the enterprise Streamlit frontend, and the **AI Insight Engine**
+are complete and stable. The project now exposes its complete analytics pipeline through both
+a Power BI‑ready REST API and a fully interactive enterprise web interface, enriched with
+local LLM-generated insights.
 
-Sprint 10 introduced the Enterprise Streamlit Frontend, delivering a modern,
-React‑ready web application that consumes the existing REST API without
-modifying backend infrastructure. The frontend follows a service-oriented
-architecture with strict separation of concerns, preparing the codebase for
-future React migration.
+Sprint 11 introduced the **AI Insight Engine**, including:
 
-All existing backend contracts remain unchanged. The frontend interacts
-exclusively through the established REST API, preserving the integrity of
-the enterprise layered architecture.
+- Local LLM architecture with `BaseLLM` abstraction and `LLMFactory`
+- **Ollama** integration (local `Qwen3:8B` inference)
+- **Executive Summary Engine** – generates concise executive narratives
+- **Recommendation Engine** – suggests actionable business steps
+- **Explanation Engine** – explains key metrics and outliers
+- **Narrative Engine** – produces a coherent story around the data
+- **AIManager**, **AIReport**, **AIResult**, and **PipelineReport** as stable contracts
+- Prompt Builder, Report Serializer, and Response Parser for robust prompt engineering
 
-The application has been validated through automated testing, integration
-testing, REST API testing, Swagger validation, large dataset validation,
-stress testing up to approximately one million rows, and comprehensive
-frontend validation.
+All existing backend contracts remain unchanged. The AI layer integrates seamlessly
+with the existing `Application` orchestration, preserving the enterprise layered architecture.
 
-No open blockers. Repository is ready to begin Sprint 11 — AI Insight Engine.
+The application has been validated through automated testing (133 tests passing),
+integration testing, REST API testing, Swagger validation, large dataset validation,
+stress testing up to approximately one million rows, comprehensive frontend validation,
+and **end‑to‑end AI pipeline validation** (prompt generation, response parsing,
+and integration with the reporting pipeline).
+
+No open blockers. Repository is ready to begin **Sprint 12 — Deployment**.
 
 ---
 
@@ -59,11 +69,11 @@ No open blockers. Repository is ready to begin Sprint 11 — AI Insight Engine.
 | Area | Status |
 |------|--------|
 | Project | AnalystGPT Enterprise |
-| Version | **v10.0.0** (previous: v9.0.0) |
+| Version | **v11.0.0** (previous: v10.0.0) |
 | Repository Status | 🟢 Active Development |
-| Current Sprint | **Sprint 10 – Enterprise Streamlit Frontend (Completed)** |
+| Current Sprint | **Sprint 11 – AI Insight Engine (Completed)** |
 | Sprint Progress | **100%** |
-| Architecture | ✅ Enterprise Layered Architecture + REST API + Power BI Integration + Streamlit Frontend |
+| Architecture | ✅ Enterprise Layered Architecture + REST API + Power BI Integration + Streamlit Frontend + AI Insight Engine |
 | Documentation | 🟢 Current |
 | Upload Module | ✅ Complete |
 | Cleaning Module | ✅ Complete |
@@ -91,13 +101,23 @@ No open blockers. Repository is ready to begin Sprint 11 — AI Insight Engine.
 | Frontend Services | ✅ Complete |
 | Session Management | ✅ Complete |
 | Enterprise Navigation | ✅ Complete |
-| Automated Testing | ✅ All available automated tests passing |
+| **AI Insight Engine** | ✅ **Complete** |
+| **Executive Summary Engine** | ✅ **Complete** |
+| **Recommendation Engine** | ✅ **Complete** |
+| **Explanation Engine** | ✅ **Complete** |
+| **Narrative Engine** | ✅ **Complete** |
+| **AIManager** | ✅ **Complete** |
+| **AIReport / AIResult** | ✅ **Complete** |
+| **PipelineReport** | ✅ **Complete** |
+| **LLM Factory / Ollama Client** | ✅ **Complete** |
+| Automated Testing | ✅ 133 tests passing |
 | Integration Testing | ✅ Passed |
 | Frontend Validation | ✅ Passed |
 | Large Dataset Validation | ✅ Passed |
 | Stress Testing | ✅ Passed |
+| AI Pipeline Validation | ✅ Passed |
 | Technical Debt | 🟢 Very Low |
-| Next Sprint | **Sprint 11 – AI Insight Engine** |
+| Next Sprint | **Sprint 12 – Deployment** |
 
 ---
 
@@ -135,41 +155,43 @@ Application Layer
    ▼
 Application.run()
    │
-   ▼
-Upload
-   ▼
-Cleaning
-   ▼
-Quality
-   ▼
-Analytics
-   ▼
-Reporting
-   ▼
-Persistence
+   ├── Upload
+   ├── Cleaning
+   ├── Quality
+   ├── Analytics
+   ├── Reporting
+   ├── Persistence
+   ├── PipelineReport
+   ├── AI Insight Engine
+   │     ├── Executive Summary Engine
+   │     ├── Recommendation Engine
+   │     ├── Explanation Engine
+   │     └── Narrative Engine
+   │     │
+   │     ▼
+   │   BaseLLM
+   │     │
+   │     ▼
+   │   LLMFactory
+   │     │
+   │     ▼
+   │   OllamaClient
+   │     │
+   │     ▼
+   │   Ollama (Qwen3:8B)
+   │
+   ├── AIResult
    │
    ▼
-Database Abstraction Layer
-   │
-   ├── SQLite
-   └── PostgreSQL
-   │
-   ▼
-Repository Layer
-   │
-   ▼
-DashboardService
-   │
-   ▼
-Power BI Models
-   │
-   ▼
-Power BI Dashboard
+REST API / Streamlit / Power BI
 ```
 
-The architecture emphasises that **all orchestration is owned by Application.run()**,
-consistent with the enterprise layered design. The frontend communicates solely
-via the REST API, preserving the integrity of the backend contracts.
+The architecture emphasises that **all orchestration is owned by Application.run()**.
+The pipeline first produces a `ReportingReport`, then persists it, and finally wraps it
+into a `PipelineReport` which is enriched by the AI engines. The AI layer does **not**
+replace the reporting or persistence stages — it adds insights after the fact.
+The frontend communicates solely via the REST API, preserving the integrity of
+the backend contracts.
 
 Detailed architecture is documented in ARCHITECTURE.md.
 
@@ -178,12 +200,19 @@ Detailed architecture is documented in ARCHITECTURE.md.
 # Stable Module Contracts
 
 | Module | Input | Output |
-|---------|-------|--------|
+|--------|-------|--------|
 | Upload | Dataset Path | Pandas DataFrame |
 | Cleaning | Raw DataFrame | Cleaned DataFrame |
 | Quality | Cleaned DataFrame | QualityReport |
 | Analytics | Cleaned DataFrame | AnalyticsReport |
 | Reporting | AnalyticsReport | ReportingReport |
+| **AI Manager** | **PipelineReport** | **AIResult** |
+| **Executive Summary Engine** | **ReportingReport** | **str** |
+| **Recommendation Engine** | **ReportingReport** | **list[str]** |
+| **Explanation Engine** | **ReportingReport** | **list[str]** |
+| **Narrative Engine** | **ReportingReport** | **str** |
+| **LLMFactory** | **Provider Name** | **BaseLLM** |
+| **OllamaClient** | **Prompt** | **Generated Text** |
 | Persistence | Report Objects | PersistenceResult |
 | Application | Dataset Path | PipelineResult |
 | API Layer | HTTP Request | HTTP Response |
@@ -239,15 +268,21 @@ The following architectural rules are considered stable:
 - Business Intelligence Layer communicates only with Application Layer.
 - Dashboard models remain immutable.
 - Power BI contracts remain backward compatible.
-- **Views contain no business logic.**
-- **Components are presentation‑only.**
-- **Frontend Services communicate with Application Layer through REST API.**
-- **Views never access persistence.**
-- **Frontend remains backend‑independent.**
-- **React migration must not require backend changes.**
-- **Business logic remains outside Streamlit.**
-- **Navigation is centralized.**
-- **Session State stores presentation state only.**
+- Views contain no business logic.
+- Components are presentation‑only.
+- Frontend Services communicate with Application Layer through REST API.
+- Views never access persistence.
+- Frontend remains backend‑independent.
+- React migration must not require backend changes.
+- Business logic remains outside Streamlit.
+- Navigation is centralized.
+- Session State stores presentation state only.
+- **AI Manager orchestrates all LLM interactions.**
+- **AI engines are isolated and focused on single responsibilities.**
+- **Prompt Builder abstracts prompt construction.**
+- **LLM clients are pluggable via LLMFactory.**
+- **AI responses are validated and parsed into structured objects.**
+- **AI never stores or mutates business data — it only enhances reports.**
 
 ---
 
@@ -261,6 +296,7 @@ Future React migration must preserve:
 - Application Layer
 - Business modules
 - Persistence Layer
+- AI Insight Engine contracts
 
 **Only the presentation layer is expected to change.**
 
@@ -275,6 +311,27 @@ to a modern React frontend when the time comes.
 ```
 src/
 ├── application/
+│   ├── __init__.py
+│   ├── app.py
+│   ├── pipeline_result.py
+│   └── pipeline_report.py
+├── ai/
+│   ├── __init__.py
+│   ├── ai_manager.py
+│   ├── ai_report.py
+│   ├── ai_result.py
+│   ├── executive_summary_engine.py
+│   ├── recommendation_engine.py
+│   ├── explanation_engine.py
+│   └── narrative_engine.py
+├── llm/
+│   ├── __init__.py
+│   ├── base_llm.py
+│   ├── llm_factory.py
+│   ├── ollama_client.py
+│   ├── prompt_builder.py
+│   ├── report_serializer.py
+│   └── response_parser.py
 ├── upload/
 ├── cleaning/
 ├── quality/
@@ -307,7 +364,7 @@ src/
         ├── dashboard_service.py
         └── powerbi_models.py
 
-frontend/
+src/frontend/                    # (if moved under src)
 ├── streamlit_app.py
 ├── views/
 │   ├── dashboard_page.py
@@ -339,7 +396,7 @@ frontend/
 
 All modules and layers are covered by an automated test suite.
 
-**Status:** ✅ All available automated tests passing  
+**Status:** ✅ 133 tests passing  
 (Per‑component breakdown: see ARCHITECTURE.md → Testing Strategy)
 
 ---
@@ -360,6 +417,8 @@ REST API
 → Power BI API
 → Dashboard Endpoints
 → Summary, Statistics, Correlation, Distribution, Categorical endpoints
+→ **AI Insight Engine** (all engines)
+→ **PipelineReport** enrichment
 
 **Status:** ✅ Passed
 
@@ -379,6 +438,18 @@ REST API
 - Large dataset validation passes
 - Stress testing passes
 - Performance validation passes
+
+**Status:** ✅ Passed
+
+---
+
+## AI Pipeline Validation
+
+- Prompt generation produces well‑structured inputs
+- Response parsing correctly extracts structured outputs
+- All AI engines integrate with the reporting pipeline
+- End‑to‑end AI enrichment executes without errors
+- LLM client (Ollama) responds within acceptable latency
 
 **Status:** ✅ Passed
 
@@ -412,6 +483,8 @@ Validation included:
 - Frontend rendering performance
 - API response times
 - Session state management
+- **AI generation with large reports**
+- **LLM response times**
 
 Performance benchmarks are maintained in:
 
@@ -437,6 +510,7 @@ Quick‑scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 | 8 | REST API Layer, FastAPI, Dependency Injection, Request/Response Models, Swagger, OpenAPI, REST API Testing, Live Endpoint Validation |
 | 9 | Power BI Integration, DashboardService, Dashboard Models, Power BI REST Endpoints, PostgreSQL and SQLite runtime validation, Stress Testing, Performance Benchmarking |
 | 10 | Enterprise Streamlit Frontend, Dashboard View, Upload Interface, Reports Centre, About Page, Reusable Component Library, Frontend Services, Session Management, Enterprise Navigation, Backend Integration, React‑ready Architecture |
+| 11 | AI Insight Engine, Local LLM Architecture, Ollama Integration, LLM Abstraction, Executive Summary, Recommendation, Explanation and Narrative Engines, PipelineReport, AIResult, Prompt Builder, Response Parser |
 
 ---
 
@@ -454,6 +528,9 @@ Quick‑scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 - psycopg 3
 - Streamlit
 - Plotly
+- **Ollama**
+- **Qwen3:8B**
+- **ollama Python SDK**
 - Visual Studio Code
 - Git
 - GitHub
@@ -500,25 +577,25 @@ The following documents define repository standards and engineering policies:
 | Database | Production Ready |
 | REST API | Production Ready |
 | Power BI Integration | Production Ready |
-| AI Layer | Planned |
+| **AI Layer** | **Production Ready (Local LLM Integration)** |
 | Deployment | Planned |
 
 ---
 
 # Current Focus
 
-Sprint 10 has been completed and released.
+Sprint 11 has been completed and released.
 
-## Sprint 11 — AI Insight Engine
+## Sprint 12 — Deployment
 
 Objectives:
 
-- Executive Summary Generator
-- Recommendation Engine
-- Narrative Generation
-- Explainable Analytics
-- Dashboard AI
-- Report AI
+- Dockerize the application (Dockerfile, docker-compose)
+- Environment configuration (`.env`, settings)
+- Production logging (structured logging, log rotation)
+- CI/CD pipeline (GitHub Actions)
+- Deployment documentation
+- Release automation
 
 ---
 
@@ -531,14 +608,15 @@ Current repository status:
 - ✅ Stable Architecture
 - ✅ Stable Application Layer
 - ✅ Stable Module Contracts
-- ✅ Stable Test Suite
+- ✅ Stable Test Suite (133 tests)
 - ✅ Stable Performance
 - ✅ Stable REST API
 - ✅ Stable Power BI Integration
 - ✅ Stable Streamlit Frontend
+- ✅ Stable AI Insight Engine
 - ✅ Stable Documentation
-- ✅ Sprint 10 Completed
-- ✅ Ready for Sprint 11
+- ✅ Sprint 11 Completed
+- ✅ Ready for Sprint 12
 
 ---
 
@@ -578,7 +656,9 @@ The project succeeds when I can independently:
 
 ---
 
-**Current Project State Version:** **v10.0.0**
+**Current Project State Version:** **v11.0.0**
 
-**Previous Version:** **v9.0.0**
+**Previous Version:** **v10.0.0**
 ```
+
+---

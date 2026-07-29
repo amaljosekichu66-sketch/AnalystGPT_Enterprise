@@ -5,6 +5,10 @@ Defines the standardized output contract returned by the
 Reporting Module.
 """
 
+from __future__ import annotations
+
+from datetime import UTC
+from datetime import datetime
 from typing import Any
 
 from src.core.logger import logger
@@ -15,8 +19,8 @@ class ReportingReport:
     """
     Represents the final output produced by the Reporting Module.
 
-    This object contains the generated report together with
-    reporting metadata.
+    This object contains the generated business report together
+    with reporting metadata.
     """
 
     def __init__(
@@ -24,35 +28,53 @@ class ReportingReport:
         report: StructuredReport,
         export_path: str,
         execution_time: float,
+        generated_at: datetime | None = None,
     ) -> None:
         """
-        Initialize a ReportingReport instance.
+        Initialise a ReportingReport instance.
 
-        Args:
-            report:
-                Structured business report.
+        Parameters
+        ----------
+        report:
+            Structured business report.
 
-            export_path:
-                Location of the exported report.
+        export_path:
+            Location of the exported report.
 
-            execution_time:
-                Total reporting pipeline execution time.
+        execution_time:
+            Total reporting execution time.
+
+        generated_at:
+            UTC timestamp when the report was generated.
         """
 
-        logger.info("Creating ReportingReport.")
+        logger.info(
+            "Creating ReportingReport."
+        )
 
         self.report = report
+
         self.export_path = export_path
+
         self.execution_time = execution_time
 
-    def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the reporting result into a serializable dictionary.
+        self.generated_at = (
+            generated_at
+            if generated_at is not None
+            else datetime.now(
+                UTC,
+            )
+        )
 
-        Returns
-        -------
-        dict[str, Any]
-            Dictionary representation of the reporting result.
+    # ==========================================================
+    # Serialization
+    # ==========================================================
+
+    def to_dict(
+        self,
+    ) -> dict[str, Any]:
+        """
+        Convert the reporting result into a serialisable dictionary.
         """
 
         return {
@@ -62,4 +84,23 @@ class ReportingReport:
                 self.execution_time,
                 4,
             ),
+            "generated_at": (
+                self.generated_at.isoformat()
+            ),
         }
+
+    # ==========================================================
+    # Representation
+    # ==========================================================
+
+    def __repr__(
+        self,
+    ) -> str:
+
+        return (
+            "ReportingReport("
+            f"export_path={self.export_path!r}, "
+            f"execution_time={self.execution_time:.4f}, "
+            f"generated_at={self.generated_at.isoformat()}"
+            ")"
+        )

@@ -20,7 +20,9 @@ def render_export_buttons(
     if not export_result.get("success"):
         return
 
-    export_path = export_result.get("export_path")
+    export_path = export_result.get(
+        "export_path"
+    )
 
     if not export_path:
         return
@@ -29,7 +31,9 @@ def render_export_buttons(
 
     if not path.exists():
 
-        st.warning("Generated report could not be found.")
+        st.warning(
+            "Generated report could not be found."
+        )
 
         return
 
@@ -43,5 +47,5 @@ def render_export_buttons(
             data=file,
             file_name=path.name,
             mime="text/plain",
-            use_container_width=True,
+            width="stretch",
         )

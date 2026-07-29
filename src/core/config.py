@@ -2,9 +2,11 @@
 Application configuration for AnalystGPT Enterprise.
 """
 
-from pathlib import Path
+from __future__ import annotations
+
 import logging
 import os
+from pathlib import Path
 
 # ==========================================================
 # Logging Configuration
@@ -13,19 +15,15 @@ import os
 LOG_LEVEL = logging.INFO
 
 # ==========================================================
+# Project Configuration
+# ==========================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+# ==========================================================
 # Upload Configuration
 # ==========================================================
 
-# Maximum supported upload size.
-#
-# NOTE:
-# Streamlit also enforces its own upload limit.
-# Set the same value in:
-#
-# .streamlit/config.toml
-#
-# server.maxUploadSize = 500
-#
 MAX_FILE_SIZE_MB = 500
 
 # ==========================================================
@@ -34,9 +32,9 @@ MAX_FILE_SIZE_MB = 500
 
 RESET_INDEX_AFTER_CLEANING = True
 
-DEFAULT_DATATYPE_MAP = {
+DEFAULT_DATATYPE_MAP: dict[str, str] = {
     # Example:
-    # "joining_date": "datetime",
+    # "joining_date": "datetime64[ns]",
     # "age": "int64",
     # "salary": "float64",
 }
@@ -45,11 +43,13 @@ DEFAULT_DATATYPE_MAP = {
 # Reporting Configuration
 # ==========================================================
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+REPORT_OUTPUT_DIRECTORY = (
+    PROJECT_ROOT / "reports"
+)
 
-REPORT_OUTPUT_DIRECTORY = PROJECT_ROOT / "reports"
-
-DEFAULT_REPORT_FILENAME = "analystgpt_report.txt"
+DEFAULT_REPORT_FILENAME = (
+    "analystgpt_report.txt"
+)
 
 # ==========================================================
 # Database Configuration
@@ -58,21 +58,41 @@ DEFAULT_REPORT_FILENAME = "analystgpt_report.txt"
 DATABASE_ENGINE = os.getenv(
     "DATABASE_ENGINE",
     "sqlite",
-).lower()
+).strip().lower()
 
-# ---------------- SQLite ----------------
+# ----------------------------------------------------------
+# SQLite
+# ----------------------------------------------------------
 
-SQLITE_DATABASE_PATH = "analystgpt.db"
+SQLITE_DATABASE_PATH = (
+    PROJECT_ROOT / "analystgpt.db"
+)
 
-# ---------------- PostgreSQL ----------------
+# ----------------------------------------------------------
+# PostgreSQL
+# ----------------------------------------------------------
 
-POSTGRES_HOST = "localhost"
+POSTGRES_HOST = os.getenv(
+    "POSTGRES_HOST",
+    "localhost",
+)
 
-POSTGRES_PORT = 5433
+POSTGRES_PORT = int(
+    os.getenv(
+        "POSTGRES_PORT",
+        "5433",
+    )
+)
 
-POSTGRES_DATABASE = "analystgpt"
+POSTGRES_DATABASE = os.getenv(
+    "POSTGRES_DATABASE",
+    "analystgpt",
+)
 
-POSTGRES_USER = "postgres"
+POSTGRES_USER = os.getenv(
+    "POSTGRES_USER",
+    "postgres",
+)
 
 POSTGRES_PASSWORD = os.getenv(
     "POSTGRES_PASSWORD",
@@ -87,24 +107,103 @@ if (
     )
 
 # ==========================================================
-# Future Configuration
+# Frontend Configuration
 # ==========================================================
 
-# API_TIMEOUT = 30
-
-# DEBUG = False
-# ==========================================================
-# Frontend Performance Configuration
-# ==========================================================
-
-# Maximum rows displayed in preview tables.
 DATAFRAME_PREVIEW_ROWS = 100
 
-# Maximum rows sampled for charts.
 MAX_CHART_ROWS = 100_000
 
-# Maximum rows sampled for column profiling.
 MAX_PROFILE_ROWS = 100_000
 
-# Maximum rows sampled for correlation analysis.
 MAX_CORRELATION_ROWS = 100_000
+
+# ==========================================================
+# AI Configuration
+# ==========================================================
+
+LLM_PROVIDER = os.getenv(
+    "LLM_PROVIDER",
+    "ollama",
+).strip().lower()
+
+# ----------------------------------------------------------
+# Ollama
+# ----------------------------------------------------------
+
+OLLAMA_HOST = os.getenv(
+    "OLLAMA_HOST",
+    "http://localhost:11434",
+)
+
+OLLAMA_MODEL = os.getenv(
+    "OLLAMA_MODEL",
+    "gemma3:4b",
+)
+
+OLLAMA_KEEP_ALIVE = os.getenv(
+    "OLLAMA_KEEP_ALIVE",
+    "30m",
+)
+
+# ==========================================================
+# Generation Parameters
+# ==========================================================
+
+AI_TEMPERATURE = float(
+    os.getenv(
+        "AI_TEMPERATURE",
+        "0.2",
+    )
+)
+
+AI_TOP_P = float(
+    os.getenv(
+        "AI_TOP_P",
+        "0.90",
+    )
+)
+
+AI_MAX_TOKENS = int(
+    os.getenv(
+        "AI_MAX_TOKENS",
+        "1024",
+    )
+)
+
+AI_CONTEXT_WINDOW = int(
+    os.getenv(
+        "AI_CONTEXT_WINDOW",
+        "4096",
+    )
+)
+
+AI_TIMEOUT = float(
+    os.getenv(
+        "AI_TIMEOUT",
+        "120",
+    )
+)
+
+AI_MAX_RETRIES = int(
+    os.getenv(
+        "AI_MAX_RETRIES",
+        "3",
+    )
+)
+
+# ==========================================================
+# Future Providers (Sprint 12+)
+# ==========================================================
+
+OPENAI_API_KEY = os.getenv(
+    "OPENAI_API_KEY",
+)
+
+GEMINI_API_KEY = os.getenv(
+    "GEMINI_API_KEY",
+)
+
+CLAUDE_API_KEY = os.getenv(
+    "CLAUDE_API_KEY",
+)

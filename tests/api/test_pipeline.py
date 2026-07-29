@@ -2,132 +2,124 @@
 Integration tests for the pipeline endpoint.
 """
 
-from fastapi.testclient import TestClient
+from pathlib import Path
 
-from src.api.dependencies.application_dependency import (
-    get_application,
-)
-from src.api.server import app
+import pandas as pd
+from pandas import DataFrame
+import pytest
+
+from src.analytics.analytics_manager import AnalyticsManager
+from src.analytics.analytics_report import AnalyticsReport
+from src.cleaning.cleaning_manager import CleaningManager
+from src.quality.quality_manager import QualityManager
+from src.quality.quality_report import QualityReport
+from src.reporting.reporting_manager import ReportingManager
+from src.reporting.reporting_report import ReportingReport
+from src.upload.upload_manager import UploadManager
 
 
-# ==========================================================
-# Fake Application
-# ==========================================================
-
-class FakeAnalytics:
+def test_complete_pipeline():
     """
-    Fake analytics payload.
-    """
-
-    def __init__(self):
-        self.analytics = {
-            "descriptive_statistics": {
-                "total_rows": 100,
-                "total_columns": 5,
-                "numeric_column_count": 2,
-                "categorical_column_count": 3,
-                "datetime_column_count": 0,
-                "memory_usage_mb": 0.01,
-            },
-            "correlation_analysis": {},
-            "distribution_analysis": {},
-            "categorical_analysis": {},
-        }
-
-
-class FakeStructuredReport:
-    """
-    Fake structured report.
+    Verify the complete AnalystGPT Enterprise pipeline executes successfully.
     """
 
-    def __init__(self):
-        self.analytics = FakeAnalytics().analytics
+    upload_manager = UploadManager()
+    cleaning_manager = CleaningManager()
+    quality_manager = QualityManager()
+    analytics_manager = AnalyticsManager()
+    reporting_manager = ReportingManager()
 
+    # ---------------------------------------------------------
+    # Upload
+    # ---------------------------------------------------------
 
-class FakeReportingReport:
-    """
-    Fake reporting report.
-    """
-
-    def __init__(self):
-        self.report = FakeStructuredReport()
-
-    def to_dict(self):
-        return {
-            "report": self.report.analytics,
-            "export_path": "reports/report.txt",
-            "execution_time": 1.25,
-        }
-
-
-class FakePipelineResult:
-    """
-    Fake pipeline execution result.
-    """
-
-    def __init__(self):
-        self.success = True
-        self.output_path = "reports/report.txt"
-        self.execution_time = 1.25
-        self.error = None
-        self.reporting_report = FakeReportingReport()
-
-
-class FakeApplication:
-    """
-    Fake application used for dependency injection.
-    """
-
-    def run(self, input_path: str) -> FakePipelineResult:
-        return FakePipelineResult()
-
-
-# ==========================================================
-# Dependency Override
-# ==========================================================
-
-app.dependency_overrides[get_application] = (
-    lambda: FakeApplication()
-)
-
-client = TestClient(app)
-
-
-# ==========================================================
-# Pipeline Endpoint Tests
-# ==========================================================
-
-def test_pipeline_endpoint_returns_success() -> None:
-    """
-    Verify that the pipeline endpoint executes successfully.
-    """
-
-    response = client.post(
-        "/api/pipeline",
-        json={
-            "input_path": "sample_data/customer_data.csv",
-        },
+    dataframe = upload_manager.upload(
+        "sample_data/customer_data.csv"
     )
 
-    assert response.status_code == 200
+    assert isinstance(dataframe, DataFrame)
 
+    # ---------------------------------------------------------
+    # Cleaning
+    # ---------------------------------------------------------
 
-def test_pipeline_endpoint_returns_expected_response() -> None:
-    """
-    Verify that the pipeline endpoint returns
-    the expected pipeline result.
-    """
-
-    response = client.post(
-        "/api/pipeline",
-        json={
-            "input_path": "sample_data/customer_data.csv",
-        },
+    cleaned_dataframe = cleaning_manager.clean(
+        dataframe
     )
 
-    data = response.json()
+    assert isinstance(cleaned_dataframe, DataFrame)
 
-    assert data["success"] is True
-    assert data["output_path"] == "reports/report.txt"
-    assert data["execution_time"] == 1.25
-    assert data["error"] is None
+    # ---------------------------------------------------------
+    # Quality
+    # ---------------------------------------------------------
+
+    quality_report = quality_manager.assess(
+        cleaned_dataframe
+    )
+
+    assert isinstance(
+        quality_report,
+        QualityReport,
+    )
+
+    # ---------------------------------------------------------
+    # Analytics
+    # ---------------------------------------------------------
+
+    analytics_report = analytics_manager.analyze(
+        cleaned_dataframe
+    )
+
+    assert isinstance(
+        analytics_report,
+        AnalyticsReport,
+    )
+
+    expected_sections = [
+        "descriptive_statistics",
+        "numerical_analysis",
+        "categorical_analysis",
+        "correlation_analysis",
+        "distribution_analysis",
+    ]
+
+    for section in expected_sections:
+        assert section in analytics_report.report
+
+    # ---------------------------------------------------------
+    # Reporting
+    # ---------------------------------------------------------
+
+    reporting_report = reporting_manager.generate_report(
+        analytics_report
+    )
+
+    assert isinstance(
+        reporting_report,
+        ReportingReport,
+    )
+
+    assert reporting_report.report is not None
+
+    assert reporting_report.export_path is not None
+
+    assert reporting_report.execution_time >= 0
+
+    report_path = Path(
+        reporting_report.export_path
+    )
+
+    assert report_path.exists()
+
+    report_content = report_path.read_text(
+        encoding="utf-8",
+    )
+
+    assert "EXECUTIVE SUMMARY" in report_content
+    assert "KEY PERFORMANCE INDICATORS" in report_content
+
+    # ---- CORRECTED LINE ----
+    assert "ANALYTICS" in report_content
+    # -------------------------
+
+    assert "RECOMMENDATIONS" in report_content

@@ -1,60 +1,128 @@
 """
-Quick actions component for AnalystGPT Enterprise.
+Quick Actions Component
+
+Provides common dashboard actions.
+
+Sprint 11
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
+from src.frontend.services.session_manager import (
+    clear_dataset,
+)
+
 
 def render_quick_actions() -> None:
     """
-    Render enterprise dashboard quick actions.
+    Render dashboard quick actions.
     """
 
-    st.subheader("⚡ Quick Actions")
+    st.subheader(
+        "⚡ Quick Actions"
+    )
 
-    col1, col2 = st.columns(2)
+    left, right = st.columns(
+        2,
+        gap="medium",
+    )
 
-    with col1:
+    # ==========================================================
+    # Navigation
+    # ==========================================================
+
+    with left:
 
         if st.button(
             "📁 Upload Dataset",
-            use_container_width=True,
+            width="stretch",
             type="primary",
         ):
-            st.info(
-                "Navigate to the Upload page using the "
-                "sidebar to upload another dataset."
-            )
+
+            st.session_state[
+                "current_page"
+            ] = "Upload"
+
+            st.rerun()
 
         if st.button(
-            "📄 View Reports",
-            use_container_width=True,
+            "📄 Reports Centre",
+            width="stretch",
         ):
-            st.info(
-                "Open the Reports page from the sidebar "
-                "to preview generated reports."
-            )
 
-    with col2:
+            st.session_state[
+                "current_page"
+            ] = "Reports"
+
+            st.rerun()
+
+    # ==========================================================
+    # Session Actions
+    # ==========================================================
+
+    with right:
 
         if st.button(
             "🔄 Refresh Dashboard",
-            use_container_width=True,
+            width="stretch",
         ):
+
+            st.cache_data.clear()
+
             st.rerun()
 
         if st.button(
             "🧹 Clear Session",
-            use_container_width=True,
+            width="stretch",
         ):
-            st.session_state.clear()
-            st.success("Session cleared successfully.")
+
+            #
+            # Preserve navigation state
+            #
+
+            current_page = (
+                st.session_state.get(
+                    "current_page",
+                    "Dashboard",
+                )
+            )
+
+            #
+            # Clear only application data
+            #
+
+            clear_dataset()
+
+            #
+            # Clear Streamlit cache
+            #
+
+            st.cache_data.clear()
+
+            #
+            # Restore current page
+            #
+
+            st.session_state[
+                "current_page"
+            ] = current_page
+
+            st.success(
+                "Session cleared successfully."
+            )
+
             st.rerun()
 
+    # ==========================================================
+    # Information
+    # ==========================================================
+
     st.caption(
-        "Quick Actions provide shortcuts to common "
-        "operations. Additional workflow automation "
-        "will be introduced in Sprint 11."
+        "Quick actions provide shortcuts to common "
+        "workflow operations. Navigation is handled "
+        "through Streamlit session state while "
+        "business operations remain in the "
+        "Application Layer."
     )

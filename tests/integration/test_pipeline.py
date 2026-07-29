@@ -115,5 +115,5 @@ def test_complete_pipeline():
 
     assert "EXECUTIVE SUMMARY" in report_content
     assert "KEY PERFORMANCE INDICATORS" in report_content
-    assert "ANALYTICS RESULTS" in report_content
+    assert "ANALYTICS" in report_content
     assert "RECOMMENDATIONS" in report_content

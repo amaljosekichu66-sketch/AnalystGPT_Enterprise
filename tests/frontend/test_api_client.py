@@ -2,8 +2,7 @@
 Unit tests for the frontend REST API client.
 """
 
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -14,48 +13,32 @@ from src.frontend.services.api_client import APIClient
 # Fixtures
 # ==========================================================
 
-
 @pytest.fixture
 def client() -> APIClient:
-    """
-    Create API client.
-    """
-
-    return APIClient(
-        base_url="http://localhost:8000",
-    )
+    """Create API client."""
+    return APIClient(base_url="http://localhost:8000")
 
 
 # ==========================================================
 # Internal GET
 # ==========================================================
 
-
-@patch("src.frontend.services.api_client.httpx.Client.get")
-def test_get_success(
-    mock_get,
-    client,
-):
-    """
-    Test internal GET helper.
-    """
-
+@patch("src.frontend.services.api_client.httpx.Client.request")
+def test_get_success(mock_request, client):
+    """Test internal GET helper."""
     response = MagicMock()
-
-    response.json.return_value = {
-        "success": True,
-    }
-
+    response.json.return_value = {"success": True}
     response.raise_for_status.return_value = None
-
-    mock_get.return_value = response
+    mock_request.return_value = response
 
     result = client._get("/health")
 
     assert result["success"] is True
-
-    mock_get.assert_called_once_with(
-        "/health",
+    mock_request.assert_called_once_with(
+        method="GET",
+        url="/health",
+        params=None,
+        json=None,
     )
 
 
@@ -63,39 +46,22 @@ def test_get_success(
 # Internal POST
 # ==========================================================
 
-
-@patch("src.frontend.services.api_client.httpx.Client.post")
-def test_post_success(
-    mock_post,
-    client,
-):
-    """
-    Test internal POST helper.
-    """
-
-    payload = {
-        "input_path": "sample.csv",
-    }
-
+@patch("src.frontend.services.api_client.httpx.Client.request")
+def test_post_success(mock_request, client):
+    """Test internal POST helper."""
+    payload = {"input_path": "sample.csv"}
     response = MagicMock()
-
     response.raise_for_status.return_value = None
+    response.json.return_value = {"success": True}
+    mock_request.return_value = response
 
-    response.json.return_value = {
-        "success": True,
-    }
-
-    mock_post.return_value = response
-
-    result = client._post(
-        "/pipeline",
-        payload,
-    )
+    result = client._post("/pipeline", payload)
 
     assert result["success"] is True
-
-    mock_post.assert_called_once_with(
-        "/pipeline",
+    mock_request.assert_called_once_with(
+        method="POST",
+        url="/pipeline",
+        params=None,
         json=payload,
     )
 
@@ -104,23 +70,11 @@ def test_post_success(
 # Root
 # ==========================================================
 
-
-@patch.object(
-    APIClient,
-    "_get",
-)
-def test_root(
-    mock_get,
-    client,
-):
-    """
-    Test root endpoint.
-    """
-
+@patch.object(APIClient, "_get")
+def test_root(mock_get, client):
+    """Test root endpoint."""
     mock_get.return_value = {}
-
     client.root()
-
     mock_get.assert_called_once_with("/")
 
 
@@ -128,77 +82,39 @@ def test_root(
 # Health
 # ==========================================================
 
-
-@patch.object(
-    APIClient,
-    "_get",
-)
-def test_health(
-    mock_get,
-    client,
-):
-    """
-    Test health endpoint.
-    """
-
+@patch.object(APIClient, "_get")
+def test_health(mock_get, client):
+    """Test health endpoint."""
     mock_get.return_value = {}
-
     client.health()
-
-    mock_get.assert_called_once_with(
-        "/api/health",
-    )
+    mock_get.assert_called_once_with("/api/health")
 
 
 # ==========================================================
 # Version
 # ==========================================================
 
-
-@patch.object(
-    APIClient,
-    "_get",
-)
-def test_version(
-    mock_get,
-    client,
-):
-    """
-    Test version endpoint.
-    """
-
+@patch.object(APIClient, "_get")
+def test_version(mock_get, client):
+    """Test version endpoint."""
     mock_get.return_value = {}
-
     client.version()
-
-    mock_get.assert_called_once_with(
-        "/api/version",
-    )
+    mock_get.assert_called_once_with("/api/version")
 
 
 # ==========================================================
 # Dashboard
 # ==========================================================
 
-
-@patch.object(
-    APIClient,
-    "_get",
-)
-def test_dashboard(
-    mock_get,
-    client,
-):
-    """
-    Test dashboard endpoint.
-    """
-
+@patch.object(APIClient, "_get")
+def test_dashboard(mock_get, client):
+    """Test dashboard endpoint."""
     mock_get.return_value = {}
-
-    client.dashboard()
-
+    client.dashboard(dataset="test_dataset")
+    # The actual call uses /powerbi/dashboard with a query parameter
     mock_get.assert_called_once_with(
-        "/dashboard",
+        "/powerbi/dashboard",
+        params={"dataset": "test_dataset"},
     )
 
 
@@ -206,86 +122,36 @@ def test_dashboard(
 # Reports
 # ==========================================================
 
-
-@patch.object(
-    APIClient,
-    "_get",
-)
-def test_reports(
-    mock_get,
-    client,
-):
-    """
-    Test reports endpoint.
-    """
-
+@patch.object(APIClient, "_get")
+def test_reports(mock_get, client):
+    """Test reports endpoint."""
     mock_get.return_value = {}
-
     client.reports()
-
-    mock_get.assert_called_once_with(
-        "/reports",
-    )
+    mock_get.assert_called_once_with("/reports")
 
 
 # ==========================================================
 # Pipeline
 # ==========================================================
 
-
-@patch.object(
-    APIClient,
-    "_post",
-)
-def test_run_pipeline(
-    mock_post,
-    client,
-):
-    """
-    Test pipeline endpoint.
-    """
-
-    payload = {
-        "input_path": "sample.csv",
-    }
-
+@patch.object(APIClient, "_post")
+def test_run_pipeline(mock_post, client):
+    """Test pipeline endpoint."""
+    payload = {"input_path": "sample.csv"}
     mock_post.return_value = {}
-
-    client.run_pipeline(
-        payload,
-    )
-
-    mock_post.assert_called_once_with(
-        "/api/pipeline",
-        payload,
-    )
+    client.run_pipeline(payload)
+    mock_post.assert_called_once_with("/api/pipeline", payload)
 
 
 # ==========================================================
 # Context Manager
 # ==========================================================
 
-
-@patch.object(
-    APIClient,
-    "close",
-)
-def test_context_manager(
-    mock_close,
-):
-    """
-    Test context manager closes client.
-    """
-
-    with APIClient(
-        base_url="http://localhost:8000",
-    ) as client:
-
-        assert isinstance(
-            client,
-            APIClient,
-        )
-
+@patch.object(APIClient, "close")
+def test_context_manager(mock_close):
+    """Test context manager closes client."""
+    with APIClient(base_url="http://localhost:8000") as client:
+        assert isinstance(client, APIClient)
     mock_close.assert_called_once()
 
 
@@ -293,17 +159,8 @@ def test_context_manager(
 # Close
 # ==========================================================
 
-
 def test_close(client):
-    """
-    Test HTTP client closes correctly.
-    """
-
-    with patch.object(
-        client._client,
-        "close",
-    ) as mock_close:
-
+    """Test HTTP client closes correctly."""
+    with patch.object(client._client, "close") as mock_close:
         client.close()
-
         mock_close.assert_called_once()

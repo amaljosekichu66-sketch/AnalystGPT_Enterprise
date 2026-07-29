@@ -27,18 +27,19 @@
 
 | Item | Status |
 |------|--------|
-| Current Version | **v10.0.0** |
-| Previous Version | v9.0.0 |
-| Repository Status | 🟢 Release Candidate |
-| Current Sprint | ✅ Sprint 10 Complete |
-| Current Focus | **Sprint 11 – AI Insight Engine** |
-| Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction |
+| Current Version | **v11.0.0** |
+| Previous Version | v10.0.0 |
+| Repository Status | 🟢 Stable Release |
+| Current Sprint | ✅ Sprint 11 Complete |
+| Current Focus | **Sprint 12 – Deployment** |
+| Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction + AI Insight Engine |
 | Application Layer | ✅ Stable |
 | Persistence Layer | ✅ Stable |
 | Database Abstraction Layer | ✅ Stable |
 | REST API Layer | ✅ Stable |
 | Business Intelligence Layer | ✅ Stable |
 | Frontend Layer | ✅ Stable |
+| AI Layer | ✅ Stable |
 | Power BI Integration | ✅ Complete |
 | Enterprise Streamlit Frontend | ✅ Complete |
 | Dashboard | ✅ Complete |
@@ -52,7 +53,7 @@
 | Enterprise Navigation | ✅ Complete |
 | OpenAPI | ✅ Operational |
 | Swagger | ✅ Operational |
-| Automated Testing | ✅ All available tests passing |
+| Automated Testing | ✅ 133 tests passing |
 | Performance Validation | ✅ Completed |
 | Technical Debt | 🟢 Very Low |
 
@@ -660,6 +661,69 @@ Dashboard / Reports
 
 ---
 
+## Sprint 11 — AI Insight Engine ✅
+
+### Delivered
+
+- BaseLLM abstraction
+- LLMFactory
+- OllamaClient
+- PromptBuilder
+- ResponseParser
+- ReportSerializer
+- ExecutiveSummaryEngine
+- RecommendationEngine
+- ExplanationEngine
+- NarrativeEngine
+- AIManager
+- AIReport
+- AIResult
+- PipelineReport
+- Local Ollama integration
+- Qwen3:8B support
+
+### Achievements
+
+- Introduced enterprise AI layer
+- Preserved layered architecture
+- AI consumes ReportingReport objects
+- Pluggable LLM providers
+- Local inference support
+- Stable AI contracts
+- Enterprise prompt architecture
+
+### Validation
+
+- Automated tests passed
+- AI integration tests passed
+- Prompt generation validated
+- Response parsing validated
+- End-to-end AI pipeline validated
+- Large report validation completed
+
+### Output
+
+```text
+ReportingReport
+      │
+      ▼
+PipelineReport
+      │
+      ▼
+AIManager
+      │
+      ▼
+Executive Summary
+Recommendations
+Explanations
+Narrative
+      │
+      ▼
+AIResult
+```
+
+---
+
 # Release Timeline
 
 | Version | Release |
@@ -677,6 +741,7 @@ Dashboard / Reports
 | **v8.0.0** | **REST API Integration** ✅ |
 | **v9.0.0** | **Power BI Integration** ✅ |
 | **v10.0.0** | **Enterprise Streamlit Frontend** ✅ |
+| **v11.0.0** | **AI Insight Engine** ✅ |
 
 ---
 
@@ -685,51 +750,12 @@ Dashboard / Reports
 The following sprints build upon the enterprise architecture
 introduced in Sprint 5.5, persistence from Sprint 6, database
 abstraction from Sprint 7, REST API from Sprint 8, Business
-Intelligence from Sprint 9, and the Presentation Layer from Sprint 10.
+Intelligence from Sprint 9, Presentation Layer from Sprint 10,
+and AI Insight Engine from Sprint 11.
 
 ---
 
-## Sprint 10 — Streamlit Frontend ✅ (Completed)
-
-See Completed Milestones section above.
-
----
-
-## Sprint 11 — AI Insight Engine (Current Focus)
-
-### Objective
-
-Introduce AI-assisted analytics to transform analytical outputs into
-intelligent narratives, executive summaries, and actionable recommendations
-while preserving the existing layered architecture and stable contracts.
-
-### Planned Deliverables
-
-- Executive Summary Generator
-- Recommendation Engine
-- Narrative Generation
-- Explainable Analytics
-- Dashboard Insights
-- Report Insights
-- LLM-ready architecture
-- Stable AI contracts
-- Prompt abstraction layer
-- Future model independence
-
-The AI layer will consume structured report objects rather than raw
-datasets, preserving module boundaries and enabling model interchangeability.
-
-### Validation Goals
-
-- AI output correctness
-- Narrative coherence
-- Recommendation relevance
-- Explainability quality
-- Performance benchmarks
-
----
-
-## Sprint 12 — Production Deployment
+## Sprint 12 — Production Deployment (Current Focus)
 
 ### Objective
 
@@ -737,16 +763,23 @@ Prepare AnalystGPT Enterprise for production-quality deployment.
 
 ### Planned Deliverables
 
-- Docker support
-- CI/CD pipeline
-- Cloud deployment
-- Monitoring
-- Production logging
-- Executable packaging
-- Release automation
+- Docker support (Dockerfile and docker-compose)
+- Environment variables and `.env` configuration
+- Production logging (structured logging, log rotation)
+- GitHub Actions CI/CD pipeline (build, test, deploy)
+- Release automation (versioning, tagging, changelog generation)
+- Configuration management
+- Deployment documentation
+- Container orchestration documentation
+- Release packaging and distribution
 
-This sprint represents the transition from an engineering project
-to a deployable enterprise application.
+### Validation Goals
+
+- Containerised execution passes all tests
+- CI/CD pipeline executes successfully
+- Production logging meets enterprise standards
+- Deployment guide validated
+- Automated releases functioning
 
 ---
 
@@ -762,7 +795,7 @@ layer while preserving all backend contracts and service boundaries.
 Only the Presentation Layer may be replaced.
 
 All backend infrastructure (REST API, Application Layer, Business
-modules, Persistence, Database Abstraction) must remain unchanged.
+modules, Persistence, Database Abstraction, AI Layer) must remain unchanged.
 
 ### Planned Deliverables
 
@@ -847,7 +880,7 @@ engineering maturity levels:
 | External Integrations | ✅ Complete |
 | Business Intelligence | ✅ Complete |
 | User Interface | ✅ Complete |
-| AI Layer | 🔄 Sprint 11 |
+| AI Layer | ✅ Complete |
 | Production Deployment | 🔄 Sprint 12 |
 
 ---
@@ -980,14 +1013,15 @@ Current repository state:
 - ✅ Stable Power BI Integration
 - ✅ Stable Frontend Layer
 - ✅ Stable Streamlit Frontend
-- ✅ Sprint 10 Complete
-- 🚀 Ready for Sprint 11 — AI Insight Engine
+- ✅ Stable AI Insight Engine
+- ✅ Sprint 11 Complete
+- 🚀 Ready for Sprint 12 — Production Deployment
 
 ---
 
-**Current Roadmap Version:** **v10.0.0**
+**Current Roadmap Version:** **v11.0.0**
 
-**Previous Version:** **v9.0.0**
+**Previous Version:** **v10.0.0**
 
-**Next Planned Release:** **v11.0.0 — AI Insight Engine**
+**Next Planned Release:** **v12.0.0 — Production Deployment**
 ```

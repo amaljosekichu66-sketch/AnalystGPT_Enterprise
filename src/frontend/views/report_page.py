@@ -3,33 +3,28 @@ Enterprise Reports Page
 
 AnalystGPT Enterprise
 
-Sprint 10
+Sprint 11
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
+from src.frontend.components.ai_insights import (
+    render_ai_insights,
+)
 from src.frontend.components.empty_state import (
     render_empty_state,
 )
-
-from src.frontend.components.footer import (
-    render_footer,
-)
-
 from src.frontend.components.loading_state import (
     loading,
 )
-
 from src.frontend.components.report_list import (
     render_report_list,
 )
-
 from src.frontend.components.report_preview import (
     render_report_preview,
 )
-
 from src.frontend.services.report_service import (
     export_pdf_report,
     export_text_report,
@@ -42,14 +37,19 @@ def render() -> None:
     Render the enterprise Reports page.
     """
 
-    st.title("📄 Reports Centre")
-
-    st.caption(
-        "View generated reports and submit export "
-        "requests through the application layer."
+    st.title(
+        "📄 Reports Centre"
     )
 
-    with loading("Loading reports..."):
+    st.caption(
+        "View generated reports, AI insights, and "
+        "submit export requests through the "
+        "Application Layer."
+    )
+
+    with loading(
+        "Loading reports..."
+    ):
 
         report_data = get_report_data()
 
@@ -59,16 +59,16 @@ def render() -> None:
 
     if not report_data["dataset_loaded"]:
 
-        render_empty_state(
+        if render_empty_state(
             title="No Dataset Available",
             message=(
                 "Upload and process a dataset before "
                 "viewing reports."
             ),
             button_label="Go to Upload",
-        )
-
-        render_footer()
+        ):
+            st.session_state.current_page = "Upload"
+            st.rerun()
 
         return
 
@@ -80,10 +80,53 @@ def render() -> None:
         f"Current Dataset: {report_data['filename']}"
     )
 
+    if report_data.get(
+        "source"
+    ) == "api":
+
+        st.success(
+            "Connected to AnalystGPT REST API."
+        )
+
+    else:
+
+        st.warning(
+            "REST API unavailable. "
+            "Displaying locally available reports."
+        )
+
+    if report_data.get(
+        "api_error"
+    ):
+
+        st.info(
+            report_data[
+                "api_error"
+            ]
+        )
+
+    if report_data.get(
+        "execution_time"
+    ):
+
+        st.caption(
+            f"Pipeline Execution Time: "
+            f"{report_data['execution_time']:.2f} s"
+        )
+
+    if report_data.get(
+        "output_path"
+    ):
+
+        st.caption(
+            f"Report Output: "
+            f"{report_data['output_path']}"
+        )
+
     st.divider()
 
     # ==========================================================
-    # Reports + Preview
+    # Report List + Preview
     # ==========================================================
 
     left, right = st.columns(
@@ -106,17 +149,31 @@ def render() -> None:
     st.divider()
 
     # ==========================================================
+    # AI Insight Engine
+    # ==========================================================
+
+    st.subheader(
+        "🧠 AI Insight Engine"
+    )
+
+    render_ai_insights(
+        report_data,
+    )
+
+    st.divider()
+
+    # ==========================================================
     # Export Centre
     # ==========================================================
 
-    st.subheader("📤 Export Centre")
+    st.subheader(
+        "📤 Export Centre"
+    )
 
     st.caption(
         "Export requests are routed through the "
-        "Application Layer. Report generation "
-        "will be connected when the "
-        "Reporting Orchestrator implementation "
-        "is completed."
+        "Application Layer to preserve the "
+        "enterprise architecture."
     )
 
     col1, col2 = st.columns(
@@ -124,15 +181,11 @@ def render() -> None:
         gap="large",
     )
 
-    # ----------------------------------------------------------
-    # Text Export
-    # ----------------------------------------------------------
-
     with col1:
 
         if st.button(
             "📄 Export Text Report",
-            use_container_width=True,
+            width="stretch",
         ):
 
             with loading(
@@ -153,15 +206,11 @@ def render() -> None:
                     result["message"]
                 )
 
-    # ----------------------------------------------------------
-    # PDF Export
-    # ----------------------------------------------------------
-
     with col2:
 
         if st.button(
             "📑 Export PDF Report",
-            use_container_width=True,
+            width="stretch",
         ):
 
             with loading(
@@ -183,9 +232,7 @@ def render() -> None:
                 )
 
     st.info(
-        "Report export is intentionally routed "
-        "through the Application Layer to "
-        "preserve the enterprise architecture."
+        "Reports include both the analytical report "
+        "and AI-generated business insights when "
+        "available."
     )
-
-    render_footer()

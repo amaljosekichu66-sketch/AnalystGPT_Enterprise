@@ -2,7 +2,14 @@
 About card component for AnalystGPT Enterprise.
 """
 
+from __future__ import annotations
+
 import streamlit as st
+
+from src.core.constants import (
+    APP_NAME,
+    APP_VERSION,
+)
 
 
 def render_about_card() -> None:
@@ -13,21 +20,21 @@ def render_about_card() -> None:
     st.subheader("📘 Project Overview")
 
     st.markdown(
-        """
-**AnalystGPT Enterprise** is an enterprise-grade analytics platform
-designed with a modular architecture.
+        f"""
+**{APP_NAME}** is an enterprise-grade analytics platform
+designed using a modular, production-oriented architecture.
 
-The application provides an end-to-end analytics workflow including:
+The platform provides a complete analytics workflow including:
 
 - Dataset Upload
 - Data Cleaning
 - Data Quality Assessment
 - Analytics
 - Reporting
-- Dashboard
+- Enterprise Dashboard
 - REST API
 - Power BI Integration
-- AI Insights (Sprint 11)
+- AI Insight Engine
 """
     )
 
@@ -37,22 +44,25 @@ The application provides an end-to-end analytics workflow including:
 
     st.code(
         """
-Frontend (Streamlit)
+Streamlit Frontend
         │
         ▼
-Frontend Services
+Frontend Service Layer
         │
         ▼
-REST API
+FastAPI REST API
         │
         ▼
 Application Layer
         │
         ▼
-Managers
+Domain Managers
         │
         ▼
-Database
+Persistence Layer
+        │
+        ▼
+SQLite / PostgreSQL
 """,
         language="text",
     )
@@ -64,26 +74,28 @@ Database
     with col1:
 
         st.write("**Version**")
-
-        st.write("v10.0.0-dev")
+        st.write(APP_VERSION)
 
         st.write("**License**")
-
         st.write("MIT")
+
+        st.write("**Architecture**")
+        st.write("Modular")
 
     with col2:
 
         st.write("**Backend**")
-
         st.write("FastAPI")
 
         st.write("**Frontend**")
-
         st.write("Streamlit")
+
+        st.write("**AI Engine**")
+        st.write("Ollama")
 
     st.divider()
 
-    st.subheader("🛠 Technologies")
+    st.subheader("🛠 Technology Stack")
 
     st.markdown(
         """
@@ -95,13 +107,28 @@ Database
 - SQLite
 - Plotly
 - Power BI
+- Ollama
+- REST APIs
 """
     )
+
+    st.divider()
+
+    st.subheader("🚀 Current Capabilities")
+
+    st.success("✅ Enterprise Analytics Pipeline")
+    st.success("✅ AI Insight Engine")
+    st.success("✅ Power BI Integration")
+    st.success("✅ REST API")
+    st.success("✅ Streamlit Frontend")
+    st.success("✅ PostgreSQL Persistence")
 
     st.divider()
 
     st.subheader("📂 Repository")
 
     st.info(
-        "GitHub repository configured for AnalystGPT Enterprise."
+        "AnalystGPT Enterprise is developed using a "
+        "modular architecture following enterprise "
+        "software engineering practices."
     )

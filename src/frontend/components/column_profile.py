@@ -75,5 +75,5 @@ def render_column_profile(
     st.dataframe(
         profile,
         hide_index=True,
-        use_container_width=True,
+        width="stretch",  # changed from use_container_width=True
     )

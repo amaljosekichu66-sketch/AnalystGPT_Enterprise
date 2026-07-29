@@ -1,56 +1,56 @@
 """
 Enterprise Footer Component
-===========================
 
 Reusable footer displayed across AnalystGPT Enterprise.
-
-Purpose
--------
-Provides consistent application branding,
-version information and technology stack.
-
-Sprint
-------
-Sprint 10
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
+from src.core.constants import (
+    APP_NAME,
+    APP_VERSION,
+)
 
-APP_NAME = "AnalystGPT Enterprise"
-VERSION = "v10.0.0"
-LICENSE = "MIT License"
 
 TECH_STACK = (
-    "Python • Streamlit • FastAPI • PostgreSQL • SQLite • Pandas"
+    "Python • Streamlit • FastAPI • PostgreSQL • "
+    "SQLite • Pandas • Plotly • Power BI • Ollama"
 )
 
 
 def render_footer() -> None:
     """
-    Render the application footer.
+    Render the enterprise footer.
     """
 
     st.divider()
 
     left, centre, right = st.columns(
-        [2, 2, 2]
+        [2, 3, 2],
     )
 
     with left:
 
         st.caption(APP_NAME)
 
-        st.caption(VERSION)
+        st.caption(
+            f"Version {APP_VERSION}"
+        )
 
     with centre:
 
-        st.caption(TECH_STACK)
+        st.caption(
+            TECH_STACK
+        )
 
     with right:
 
-        st.caption(LICENSE)
+        st.caption(
+            "MIT License"
+        )
 
-        st.caption("© 2026 Amal Jose")
+        st.caption(
+            "© 2026 Amal Jose"
+        )

@@ -9,11 +9,12 @@ Responsibilities
 - Register API routers.
 - Configure application lifespan.
 
-Sprint 10 Release Candidate
+Sprint 11
 """
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -42,6 +43,17 @@ from src.api.routes.reports import (
     router as reports_router,
 )
 
+# ----------------------------------------------------------
+# AI Router
+#
+# Enable this router after the dedicated AI endpoint is
+# implemented (Sprint 12 or later).
+# ----------------------------------------------------------
+#
+# from src.api.routes.ai import (
+#     router as ai_router,
+# )
+
 from src.core.constants import (
     API_DOCS_URL,
     API_OPENAPI_URL,
@@ -60,7 +72,9 @@ from src.core.logger import logger
 # ==========================================================
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(
+    app: FastAPI,
+) -> AsyncIterator[None]:
     """
     Startup / Shutdown lifecycle.
     """
@@ -96,6 +110,7 @@ app = FastAPI(
     },
 )
 
+
 # ==========================================================
 # Middleware
 # ==========================================================
@@ -108,57 +123,84 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # ==========================================================
 # Exception Handlers
 # ==========================================================
 
-register_exception_handlers(app)
+register_exception_handlers(
+    app,
+)
+
 
 # ==========================================================
-# API Routers
+# Router Registration
 # ==========================================================
 
-logger.info(
-    "Registering API routers..."
-)
+def register_routes(
+    application: FastAPI,
+) -> None:
+    """
+    Register all API routers.
+    """
 
-app.include_router(
-    root_router,
-    tags=["Root"],
-)
+    logger.info(
+        "Registering API routers..."
+    )
 
-app.include_router(
-    health_router,
-    prefix=API_PREFIX,
-    tags=["Health"],
-)
+    application.include_router(
+        root_router,
+        tags=["Root"],
+    )
 
-app.include_router(
-    version_router,
-    prefix=API_PREFIX,
-    tags=["Version"],
-)
+    application.include_router(
+        health_router,
+        prefix=API_PREFIX,
+        tags=["Health"],
+    )
 
-app.include_router(
-    pipeline_router,
-    prefix=API_PREFIX,
-    tags=["Pipeline"],
-)
+    application.include_router(
+        version_router,
+        prefix=API_PREFIX,
+        tags=["Version"],
+    )
 
-app.include_router(
-    dashboard_router,
-    tags=["Dashboard"],
-)
+    application.include_router(
+        pipeline_router,
+        prefix=API_PREFIX,
+        tags=["Pipeline"],
+    )
 
-app.include_router(
-    reports_router,
-    tags=["Reports"],
-)
+    application.include_router(
+        dashboard_router,
+        tags=["Dashboard"],
+    )
 
-app.include_router(
-    powerbi_router,
-    tags=["Power BI"],
-)
+    application.include_router(
+        reports_router,
+        tags=["Reports"],
+    )
+
+    application.include_router(
+        powerbi_router,
+        tags=["Power BI"],
+    )
+
+    # ------------------------------------------------------
+    # AI Router
+    #
+    # Uncomment after AI endpoint implementation.
+    # ------------------------------------------------------
+    #
+    # application.include_router(
+    #     ai_router,
+    #     prefix=API_PREFIX,
+    #     tags=["AI"],
+    # )
+
+
+register_routes(app)
+
 
 logger.info(
     "FastAPI server initialized successfully."

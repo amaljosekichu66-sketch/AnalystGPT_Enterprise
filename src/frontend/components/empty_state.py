@@ -3,7 +3,7 @@ Enterprise Empty State Component
 
 Reusable across all frontend pages.
 
-Sprint 10
+Sprint 11
 """
 
 from __future__ import annotations
@@ -20,29 +20,17 @@ def render_empty_state(
     """
     Render a reusable enterprise empty state.
 
-    Parameters
-    ----------
-    title:
-        Empty-state title.
-
-    message:
-        Supporting message.
-
-    icon:
-        Emoji icon.
-
-    button_label:
-        Optional button.
-
     Returns
     -------
     bool
-        True when optional button is clicked.
+        True when the optional button is clicked.
     """
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    left, centre, right = st.columns([1, 2, 1])
+    _, centre, _ = st.columns(
+        [1, 2, 1],
+    )
 
     clicked = False
 
@@ -54,7 +42,7 @@ def render_empty_state(
         )
 
         st.markdown(
-            f"<h3 style='text-align:center'>{title}</h3>",
+            f"<h2 style='text-align:center'>{title}</h2>",
             unsafe_allow_html=True,
         )
 
@@ -68,12 +56,24 @@ def render_empty_state(
             unsafe_allow_html=True,
         )
 
-        if button_label is not None:
+        if button_label:
 
             clicked = st.button(
                 button_label,
-                use_container_width=True,
+                width="stretch",
             )
+
+            #
+            # Enterprise navigation
+            #
+
+            if clicked:
+
+                st.session_state[
+                    "current_page"
+                ] = "Upload"
+
+                st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
 

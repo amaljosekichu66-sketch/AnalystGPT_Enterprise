@@ -10,13 +10,22 @@ Responsibilities
 This module intentionally contains no business logic.
 """
 
-from fastapi import APIRouter, Depends, status
+from __future__ import annotations
+
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import status
 
 from src.api.dependencies.application_dependency import (
     get_application,
 )
-from src.api.models.request_models import PipelineRequest
-from src.api.models.response_models import PipelineResponse
+from src.api.models.request_models import (
+    PipelineRequest,
+)
+from src.api.models.response_models import (
+    AIReportResponse,
+    PipelineResponse,
+)
 from src.application.app import Application
 
 
@@ -32,12 +41,14 @@ router = APIRouter(
     summary="Execute Pipeline",
     description=(
         "Execute the complete AnalystGPT Enterprise "
-        "processing pipeline."
+        "analytics pipeline."
     ),
 )
 def execute_pipeline(
     request: PipelineRequest,
-    application: Application = Depends(get_application),
+    application: Application = Depends(
+        get_application,
+    ),
 ) -> PipelineResponse:
     """
     Execute the complete analytics pipeline.
@@ -47,13 +58,33 @@ def execute_pipeline(
         input_path=request.input_path,
     )
 
+    ai_response: AIReportResponse | None = None
+
+    if (
+        result.pipeline_report is not None
+        and result.pipeline_report.ai_report is not None
+    ):
+
+        ai = result.pipeline_report.ai_report
+
+        ai_response = AIReportResponse(
+            executive_summary=ai.executive_summary,
+            recommendations=ai.recommendations,
+            explanations=ai.explanations,
+            narrative=ai.narrative,
+            model=ai.model,
+            provider=ai.provider,
+            execution_time=ai.execution_time,
+        )
+
     return PipelineResponse(
         success=result.success,
         output_path=result.output_path,
-        execution_time=result.execution_time,
+        execution_time=result.execution_time or 0.0,
+        ai_report=ai_response,
         error=(
             str(result.error)
-            if result.error is not None
+            if result.error
             else None
         ),
     )

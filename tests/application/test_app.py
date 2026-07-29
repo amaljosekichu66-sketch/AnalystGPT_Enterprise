@@ -6,6 +6,7 @@ from pathlib import Path
 
 from src.application.app import Application
 from src.application.pipeline_result import PipelineResult
+from src.application.pipeline_report import PipelineReport
 from src.reporting.reporting_report import ReportingReport
 
 
@@ -33,8 +34,15 @@ def test_application_run_success() -> None:
 
     assert result.success is True
 
+    assert result.pipeline_report is not None
+
     assert isinstance(
-        result.reporting_report,
+        result.pipeline_report,
+        PipelineReport,
+    )
+
+    assert isinstance(
+        result.pipeline_report.reporting_report,
         ReportingReport,
     )
 
@@ -70,7 +78,7 @@ def test_application_run_invalid_path() -> None:
 
     assert result.success is False
 
-    assert result.reporting_report is None
+    assert result.pipeline_report is None
 
     assert result.output_path is None
 
@@ -100,7 +108,7 @@ def test_pipeline_result_contract() -> None:
 
     assert hasattr(
         result,
-        "reporting_report",
+        "pipeline_report",
     )
 
     assert hasattr(
@@ -116,4 +124,16 @@ def test_pipeline_result_contract() -> None:
     assert hasattr(
         result,
         "error",
+    )
+
+    assert result.pipeline_report is not None
+
+    assert hasattr(
+        result.pipeline_report,
+        "reporting_report",
+    )
+
+    assert hasattr(
+        result.pipeline_report,
+        "ai_report",
     )
