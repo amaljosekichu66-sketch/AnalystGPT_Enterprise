@@ -12,16 +12,87 @@ from pathlib import Path
 load_dotenv()
 
 # ==========================================================
-# Logging Configuration
-# ==========================================================
-
-LOG_LEVEL = logging.INFO
-
-# ==========================================================
 # Project Configuration
 # ==========================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+# ==========================================================
+# Logging Configuration
+# ==========================================================
+
+LOG_LEVEL_NAME = os.getenv(
+    "LOG_LEVEL",
+    "INFO",
+).strip().upper()
+
+LOG_LEVEL = getattr(
+    logging,
+    LOG_LEVEL_NAME,
+    logging.INFO,
+)
+
+LOG_TO_FILE = os.getenv(
+    "LOG_TO_FILE",
+    "false",
+).strip().lower() in ("true", "1", "yes")
+
+LOG_DIRECTORY = (
+    PROJECT_ROOT / "logs"
+)
+
+LOG_FILE_PATH = Path(
+    os.getenv(
+        "LOG_FILE_PATH",
+        str(LOG_DIRECTORY / "analystgpt.log"),
+    )
+)
+
+LOG_MAX_BYTES = int(
+    os.getenv(
+        "LOG_MAX_BYTES",
+        str(10 * 1024 * 1024),
+    )
+)
+
+LOG_BACKUP_COUNT = int(
+    os.getenv(
+        "LOG_BACKUP_COUNT",
+        "5",
+    )
+)
+
+LOG_FORMAT = (
+    "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+)
+
+# ==========================================================
+# Web API & Networking Configuration
+# ==========================================================
+
+API_HOST = os.getenv(
+    "API_HOST",
+    "0.0.0.0",
+).strip()
+
+API_PORT = int(
+    os.getenv(
+        "API_PORT",
+        "8000",
+    )
+)
+
+API_BASE_URL = os.getenv(
+    "API_BASE_URL",
+    "http://127.0.0.1:8000",
+).strip()
+
+FRONTEND_PORT = int(
+    os.getenv(
+        "FRONTEND_PORT",
+        "8501",
+    )
+)
 
 # ==========================================================
 # Upload Configuration

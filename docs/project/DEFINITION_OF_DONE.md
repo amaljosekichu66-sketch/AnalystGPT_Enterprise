@@ -13,9 +13,9 @@ maintains production-quality engineering standards throughout its development.
 
 # Last Updated
 
-**Version:** v8.0.0
+**Version:** v12.0.0
 
-**Date:** 23 July 2026
+**Date:** August 2026
 
 ---
 

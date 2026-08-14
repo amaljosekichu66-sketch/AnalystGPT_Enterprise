@@ -2,6 +2,8 @@
 Frontend configuration for AnalystGPT Enterprise.
 """
 
+from src.core.config import API_BASE_URL
+
 # ==========================================================
 # Application Configuration
 # ==========================================================
@@ -13,12 +15,6 @@ PAGE_ICON = "📊"
 LAYOUT = "wide"
 
 SIDEBAR_STATE = "expanded"
-
-# ==========================================================
-# Backend API
-# ==========================================================
-
-API_BASE_URL = "http://127.0.0.1:8000"
 
 # ==========================================================
 # Navigation

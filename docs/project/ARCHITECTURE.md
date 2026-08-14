@@ -6,7 +6,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v11.0.0**.
+> This document reflects the implementation as of **v12.0.0**.
 
 ---
 
@@ -35,6 +35,8 @@ Sprint 9 introduced a dedicated Business Intelligence Integration Layer that exp
 Sprint 10 introduced a dedicated Enterprise Streamlit Frontend Layer that provides an interactive web interface for the analytics pipeline. The Frontend Layer is built using Streamlit with a React-ready architecture, consuming the REST API as its sole backend interface. It contains zero business logic and communicates exclusively through the established REST API, preserving the integrity of the enterprise layered architecture and enabling future migration to React without backend changes.
 
 Sprint 11 introduced an AI Insight Engine that enriches the reporting output with intelligent narratives, executive summaries, recommendations, and explanations. The AI layer is built on a local LLM (Ollama with Qwen3:8B) and follows a pluggable architecture via `BaseLLM` and `LLMFactory`. It consumes the `ReportingReport` and produces an `AIResult`, which is then attached to the `PipelineReport`. The AI layer is completely isolated from business logic, uses only stable contracts, and preserves the existing layered architecture.
+
+Sprint 12 introduced Production Deployment Infrastructure, including multi-stage Docker containerization (`Dockerfile`), multi-service Docker Compose topology (`docker-compose.yml`), bounded rotating file logging (`RotatingFileHandler`), centralized environment configuration, and automated GitHub Actions CI/CD (`.github/workflows/ci.yml`). The deployment architecture provides service isolation (`postgres`, `api`, `frontend`), internal networking, non-root execution, and strict blocking quality gates without altering application contracts or business logic.
 
 ---
 
@@ -2066,6 +2068,6 @@ Every architectural change affecting module boundaries or dependency direction m
 
 ---
 
-**Current Architecture Version:** **v11.0.0**
+**Current Architecture Version:** **v12.0.0**
 
 **Previous Version:** **v10.0.0**

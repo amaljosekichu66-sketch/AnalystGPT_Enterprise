@@ -28,34 +28,30 @@ Cleaning → Quality → Analytics → Reporting → **AI Insight Engine** → R
 built as a self-directed software engineering exercise to develop production-level
 architecture, testing, and delivery skills.
 
-**Standing as of v11.0.0:** all business modules, the Application orchestration layer,
+**Standing as of v12.0.0:** all business modules, the Application orchestration layer,
 the enterprise-grade Database Abstraction Layer, the REST API Layer, the Business
-Intelligence Integration Layer, the enterprise Streamlit frontend, and the **AI Insight Engine**
-are complete and stable. The project now exposes its complete analytics pipeline through both
-a Power BI‑ready REST API and a fully interactive enterprise web interface, enriched with
-local LLM-generated insights.
+Intelligence Integration Layer, the enterprise Streamlit frontend, the **AI Insight Engine**,
+and the **Production Deployment Infrastructure** are complete and stable. The project is fully
+containerized with multi-stage Docker targets, orchestrated via Docker Compose, monitored with
+bounded rotating file logging, and verified by a 5-job GitHub Actions CI pipeline with 201 automated tests.
 
-Sprint 11 introduced the **AI Insight Engine**, including:
+Sprint 12 introduced the **Production Deployment Infrastructure**, including:
 
-- Local LLM architecture with `BaseLLM` abstraction and `LLMFactory`
-- **Ollama** integration (local `Qwen3:8B` inference)
-- **Executive Summary Engine** – generates concise executive narratives
-- **Recommendation Engine** – suggests actionable business steps
-- **Explanation Engine** – explains key metrics and outliers
-- **Narrative Engine** – produces a coherent story around the data
-- **AIManager**, **AIReport**, **AIResult**, and **PipelineReport** as stable contracts
-- Prompt Builder, Report Serializer, and Response Parser for robust prompt engineering
+- Multi-stage `Dockerfile` with targets for `api`, `frontend`, and `cli` under non-root `appuser`
+- Multi-service `docker-compose.yml` topology (`postgres`, `api`, `frontend`)
+- Centralized environment configuration and sanitized `.env.example`
+- Production logging with size-based rotation (`RotatingFileHandler`) capping disk usage
+- 5-job GitHub Actions CI pipeline (`.github/workflows/ci.yml`) with strict blocking quality gates
+- Production Deployment Guide and Architecture Decision Records (`ADR-022`, `ADR-023`)
 
-All existing backend contracts remain unchanged. The AI layer integrates seamlessly
-with the existing `Application` orchestration, preserving the enterprise layered architecture.
+All existing backend and frontend contracts remain unchanged.
 
-The application has been validated through automated testing (180 tests passing),
+The application has been validated through automated testing (**201 tests passing**),
 integration testing, REST API testing, Swagger validation, large dataset validation,
 stress testing up to approximately one million rows, comprehensive frontend validation,
-and **end‑to‑end AI pipeline validation** (prompt generation, response parsing,
-and integration with the reporting pipeline).
+AI pipeline validation, and CI workflow validation.
 
-No open blockers. Repository is ready to begin **Sprint 12 — Deployment**.
+No open blockers. Repository is sealed for **Sprint 12 / v12.0.0**.
 
 ---
 
@@ -64,11 +60,11 @@ No open blockers. Repository is ready to begin **Sprint 12 — Deployment**.
 | Area | Status |
 |------|--------|
 | Project | AnalystGPT Enterprise |
-| Version | **v11.0.0** (previous: v10.0.0) |
+| Version | **v12.0.0** (previous: v11.0.0) |
 | Repository Status | 🟢 Active Development |
-| Current Sprint | **Sprint 11 – AI Insight Engine (Completed)** |
+| Current Sprint | **Sprint 12 – Production Deployment (Completed)** |
 | Sprint Progress | **100%** |
-| Architecture | ✅ Enterprise Layered Architecture + REST API + Power BI Integration + Streamlit Frontend + AI Insight Engine |
+| Architecture | ✅ Enterprise Layered Architecture + REST API + Streamlit Frontend + AI Insight Engine + Docker Containerization + GitHub Actions CI |
 | Documentation | 🟢 Current |
 | Upload Module | ✅ Complete |
 | Cleaning Module | ✅ Complete |
@@ -96,23 +92,20 @@ No open blockers. Repository is ready to begin **Sprint 12 — Deployment**.
 | Frontend Services | ✅ Complete |
 | Session Management | ✅ Complete |
 | Enterprise Navigation | ✅ Complete |
-| **AI Insight Engine** | ✅ **Complete** |
-| **Executive Summary Engine** | ✅ **Complete** |
-| **Recommendation Engine** | ✅ **Complete** |
-| **Explanation Engine** | ✅ **Complete** |
-| **Narrative Engine** | ✅ **Complete** |
-| **AIManager** | ✅ **Complete** |
-| **AIReport / AIResult** | ✅ **Complete** |
-| **PipelineReport** | ✅ **Complete** |
-| **LLM Factory / Ollama Client** | ✅ **Complete** |
-| Automated Testing | ✅ 180 tests passing |
+| AI Insight Engine | ✅ Complete |
+| Production Logging & Rotation | ✅ Complete (Sprint 12 Phase 2) |
+| Multi-Stage Dockerfile | ✅ Complete (Sprint 12 Phase 3) |
+| Docker Compose Topology | ✅ Complete (Sprint 12 Phase 4) |
+| GitHub Actions CI Pipeline | ✅ Complete (Sprint 12 Phase 5) |
+| Deployment Architecture & ADRs | ✅ Complete (Sprint 12 Phase 6) |
+| Automated Testing | ✅ 201 tests passing |
 | Integration Testing | ✅ Passed |
 | Frontend Validation | ✅ Passed |
 | Large Dataset Validation | ✅ Passed |
 | Stress Testing | ✅ Passed |
 | AI Pipeline Validation | ✅ Passed |
 | Technical Debt | 🟢 Very Low |
-| Next Sprint | **Sprint 12 – Deployment** |
+| Next Sprint | **Sprint 13 – Multi-user Support / Scalability** |
 
 ---
 
@@ -651,7 +644,7 @@ The project succeeds when I can independently:
 
 ---
 
-**Current Project State Version:** **v11.0.0**
+**Current Project State Version:** **v12.0.0**
 
 **Previous Version:** **v10.0.0**
 

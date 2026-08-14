@@ -13,10 +13,11 @@
 <p align="center">
   <a href="#"><img src="https://img.shields.io/badge/Python-3.11-blue.svg" alt="Python 3.11"></a>
   <a href="#"><img src="https://img.shields.io/badge/FastAPI-0.115+-green.svg" alt="FastAPI"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Streamlit-1.38+-red.svg" alt="Streamlit"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Streamlit-1.48+-red.svg" alt="Streamlit"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Docker-Ready-2496ED.svg" alt="Docker"></a>
   <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License MIT"></a>
-  <a href="#"><img src="https://img.shields.io/badge/version-v11.0.0-brightgreen" alt="Version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-180%2B%20passing-success" alt="Tests"></a>
+  <a href="#"><img src="https://img.shields.io/badge/version-v12.0.0-brightgreen" alt="Version"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-201%20passing-success" alt="Tests"></a>
 </p>
 
 <p align="center">
@@ -391,13 +392,15 @@ timeline
         Enterprise Streamlit frontend : ✅ Completed
     section Sprint 11
         AI Insight Engine : ✅ Completed
+    section Sprint 12
+        Production Deployment : ✅ Completed
 ```
 
 ### Current & Future Sprints
 
 | Sprint | Focus | Status |
 |--------|-------|--------|
-| **12** | Production Deployment & Optimisation | 🔄 Not Started |
+| **12** | Production Deployment & Containerization | ✅ Completed |
 | 13 | Multi‑user support | 📅 Planned |
 | 14 | React frontend | 📅 Planned |
 | 15 | Multi‑AI provider support | 📅 Planned |
@@ -418,8 +421,8 @@ REST API   ████████████████████ 100%
 Power BI   ████████████████████ 100%
 Streamlit  ████████████████████ 100%
 AI Engine  ████████████████████ 100%
-Deployment ░░░░░░░░░░░░░░░░░░░░   0%   (Sprint 12 not started)
-Monitoring ░░░░░░░░░░░░░░░░░░░░   0%   (Sprint 12 not started)
+Deployment ████████████████████ 100%
+CI/CD      ████████████████████ 100%
 ```
 
 ---

@@ -1,0 +1,135 @@
+# ==========================================================
+# AnalystGPT Enterprise — Docker Compose Multi-Service Topology
+#
+# Services:
+# - postgres: PostgreSQL 16 relational database
+# - api: FastAPI backend REST service (target: api)
+# - frontend: Streamlit enterprise user interface (target: frontend)
+# ==========================================================
+
+services:
+
+  # --------------------------------------------------------
+  # 1. PostgreSQL Database Service
+  # --------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: analystgpt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE:-analystgpt}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - analystgpt-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DATABASE:-analystgpt}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --------------------------------------------------------
+  # 2. FastAPI Backend REST API Service
+  # --------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    container_name: analystgpt-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      # Database Connection (Routed to internal postgres service)
+      DATABASE_ENGINE: postgresql
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE:-analystgpt}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+
+      # Logging Configuration
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_TO_FILE: ${LOG_TO_FILE:-false}
+      LOG_FILE_PATH: ${LOG_FILE_PATH:-logs/analystgpt.log}
+      LOG_MAX_BYTES: ${LOG_MAX_BYTES:-10485760}
+      LOG_BACKUP_COUNT: ${LOG_BACKUP_COUNT:-5}
+
+      # AI / Ollama Configuration
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-30m}
+      AI_TEMPERATURE: ${AI_TEMPERATURE:-0.2}
+      AI_TOP_P: ${AI_TOP_P:-0.90}
+      AI_MAX_TOKENS: ${AI_MAX_TOKENS:-1024}
+      AI_CONTEXT_WINDOW: ${AI_CONTEXT_WINDOW:-4096}
+      AI_TIMEOUT: ${AI_TIMEOUT:-120}
+      AI_MAX_RETRIES: ${AI_MAX_RETRIES:-3}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - reports_data:/app/reports
+      - logs_data:/app/logs
+    networks:
+      - analystgpt-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # --------------------------------------------------------
+  # 3. Streamlit Frontend UI Service
+  # --------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    container_name: analystgpt-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8501}:8501"
+    environment:
+      # Inter-Service API Routing via Docker DNS
+      API_BASE_URL: http://api:8000
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    networks:
+      - analystgpt-network
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+# ==========================================================
+# Persistent Named Volumes
+# ==========================================================
+volumes:
+  postgres_data:
+    name: analystgpt_postgres_data
+  reports_data:
+    name: analystgpt_reports_data
+  logs_data:
+    name: analystgpt_logs_data
+
+# ==========================================================
+# Bridge Network
+# ==========================================================
+networks:
+  analystgpt-network:
+    name: analystgpt_network
+    driver: bridge

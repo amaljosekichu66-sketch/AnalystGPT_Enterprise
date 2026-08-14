@@ -2064,6 +2064,65 @@ The repository is now fully prepared to begin Sprint 12 — Production Deploymen
 
 ---
 
+# Sprint 12 — Production Deployment
+
+## Overview
+
+Sprint 12 establishes production deployment infrastructure for AnalystGPT Enterprise, transitioning the application from a development workspace into a fully containerized, orchestrated, observable, and CI-validated platform.
+
+---
+
+## Delivered Capabilities
+
+- **Phase 1 — Configuration & Encoding Normalization:**
+  - Normalized `requirements.txt` from UTF-16LE to standard UTF-8.
+  - Created `.env.example` documenting all configuration keys with safe defaults.
+  - Implemented centralized networking configuration (`API_HOST`, `API_PORT`, `API_BASE_URL`, `FRONTEND_PORT`).
+  - Added unit test suite in `tests/core/test_config.py` (190 passing tests baseline).
+
+- **Phase 2 — Production Logging & Observability:**
+  - Implemented `configure_logger()` with `StreamHandler` and `RotatingFileHandler`.
+  - Added deterministic size-based log rotation (`LOG_MAX_BYTES`, `LOG_BACKUP_COUNT`).
+  - Implemented handler deduplication and parent directory auto-creation.
+  - Added unit tests in `tests/core/test_logger.py` (201 passing tests).
+
+- **Phase 3 — Production Multi-Stage Dockerfile:**
+  - Created multi-stage `Dockerfile` with targets: `base`, `builder`, `runtime-base`, `api`, `frontend`, `cli`.
+  - Enforced non-root execution (`appuser`, UID 1000).
+  - Created `.dockerignore` excluding `.venv`, `.git`, `.env`, and caches.
+  - Integrated healthchecks for API (`/api/health`) and Streamlit (`/_stcore/health`).
+
+- **Phase 4 — Docker Compose Multi-Service Topology:**
+  - Created `docker-compose.yml` orchestrating `postgres` (PostgreSQL 16), `api` (FastAPI), and `frontend` (Streamlit).
+  - Configured health-aware startup dependency ordering (`postgres` $\to$ `api` $\to$ `frontend`).
+  - Established internal bridge network (`analystgpt_network`) and named persistent volumes.
+  - Protected PostgreSQL on private network (unexposed to host ports by default).
+
+- **Phase 5 — Continuous Integration (GitHub Actions):**
+  - Created `.github/workflows/ci.yml` with 5 automated jobs: `quality`, `test`, `docker-build`, `compose-validation`, `compose-integration`.
+  - Configured strict blocking gates for Flake8, Black, isort, and Mypy.
+  - Added `.flake8` and `pyproject.toml` tool configuration.
+
+- **Phase 6 — Architecture Decisions & Deployment Documentation:**
+  - Authored `docs/adr/ADR-022-Containerization-and-Multi-Service-Topology.md`.
+  - Authored `docs/adr/ADR-023-Continuous-Integration-with-GitHub-Actions.md`.
+  - Authored `docs/deployment/DEPLOYMENT_GUIDE.md`.
+
+- **Phase 7 — Final Sprint Closure & Release Gate:**
+  - Bumped version to `v12.0.0`.
+  - Synchronized documentation across `PROJECT_STATE.md`, `ROADMAP.md`, `CHANGELOG.md`, `README.md`.
+  - Full regression test validation: 201 passed tests.
+
+---
+
+## Result
+
+Sprint 12 is officially complete with **201/201 passing tests** and 0 regressions.
+
+**Release Version:** **v12.0.0**
+
+---
+
 # Journal Summary
 
 | Sprint | Version | Primary Achievement | Status |
@@ -2083,7 +2142,8 @@ The repository is now fully prepared to begin Sprint 12 — Production Deploymen
 | Sprint 9 | v9.0.0 | Power BI Integration | ✅ |
 | Sprint 10 | v10.0.0 | Enterprise Streamlit Frontend | ✅ |
 | Sprint 11 | v11.0.0 | AI Insight Engine | ✅ |
+| Sprint 12 | v12.0.0 | Production Deployment & Containerization | ✅ |
 
 ---
 
-**Current Journal Version:** **v11.0.0**
+**Current Journal Version:** **v12.0.0**

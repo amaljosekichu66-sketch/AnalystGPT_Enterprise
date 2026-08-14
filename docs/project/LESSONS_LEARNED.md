@@ -977,3 +977,56 @@ These principles established during Sprint 10 ensure that the frontend remains m
 - Reasoning Tag Sanitization
 - Non-Blocking Failure Tolerance
 - Immutable AI Data Contracts
+
+---
+
+# Sprint 12 — Production Deployment & CI/CD Lessons
+
+## Configuration Normalization & Environment Portability
+
+- Maintain dependency manifests (`requirements.txt`) in standard UTF-8 encoding with deterministic line endings to prevent cross-platform installation anomalies across local, container, and CI environments.
+- Environment variables must serve as the single source of truth for runtime configurations (`API_HOST`, `API_PORT`, `API_BASE_URL`, `FRONTEND_PORT`), while `.env.example` provides a sanitized, comprehensive reference template without leaking credentials.
+
+---
+
+## Production Logging & Observability
+
+- Log volume in production must be deterministically bounded; unmanaged log files will eventually exhaust container disk quotas. Implementing size-based rotation (`RotatingFileHandler` with `maxBytes` and `backupCount`) ensures predictable storage utilization.
+- Logging frameworks must guard against duplicate handler registration across multi-module imports, reload cycles, and runtime re-configuration.
+
+---
+
+## Multi-Stage Containerization & Security Hardening
+
+- Multi-stage Docker builds separate build dependencies (compilers, package managers) from runtime environments, minimizing final image attack surface and artifact size.
+- Production containers must never execute as `root`. Defining a dedicated non-root user (`appuser`, UID 1000) prevents privilege escalation vulnerabilities in container runtimes.
+- Build context hygiene via `.dockerignore` is essential to prevent local state, secrets (`.env`), virtual environments, bytecode caches, and logs from contaminating container layers.
+
+---
+
+## Multi-Service Orchestration & Network Isolation
+
+- Docker Compose multi-service topologies must enforce health-aware dependency ordering (`condition: service_healthy`) rather than naive startup order to eliminate race conditions during database initialization.
+- Isolate backing services (e.g., PostgreSQL) on internal private bridge networks without publishing host ports by default, minimizing external attack vectors.
+- Inter-service networking must leverage container DNS names (`http://api:8000`) injected dynamically via environment variables rather than hardcoded `localhost` references.
+
+---
+
+## Strict CI/CD Quality Gates & Automated Validation
+
+- CI quality gates must act as strict blocking controls. Suppressing errors with `|| true` or `--exit-zero` degrades quality enforcement into visual noise and permits regressions.
+- When local development environments face host limitations (e.g., unavailable Docker daemon on local OS), standardized CI runners (GitHub Actions Ubuntu runners) provide the authoritative environment for container build compilation, Compose stack orchestration, health probing, and live integration testing.
+
+---
+
+## Summary of Sprint 12 Principles
+
+- Standardized UTF-8 Dependency Manifests
+- Centralized Environment Configuration (`.env.example`)
+- Size-Bounded Rotating File Logging
+- Multi-Stage Dockerfile with Dedicated Target Stages
+- Non-Root Container Execution (`appuser`)
+- Private Network Isolation for Backing Databases
+- Health-Aware Multi-Service Startup Ordering
+- Strictly Blocking CI Quality Gates (Zero Non-Blocking Suppressions)
+- Continuous Integration as Authoritative Runtime Validator

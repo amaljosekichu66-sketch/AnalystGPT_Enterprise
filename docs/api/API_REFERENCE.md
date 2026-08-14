@@ -14,7 +14,7 @@
 >
 > Business logic remains inside the Application Layer.
 >
-> Current Version: **v8.0.0**
+> Current Version: **v12.0.0**
 
 ---
 
@@ -22,7 +22,7 @@
 
 | Item | Value |
 |------|--------|
-| API Version | v8.0.0 |
+| API Version | v12.0.0 |
 | Framework | FastAPI |
 | Specification | OpenAPI 3.1 |
 | Documentation | Swagger UI |
@@ -157,7 +157,7 @@ HTTP 200
 {
     "success": true,
     "application": "AnalystGPT Enterprise",
-    "version": "8.0.0",
+    "version": "12.0.0",
     "status": "running",
     "documentation": "/docs"
 }
@@ -234,7 +234,7 @@ HTTP 200
 ```json
 {
     "success": true,
-    "version": "8.0.0"
+    "version": "12.0.0"
 }
 ```
 

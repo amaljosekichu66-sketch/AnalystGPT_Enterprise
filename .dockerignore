@@ -1,0 +1,56 @@
+# ==========================================================
+# AnalystGPT Enterprise — Docker Ignore
+# Exclude build context artifacts to minimize image size and
+# prevent secret/metadata leakage into container layers.
+# ==========================================================
+
+# Git & Version Control
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python Bytecode & Caches
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-*
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Secrets & Environment Variables (Runtime injected)
+.env
+.env.*
+.streamlit/secrets.toml
+
+# Local Databases & Runtime Output
+*.db
+*.sqlite
+*.sqlite3
+logs/
+*.log
+reports/
+
+# Documentation & Sprint Management (Not needed at container runtime)
+docs/

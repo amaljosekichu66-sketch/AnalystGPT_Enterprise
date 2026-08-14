@@ -1103,8 +1103,82 @@ The platform is now ready for production deployment.
 
 ---
 
-### Next Release
+---
 
-**v12.0.0 — Production Deployment**
+## [v12.0.0] — Production Deployment
+
+**Release Date:** August 2026
+
+### Overview
+
+Sprint 12 establishes production-grade deployment, containerization, observability,
+and continuous integration infrastructure for AnalystGPT Enterprise.
+
+The platform is transformed into a containerized multi-service topology orchestrated
+by Docker Compose, supported by centralized environment-driven configuration, size-bounded
+rotating file logging, and automated GitHub Actions continuous integration with strict
+blocking quality gates.
 
 ---
+
+### Added
+
+#### Infrastructure & Containerization
+- `Dockerfile`: Multi-stage build defining target stages (`base`, `builder`, `runtime-base`, `api`, `frontend`, `cli`) executing under non-root `appuser` (UID 1000).
+- `docker-compose.yml`: Multi-service topology orchestrating `postgres` (PostgreSQL 16 Alpine), `api` (FastAPI REST service), and `frontend` (Streamlit UI).
+- `.dockerignore`: Comprehensive build-context exclusions preventing secret, bytecode, and cache ingestion.
+- `.env.example`: Sanitized reference configuration covering all 25 runtime environment variables.
+
+#### Production Logging & Observability (`src/core/logger.py`)
+- `configure_logger()`: Dynamic logger factory supporting unified stdout console logging and optional `RotatingFileHandler`.
+- Size-based rotation parameters (`LOG_MAX_BYTES`, `LOG_BACKUP_COUNT`) guaranteeing strict disk utilization bounds.
+- Handler deduplication and automatic parent directory creation (`/app/logs`).
+
+#### Continuous Integration (`.github/workflows/ci.yml`)
+- 5-job GitHub Actions pipeline on Ubuntu 22.04 / Python 3.11:
+  - `quality`: Strict blocking Flake8 syntax checks, Flake8 style rules, Black check, isort check, and Mypy static typing.
+  - `test`: Full pytest regression execution (201 tests).
+  - `docker-build`: Multi-stage BuildKit compilation of `api`, `frontend`, and `cli` image targets.
+  - `compose-validation`: Schema and compose configuration verification.
+  - `compose-integration`: Full stack startup, health polling, HTTP live verification (`/api/health`, `/_stcore/health`), and guaranteed teardown (`docker compose down -v`).
+- Added `.flake8` and `pyproject.toml` tool configurations.
+
+#### Architecture Decisions & Deployment Documentation
+- `docs/adr/ADR-022-Containerization-and-Multi-Service-Topology.md`
+- `docs/adr/ADR-023-Continuous-Integration-with-GitHub-Actions.md`
+- `docs/deployment/DEPLOYMENT_GUIDE.md`: Comprehensive operational procedures, backup commands, and environment taxonomy.
+
+#### Testing
+- Added `tests/core/test_config.py` (12 unit tests).
+- Added `tests/core/test_logger.py` (9 unit tests).
+- Total test suite expanded from 180 to **201 passed automated tests**.
+
+---
+
+### Changed
+- `src/core/config.py`: Centralized dynamic environment parsing for networking, logging, database, and AI parameters.
+- `src/core/constants.py`: Bumped `APP_VERSION` to `12.0.0`.
+- `src/frontend/config/settings.py`: Integrated `API_BASE_URL` from centralized config for seamless container DNS routing (`http://api:8000`).
+
+---
+
+### Validation
+- ✅ Automated Testing: **201 passed tests** (0 failed, 0 errors, 0 regressions)
+- ✅ Flake8 Syntax & Style Gates: **PASS (0 errors)**
+- ✅ Black Formatting Check: **PASS (0 errors)**
+- ✅ Isort Import Ordering Check: **PASS (0 errors)**
+- ✅ Mypy Static Type Analysis: **PASS (0 errors in 154 files)**
+- ✅ Docker Multi-Stage Architecture: **PASS (Statically validated)**
+- ✅ Docker Compose Schema & Dependency Topology: **PASS (PyYAML validated)**
+- ✅ Healthcheck Verification: `/api/health` and `/_stcore/health`
+- ✅ Security & Secret Audit: **PASS** (Zero credentials committed, non-root user, private PostgreSQL network)
+
+---
+
+### Result
+
+Sprint 12 successfully packages AnalystGPT Enterprise for production deployment with containerization, observability, automated CI quality validation, and full deployment documentation.
+
+---
+
+**Release Version:** **v12.0.0**

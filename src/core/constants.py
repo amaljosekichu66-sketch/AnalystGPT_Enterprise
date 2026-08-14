@@ -10,7 +10,7 @@ from __future__ import annotations
 
 APP_NAME = "AnalystGPT Enterprise"
 
-APP_VERSION = "11.0.0"
+APP_VERSION = "12.0.0"
 
 APP_AUTHOR = "Amal Jose"
 
