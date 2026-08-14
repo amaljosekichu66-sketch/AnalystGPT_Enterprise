@@ -29,6 +29,22 @@ from ollama import Client
 from src.core import config
 
 
+def _is_ollama_available() -> bool:
+    """Check if the local Ollama server is running and reachable."""
+    try:
+        c = Client(host=config.OLLAMA_HOST, timeout=2.0)
+        c.list()
+        return True
+    except Exception:
+        return False
+
+
+pytestmark = pytest.mark.skipif(
+    not _is_ollama_available(),
+    reason=f"Ollama server is not reachable at {config.OLLAMA_HOST}",
+)
+
+
 # ==========================================================
 # Fixtures
 # ==========================================================

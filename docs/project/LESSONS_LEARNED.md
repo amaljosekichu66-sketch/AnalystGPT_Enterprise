@@ -928,3 +928,52 @@ Future frontend development should continue to prioritize:
 - User Experience Consistency
 
 These principles established during Sprint 10 ensure that the frontend remains maintainable, extensible, and replaceable while preserving the integrity of the backend architecture. Future presentation technologies should integrate through the existing service boundaries without requiring modifications to the Application Layer, business modules, or persistence infrastructure.
+
+---
+
+# Sprint 11 — AI Insight Engine & Local LLM Lessons
+
+## AI Layer Architecture
+
+- AI insight generation should act as an enrichment stage following deterministic reporting and persistence, never replacing core analytics.
+- Isolate LLM provider dependencies behind a provider-agnostic interface (`BaseLLM`) and factory (`LLMFactory`) to support seamless model or vendor migration.
+- AI components must consume stable report contracts (`ReportingReport`) and return strongly typed, immutable dataclasses (`AIReport`, `AIResult`).
+- AI modules must remain strictly stateless and read-only with respect to business datasets.
+
+---
+
+## Inference Performance & Prompt Engineering
+
+- Sequential multi-call LLM workflows incur high latency overhead in local inference environments; a consolidated single-prompt architecture (`UnifiedReportEngine`) dramatically cuts response times.
+- Strict prompt delimitations and explicit source-of-truth bounding prevent model hallucination and enforce factual consistency.
+- Mandatory section headers with pre-compiled regex matching and alias mappings provide resilient parsing across different model weights.
+- Context window management requires defensive serialization with depth-limited summarization and hard character caps.
+
+---
+
+## Output Parsing & Model Heuristics
+
+- Modern reasoning models (e.g., Qwen, DeepSeek) emit thinking tags (`<think>`); robust sanitization (`ResponseParser`) is essential before assembling user-facing reports.
+- Output truncation detection (analyzing trailing colons, incomplete punctuation, and length heuristics) is vital for actionable debugging.
+- Unstructured LLM text must be parsed into strongly typed structures before integration with downstream APIs or frontends.
+
+---
+
+## Resilience & Production Boundaries
+
+- Treat the LLM as an inherently unreliable dependency: encapsulate all generation calls in try-catch boundaries and return explicit failure results (`AIResult(success=False)`).
+- The parent orchestrator (`Application.run()`) must gracefully complete data ingestion, processing, persistence, and reporting even when AI generation fails.
+- CI/CD test suites must isolate live model calls to prevent environment-dependent build breakages.
+
+---
+
+## Summary of Sprint 11 Principles
+
+- Post-Persistence AI Enrichment
+- Pluggable LLM Abstraction (`BaseLLM`)
+- Consolidated Single-Prompt Execution
+- Strict Anti-Hallucination Guardrails
+- Resilient Heading & Alias Parsing
+- Reasoning Tag Sanitization
+- Non-Blocking Failure Tolerance
+- Immutable AI Data Contracts

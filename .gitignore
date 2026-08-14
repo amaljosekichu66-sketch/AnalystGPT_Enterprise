@@ -202,3 +202,11 @@ pnpm-debug.log*
 !main.py
 !.gitattributes
 !.gitignore
+
+# ==========================================================
+# Ensure Bytecode Ignored in Kept Directories
+# ==========================================================
+
+**/__pycache__/
+*.py[cod]
+*$py.class

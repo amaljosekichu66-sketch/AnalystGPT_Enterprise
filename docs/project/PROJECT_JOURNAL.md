@@ -1998,10 +1998,76 @@ The repository is now prepared to begin Sprint 11, where the focus shifts from p
 
 ---
 
+# Sprint 11 — AI Insight Engine
+
+## Overview
+
+Sprint 11 introduced the AI Insight Engine to AnalystGPT Enterprise, enabling the automated generation of executive summaries, business recommendations, analytical explanations, and publication-ready narratives using local Large Language Model inference (Ollama running Qwen3:8B).
+
+The objective was to deliver intelligent analytical insights while preserving the clean layered architecture, stable contracts, non-blocking resilience, and backward compatibility across the REST API, Power BI integration, and Streamlit presentation layers.
+
+---
+
+## Delivered Capabilities
+
+- **LLM Abstraction Layer (`src/llm/`):**
+  - Provider-agnostic `BaseLLM` interface and `LLMFactory`.
+  - `OllamaClient` targeting local inference.
+  - `PromptBuilder` with strict source-of-truth delimitations preventing hallucinations.
+  - `ReportSerializer` converting `ReportingReport` into compact structured text.
+  - `ResponseParser` stripping `<think>` reasoning tags, markdown fences, and normalizing whitespace.
+  - `LLMService` supporting configurable retry policies.
+
+- **AI Insight Subsystem (`src/ai/`):**
+  - `AIManager` coordinating generation, timings, exceptions, and packaging.
+  - `AIReport` and `AIResult` immutable dataclass contracts.
+  - `UnifiedReportEngine` optimizing generation into a single LLM request with heading pattern matching, alias fallback, and truncation diagnostics.
+  - Specialized engines (`ExecutiveSummaryEngine`, `RecommendationEngine`, `ExplanationEngine`, `NarrativeEngine`).
+
+- **Application Orchestration Integration (`src/application/`):**
+  - `PipelineReport` encapsulating `ReportingReport` and `AIReport`.
+  - Integrated AI generation in `Application.run()` after report persistence.
+  - Non-blocking error handling guaranteeing pipeline execution completes even if the LLM is unavailable.
+
+---
+
+## Engineering Challenges
+
+- **Inference Latency vs Multi-Engine Calls:**
+  Calling 4 separate LLM prompts sequentially created noticeable latency overhead. Introducing `UnifiedReportEngine` reduced round trips to a single prompt while robust regex heading parsing extracted each section deterministically.
+- **Reasoning Tag Artifacts:**
+  Modern reasoning models emit `<think>` blocks. `ResponseParser` cleanly extracts pure business text before reports are assembled.
+- **Anti-Hallucination Guardrails:**
+  Prompts explicitly restrict facts to the serialized report and mandate explicit "Not available" fallbacks when data is missing.
+- **Resilience Boundary:**
+  AI is treated as an enhancement layer. Failures in local inference are logged as warnings and gracefully handled, preserving full pipeline execution and persistence.
+
+---
+
+## Lessons Learned
+
+- AI capabilities should enhance existing reporting pipelines rather than replace deterministic analytics.
+- Provider abstractions (`BaseLLM`) isolate the core application from specific model vendors and deployment strategies.
+- Single-request prompt designs significantly outperform multi-call architectures in local inference environments.
+- Structured response parsing requires robust fallback heuristics (aliases, duplicate detection, truncation diagnostics).
+- Non-blocking failure handling is mandatory for AI services in enterprise data pipelines.
+
+---
+
+## Result
+
+Sprint 11 successfully delivers the AI Insight Engine, bringing total automated test coverage to **180 passing tests** and completing the analytical pipeline of AnalystGPT Enterprise.
+
+The repository is now fully prepared to begin Sprint 12 — Production Deployment.
+
+**Release Version:** v11.0.0
+
+---
+
 # Journal Summary
 
 | Sprint | Version | Primary Achievement | Status |
-|--------|---------|---------------------|--------|
+|---|---|---|---|
 | Sprint 0 | Foundation | Project Foundation | ✅ |
 | Sprint 0.5 | v0.5.0 | Core Infrastructure | ✅ |
 | Sprint 0.75 | v0.75.0 | Enterprise Engineering Foundation | ✅ |
@@ -2016,8 +2082,8 @@ The repository is now prepared to begin Sprint 11, where the focus shifts from p
 | Sprint 8 | v8.0.0 | REST API Integration | ✅ |
 | Sprint 9 | v9.0.0 | Power BI Integration | ✅ |
 | Sprint 10 | v10.0.0 | Enterprise Streamlit Frontend | ✅ |
+| Sprint 11 | v11.0.0 | AI Insight Engine | ✅ |
 
 ---
 
-**Current Journal Version:** **v10.0.0**
-```
+**Current Journal Version:** **v11.0.0**
