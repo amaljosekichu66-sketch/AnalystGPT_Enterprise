@@ -8,7 +8,9 @@
 
 # Last Updated
 
-**Date:** 23 July 2026
+**Date:** August 2026
+
+**Version:** v13.0.0
 
 ---
 
@@ -1030,3 +1032,60 @@ These principles established during Sprint 10 ensure that the frontend remains m
 - Health-Aware Multi-Service Startup Ordering
 - Strictly Blocking CI Quality Gates (Zero Non-Blocking Suppressions)
 - Continuous Integration as Authoritative Runtime Validator
+
+---
+
+# Sprint 13 — Enterprise Identity & Multi-User Platform Lessons
+
+## Server-Side Authorization vs UI Gating
+
+- Client-side visibility controls are strictly cosmetic; security must be enforced server-side.
+- Insecure Direct Object Reference (IDOR) vulnerabilities arise when server endpoints trust client-supplied resource IDs without verifying ownership against the authenticated security context (`UserContext`).
+- All repository queries must enforce user scoping (`WHERE user_id = ?`) directly at the database layer.
+
+---
+
+## Cryptographic Security & Performance Trade-offs
+
+- Password hashing requires slow, memory-hard key derivation functions (PBKDF2-HMAC-SHA256 with 600,000 iterations). Plaintext storage or simple fast hashes (MD5, SHA-256) are dangerous and unacceptable.
+- Timing attack mitigation requires constant-time verification (`secrets.compare_digest`) and dummy hashing cycles when authenticating non-existent usernames.
+
+---
+
+## Multi-Tenant Cache & State Isolation
+
+- In multi-user applications, caching at the application layer must be explicitly keyed by tenant/user (`_user_pipeline_results: dict[int | None, PipelineResult]`). Single global cache variables will inadvertently leak sensitive analytical results between users.
+- Frontend session management must provide atomic session purging (`clear_authenticated_session()`) upon logout to ensure subsequent logins on shared browsers start from a completely clean state.
+
+---
+
+## Administrative Safety Guards
+
+- Administrative APIs must enforce protective invariants preventing the demotion, deactivation, or deletion of the last remaining active administrator, preventing irrecoverable system lockouts.
+- Structured audit logs must sanitize sensitive data (passwords, tokens, hashes) at the boundary before logging to prevent credential spills in observability pipelines.
+
+---
+
+## Summary of Sprint 13 Principles
+
+- Server-Side Scoped Ownership & IDOR Immunity
+- Cryptographic Password Hashing (PBKDF2-HMAC-SHA256)
+- Signed Stateless Tokens with Server-Side Revocation
+- Declarative Role-Based Access Control (RBAC)
+- Multi-User In-Memory Cache Isolation
+- Last-Admin Lockout Safeguards
+- Zero-Credential Leakage Security Audit Logging
+
+---
+
+# Sprint 14 — Architecture & Performance Insights (Pre-Sprint)
+
+## Synchronous AI Latency vs User Experience
+
+- Coupling long-running LLM generation (45–70s) to synchronous HTTP requests severely degrades user perceived performance.
+- Decoupling pipeline execution from AI generation via an asynchronous background job state machine (`PENDING → GENERATING → READY / FAILED`) allows immediate presentation of deterministic analytics while AI completes in the background.
+
+## Data Cleaning Governance vs Silent Data Loss
+
+- Destructive transformations (row dropping, imputation) without provenance tracking lead to silent information loss.
+- Separating immutable raw source datasets from cleaned analytical datasets with explicit policy versioning and before/after quality metrics ensures data integrity and analytical reproducibility.

@@ -129,13 +129,16 @@ class ReportingOrchestrator:
 
     def get_reports(
         self,
+        user_id: int | None = None,
     ) -> dict[str, Any]:
         """
-        Return the most recently generated reports.
+        Return reporting metadata for the latest pipeline execution.
         """
 
         logger.info("=" * 80)
-        logger.info("REPORTING ORCHESTRATOR")
+
+        logger.info("GET REPORTS REQUESTED")
+
         logger.info("=" * 80)
 
         logger.info(
@@ -143,7 +146,10 @@ class ReportingOrchestrator:
             id(self._application),
         )
 
-        result = self._application.get_last_result()
+        try:
+            result = self._application.get_result_for_user(user_id=user_id)
+        except AttributeError:
+            result = getattr(self._application, "get_last_result", lambda: getattr(self._application, "last_result", None))()
 
         logger.info(
             "Returned Result : %s",

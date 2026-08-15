@@ -55,13 +55,14 @@ from .pipeline_report import PipelineReport
 
 
 # AI Layer
-
 from src.ai.ai_manager import AIManager
-
 from src.ai.ai_result import AIResult
 
-
-
+# Identity Layer (Sprint 13)
+from src.identity.context import (
+    UserContext,
+    get_current_user_context,
+)
 
 
 class Application:
@@ -141,42 +142,35 @@ class Application:
         ) = None
 
         self._cached_dataset_path: str | None = None
+        self._user_pipeline_results: dict[int | None, PipelineResult] = {}
+        self._user_cached_paths: dict[int | None, str] = {}
 
 
 
     def run(
-
         self,
-
         input_path: str,
-
+        user_context: UserContext | None = None,
     ) -> PipelineResult:
-
         """
-
         Execute the complete AnalystGPT Enterprise
-
         processing pipeline.
 
-
-
         Parameters
-
         ----------
-
         input_path:
-
             Dataset location.
-
-
+        user_context:
+            Optional authenticated identity context (Sprint 13).
+            If omitted, defaults to active request context.
 
         Returns
-
         -------
-
         PipelineResult
-
         """
+        active_context = user_context or get_current_user_context()
+        user_id = active_context.user_id if active_context.is_authenticated else None
+
 
 
 
@@ -208,6 +202,13 @@ class Application:
 
 
 
+        logger.info(
+            "Identity Context    : User=%s | Role=%s | Authenticated=%s",
+            active_context.username,
+            active_context.role.value,
+            active_context.is_authenticated,
+        )
+
         logger.info("=" * 80)
 
         logger.info("Starting AnalystGPT Enterprise...")
@@ -228,7 +229,7 @@ class Application:
 
 
 
-            self.persistence.start_pipeline()
+            self.persistence.start_pipeline(user_id=user_id)
 
 
 
@@ -524,7 +525,7 @@ class Application:
 
 
 
-            self._cache_pipeline_result(result, input_path)
+            self._cache_pipeline_result(result, input_path, user_context=active_context)
 
 
 
@@ -1335,6 +1336,7 @@ class Application:
         result: PipelineResult,
 
         dataset_path: str,
+        user_context: UserContext | None = None,
 
     ) -> None:
 
@@ -1417,16 +1419,20 @@ class Application:
 
 
         if result.success:
+            context = user_context or get_current_user_context()
+            user_id = context.user_id if context.is_authenticated else None
+            self._user_pipeline_results[user_id] = result
+            self._user_cached_paths[user_id] = dataset_path
 
             self._last_pipeline_result = result
-
             self._cached_dataset_path = dataset_path
 
             logger.info(
 
-                "PipelineResult cached successfully for dataset: %s",
+                "PipelineResult cached successfully for dataset: %s (user_id=%s)",
 
                 dataset_path,
+                user_id,
 
             )
 
@@ -1443,6 +1449,7 @@ class Application:
     def clear_cache(
 
         self,
+        user_id: int | None = None,
 
     ) -> None:
 
@@ -1467,6 +1474,10 @@ class Application:
         logger.info("=" * 80)
 
 
+
+        if user_id is not None and user_id in self._user_pipeline_results:
+            del self._user_pipeline_results[user_id]
+            self._user_cached_paths.pop(user_id, None)
 
         if self._cached_dataset_path is not None:
 
@@ -1495,6 +1506,7 @@ class Application:
         self,
 
         input_path: str,
+        user_context: UserContext | None = None,
 
     ) -> PipelineResult:
 
@@ -1505,15 +1517,22 @@ class Application:
         If no cached result exists for this dataset, execute the pipeline and cache the result.
 
         """
-
-
+        active_context = user_context or get_current_user_context()
+        user_id = active_context.user_id if active_context.is_authenticated else None
 
         if (
+            user_id in self._user_pipeline_results
+            and self._user_cached_paths.get(user_id) == input_path
+        ):
+            logger.info("=" * 80)
+            logger.info("USING CACHED PIPELINE RESULT FOR USER: %s", active_context.username)
+            logger.info("=" * 80)
+            return self._user_pipeline_results[user_id]
 
-            self._last_pipeline_result is not None
-
+        if (
+            user_id is None
+            and self._last_pipeline_result is not None
             and self._cached_dataset_path == input_path
-
         ):
 
             logger.info("=" * 80)
@@ -1539,10 +1558,19 @@ class Application:
         return self.run(
 
             input_path=input_path,
+            user_context=active_context,
 
         )
 
 
+
+    def get_result_for_user(self, user_id: int | None = None) -> PipelineResult | None:
+        """
+        Retrieve cached pipeline result for a specific user ID.
+        """
+        if user_id is not None:
+            return self._user_pipeline_results.get(user_id)
+        return self._last_pipeline_result
 
     @property
 

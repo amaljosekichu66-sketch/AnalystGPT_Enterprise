@@ -24,34 +24,42 @@
 # Quick Orientation
 
 AnalystGPT Enterprise is an enterprise-grade analytics pipeline (Upload →
-Cleaning → Quality → Analytics → Reporting → **AI Insight Engine** → REST API → Power BI → Streamlit Frontend),
+Cleaning → Quality → Analytics → Reporting → **AI Insight Engine** → REST API → Power BI → Streamlit Frontend → **Enterprise Identity & Multi-User Platform**),
 built as a self-directed software engineering exercise to develop production-level
 architecture, testing, and delivery skills.
 
-**Standing as of v12.0.0:** all business modules, the Application orchestration layer,
+**Standing as of v13.0.0:** all business modules, the Application orchestration layer,
 the enterprise-grade Database Abstraction Layer, the REST API Layer, the Business
 Intelligence Integration Layer, the enterprise Streamlit frontend, the **AI Insight Engine**,
-and the **Production Deployment Infrastructure** are complete and stable. The project is fully
-containerized with multi-stage Docker targets, orchestrated via Docker Compose, monitored with
-bounded rotating file logging, and verified by a 5-job GitHub Actions CI pipeline with 201 automated tests.
+the **Production Deployment Infrastructure**, and the **Enterprise Identity & Multi-User Platform**
+are complete and stable. The project is fully containerized with multi-stage Docker targets,
+orchestrated via Docker Compose, secured with PBKDF2-HMAC-SHA256 password hashing, signed HMAC-SHA256
+access tokens, declarative RBAC, server-side resource ownership and data isolation, monitored with
+bounded rotating file logging, and verified by a 5-job GitHub Actions CI pipeline with 329 automated tests.
 
-Sprint 12 introduced the **Production Deployment Infrastructure**, including:
+Sprint 13 introduced the **Enterprise Identity & Multi-User Platform**, including:
 
-- Multi-stage `Dockerfile` with targets for `api`, `frontend`, and `cli` under non-root `appuser`
-- Multi-service `docker-compose.yml` topology (`postgres`, `api`, `frontend`)
-- Centralized environment configuration and sanitized `.env.example`
-- Production logging with size-based rotation (`RotatingFileHandler`) capping disk usage
-- 5-job GitHub Actions CI pipeline (`.github/workflows/ci.yml`) with strict blocking quality gates
-- Production Deployment Guide and Architecture Decision Records (`ADR-022`, `ADR-023`)
+- Domain user entity and role/status lifecycle models (`User`, `UserRole`, `UserStatus`)
+- Cryptographic password hasher (`PBKDF2PasswordHasher` with 600,000 iterations and 16-byte salts)
+- Signed stateless token service (`TokenService`) and server-side token revocation (`TokenRevocationService`)
+- Application-level domain service (`UserService`) coordinating authentication, status, and last-admin guards
+- Database repository implementations (`UserRepository`, `InMemoryUserRepository`) and schema migrations
+- Server-side query scoping and IDOR prevention across `datasets`, `pipeline_runs`, and `reports`
+- Multi-user in-memory application cache isolation (`_user_pipeline_results`)
+- Declarative RBAC permission matrix and FastAPI dependency injection hooks
+- Protected REST API endpoints (`/api/auth/*`, `/api/admin/*`, authenticated `/api/pipeline/run`, etc.)
+- Structured security audit logging (`AuditService`) with zero-credential leakage sanitization
+- Streamlit authentication UI (`login_page.py`), session manager (`SessionManager`), and role-aware navigation
+- Architecture Decision Record (`ADR-024`) and 128 new automated tests (329 total tests passing)
 
-All existing backend and frontend contracts remain unchanged.
+All existing backend and frontend contracts remain fully backward compatible.
 
-The application has been validated through automated testing (**201 tests passing**),
+The application has been validated through automated testing (**329 tests passing**),
 integration testing, REST API testing, Swagger validation, large dataset validation,
 stress testing up to approximately one million rows, comprehensive frontend validation,
 AI pipeline validation, and CI workflow validation.
 
-No open blockers. Repository is sealed for **Sprint 12 / v12.0.0**.
+No open blockers. Repository is sealed for **Sprint 13 / v13.0.0**.
 
 ---
 
@@ -60,12 +68,31 @@ No open blockers. Repository is sealed for **Sprint 12 / v12.0.0**.
 | Area | Status |
 |------|--------|
 | Project | AnalystGPT Enterprise |
-| Version | **v12.0.0** (previous: v11.0.0) |
-| Repository Status | 🟢 Active Development |
-| Current Sprint | **Sprint 12 – Production Deployment (Completed)** |
-| Sprint Progress | **100%** |
-| Architecture | ✅ Enterprise Layered Architecture + REST API + Streamlit Frontend + AI Insight Engine + Docker Containerization + GitHub Actions CI |
+| Version | **v13.0.0** |
+| Repository Status | 🟢 Active Development / Sprint 13 Complete |
+| Current Sprint | ✅ Sprint 13 Complete |
+| Current Focus | **Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness** |
+| Architecture | ✅ Enterprise Layered Architecture + REST API + Streamlit Frontend + AI Insight Engine + Docker Containerization + GitHub Actions CI + Enterprise Identity & Authentication Engine + Resource Ownership & Data Isolation + Declarative RBAC & Admin Management + Frontend Authentication & Session Isolation |
 | Documentation | 🟢 Current |
+| Identity Domain Models & RBAC | ✅ Complete (Sprint 13 Phase 1) |
+| Security Request Context | ✅ Complete (Sprint 13 Phase 1) |
+| Cryptographic Password Hasher | ✅ Complete (Sprint 13 Phase 1) |
+| User Repository Abstraction | ✅ Complete (Sprint 13 Phase 1) |
+| Auth Dependency Injection | ✅ Complete (Sprint 13 Phase 1 & 2) |
+| Identity Schema & Migration | ✅ Complete (Sprint 13 Phase 1 & 3) |
+| UserService Domain Service | ✅ Complete (Sprint 13 Phase 2 & 4) |
+| Signed Access Token Engine | ✅ Complete (Sprint 13 Phase 2) |
+| User Registration & Login API | ✅ Complete (Sprint 13 Phase 2) |
+| Token Revocation & Logout | ✅ Complete (Sprint 13 Phase 2) |
+| Resource Ownership & Isolation | ✅ Complete (Sprint 13 Phase 3) |
+| IDOR Prevention & Query Scoping | ✅ Complete (Sprint 13 Phase 3) |
+| Multi-User Application Caching | ✅ Complete (Sprint 13 Phase 3) |
+| Declarative RBAC Dependencies | ✅ Complete (Sprint 13 Phase 4) |
+| Admin User Management API | ✅ Complete (Sprint 13 Phase 4) |
+| Structured Security Audit Trail | ✅ Complete (Sprint 13 Phase 4) |
+| Frontend Authentication UI | ✅ Complete (Sprint 13 Phase 5) |
+| Frontend Session & Tenant Isolation | ✅ Complete (Sprint 13 Phase 5) |
+| Role-Aware Navigation & Admin UI | ✅ Complete (Sprint 13 Phase 5) |
 | Upload Module | ✅ Complete |
 | Cleaning Module | ✅ Complete |
 | Quality Module | ✅ Complete |
@@ -98,14 +125,14 @@ No open blockers. Repository is sealed for **Sprint 12 / v12.0.0**.
 | Docker Compose Topology | ✅ Complete (Sprint 12 Phase 4) |
 | GitHub Actions CI Pipeline | ✅ Complete (Sprint 12 Phase 5) |
 | Deployment Architecture & ADRs | ✅ Complete (Sprint 12 Phase 6) |
-| Automated Testing | ✅ 201 tests passing |
+| Automated Testing | ✅ 329 tests passing |
 | Integration Testing | ✅ Passed |
 | Frontend Validation | ✅ Passed |
 | Large Dataset Validation | ✅ Passed |
 | Stress Testing | ✅ Passed |
 | AI Pipeline Validation | ✅ Passed |
 | Technical Debt | 🟢 Very Low |
-| Next Sprint | **Sprint 13 – Multi-user Support / Scalability** |
+| Next Sprint | **Sprint 14 — Performance Optimization & High-Concurrency Scaling** |
 
 ---
 
@@ -499,6 +526,8 @@ Quick‑scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 | 9 | Power BI Integration, DashboardService, Dashboard Models, Power BI REST Endpoints, PostgreSQL and SQLite runtime validation, Stress Testing, Performance Benchmarking |
 | 10 | Enterprise Streamlit Frontend, Dashboard View, Upload Interface, Reports Centre, About Page, Reusable Component Library, Frontend Services, Session Management, Enterprise Navigation, Backend Integration, React‑ready Architecture |
 | 11 | AI Insight Engine, Local LLM Architecture, Ollama Integration, LLM Abstraction, Executive Summary, Recommendation, Explanation and Narrative Engines, PipelineReport, AIResult, Prompt Builder, Response Parser |
+| 12 | Production Deployment, Multi-Stage Dockerfile (`api`, `frontend`, `cli`), Docker Compose Topology, Bounded Rotating File Logging, GitHub Actions 5-Job CI Pipeline, ADR-022, ADR-023, Deployment Guide |
+| 13 | Enterprise Identity & Multi-User Platform, Domain Models, PBKDF2 Password Hasher, Signed TokenService, TokenRevocationService, UserService, UserRepository, Server-Side Data Isolation & IDOR Defense, Declarative RBAC, Admin Management API & UI, Streamlit Auth & Session Isolation, Audit Trail, ADR-024, 329 Automated Tests |
 
 ---
 
@@ -523,6 +552,7 @@ Quick‑scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 - Git
 - GitHub
 - Power BI
+- Docker & Docker Compose
 
 ---
 
@@ -561,29 +591,33 @@ The following documents define repository standards and engineering policies:
 |------|----------------|
 | Architecture | Production Ready |
 | Backend | Production Ready |
-| Frontend | MVP Complete |
+| Frontend | MVP Complete (Streamlit) |
 | Database | Production Ready |
 | REST API | Production Ready |
 | Power BI Integration | Production Ready |
 | **AI Layer** | **Production Ready (Local LLM Integration)** |
-| Deployment | Planned |
+| **Deployment** | **Production Ready (Docker & CI)** |
+| **Enterprise Identity & Multi-User** | **Production Ready (PBKDF2 + JWT + RBAC)** |
+| Data Governance & Lineage | Planned (Sprint 14) |
+| React Presentation Layer | Planned (Sprint 15) |
 
 ---
 
 # Current Focus
 
-Sprint 11 has been completed and released.
+Sprint 13 has been completed and released (**v13.0.0**).
 
-## Sprint 12 — Deployment
+## Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness (Planned)
 
 Objectives:
 
-- Dockerize the application (Dockerfile, docker-compose)
-- Environment configuration (`.env`, settings)
-- Production logging (structured logging, log rotation)
-- CI/CD pipeline (GitHub Actions)
-- Deployment documentation
-- Release automation
+- **Phase 1 — Frontend UX Stabilization:** Scroll reset on page changes, redesigned hierarchy, dedicated AI Insights page, public About, role-aware Admin nav.
+- **Phase 2 — Asynchronous AI Job Lifecycle:** Decouple pipeline request from Ollama inference; database-backed job state machine (`PENDING → GENERATING → READY / FAILED`), idempotency, failure isolation.
+- **Phase 3 — Data Cleaning Governance & Lineage:** Versioned immutable raw dataset vs separate cleaned analytical dataset, configurable missing-value policies, before/after quality metrics, provenance tracking.
+- **Phase 4 — AI Analytical Context & Data Integrity:** Privacy-safe aggregated context vs source-data quality metadata, cleaning transformation context in prompts.
+- **Phase 5 — Reporting & Export Reliability:** Repair report download & PDF export, ownership verification, export idempotency.
+- **Phase 6 — React Migration Readiness:** OpenAPI 3.1 contract freeze, typed API response models, frontend-independent service interfaces (`AuthService`, `DashboardService`, `ReportService`, `AIInsightService`, `UploadService`, `AdminService`), Streamlit $\to$ React mapping.
+- **Phase 7 — Regression, Contract & Quality Gates:** Full regression suite validation (329+ tests), multi-user isolation tests, CI gates.
 
 ---
 
@@ -596,15 +630,17 @@ Current repository status:
 - ✅ Stable Architecture
 - ✅ Stable Application Layer
 - ✅ Stable Module Contracts
-- ✅ Stable Test Suite (180 tests)
+- ✅ Stable Test Suite (329 tests passing)
 - ✅ Stable Performance
 - ✅ Stable REST API
 - ✅ Stable Power BI Integration
 - ✅ Stable Streamlit Frontend
 - ✅ Stable AI Insight Engine
+- ✅ Stable Production Deployment & Docker Topology
+- ✅ Stable Enterprise Identity & Multi-User Platform
 - ✅ Stable Documentation
-- ✅ Sprint 11 Completed
-- ✅ Ready for Sprint 12
+- ✅ Sprint 13 Completed
+- 🚀 Ready for Sprint 14
 
 ---
 
@@ -637,6 +673,8 @@ The project succeeds when I can independently:
 - Design enterprise frontend architectures.
 - Build service‑oriented UI applications.
 - Implement AI‑assisted analytics.
+- Implement enterprise identity, authentication, and RBAC systems.
+- Enforce strict server-side multi-user data isolation and IDOR prevention.
 - Lead React migration projects.
 - Develop enterprise dashboard solutions.
 - Demonstrate software architecture leadership.
@@ -644,8 +682,8 @@ The project succeeds when I can independently:
 
 ---
 
-**Current Project State Version:** **v12.0.0**
+**Current Project State Version:** **v13.0.0**
 
-**Previous Version:** **v10.0.0**
+**Previous Version:** **v12.0.0**
 
 ---

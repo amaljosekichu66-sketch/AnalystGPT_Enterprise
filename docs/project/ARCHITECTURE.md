@@ -6,7 +6,7 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v12.0.0**.
+> This document reflects the implementation as of **v13.0.0**.
 
 ---
 
@@ -37,6 +37,10 @@ Sprint 10 introduced a dedicated Enterprise Streamlit Frontend Layer that provid
 Sprint 11 introduced an AI Insight Engine that enriches the reporting output with intelligent narratives, executive summaries, recommendations, and explanations. The AI layer is built on a local LLM (Ollama with Qwen3:8B) and follows a pluggable architecture via `BaseLLM` and `LLMFactory`. It consumes the `ReportingReport` and produces an `AIResult`, which is then attached to the `PipelineReport`. The AI layer is completely isolated from business logic, uses only stable contracts, and preserves the existing layered architecture.
 
 Sprint 12 introduced Production Deployment Infrastructure, including multi-stage Docker containerization (`Dockerfile`), multi-service Docker Compose topology (`docker-compose.yml`), bounded rotating file logging (`RotatingFileHandler`), centralized environment configuration, and automated GitHub Actions CI/CD (`.github/workflows/ci.yml`). The deployment architecture provides service isolation (`postgres`, `api`, `frontend`), internal networking, non-root execution, and strict blocking quality gates without altering application contracts or business logic.
+
+Sprint 13 delivered the Enterprise Identity & Multi-User Platform subsystem (`src/identity/`), establishing domain user models (`User`, `UserRole`, `UserStatus`), cryptographic password hashing (PBKDF2-HMAC-SHA256, 600,000 iterations), granular Role-Based Access Control (RBAC) permission matrices, request security context (`UserContext`), user persistence repositories (`UserRepository`), domain service orchestration (`UserService`), stateless HMAC-SHA256 token issuance/validation (`TokenService`), server-side token revocation tracking (`TokenRevocationService`), and FastAPI authentication endpoints (`POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`) with dependency injection hooks, server-side resource ownership/data isolation across all repositories, and Streamlit session authentication gating, while preserving 100% backward compatibility for all business modules.
+
+
 
 ---
 
@@ -2047,27 +2051,129 @@ to a modern React frontend when the time comes.
 
 ---
 
+# Sprint 13 — Enterprise Identity & Multi-User Architecture
+
+Sprint 13 transforms AnalystGPT Enterprise into a multi-tenant, secure enterprise platform with domain identity modeling, cryptographic authentication, role-based access control, user-owned resources, and IDOR prevention.
+
+### Architectural Invariants
+1. **Server-Side Authorization**: Resource ownership and permission enforcement occur strictly at the Application, API, and Persistence boundaries. Client-supplied IDs in request parameters are never trusted.
+2. **Business Module Isolation**: Data processing engines (Upload, Cleaning, Quality, Analytics, Reporting, AI) remain completely decoupled from authentication and identity logic.
+3. **Multi-User Cache Isolation**: In-memory analytical result caching in the Application layer is strictly partitioned per user (`_user_pipeline_results: dict[int | None, PipelineResult]`), preventing cross-tenant leakage.
+4. **Data Isolation & IDOR Immunity**: Repositories enforce user scoping (`WHERE user_id = ?`) preventing unauthorized horizontal privilege escalation.
+5. **Pluggable & Extensible**: Pluggable interfaces for password hashing, user storage, token validation, and revocation enable seamless enterprise SSO/OAuth2 evolution.
+
+```
+                    ┌─────────────────────────┐
+                    │ Client / UI / REST API  │
+                    └───────────┬─────────────┘
+                                │ Bearer Token
+                                ▼
+                    ┌─────────────────────────┐
+                    │ FastAPI Auth Dependency │
+                    │   (Resolves UserContext) │
+                    └───────────┬─────────────┘
+                                │ user_context
+                                ▼
+                    ┌─────────────────────────┐
+                    │    Application Layer    │
+                    │ (Tenant-Scoped Cache)   │
+                    └───────────┬─────────────┘
+                                │ user_id
+                                ▼
+                    ┌─────────────────────────┐
+                    │   Persistence Manager   │
+                    └───────────┬─────────────┘
+                                │ Scoped queries (WHERE user_id = ?)
+                                ▼
+                    ┌─────────────────────────┐
+                    │ Database (SQLite/PG)    │
+                    │ users, pipeline_runs,   │
+                    │ datasets, reports       │
+                    └─────────────────────────┘
+```
+
+# Sprint 14 Target Architecture (Planned)
+
+> **Status:** PLANNED / NOT YET IMPLEMENTED
+
+Sprint 14 introduces performance stabilization, asynchronous AI job execution, data-cleaning governance and lineage tracking, privacy-safe AI context formatting, report export reliability, and stable frontend API contracts preparing for the React migration.
+
+### 1. Asynchronous AI Job Lifecycle & State Machine
+- **Decoupled Pipeline Execution**: Pipeline API requests return deterministic analytical results immediately (`Upload → Cleaning → Quality → Analytics → Reporting → Persistence`).
+- **AI Background Job**: Dispatches AI generation as an independent asynchronous task, decoupling 45–70s Ollama generation from user-visible dashboard rendering.
+- **Job State Machine**: `PENDING → GENERATING → READY / FAILED`, persisted in database with `pipeline_run_id`, `user_id`, and `report_id`.
+- **Failure Isolation**: An AI generation failure never invalidates or fails the underlying analytics pipeline run.
+
+```text
+Upload Request
+      │
+      ▼
+Pipeline Execution (Deterministic) ───────────► Dashboard & Reports (Immediate)
+      │
+      └──► Background AI Job
+                 │
+                 ▼
+         State: PENDING ──► GENERATING ──► READY / FAILED
+                                               │
+                                               ▼
+                                      AI Insights View (Polled)
+```
+
+### 2. Data Cleaning Governance & Lineage Architecture
+- **Immutable Raw Dataset Artifact**: Source dataset stored immutably with SHA-256 checksum and metadata persisted in database.
+- **Cleaned Analytical Dataset**: Separated analytical dataset generated via configurable, explicit missing-value policies.
+- **Cleaning Provenance Tracking**: Comprehensive record of transformations (rows removed, columns modified, imputation rules applied, quality metrics before vs after).
+- **Reproducibility**: Complete traceability from raw dataset version + cleaning policy version → analytical dataset → reports → AI insights.
+
+### 3. AI Analytical Context & Integrity
+- **Privacy-Safe Aggregated Context**: AI prompt receives structured source-data quality metadata and aggregated analytical distributions, rather than raw unaggregated PII.
+- **Contextual Integrity**: Prompt includes data cleaning statistics so the LLM correctly distinguishes original missingness from post-cleaning analytical rows.
+
+### 4. Frontend Service Interface Layer & React Migration Boundary
+- **Service Interfaces**: Frontend logic abstracted into technology-neutral service interfaces:
+  - `AuthService`
+  - `DashboardService`
+  - `ReportService`
+  - `AIInsightService`
+  - `UploadService`
+  - `AdminService`
+- **Zero Backend Logic in Streamlit**: Streamlit views operate strictly as presentation components consuming the REST API via services.
+- **OpenAPI 3.1 Contract Freeze**: Authoritative backend API contract ensuring seamless drop-in replacement by the React presentation layer in Sprint 15.
+
+---
+
 # Future Evolution
 
 The current architecture provides a stable foundation for continued, sequenced evolution. The Application layer remains the single orchestration point as the platform grows, while the REST API Layer provides the interface for external integrations.
 
-## Sprint 12 — Production Deployment
+## Sprint 13 — Enterprise Identity & Multi-User Platform (Complete)
 
-- Docker
-- CI/CD
-- Monitoring
-- Cloud deployment
+- Phase 1: Architecture Reconnaissance & Foundation ✅
+- Phase 2: Core Identity & Authentication Engine ✅
+- Phase 3: Resource Ownership & Data Isolation ✅
+- Phase 4: API Security & Role-Based Access Control (RBAC) ✅
+- Phase 5: Frontend Authentication & Sprint Closure ✅
 
-## Sprint 15 — React Migration
+## Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness (Planned)
 
-- Replace Streamlit with React
-- Preserve all backend contracts
-- Maintain service boundaries
+- Phase 1: Frontend UX Stabilization (Scroll reset, information hierarchy, dedicated AI Insights nav, public About)
+- Phase 2: Asynchronous AI Execution & Job Lifecycle (Decoupled execution, state machine, failure isolation)
+- Phase 3: Data Cleaning Governance & Lineage (Immutable raw dataset, configurable policies, provenance)
+- Phase 4: AI Analytical Context & Data Integrity (Source metadata vs analytical context, privacy-safe prompts)
+- Phase 5: Reporting & Export Reliability (Repaired report download & PDF export, ownership enforcement)
+- Phase 6: React Migration Readiness (OpenAPI contract freeze, typed models, frontend-independent service interfaces)
+- Phase 7: Regression, Contract & Quality Gates (329+ tests, multi-user isolation, CI quality gates)
+
+## Sprint 15 — React Migration & Modern Presentation Layer (Planned)
+
+- Replace Streamlit presentation layer with production-grade React application
+- Consume existing REST API contracts without backend modifications
+- Reusable component architecture, responsive design tokens, and a11y compliance
 
 Every architectural change affecting module boundaries or dependency direction must be documented through a new Architecture Decision Record (ADR).
 
 ---
 
-**Current Architecture Version:** **v12.0.0**
+**Current Architecture Version:** **v13.0.0**
 
-**Previous Version:** **v10.0.0**
+**Previous Version:** **v12.0.0**

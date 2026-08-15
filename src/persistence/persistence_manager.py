@@ -39,6 +39,7 @@ class PersistenceManager:
         self._report_repository = None
 
         self._pipeline_run_id = None
+        self._user_id = None
         self._dataset_id = None
         self._quality_report_id = None
         self._analytics_report_id = None
@@ -117,11 +118,15 @@ class PersistenceManager:
 
     # ---------------------------------------------------------
 
-    def start_pipeline(self):
-
+    def start_pipeline(self, user_id: int | None = None):
+        """
+        Start pipeline run with optional user ownership.
+        """
+        self._user_id = user_id
         self._pipeline_run_id = (
             self._pipeline_repository.create(
-                "RUNNING"
+                "RUNNING",
+                user_id=user_id,
             )
         )
 
@@ -132,14 +137,19 @@ class PersistenceManager:
         dataset_name,
         row_count,
         column_count,
+        user_id: int | None = None,
     ):
-
+        """
+        Persist dataset metadata with user ownership.
+        """
+        eff_user_id = user_id if user_id is not None else self._user_id
         self._dataset_id = (
             self._dataset_repository.create(
                 self._pipeline_run_id,
                 dataset_name,
                 row_count,
                 column_count,
+                user_id=eff_user_id,
             )
         )
 
@@ -203,15 +213,17 @@ class PersistenceManager:
     def save_report(
         self,
         reporting_report,
+        user_id: int | None = None,
     ):
         """
-        Persist reporting metadata.
+        Persist reporting metadata with user ownership.
         """
-
+        eff_user_id = user_id if user_id is not None else self._user_id
         self._report_id = (
             self._report_repository.create(
                 self._pipeline_run_id,
                 reporting_report.export_path,
+                user_id=eff_user_id,
             )
         )
 

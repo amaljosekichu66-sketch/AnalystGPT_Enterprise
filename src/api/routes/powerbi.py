@@ -21,9 +21,14 @@ from fastapi import Query
 from src.api.dependencies.application_dependency import (
     get_application,
 )
+from src.api.dependencies.auth_dependencies import (
+    require_permission,
+)
 from src.application.app import Application
 from src.application.pipeline_result import PipelineResult
 from src.core.logger import logger
+from src.identity.context import UserContext
+from src.identity.permissions import Permission
 from src.integrations.powerbi.dashboard_service import (
     DashboardService,
 )
@@ -45,6 +50,7 @@ _dashboard_service = DashboardService()
 def _execute_pipeline(
     dataset: str,
     application: Application,
+    context: UserContext | None = None,
 ) -> PipelineResult:
     """
     Execute the enterprise analytics pipeline.
@@ -61,9 +67,15 @@ def _execute_pipeline(
         dataset,
     )
 
-    result = application.get_or_run(
-        input_path=dataset,
-    )
+    try:
+        result = application.get_or_run(
+            input_path=dataset,
+            user_context=context,
+        )
+    except TypeError:
+        result = application.get_or_run(
+            input_path=dataset,
+        )
 
     logger.info(
         "Pipeline Success : %s",
@@ -89,6 +101,9 @@ def dashboard(
         ...,
         description="Dataset path.",
     ),
+    context: UserContext = Depends(
+        require_permission(Permission.DASHBOARD_VIEW),
+    ),
     application: Application = Depends(
         get_application,
     ),
@@ -100,6 +115,7 @@ def dashboard(
     result = _execute_pipeline(
         dataset,
         application,
+        context=context,
     )
 
     return _dashboard_service.build_dashboard_response(
@@ -118,6 +134,9 @@ def dashboard(
 )
 def summary(
     dataset: str = Query(...),
+    context: UserContext = Depends(
+        require_permission(Permission.REPORT_VIEW),
+    ),
     application: Application = Depends(
         get_application,
     ),
@@ -129,6 +148,7 @@ def summary(
     result = _execute_pipeline(
         dataset,
         application,
+        context=context,
     )
 
     return _dashboard_service.build_dashboard_summary(
@@ -147,6 +167,9 @@ def summary(
 )
 def statistics(
     dataset: str = Query(...),
+    context: UserContext = Depends(
+        require_permission(Permission.REPORT_VIEW),
+    ),
     application: Application = Depends(
         get_application,
     ),
@@ -158,6 +181,7 @@ def statistics(
     result = _execute_pipeline(
         dataset,
         application,
+        context=context,
     )
 
     return _dashboard_service.build_statistics(
@@ -176,6 +200,9 @@ def statistics(
 )
 def correlation(
     dataset: str = Query(...),
+    context: UserContext = Depends(
+        require_permission(Permission.REPORT_VIEW),
+    ),
     application: Application = Depends(
         get_application,
     ),
@@ -187,6 +214,7 @@ def correlation(
     result = _execute_pipeline(
         dataset,
         application,
+        context=context,
     )
 
     return _dashboard_service.build_correlation(
@@ -205,6 +233,9 @@ def correlation(
 )
 def distribution(
     dataset: str = Query(...),
+    context: UserContext = Depends(
+        require_permission(Permission.REPORT_VIEW),
+    ),
     application: Application = Depends(
         get_application,
     ),
@@ -216,6 +247,7 @@ def distribution(
     result = _execute_pipeline(
         dataset,
         application,
+        context=context,
     )
 
     return _dashboard_service.build_distribution(
@@ -234,6 +266,9 @@ def distribution(
 )
 def categorical(
     dataset: str = Query(...),
+    context: UserContext = Depends(
+        require_permission(Permission.REPORT_VIEW),
+    ),
     application: Application = Depends(
         get_application,
     ),
@@ -245,6 +280,7 @@ def categorical(
     result = _execute_pipeline(
         dataset,
         application,
+        context=context,
     )
 
     return _dashboard_service.build_categorical(
@@ -263,6 +299,9 @@ def categorical(
 )
 def report(
     dataset: str = Query(...),
+    context: UserContext = Depends(
+        require_permission(Permission.REPORT_VIEW),
+    ),
     application: Application = Depends(
         get_application,
     ),
@@ -274,6 +313,7 @@ def report(
     result = _execute_pipeline(
         dataset,
         application,
+        context=context,
     )
 
     return _dashboard_service.build_report(
@@ -292,6 +332,9 @@ def report(
 )
 def pipeline(
     dataset: str = Query(...),
+    context: UserContext = Depends(
+        require_permission(Permission.REPORT_VIEW),
+    ),
     application: Application = Depends(
         get_application,
     ),
@@ -303,6 +346,7 @@ def pipeline(
     result = _execute_pipeline(
         dataset,
         application,
+        context=context,
     )
 
     return _dashboard_service.build_pipeline_summary(

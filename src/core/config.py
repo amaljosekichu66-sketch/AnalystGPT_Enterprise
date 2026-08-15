@@ -281,3 +281,41 @@ GEMINI_API_KEY = os.getenv(
 CLAUDE_API_KEY = os.getenv(
     "CLAUDE_API_KEY",
 )
+
+# ==========================================================
+# Enterprise Identity & Security (Sprint 13)
+# ==========================================================
+
+AUTH_SECRET_KEY = os.getenv(
+    "AUTH_SECRET_KEY",
+    "analystgpt-enterprise-insecure-dev-secret-key-change-in-production",
+).strip()
+
+AUTH_ALGORITHM = os.getenv(
+    "AUTH_ALGORITHM",
+    "HS256",
+).strip()
+
+AUTH_ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv(
+        "AUTH_ACCESS_TOKEN_EXPIRE_MINUTES",
+        "60",
+    )
+)
+
+AUTH_PASSWORD_MIN_LENGTH = int(
+    os.getenv(
+        "AUTH_PASSWORD_MIN_LENGTH",
+        "8",
+    )
+)
+
+AUTH_DEFAULT_ADMIN_USERNAME = os.getenv(
+    "AUTH_DEFAULT_ADMIN_USERNAME",
+    "admin",
+).strip()
+
+AUTH_DEFAULT_ADMIN_EMAIL = os.getenv(
+    "AUTH_DEFAULT_ADMIN_EMAIL",
+    "admin@analystgpt.enterprise",
+).strip()

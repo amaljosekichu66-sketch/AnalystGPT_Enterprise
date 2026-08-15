@@ -13,7 +13,7 @@ maintains production-quality engineering standards throughout its development.
 
 # Last Updated
 
-**Version:** v12.0.0
+**Version:** v13.0.0
 
 **Date:** August 2026
 
@@ -70,6 +70,20 @@ If architectural boundaries change:
 
 - ARCHITECTURE.md must be updated.
 - A new ADR must be created (when applicable).
+
+---
+
+# Identity, Security & Multi-User Requirements
+
+Every multi-user and security feature must:
+
+- Enforce cryptographic password hashing (PBKDF2-HMAC-SHA256, ≥ 600,000 iterations). Plaintext credentials strictly forbidden.
+- Enforce server-side authorization and resource ownership (`user_id` query scoping). Never trust client-supplied IDs (Insecure Direct Object Reference / IDOR immunity).
+- Isolate tenant in-memory application caches (`_user_pipeline_results`).
+- Enforce declarative Role-Based Access Control (RBAC) across API endpoints with proper HTTP 401/403 semantics.
+- Protect administrative operations with last-admin safeguards preventing system lockout.
+- Emit structured security audit events while strictly sanitizing passwords, hashes, tokens, and secrets from logs.
+- Isolate client-side authentication sessions and purge cached tenant data upon sign out.
 
 ---
 

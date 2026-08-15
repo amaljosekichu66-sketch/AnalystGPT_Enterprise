@@ -11,10 +11,14 @@ from fastapi.testclient import TestClient
 from src.api.dependencies.application_dependency import (
     get_application,
 )
+from src.api.dependencies.auth_dependencies import (
+    get_user_context,
+)
 from src.api.server import app
-
 from src.application.pipeline_report import PipelineReport
 from src.ai.ai_report import AIReport
+from src.identity.context import UserContext
+from src.identity.models import UserRole, UserStatus
 
 
 # ==========================================================
@@ -115,6 +119,14 @@ class FakeApplication:
 @pytest.fixture(autouse=True)
 def override_application():
     app.dependency_overrides[get_application] = lambda: FakeApplication()
+    app.dependency_overrides[get_user_context] = lambda: UserContext(
+        user_id=1,
+        username="powerbi_user",
+        email="powerbi@enterprise.com",
+        role=UserRole.ANALYST,
+        status=UserStatus.ACTIVE,
+        is_authenticated=True,
+    )
     yield
     app.dependency_overrides.clear()
 

@@ -16,8 +16,8 @@
   <a href="#"><img src="https://img.shields.io/badge/Streamlit-1.48+-red.svg" alt="Streamlit"></a>
   <a href="#"><img src="https://img.shields.io/badge/Docker-Ready-2496ED.svg" alt="Docker"></a>
   <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License MIT"></a>
-  <a href="#"><img src="https://img.shields.io/badge/version-v12.0.0-brightgreen" alt="Version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-201%20passing-success" alt="Tests"></a>
+  <a href="#"><img src="https://img.shields.io/badge/version-v13.0.0-brightgreen" alt="Version"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-329%20passing-success" alt="Tests"></a>
 </p>
 
 <p align="center">
@@ -33,15 +33,15 @@
 
 ## 📊 Quick Overview
 
-| **Data Pipeline** | **REST API** | **Business Intelligence** | **Modern UI** | **AI‑Ready** |
-| :---------------: | :----------: | :-----------------------: | :-----------: | :----------: |
-| Ingest, clean, validate & analyse data end‑to‑end | FastAPI with OpenAPI 3.1 & interactive docs | Power BI ready endpoints & dashboard integration | Streamlit frontend – interactive & responsive | Built for AI insights, recommendations & automation |
+| **Data Pipeline** | **REST API** | **Business Intelligence** | **Modern UI** | **Enterprise Identity & Multi-User** | **AI‑Ready** |
+| :---------------: | :----------: | :-----------------------: | :-----------: | :-----------------------------------: | :----------: |
+| Ingest, clean, validate & analyse data end‑to‑end | FastAPI with OpenAPI 3.1 & interactive docs | Power BI ready endpoints & dashboard integration | Streamlit frontend – interactive & responsive | PBKDF2 hashing, JWT tokens, RBAC & cross-tenant data isolation | Built for AI insights, recommendations & automation |
 
-- **Architecture**: Layered + REST + BI  
+- **Architecture**: Layered + REST + BI + Multi-Tenant Identity
 - **Database**: SQLite (dev) + PostgreSQL (prod)  
 - **Frontend**: Streamlit (React‑ready for future)  
-- **AI Engine**: Ollama + Gemma (with provider abstraction)  
-- **Testing**: 180+ passing tests
+- **AI Engine**: Ollama + Qwen/Gemma (with provider abstraction)
+- **Testing**: 329 passing tests
 
 ---
 

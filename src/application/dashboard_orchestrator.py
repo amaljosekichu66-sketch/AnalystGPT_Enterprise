@@ -53,6 +53,7 @@ class DashboardOrchestrator:
     def get_dashboard(
         self,
         dataset: str,
+        user_context: Any | None = None,
     ) -> dict[str, Any]:
         """
         Execute the analytics pipeline and return dashboard information.
@@ -64,6 +65,8 @@ class DashboardOrchestrator:
         ----------
         dataset : str
             Path to the dataset.
+        user_context : UserContext | None
+            Optional authenticated security context.
 
         Returns
         -------
@@ -81,9 +84,15 @@ class DashboardOrchestrator:
             )
 
         # Use cached or run new pipeline
-        result = self._application.get_or_run(
-            input_path=dataset,
-        )
+        try:
+            result = self._application.get_or_run(
+                input_path=dataset,
+                user_context=user_context,
+            )
+        except TypeError:
+            result = self._application.get_or_run(
+                input_path=dataset,
+            )
 
         return self._build_dashboard(
             result,

@@ -77,6 +77,25 @@ class SchemaManager:
                 )
 
             # -------------------------------------------------
+            # Users (Sprint 13 Identity Foundation)
+            # -------------------------------------------------
+
+            cursor.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS users(
+                    id {pk},
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    hashed_password TEXT NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'ANALYST',
+                    status TEXT NOT NULL DEFAULT 'ACTIVE',
+                    created_at {ts} NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at {ts} NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+                """
+            )
+
+            # -------------------------------------------------
             # Pipeline Runs
             # -------------------------------------------------
 
@@ -84,8 +103,12 @@ class SchemaManager:
                 f"""
                 CREATE TABLE IF NOT EXISTS pipeline_runs(
                     id {pk},
+                    user_id INTEGER,
                     execution_time {ts} NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    status TEXT NOT NULL
+                    status TEXT NOT NULL,
+                    FOREIGN KEY (user_id)
+                        REFERENCES users(id)
+                        ON DELETE SET NULL
                 );
                 """
             )
@@ -99,12 +122,16 @@ class SchemaManager:
                 CREATE TABLE IF NOT EXISTS datasets(
                     id {pk},
                     pipeline_run_id INTEGER NOT NULL,
+                    user_id INTEGER,
                     dataset_name TEXT NOT NULL,
                     row_count INTEGER NOT NULL,
                     column_count INTEGER NOT NULL,
                     FOREIGN KEY (pipeline_run_id)
                         REFERENCES pipeline_runs(id)
-                        ON DELETE CASCADE
+                        ON DELETE CASCADE,
+                    FOREIGN KEY (user_id)
+                        REFERENCES users(id)
+                        ON DELETE SET NULL
                 );
                 """
             )
@@ -157,14 +184,41 @@ class SchemaManager:
                 CREATE TABLE IF NOT EXISTS reports(
                     id {pk},
                     pipeline_run_id INTEGER NOT NULL,
+                    user_id INTEGER,
                     report_path TEXT NOT NULL,
                     generated_time {ts} NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (pipeline_run_id)
                         REFERENCES pipeline_runs(id)
-                        ON DELETE CASCADE
+                        ON DELETE CASCADE,
+                    FOREIGN KEY (user_id)
+                        REFERENCES users(id)
+                        ON DELETE SET NULL
                 );
                 """
             )
+
+            # -------------------------------------------------
+            # Column Migrations (Sprint 13 Multi-User Upgrade)
+            # -------------------------------------------------
+
+            for table_name in ["pipeline_runs", "datasets", "reports"]:
+                try:
+                    cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN user_id INTEGER;")
+                    self._database_connection.commit()
+                except Exception:
+                    self._database_connection.rollback()
+
+            # -------------------------------------------------
+            # Performance Indexes (Sprint 13 Phase 3)
+            # -------------------------------------------------
+
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_pipeline_runs_user_id ON pipeline_runs(user_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_datasets_user_id ON datasets(user_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_datasets_pipeline_run_id ON datasets(pipeline_run_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_pipeline_run_id ON reports(pipeline_run_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_quality_reports_pipeline_run_id ON quality_reports(pipeline_run_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_analytics_reports_pipeline_run_id ON analytics_reports(pipeline_run_id);")
 
             self._database_connection.commit()
 

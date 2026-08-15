@@ -9,6 +9,8 @@ Responsibilities
 This module intentionally contains no endpoint logic.
 """
 
+from .admin import admin_router
+from .auth import auth_router
 from .health import router as health_router
 from .pipeline import router as pipeline_router
 from .root import router as root_router
@@ -19,4 +21,6 @@ __all__ = [
     "health_router",
     "version_router",
     "pipeline_router",
+    "auth_router",
+    "admin_router",
 ]

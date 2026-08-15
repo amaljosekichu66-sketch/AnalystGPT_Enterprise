@@ -403,6 +403,15 @@ Reason:
 
 ---
 
+# Sprint 14 Planned Export Reliability & Ownership Evolution
+
+In Sprint 14, report exports are extended with:
+- **Authenticated Ownership Scoping**: Export endpoints strictly enforce authenticated tenant checks (`user_id`), preventing cross-user unauthorized report downloads (IDOR defense).
+- **Export Idempotency**: Repeated export requests for the same report run return stable artifacts without disk corruption or duplicate database records.
+- **Direct Streaming & File Integrity**: Direct file streaming contracts for text and PDF exports ensuring valid binary payloads across REST API and frontend clients.
+
+---
+
 # Related ADRs
 
 - ADR-007 — Application Layer Orchestration
@@ -410,6 +419,7 @@ Reason:
 - ADR-014 — Dashboard Service Pattern
 - ADR-015 — Streamlit Frontend Architecture
 - ADR-017 — Frontend Service Layer Pattern
+- ADR-024 — Enterprise Identity and Multi-User Architecture
 
 ---
 

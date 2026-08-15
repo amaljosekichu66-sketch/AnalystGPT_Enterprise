@@ -26,12 +26,12 @@
 
 | Item | Status |
 |------|--------|
-| Current Version | **v12.0.0** |
-| Previous Version | v11.0.0 |
+| Current Version | **v13.0.0** |
+| Previous Version | v12.0.0 |
 | Repository Status | 🟢 Stable Release |
-| Current Sprint | ✅ Sprint 12 Complete |
-| Current Focus | **Sprint 13 — Enterprise Identity & Multi-User Platform** |
-| Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction + AI Insight Engine + Production Deployment |
+| Current Sprint | ✅ Sprint 13 Complete |
+| Current Focus | **Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness** |
+| Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction + AI Insight Engine + Production Deployment + Enterprise Identity & RBAC Multi-User Platform |
 | Application Layer | ✅ Stable |
 | Persistence Layer | ✅ Stable |
 | Database Abstraction Layer | ✅ Stable |
@@ -40,6 +40,11 @@
 | Frontend Layer | ✅ Stable |
 | AI Layer | ✅ Stable |
 | Production Deployment & Docker | ✅ Stable |
+| Enterprise Identity & RBAC | ✅ Complete |
+| User Authentication & Sessions | ✅ Complete |
+| Resource Ownership & Isolation | ✅ Complete |
+| Admin User Management | ✅ Complete |
+| Security Audit Trail | ✅ Complete |
 | Power BI Integration | ✅ Complete |
 | Enterprise Streamlit Frontend | ✅ Complete |
 | Dashboard | ✅ Complete |
@@ -55,7 +60,7 @@
 | Swagger | ✅ Operational |
 | Docker Multi-Stage Build | ✅ Operational |
 | Docker Compose Topology | ✅ Operational |
-| Automated Testing | ✅ 201 tests passing |
+| Automated Testing | ✅ 329 tests passing |
 | Performance Validation | ✅ Completed |
 | Technical Debt | 🟢 Very Low |
 
@@ -771,6 +776,83 @@ Docker Compose Topology
 
 ---
 
+## Sprint 13 — Enterprise Identity & Multi-User Platform ✅
+
+### Phase Breakdown
+
+| Phase | Description | Status |
+|---|---|---|
+| **Phase 1** | **Architecture Reconnaissance & Foundation** | ✅ **Complete** |
+| **Phase 2** | **Core Identity & Authentication Engine** | ✅ **Complete** |
+| **Phase 3** | **Resource Ownership & Data Isolation** | ✅ **Complete** |
+| **Phase 4** | **API Security & Role-Based Access Control (RBAC)** | ✅ **Complete** |
+| **Phase 5** | **Frontend Authentication & Sprint Closure** | ✅ **Complete** |
+
+### Delivered
+
+- Domain user models (`User`, `UserRole`, `UserStatus`, `UserCreate`, `UserUpdate`, `UserResponse`, `UserLogin`, `TokenResponse`, `LogoutResponse`, `AdminUserUpdate`, `PaginatedUserResponse`)
+- Cryptographic password hasher (`PBKDF2PasswordHasher` with PBKDF2-HMAC-SHA256, 600,000 iterations, 16-byte random salt)
+- Signed stateless token service (`TokenService` with HMAC-SHA256 and standard JWT claims)
+- Server-side token revocation tracking (`TokenRevocationService`)
+- Domain `UserService` managing user lifecycle, authentication, timing-attack mitigation, and last-admin safeguards
+- Repository persistence for users across SQLite and PostgreSQL (`UserRepository`, `InMemoryUserRepository`)
+- Database schema migrations for `users` table and `user_id` ownership foreign keys/indexes
+- Server-side query scoping and IDOR prevention across datasets, pipeline runs, and reports
+- Multi-user in-memory application cache isolation (`_user_pipeline_results`)
+- Declarative RBAC permission matrix and FastAPI dependency injection (`require_permission`, `require_role`, `get_user_context`)
+- Authentication API endpoints (`POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`)
+- Administrative user management API endpoints (`GET /api/admin/users`, `GET /api/admin/users/{user_id}`, `PATCH /api/admin/users/{user_id}`, `DELETE /api/admin/users/{user_id}`)
+- Structured security audit logging (`AuditService`) with zero-credential leakage sanitization
+- Streamlit authentication UI (`login_page.py`) and role-aware navigation
+- Frontend session management with authentication token persistence and cross-tenant session purging (`SessionManager`)
+- Frontend `APIClient` automatic `Authorization: Bearer <token>` injection
+- Frontend `AuthService` and administrative user management view (`admin_page.py`)
+- ADR-024 (`docs/adr/ADR-024-Enterprise-Identity-and-Multi-User-Architecture.md`)
+- 128 new automated security, unit, integration, and frontend tests (329 total tests passing)
+
+### Achievements
+
+- Transformed application from a single-user tool into an authenticated, multi-user enterprise platform
+- Implemented strict server-side resource ownership and data isolation preventing IDOR vulnerabilities
+- Preserved 100% backward compatibility across all business modules and existing API contracts
+- Enforced declarative RBAC with clear role boundaries (`ADMIN`, `ANALYST`, `VIEWER`)
+- Delivered enterprise sign-in and administrative management in the Streamlit frontend
+
+### Validation
+
+- ✅ Full automated regression test suite: 329 tests passed (0 failures, 0 regressions)
+- ✅ Cryptographic password hashing and constant-time verification validated
+- ✅ Token issuance, signature verification, expiration, and revocation validated
+- ✅ Cross-user data isolation and tenant cache partitioning verified
+- ✅ IDOR prevention across API endpoints and repositories verified
+- ✅ RBAC permission matrices and 401/403 HTTP semantics verified
+- ✅ Frontend authentication gating and cross-tenant session cleanup verified
+
+### Output
+
+```text
+Browser / API Client
+       │
+       ▼
+FastAPI Authentication Boundary (Bearer Token)
+       │
+       ▼
+Security Request Context (UserContext + RBAC)
+       │
+       ▼
+Application.run(user_context=...)
+       │
+       ├── Business Modules (Upload, Clean, Quality, Analytics, Reporting, AI)
+       │
+       ▼
+Persistence Layer (Scoped by user_id)
+       │
+       ▼
+Database Repositories (Isolated per Tenant)
+```
+
+---
+
 # Release Timeline
 
 | Version | Release |
@@ -790,8 +872,8 @@ Docker Compose Topology
 | **v10.0.0** | **Enterprise Streamlit Frontend** ✅ |
 | **v11.0.0** | **AI Insight Engine** ✅ |
 | **v12.0.0** | **Production Deployment** ✅ |
-| *v13.0.0* | *Enterprise Identity & Multi-User Platform* 📋 |
-| *v14.0.0* | *Observability, Security & Reliability Engineering* 📋 |
+| **v13.0.0** | **Enterprise Identity & Multi-User Platform** ✅ |
+| *v14.0.0* | *UX Stabilization, Performance, Data Governance & React Migration Readiness* 📋 |
 | *v15.0.0* | *React Migration & Modern Presentation Layer* 📋 |
 
 ---
@@ -802,310 +884,397 @@ The following sprints build upon the enterprise architecture
 introduced in Sprint 5.5, persistence from Sprint 6, database
 abstraction from Sprint 7, REST API from Sprint 8, Business
 Intelligence from Sprint 9, Presentation Layer from Sprint 10,
-AI Insight Engine from Sprint 11, and Production Deployment from Sprint 12.
+AI Insight Engine from Sprint 11, Production Deployment from Sprint 12,
+and Enterprise Identity & Multi-User Platform from Sprint 13.
 
 ---
 
-## Sprint 13 — Enterprise Identity & Multi-User Platform 📋
+## Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness 📋
+
+> **Status:** PLANNED / NOT YET IMPLEMENTED
 
 ### Objective
 
-Transform AnalystGPT Enterprise from a primarily single-user analytics application into a secure, multi-user enterprise platform with authentication, authorization, role-based access control, user-owned resources, session management, and auditable user activity while preserving existing API, analytics, AI, database, and frontend contracts.
-
-### Scope & Planned Deliverables
-
-#### Authentication
-- User registration workflow
-- Secure password hashing (strict cryptographic hashing e.g., bcrypt/argon2; plaintext password storage is strictly forbidden)
-- User login and credential validation
-- User logout and session invalidation
-- Authentication and session management mechanism
-- Access-token / session state handling
-- Session expiration and renewal policies
-- Current authenticated user profile endpoint (`GET /api/auth/me`)
-- Authentication dependencies and security middleware
-- Protected API routes enforcing authentication
-
-#### Multi-User Domain & Ownership Model
-- User entity and domain model (`User`)
-- User repository abstraction (`UserRepository`)
-- Application-level user management service (`UserService`)
-- User lifecycle management (creation, activation, deactivation)
-- Dataset ownership (`user_id` ownership association)
-- Pipeline-run ownership and tracking
-- Report ownership
-- AI-report ownership
-- Evolution of resource architecture from a globally shared single-user model to user-owned resource isolation (`User → Application Resources`)
-
-#### Role-Based Access Control (RBAC)
-- Responsibility boundaries defined for initial roles:
-  - **ADMIN**:
-    - User administration and provisioning
-    - Role management and assignment
-    - User activation and deactivation
-    - Full administrative system access
-  - **ANALYST**:
-    - Upload datasets
-    - Execute analytics pipelines
-    - Generate reports
-    - Generate AI insights
-    - Access resources they own or are authorized to use
-  - **VIEWER**:
-    - View permitted dashboards and reports
-    - Read-only analytics access
-    - No dataset mutation or pipeline execution
-    - No administrative operations
-- Pragmatic permission model avoiding premature over-engineering
-
-#### Data Isolation & Server-Side Authorization (Core Requirement)
-- Mandatory server-side resource ownership and authorization verification
-- **Core Invariant**: A user must not be able to access another user's datasets, pipeline runs, reports, or AI reports merely by knowing or guessing their resource ID
-- Authorization must never rely solely on hiding UI elements
-- Ownership and authorization strictly enforced through the API, application, and persistence boundaries
-
-#### API Authentication
-- Conceptual authentication endpoints:
-  - `POST /api/auth/register` — User account registration
-  - `POST /api/auth/login` — User authentication and session/token issuance
-  - `POST /api/auth/logout` — User logout and session invalidation
-  - `GET /api/auth/me` — Current authenticated user profile
-  - `POST /api/auth/refresh` — Session refresh / token renewal
-- Backward compatibility preserved across existing API contracts (`/api/pipeline/run`, `/api/dashboard/*`, `/api/health`, `/api/version`)
-- Implementation detail neutrality without prematurely binding to specific token formats before formal architectural selection
-
-#### Frontend Authentication
-- Authentication boundary integrated into the Streamlit frontend
-- Conceptual user flow:
-  ```text
-  Login
-    │
-    ▼
-  Authenticated Application
-    │
-    ▼
-  Dashboard / Upload / Reports / AI Insights / About
-  ```
-- Frontend consumes authentication through the existing frontend service/API architecture (`AuthService` / `ApiClient`) rather than embedding backend business logic into Streamlit
-
-#### Admin User Management
-- List existing users with status and role metadata
-- Create new user accounts administratively
-- Activate and deactivate user accounts
-- Assign and modify user roles
-- View basic user status and activity summaries
-
-#### Audit Trail & Security Events
-- Auditable security-sensitive foundation capturing:
-  - `USER_CREATED`
-  - `LOGIN_SUCCESS`
-  - `LOGIN_FAILED`
-  - `LOGOUT`
-  - `ROLE_CHANGED`
-  - `USER_DISABLED`
-  - `DATASET_UPLOADED`
-  - `REPORT_CREATED`
-  - `REPORT_ACCESSED`
-- Structured event logging establishing an auditable enterprise baseline without building a full SIEM
-
-#### Security & Multi-User Testing
-- Valid authentication flow verification
-- Invalid credentials and authentication failure handling
-- Inactive and disabled user rejection
-- Authentication and session lifecycle validation
-- Server-side authorization and RBAC permission enforcement
-- Protected endpoints security testing
-- Resource ownership validation
-- Cross-user data isolation verification (verifying unauthorized resource access is blocked)
-- Administrative privilege and boundary restrictions
-- Frontend authentication workflow validation
-- Full automated regression test suite execution
-
-### Sprint 13 Definition of Done
-
-- [ ] Authentication implemented
-- [ ] Authorization implemented
-- [ ] RBAC implemented
-- [ ] User persistence implemented
-- [ ] Resource ownership implemented
-- [ ] Cross-user data isolation verified
-- [ ] API protection verified
-- [ ] Frontend authentication verified
-- [ ] Administrative user management implemented
-- [ ] Audit events implemented
-- [ ] Security tests passing
-- [ ] Full regression suite passing
-- [ ] Documentation synchronized
-- [ ] Definition of Done satisfied
+Stabilize the Streamlit presentation layer, improve user experience and perceived performance, correct report/export defects, introduce transparent data-cleaning governance, decouple AI generation from dashboard rendering, establish clear AI job lifecycle and failure isolation, and prepare stable frontend/API contracts for the planned React migration.
 
 ---
 
-## Sprint 14 — Observability, Security & Reliability Engineering 📋
+### Critical Architectural Principles
 
-### Objective
+**Pipeline completion must not depend on AI generation completion.**
 
-Establish production-grade observability, security hardening, reliability controls, operational diagnostics, backup/recovery validation, and performance characterization for the now multi-user AnalystGPT Enterprise platform.
+The pipeline API must return the deterministic analytical result first, while AI generation is dispatched as a separate asynchronous job. This resolves the 45–70 second UX problem where users wait for Ollama before seeing any dashboard content.
 
-### Scope & Planned Deliverables
+**Privacy-safe AI context by default.**
 
-#### Application Observability
-- Comprehensive operational metrics and visibility:
-  - API request throughput and volume
-  - API latency percentiles and response time distributions
-  - HTTP status code distributions (2xx, 4xx, 5xx)
-  - Pipeline execution frequency and duration
-  - Pipeline failure counts and error categorizations
-  - Dataset processing and cleaning execution times
-  - Database operation durations and connection pool metrics
-  - AI inference duration and token utilization
-  - AI provider failures and timeout occurrences
-  - Authentication failure rates and anomalous activity
-  - Active session tracking where practical
+Do not transmit the complete raw dataset to the LLM. Instead, provide structured source-data quality metadata and aggregated analytical context. This protects PII and keeps context sizes manageable.
 
-#### Structured Operational Logging
-- Extend Sprint 12 production logging into structured operational logging
-- Contextual log fields:
-  - `timestamp`
-  - `service`
-  - `request_id`
-  - `user_id` (where appropriate)
-  - `operation`
-  - `duration`
-  - `status`
-  - `error_classification`
-- Strict credential hygiene: Never log passwords, tokens, API keys, secrets, or sensitive credentials
+**Cleaning preview before destructive transformations.**
 
-#### Request Correlation
-- End-to-end request / correlation ID propagation across service layers:
+Analysts must review and approve cleaning policies before execution, preventing silent information loss.
+
+---
+
+### Technology-Neutral Architecture
+
+Asynchronous execution uses a **replaceable background-job abstraction**; implementation must not couple the application layer to a specific queue/worker technology. This allows the simplest reliable mechanism now and evolution toward Celery/Redis/etc. later if actual load requires it.
+
+---
+
+## Scope & Planned Deliverables
+
+---
+
+#### Phase 1 — Frontend UX Stabilization
+
+- Fix Dashboard initial scroll position (should open at the top).
+- Fix Reports initial scroll position (should open at the top).
+- Redesign Dashboard information hierarchy.
+- Move AI Insights into dedicated navigation item, separate from Dashboard.
+- Preserve About as public page.
+- Maintain role-aware Admin navigation.
+- Improve loading, empty, error, and transition states.
+- Ensure navigation does not unnecessarily trigger expensive backend operations.
+
+---
+
+#### Phase 2 — AI Execution, Job Lifecycle & Performance
+
+**Asynchronous AI Job Architecture**
+
+- Introduce asynchronous AI generation execution boundary:
+  - Pipeline request returns deterministic analytical results immediately.
+  - AI generation is dispatched as a separate background job.
+  - Dashboard and Reports are renderable before AI generation completes.
+
+- Implement AI generation job lifecycle:
+  - Persist AI generation status independently of frontend session state (stored in database).
+  - Associate AI generation jobs with `pipeline_run_id`, `user_id`, and `report_id`.
+  - State machine: `PENDING → GENERATING → READY / FAILED`.
+  - Automatically initiate AI generation after successful pipeline completion.
+
+- Duplicate prevention and idempotency:
+  - Prevent duplicate AI generation for an already-completed pipeline/report.
+  - Define retry behavior for transient AI failures (configurable retries, exponential backoff).
+
+- Status and observability:
+  - Surface AI generation status in AI Insights page with progress indicators.
+  - Allow frontend clients to poll or retrieve AI generation status without blocking pipeline execution.
+  - Persist generation timestamps, model/provider metadata, and failure information.
+
+- Failure isolation (critical):
+  - AI generation failures must not invalidate an otherwise successful analytics pipeline.
+  - Pipeline success ≠ AI success. Both are independent outcomes.
+
+**Performance Benchmarking**
+
+- Establish performance baselines:
+  - API response latency (p50, p95, p99)
+  - Dashboard load time
+  - Pipeline execution time (cleaning, quality, analytics, reporting)
+  - AI generation time (Ollama, with and without optimizations)
+  - Report generation and export times
+
+- Define measurable performance acceptance criteria.
+- Record benchmark methodology and results.
+- Detect performance regressions against established baselines.
+- Benchmark Ollama latency and investigate optimization opportunities (model quantization, prompt size reduction, provider tuning).
+- Preserve provider/model abstraction for future cloud or alternative LLM providers.
+
+---
+
+#### Phase 3 — Data Cleaning Governance & Lineage
+
+**Immutable Raw Dataset Storage**
+
+- Preserve immutable raw uploaded dataset through a versioned artifact-storage abstraction.
+- Store dataset with checksum/hash and metadata persisted in the database.
+- The application should not care whether storage is local filesystem, S3, GCS, or Azure Blob.
+
+- Maintain cleaned analytical dataset separately (database table or separate artifact).
+
+**Configurable Missing-Value Policies**
+
+- Implement configurable policies:
+  - Preserve NULLs
+  - Remove rows with missing values
+  - Remove columns above threshold
+  - Fill numeric (mean/median/mode)
+  - Fill categorical (mode/constant)
+  - Custom policy
+
+**Cleaning Preview & Approval Workflow**
+
+- Add explicit pipeline state: `UPLOADED → PROFILED → CLEANING_POLICY_REVIEW → USER_APPROVES/MODIFIES → CLEANING → QUALITY → ANALYTICS → REPORTING → AI_JOB`.
+- Allow analysts to review cleaning policy before execution.
+- Display impact assessment: rows affected, columns affected, percentage of data altered.
+- Analyst can approve, modify, or reject the cleaning policy.
+- Selected policy is persisted with the pipeline run.
+
+**Cleaning Provenance & Lineage**
+
+- Record cleaning decisions and transformation statistics:
+  - Rows removed and percentage
+  - Columns affected
+  - Missing value treatment applied per column
+
+- Expose before/after data-quality metrics (completeness, validity, consistency).
+- Prevent silent information loss – notify user when cleaning materially changes the dataset.
+
+- Assign immutable identifiers and checksums/hashes to source dataset versions.
+- Persist cleaning configuration (policy version, parameters) associated with each pipeline run.
+- Ensure analytical results are reproducible from the source dataset and recorded transformation configuration.
+
+- Enable traceability:
   ```text
-  Client
-    │ (X-Request-ID)
-    ▼
-  FastAPI Layer
-    │ (Correlation Context)
-    ▼
-  Application Layer
-    │ (Context Propagation)
-    ▼
-  Business Modules
-    │
-    ▼
-  Database / AI Layer
-    │
-    ▼
-  Structured Logs
+  Original Dataset
+        │
+        ▼
+  Dataset Version (ID + checksum)
+        │
+        ▼
+  Cleaning Configuration (versioned)
+        │
+        ▼
+  Cleaning Execution
+        │
+        ▼
+  Analytical Dataset
+        │
+        ▼
+  Pipeline Run
+        │
+        ├── Quality Report
+        ├── Analytics Report
+        ├── Business Report
+        └── AI Report
   ```
-- Full request traceability across the entire system boundary
 
-#### Operational Health & Readiness Semantics
-- Distinct operational health endpoints with meaningful semantics:
-  - `GET /api/health` — High-level platform health
-  - `GET /api/live` — Liveness probe (process responsiveness)
-  - `GET /api/ready` — Readiness probe (dependency health: PostgreSQL connectivity, AI service availability, filesystem access)
-- Meaningful operational health checks supporting container orchestrators, reverse proxies, and monitoring tools
+- Expose cleaning provenance in the UI and in report metadata.
 
-#### Reliability Engineering
-- Controlled and resilient handling of operational failure modes:
-  - Database unavailable or disconnected
-  - Database operation timeout
-  - AI provider outage or rate-limiting
-  - AI inference timeout
-  - External service failures
-  - Malformed or oversized requests
-  - Large or resource-intensive processing jobs
-- Reliability mechanisms:
-  - Configurable timeouts across network, database, and AI boundaries
-  - Carefully scoped retries for idempotent operations (strictly avoiding retries for non-idempotent operations without duplicate-operation risk analysis)
-  - Graceful degradation (e.g., analytics and reporting continue even if AI insights are temporarily unavailable)
-  - Failure classification and structured error responses
+---
 
-#### Security Hardening
-- Comprehensive review and hardening of security posture:
-  - Authentication configuration and credential policies
-  - Server-side authorization enforcement across all endpoints
-  - Session and token security policies (secure storage, expiration, revocation)
-  - Rate limiting on authentication and resource-intensive endpoints
-  - Strict Cross-Origin Resource Sharing (CORS) configuration
-  - Standard security headers (HSTS, Content-Security-Policy, X-Content-Type-Options, X-Frame-Options)
-  - Strict request schema validation and payload size limits
-  - Sanitization of error responses (no internal stack traces or database internals exposed to clients)
-  - Environment secret handling and production configuration validation
-  - Sensitive data filtering in application logs
+#### Phase 4 — AI Data Context & Analytical Integrity
 
-#### Container Security Hardening
-- Build upon Sprint 12 Docker infrastructure (without redesigning container architecture):
-  - Non-root user execution enforcement
-  - Minimal runtime image footprints
-  - Container dependency vulnerability analysis
-  - Secret handling and environment variable hygiene
-  - Filesystem permission hardening
-  - Minimal exposed network ports
-  - Network isolation between services
-  - Container healthcheck tuning
-  - Resource limits and reservations where appropriate
+**Privacy-Safe AI Context**
 
-#### Dependency & Supply-Chain Security
-- Automated security scanning integrated into CI workflows:
-  - Python dependency vulnerability scanning
-  - Container image vulnerability scanning
-  - Known vulnerable package detection
-  - Security configuration auditing
-- Non-breaking integration into CI quality gates preserving existing blocking standards
+- Provide AI with structured source-data quality metadata:
+  - Original row count
+  - Missing values (per column)
+  - Duplicate rows
+  - Invalid values
+  - Outlier counts
 
-#### Backup & Disaster Recovery Validation
-- PostgreSQL automated backup strategy
-- Backup retention expectations and schedules
-- Documented database restore procedure
-- Verified restore validation (proving data recovery works in practice rather than relying on theoretical commands)
-- End-to-end disaster recovery workflow
+- Provide AI with **aggregated analytical context** rather than the complete raw dataset:
+  - Descriptive statistics
+  - Distributions
+  - Categorical frequencies
+  - Correlations
+  - Quality results
 
-#### Performance & Load Characterization
-- Multi-user platform behavior characterization under load:
-  - Request latency percentiles (p50, p95, p99)
-  - Request throughput (requests per second)
-  - Database query response times under concurrency
-  - Pipeline execution duration under concurrent uploads
-  - CPU and memory resource consumption profiles
-  - AI inference latency under load
-  - Error and failure rates under stress
-- Engineering characterization aimed at identifying bottlenecks and capacity limits without asserting false production claims from local development hardware
+- Include cleaning transformations and data-loss statistics in AI context.
+- Prevent AI from interpreting removed missing values as evidence that the original dataset had no missing data.
 
-#### Reliability Testing
-- Fault injection and API failure testing
-- Database failure and reconnection testing
-- Authentication failure and brute-force protection testing
-- AI provider failure and timeout fallback testing
-- Request timeout handling testing
-- Malformed request fuzzing and payload limit testing
-- Concurrent multi-user load testing
-- Service-unavailable scenario testing
-- Health and readiness probe validation
-- Container graceful startup, shutdown, and restart testing
-- Recovery and restore behavior testing
+- Distinguish source-data observations from post-cleaning analytical findings:
+  - Label insights clearly: "Based on the cleaned dataset of 1,480 rows (original: 2,358)…"
+  - Add analytical caveats when cleaning materially changes the dataset.
 
-### Sprint 14 Definition of Done
+**Optional Controlled Raw-Data Access**
 
-- [ ] Structured logging implemented
-- [ ] Request correlation implemented
-- [ ] Operational metrics implemented
-- [ ] Health/readiness model implemented
-- [ ] Failure classification implemented
-- [ ] Reliability controls implemented
-- [ ] Security hardening implemented
-- [ ] Rate limiting implemented
-- [ ] Dependency/security scanning implemented
-- [ ] Container security review completed
-- [ ] Backup strategy implemented
-- [ ] Restore validation completed
-- [ ] Performance/load characterization completed
-- [ ] Reliability tests passing
-- [ ] CI security gates operational
+- Implement optional controlled raw-data sampling only where analytically justified.
+- Never expose unnecessary PII to the AI context by default.
+- Clearly label whether an insight is based on source metadata, cleaned analytical results, or approved sample data.
+
+---
+
+#### Phase 5 — Reporting & Export Reliability
+
+- Repair Report download functionality (ensure generated file is correct and downloadable).
+- Repair PDF export (generate valid PDF with structured content).
+- Validate generated files (check integrity, format).
+
+- Ensure repeated export requests do not corrupt or unintentionally duplicate persisted report artifacts.
+- Validate export behavior for the same report across repeated requests (idempotency).
+- Ensure exports respect authenticated user ownership (only the owner or ADMIN can access).
+
+- Establish frontend-independent report export contracts (API endpoints return file streams or pre-generated URLs).
+- Add export integration tests.
+
+---
+
+#### Phase 6 — React Migration Readiness
+
+**Critical Gate: Backend Usable Without Streamlit**
+
+- Core application workflows must be exercisable through REST APIs without Streamlit.
+- No business logic required by Sprint 15 resides exclusively inside Streamlit components.
+- React migration can consume existing API contracts without backend redesign.
+- Streamlit is treated as a presentation client rather than an application-layer dependency.
+
+**API Contracts & Typing**
+
+- Freeze and document frontend/backend API contracts (OpenAPI 3.1).
+- Stabilize typed API response models (ensure all fields are necessary and stable).
+- Generate/validate frontend API types from the authoritative OpenAPI contract where practical.
+- Add API contract tests covering request and response schemas.
+- Validate backward compatibility of existing API endpoints.
+- Validate standardized API error responses (status codes, error codes, messages).
+- Validate authentication/authorization behavior across frontend service boundaries.
+
+**Frontend Service Architecture**
+
+- Establish frontend service interfaces independent of Streamlit:
+  - `AuthService`
+  - `DashboardService`
+  - `ReportService`
+  - `AIInsightService`
+  - `UploadService`
+  - `AdminService`
+
+- Separate UI state from business/application logic.
+- Ensure all frontend functionality communicates through service/API boundaries.
+
+- Identify Streamlit-specific code that must not become part of the future React architecture.
+
+**React Migration Mapping**
+
+- Document migration mapping:
+  - Streamlit page → React route
+  - Streamlit component → React component
+  - Streamlit service → React API service
+  - Session state → React state/auth mechanism
+
+- Validate REST API parity required by Sprint 15.
+- Define coexistence strategy for Streamlit + React during migration (e.g., both served by the same backend).
+
+---
+
+#### Phase 7 — Regression, Contract & Quality Validation
+
+**Automated Testing**
+
+- Full automated regression suite (backend and frontend).
+- Frontend integration tests (authentication, upload, dashboard, reports, AI insights, admin).
+- Export tests (download and PDF).
+- AI workflow tests (asynchronous generation, status polling, retries, failure handling).
+- Cleaning-policy tests (all configurable policies, data lineage tracking).
+- Data-lineage tests (traceability from source to final outputs).
+- Multi-user isolation regression tests (ensure Sprint 13 identity/ownership remains intact).
+
+**Concurrency & Resource Testing**
+
+- Concurrent pipeline execution testing.
+- Concurrent AI-generation testing (duplicate job prevention).
+- Multi-user concurrent access testing (resource contention).
+- Resource contention testing for AI generation and database operations.
+
+**Failure Isolation Testing**
+
+- AI generation failure does not fail or corrupt successful pipeline execution.
+- Export failure does not affect persisted reports.
+- Frontend failure does not affect backend pipeline execution.
+- Temporary AI/provider unavailability is represented as an AI-generation failure state rather than an application-wide failure.
+
+**Performance & Security**
+
+- Performance benchmarking and regression comparison.
+- Security contract tests (authentication, authorization, RBAC enforcement).
+
+**Quality Gates**
+
+- Flake8 / Black / Isort / Mypy quality gates.
+- `git diff --check` for whitespace and merge conflict markers.
+- Documentation synchronization (update ARCHITECTURE.md, PROJECT_STATE.md, ADRs).
+- **No Git commit by the assistant** – all changes are reviewed and committed by the lead engineer.
+
+---
+
+## Sprint 14 Definition of Done
+
+### UX & Frontend
+- [ ] Dashboard opens at top
+- [ ] Reports opens at top
+- [ ] AI Insights moved to dedicated navigation item
+- [ ] Navigation does not unnecessarily trigger expensive backend operations
+
+### AI Execution & Job Lifecycle
+- [ ] Pipeline completion is independent of AI generation completion
+- [ ] Dashboard/Reports can render deterministic pipeline results before AI generation completes
+- [ ] AI generation executes asynchronously from pipeline completion
+- [ ] AI generation status is persisted independently of frontend state
+- [ ] AI generation associated with `pipeline_run_id`, `user_id`, `report_id`
+- [ ] AI generation state tracking implemented (`PENDING → GENERATING → READY / FAILED`)
+- [ ] Duplicate AI generation prevented (idempotency)
+- [ ] AI retry/failure behavior defined and tested
+- [ ] AI failure does not invalidate successful pipeline execution
+- [ ] AI job status and generated insights respect authenticated user ownership and ADMIN authorization
+- [ ] Asynchronous execution uses a replaceable background-job abstraction; implementation must not couple the application layer to a specific queue/worker technology
+
+### Performance
+- [ ] Performance baselines established (API latency, dashboard load, pipeline, AI, exports)
+- [ ] Performance acceptance criteria defined
+- [ ] Performance regression comparison completed and documented
+
+### Data Governance & Lineage
+- [ ] Raw dataset preserved through versioned artifact-storage abstraction
+- [ ] Source dataset has immutable identifier and checksum/hash
+- [ ] Cleaned dataset maintained separately
+- [ ] Configurable missing-value policies implemented
+- [ ] Cleaning preview available before destructive transformations
+- [ ] Analyst can approve or modify cleaning policy before execution
+- [ ] Selected policy is persisted with the pipeline run
+- [ ] Cleaning provenance recorded (rows removed, affected columns, percentage, policy details)
+- [ ] Before/after data-quality metrics exposed
+- [ ] Data lineage traceable from source → cleaning → pipeline → reports → AI
+- [ ] Cleaning configuration is versioned and persisted
+- [ ] Cleaning execution is reproducible from recorded configuration
+
+### AI Data Context & Integrity
+- [ ] AI context includes source-data quality metadata
+- [ ] AI receives privacy-safe aggregated analytical context (not complete raw dataset)
+- [ ] AI distinguishes source-data observations from cleaned analytical findings
+- [ ] Analytical caveats included when cleaning materially changes the dataset
+- [ ] Optional controlled raw-data sampling available only where justified
+
+### Reporting & Exports
+- [ ] Report download functional
+- [ ] PDF export functional
+- [ ] Export idempotency verified
+- [ ] Export integration tests passing
+- [ ] Exports respect authenticated user ownership
+
+### React Migration Readiness
+- [ ] Core application workflows can be exercised through REST APIs without Streamlit
+- [ ] No business logic required by Sprint 15 resides exclusively inside Streamlit components
+- [ ] React migration can consume existing API contracts without backend redesign
+- [ ] Streamlit is treated as a presentation client rather than an application-layer dependency
+- [ ] Frontend/backend API contracts frozen and documented
+- [ ] API contract tests implemented (request/response schemas, backward compatibility, error responses)
+- [ ] Typed API response models stabilized
+- [ ] Frontend service interfaces established independent of Streamlit
+- [ ] React migration mapping documented
+- [ ] REST API parity validated for Sprint 15 readiness
+
+### Testing & Quality
 - [ ] Full regression suite passing
-- [ ] Documentation synchronized
+- [ ] Concurrent pipeline execution tested
+- [ ] Concurrent AI generation tested
+- [ ] AI job idempotency tested
+- [ ] Multi-user concurrency tested
+- [ ] AI failure isolation verified
+- [ ] Export failure isolation verified
+- [ ] Performance benchmarking completed and documented
+- [ ] Flake8 / Black / Isort / Mypy quality gates passing
+- [ ] `git diff --check` passing
+- [ ] Documentation synchronized (ARCHITECTURE, PROJECT_STATE, ADRs)
+- [ ] **No Git commit by the assistant** – all changes reviewed and committed by lead engineer
 - [ ] Definition of Done satisfied
 
 ---
 
 ## Sprint 15 — React Migration & Modern Presentation Layer 📋
+
+> **Status:** PLANNED / NOT YET IMPLEMENTED
 
 ### Objective
 
@@ -1278,8 +1447,8 @@ engineering maturity levels:
 | User Interface | ✅ Complete |
 | AI Layer | ✅ Complete |
 | Production Deployment | ✅ Complete |
-| Enterprise Identity & Multi-User | 📋 Sprint 13 |
-| Observability, Security & Reliability | 📋 Sprint 14 |
+| Enterprise Identity & Multi-User | ✅ Complete |
+| UX Stabilization & Data Governance | 📋 Sprint 14 |
 | React Migration | 📋 Sprint 15 |
 
 ---
@@ -1404,7 +1573,7 @@ Current repository state:
 - ✅ Stable Enterprise Architecture
 - ✅ Stable Application Layer
 - ✅ Stable Module Contracts
-- ✅ Stable Automated Test Suite (201 tests passing)
+- ✅ Stable Automated Test Suite (329 tests passing)
 - ✅ Stable Performance Validation
 - ✅ Stable Engineering Documentation
 - ✅ Stable Persistence Layer
@@ -1420,13 +1589,14 @@ Current repository state:
 - ✅ Stable Streamlit Frontend
 - ✅ Stable AI Insight Engine
 - ✅ Stable Production Deployment & Docker Containerization
-- ✅ Sprint 12 Complete
-- 🚀 Ready for Sprint 13 — Enterprise Identity & Multi-User Platform
+- ✅ Stable Enterprise Identity & Multi-User Platform
+- ✅ Sprint 13 Complete
+- 🚀 Ready for Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness
 
 ---
 
-**Current Roadmap Version:** **v12.0.0**
+**Current Roadmap Version:** **v13.0.0**
 
-**Previous Version:** **v11.0.0**
+**Previous Version:** **v12.0.0**
 
-**Next Planned Release:** **v13.0.0 — Enterprise Identity & Multi-User Platform**
+**Next Planned Release:** **v14.0.0 — Sprint 14: UX Stabilization, Performance, Data Governance & React Migration Readiness**

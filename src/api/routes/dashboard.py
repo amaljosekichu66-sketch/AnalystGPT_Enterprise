@@ -22,10 +22,15 @@ from fastapi import (
 from src.api.dependencies.application_dependency import (
     get_application,
 )
+from src.api.dependencies.auth_dependencies import (
+    require_permission,
+)
 from src.application.app import Application
 from src.application.dashboard_orchestrator import (
     DashboardOrchestrator,
 )
+from src.identity.context import UserContext
+from src.identity.permissions import Permission
 from src.integrations.powerbi.powerbi_models import (
     DashboardResponse,
 )
@@ -74,6 +79,9 @@ async def get_dashboard(
         ...,
         description="Absolute path of the dataset.",
     ),
+    context: UserContext = Depends(
+        require_permission(Permission.DASHBOARD_VIEW),
+    ),
     orchestrator: DashboardOrchestrator = Depends(
         get_dashboard_orchestrator,
     ),
@@ -86,6 +94,7 @@ async def get_dashboard(
 
         dashboard = orchestrator.get_dashboard(
             dataset,
+            user_context=context,
         )
 
         pipeline = dashboard["pipeline"]

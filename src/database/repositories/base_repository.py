@@ -204,6 +204,29 @@ class BaseRepository:
             ),
         )
 
+    def get_by_id_scoped(
+        self,
+        record_id: int,
+        user_id: int | None = None,
+    ) -> dict | None:
+        """
+        Retrieve record by ID with server-side user ownership constraint.
+        """
+        if user_id is not None:
+            query = f"""
+            SELECT *
+            FROM {self.TABLE_NAME}
+            WHERE id = ? AND user_id = ?;
+            """
+            return self.fetch_one(query, (record_id, user_id))
+
+        query = f"""
+        SELECT *
+        FROM {self.TABLE_NAME}
+        WHERE id = ?;
+        """
+        return self.fetch_one(query, (record_id,))
+
     # ---------------------------------------------------------
 
     def get_all(
@@ -216,6 +239,29 @@ class BaseRepository:
         ORDER BY id DESC;
         """
 
+        return self.fetch_all(query)
+
+    def get_all_scoped(
+        self,
+        user_id: int | None = None,
+    ) -> list[dict]:
+        """
+        List records ordered by ID DESC with optional user ownership constraint.
+        """
+        if user_id is not None:
+            query = f"""
+            SELECT *
+            FROM {self.TABLE_NAME}
+            WHERE user_id = ?
+            ORDER BY id DESC;
+            """
+            return self.fetch_all(query, (user_id,))
+
+        query = f"""
+        SELECT *
+        FROM {self.TABLE_NAME}
+        ORDER BY id DESC;
+        """
         return self.fetch_all(query)
 
     # ---------------------------------------------------------
@@ -237,3 +283,26 @@ class BaseRepository:
                 record_id,
             ),
         )
+
+    def delete_scoped(
+        self,
+        record_id: int,
+        user_id: int | None = None,
+    ) -> None:
+        """
+        Delete a record with server-side ownership constraint.
+        """
+        if user_id is not None:
+            query = f"""
+            DELETE
+            FROM {self.TABLE_NAME}
+            WHERE id = ? AND user_id = ?;
+            """
+            self.execute(query, (record_id, user_id))
+        else:
+            query = f"""
+            DELETE
+            FROM {self.TABLE_NAME}
+            WHERE id = ?;
+            """
+            self.execute(query, (record_id,))

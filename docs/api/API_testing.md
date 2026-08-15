@@ -6,24 +6,25 @@
 > AnalystGPT Enterprise REST API.
 >
 > It covers local execution, Swagger UI, OpenAPI validation,
-> automated testing, and endpoint verification.
+> automated testing, security validation, and endpoint verification.
 >
-> Current Version: **v8.0.0**
+> Current Version: **v13.0.0**
 
 ---
 
 # API Testing Overview
 
 The REST API is tested through multiple validation layers to ensure
-correctness, reliability, and compatibility.
+correctness, reliability, and security.
 
 Testing includes:
 
 - Automated endpoint testing
-- Request validation
-- Response validation
-- OpenAPI validation
-- Swagger validation
+- Authentication & JWT token verification
+- Role-Based Access Control (RBAC) & 401/403 authorization checks
+- Server-side IDOR prevention and data isolation checks
+- Request & Response validation
+- OpenAPI & Swagger UI validation
 - Integration testing
 - End-to-end pipeline execution
 - Live API verification
@@ -35,9 +36,8 @@ Testing includes:
 Before testing, ensure the following are installed:
 
 - Python 3.11+
-- FastAPI
-- Uvicorn
-- Pytest
+- FastAPI & Uvicorn
+- Pytest & HTTPX
 
 Install project dependencies:
 
@@ -63,399 +63,76 @@ INFO:     Uvicorn running on http://127.0.0.1:8000
 
 ---
 
-# Swagger UI
+# Interactive Documentation
 
-Open your browser:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-Swagger UI allows you to:
-
-- Explore endpoints
-- Submit requests
-- Inspect responses
-- View schemas
-- Test request validation
+- **Swagger UI**: `http://127.0.0.1:8000/docs`
+- **ReDoc**: `http://127.0.0.1:8000/redoc`
+- **OpenAPI Spec**: `http://127.0.0.1:8000/openapi.json`
 
 ---
 
-# ReDoc
+# Automated Test Execution
 
-Alternative documentation:
-
-```text
-http://127.0.0.1:8000/redoc
-```
-
----
-
-# OpenAPI Specification
-
-Generated automatically:
-
-```text
-http://127.0.0.1:8000/openapi.json
-```
-
-Verify that:
-
-- All endpoints appear
-- Request models exist
-- Response models exist
-- Schemas are generated correctly
-
----
-
-# Available Endpoints
-
-| Method | Endpoint |
-|---------|----------|
-| GET | / |
-| GET | /api/health |
-| GET | /api/version |
-| POST | /api/pipeline |
-
----
-
-# Testing Root Endpoint
-
-Request
-
-```http
-GET /
-```
-
-Expected Response
-
-```json
-{
-    "success": true,
-    "application": "AnalystGPT Enterprise",
-    "version": "8.0.0",
-    "status": "running",
-    "documentation": "/docs"
-}
-```
-
-Expected Status
-
-```
-200 OK
-```
-
----
-
-# Testing Health Endpoint
-
-Request
-
-```http
-GET /api/health
-```
-
-Expected Response
-
-```json
-{
-    "success": true,
-    "status": "healthy"
-}
-```
-
-Expected Status
-
-```
-200 OK
-```
-
----
-
-# Testing Version Endpoint
-
-Request
-
-```http
-GET /api/version
-```
-
-Expected Response
-
-```json
-{
-    "success": true,
-    "version": "8.0.0"
-}
-```
-
-Expected Status
-
-```
-200 OK
-```
-
----
-
-# Testing Pipeline Endpoint
-
-Request
-
-```http
-POST /api/pipeline
-```
-
-Body
-
-```json
-{
-    "input_path": "sample_data/customer_data.csv"
-}
-```
-
-Expected Response
-
-```json
-{
-    "success": true,
-    "output_path": "...",
-    "execution_time": 0.08,
-    "error": null
-}
-```
-
-Expected Status
-
-```
-200 OK
-```
-
----
-
-# Testing Invalid Dataset
-
-Request
-
-```json
-{
-    "input_path": "invalid.csv"
-}
-```
-
-Expected Response
-
-```json
-{
-    "success": false,
-    "error": "File not found: invalid.csv"
-}
-```
-
-The API should return a consistent error response.
-
----
-
-# Request Validation Testing
-
-Example
-
-```json
-{}
-```
-
-Expected Result
-
-```
-422 Unprocessable Entity
-```
-
-Validation is automatically handled by Pydantic.
-
----
-
-# Automated API Tests
-
-Run only API tests:
+### Run All API and Security Tests
 
 ```bash
-python -m pytest tests/api -v
+PYTHONPATH=. pytest tests/api/ tests/identity/ -v
 ```
 
-Expected Output
-
-```text
-8 passed
-```
-
----
-
-Run the complete test suite:
+### Run Frontend Authentication Tests
 
 ```bash
-python -m pytest
+PYTHONPATH=. pytest tests/frontend/test_frontend_auth.py -v
 ```
 
-Expected Output
+### Run Full Repository Test Suite
+
+```bash
+PYTHONPATH=. pytest tests/ -q
+```
+
+Expected Output:
 
 ```text
-90 passed
+329 passed in ~4m40s
 0 failed
 0 errors
 ```
 
 ---
 
-# Integration Testing
+# Key Test Modules
 
-The Pipeline endpoint validates the complete workflow:
-
-```text
-HTTP Request
-        │
-        ▼
-API Route
-        │
-        ▼
-Application.run()
-        │
-        ▼
-Upload
-        │
-        ▼
-Cleaning
-        │
-        ▼
-Quality
-        │
-        ▼
-Analytics
-        │
-        ▼
-Reporting
-        │
-        ▼
-Persistence
-        │
-        ▼
-PipelineResponse
-```
-
-This confirms successful integration across all architectural layers.
+| Test Module | Coverage |
+|---|---|
+| `tests/api/test_auth_routes.py` | Registration, login, profile (`/me`), logout, credential validation |
+| `tests/api/test_admin_routes.py` | Admin user listing, role/status mutation, last-admin safeguards |
+| `tests/api/test_auth_dependencies.py` | Bearer token extraction, UserContext resolution, RBAC injection |
+| `tests/identity/test_token_service.py` | HMAC-SHA256 token issuance, claims validation, expiration |
+| `tests/identity/test_password_hasher.py` | PBKDF2-HMAC-SHA256 hashing, salting, constant-time verification |
+| `tests/identity/test_rbac.py` | Declarative RBAC matrices (`ADMIN`, `ANALYST`, `VIEWER`), 401/403 errors |
+| `tests/identity/test_resource_ownership.py` | Server-side query scoping, IDOR immunity, cross-user isolation |
+| `tests/identity/test_audit.py` | Structured audit logging & credential sanitization |
+| `tests/frontend/test_frontend_auth.py` | Streamlit login view, session state management, tenant cleanup |
 
 ---
 
-# Live Validation Checklist
-
-Verify:
-
-- API starts successfully
-- Swagger UI loads
-- ReDoc loads
-- OpenAPI JSON loads
-- Root endpoint responds
-- Health endpoint responds
-- Version endpoint responds
-- Pipeline endpoint executes successfully
-- Reports are generated
-- Database persistence succeeds
-
----
-
-# Error Handling Validation
-
-Verify that the API returns consistent responses for:
-
-- Missing files
-- Invalid JSON
-- Missing request fields
-- Invalid request types
-- Unexpected server errors
-
-All errors should follow the standard error response format.
-
----
-
-# Performance Validation
-
-REST API performance has been validated using:
-
-| Dataset | Status |
-|----------|--------|
-| Sample Dataset | ✅ Passed |
-| Large Dataset (~100K rows) | ✅ Passed |
-| Stress Dataset (~1M rows) | ✅ Passed |
-
-Performance testing confirmed:
-
-- Stable request processing
-- Successful pipeline execution
-- Correct report generation
-- Reliable persistence
-- Consistent API responses
-
----
-
-# Test Coverage
-
-Current API coverage includes:
-
-- Root endpoint
-- Health endpoint
-- Version endpoint
-- Pipeline endpoint
-- Request validation
-- Response validation
-- Swagger generation
-- OpenAPI generation
-- End-to-end pipeline execution
-
----
-
-# Current Validation Status
+# Summary & Status
 
 | Validation | Status |
-|------------|--------|
-| API Endpoints | ✅ Passed |
-| Swagger UI | ✅ Passed |
-| ReDoc | ✅ Passed |
-| OpenAPI | ✅ Passed |
-| Request Validation | ✅ Passed |
-| Response Validation | ✅ Passed |
-| Integration Tests | ✅ Passed |
-| End-to-End Pipeline | ✅ Passed |
-| Automated Tests | ✅ 90 / 90 Passed |
+|---|---|
+| REST API Endpoints | ✅ Passed |
+| Authentication & Tokens | ✅ Passed |
+| RBAC Authorization | ✅ Passed |
+| Server-Side Data Isolation | ✅ Passed |
+| Admin Safety Guards | ✅ Passed |
+| Swagger & OpenAPI Spec | ✅ Passed |
+| Full Automated Test Suite | ✅ **329 / 329 Passed** |
 
 ---
 
-# Future Testing
+**API Version:** **v13.0.0**
 
-Sprint 9 will extend API testing to include:
+**Testing Status:** **329 / 329 Automated Tests Passed (0 Regressions)**
 
-- Power BI connectivity
-- External API consumption
-- Dashboard integration
-- API performance benchmarking
-
-Sprint 12 will introduce:
-
-- Load testing
-- Authentication testing
-- Security testing
-- Docker validation
-- Production deployment testing
-
----
-
-# Summary
-
-The AnalystGPT Enterprise REST API has been validated through automated testing, live endpoint verification, OpenAPI generation, and end-to-end integration testing.
-
-The API Layer remains thin, stateless, and fully separated from business logic while exposing the complete analytics pipeline through stable, well-documented HTTP endpoints.
-
----
-
-**API Version:** **v8.0.0**
-
-**Testing Status:** **90 / 90 Automated Tests Passed**
-
-**Next Milestone:** **Sprint 9 – Power BI Integration**
+**Next Milestone:** **Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness**

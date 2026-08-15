@@ -116,6 +116,14 @@ LOG_FILE_PATH=logs/analystgpt.log
 LOG_MAX_BYTES=10485760
 LOG_BACKUP_COUNT=5
 
+# Identity & Authentication Configuration
+JWT_SECRET_KEY=change_this_to_a_secure_random_64_character_hex_secret_in_production
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+PBKDF2_ITERATIONS=600000
+ADMIN_DEFAULT_USERNAME=admin
+ADMIN_DEFAULT_PASSWORD=ChangeMeAdmin123!
+ADMIN_DEFAULT_EMAIL=admin@analystgpt.enterprise
+
 # AI / Ollama Configuration
 LLM_PROVIDER=ollama
 OLLAMA_HOST=http://host.docker.internal:11434
@@ -140,7 +148,7 @@ OLLAMA_MODEL=gemma3:4b
 
 The GitHub Actions workflow ([`.github/workflows/ci.yml`](file:///Users/amaljose/AnalystGPT_Enterprise/.github/workflows/ci.yml)) executes automatically on pushes and pull requests targeting `main`:
 1. **`quality`:** Blocking validation using Flake8 syntax checks, Flake8 style gates, Black formatting (`black --check`), isort import sorting (`isort --check`), and Mypy static typing (`mypy src`).
-2. **`test`:** Runs full pytest regression suite (201 tests) in Python 3.11 runner.
+2. **`test`:** Runs full pytest regression suite (329 tests) in Python 3.11 runner.
 3. **`docker-build`:** Validates BuildKit compilation of `api`, `frontend`, and `cli` image targets.
 4. **`compose-validation`:** Validates `docker compose config`.
 5. **`compose-integration`:** Starts the full Compose stack, waits for healthchecks, validates live HTTP responses on `/api/health` and `/_stcore/health`, and ensures clean teardown (`docker compose down -v`).
@@ -202,3 +210,6 @@ cat backup_20260814_120000.sql | docker compose exec -T postgres psql -U postgre
 * [x] **Database Isolation:** PostgreSQL is inaccessible from public host ports.
 * [x] **Bounded Log Growth:** `RotatingFileHandler` deterministically caps log disk usage.
 * [x] **Dependency Sanitization:** `requirements.txt` normalized to standard UTF-8.
+* [x] **PBKDF2 Password Hashing:** 600,000 iterations for secure password derivation.
+* [x] **Server-Side Data Isolation:** Scoped queries prevent IDOR across tenants.
+* [x] **JWT Token Security:** Signed tokens with server-side revocation tracking.

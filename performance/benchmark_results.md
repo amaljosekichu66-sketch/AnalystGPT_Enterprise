@@ -218,16 +218,18 @@ architectural regressions while preserving clean separation of concerns.
 
 # Future Benchmarks
 
-Sprint 10 will introduce:
+### Sprint 14 Planned Benchmarks
+- End-to-end API response latency (p50, p95, p99)
+- Dashboard load time and initial scroll rendering
+- Asynchronous AI job lifecycle execution & status polling latency
+- Ollama inference duration across report sizes
+- Multi-user concurrent execution & cache isolation overhead
+- Report export and streaming latency
 
-- Streamlit UI performance
-- Interactive dashboard latency
-- User interaction benchmarks
-- Frontend rendering benchmarks
-- Concurrent dashboard sessions
+*Status:* **Not yet measured — Sprint 14 planned benchmark.**
 
 ---
 
-**Benchmark Version:** v9.0.0
+**Benchmark Version:** v13.0.0
 
-**Status:** ✅ Performance Validation Complete
+**Status:** ✅ Baseline Performance Preserved (Sprint 14 Benchmarks Planned)

@@ -19,6 +19,9 @@ from fastapi import status
 from src.api.dependencies.application_dependency import (
     get_application,
 )
+from src.api.dependencies.auth_dependencies import (
+    require_permission,
+)
 from src.api.models.request_models import (
     PipelineRequest,
 )
@@ -27,6 +30,8 @@ from src.api.models.response_models import (
     PipelineResponse,
 )
 from src.application.app import Application
+from src.identity.context import UserContext
+from src.identity.permissions import Permission
 
 
 router = APIRouter(
@@ -46,6 +51,9 @@ router = APIRouter(
 )
 def execute_pipeline(
     request: PipelineRequest,
+    context: UserContext = Depends(
+        require_permission(Permission.PIPELINE_EXECUTE),
+    ),
     application: Application = Depends(
         get_application,
     ),
@@ -56,6 +64,7 @@ def execute_pipeline(
 
     result = application.run(
         input_path=request.input_path,
+        user_context=context,
     )
 
     ai_response: AIReportResponse | None = None

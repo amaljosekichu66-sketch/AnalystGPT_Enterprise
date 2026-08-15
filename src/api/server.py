@@ -25,6 +25,8 @@ from src.api.exceptions.exception_handlers import (
 )
 
 from src.api.routes import (
+    admin_router,
+    auth_router,
     health_router,
     pipeline_router,
     root_router,
@@ -163,6 +165,18 @@ def register_routes(
         version_router,
         prefix=API_PREFIX,
         tags=["Version"],
+    )
+
+    application.include_router(
+        auth_router,
+        prefix=API_PREFIX,
+        tags=["Authentication"],
+    )
+
+    application.include_router(
+        admin_router,
+        prefix=API_PREFIX,
+        tags=["Administration"],
     )
 
     application.include_router(

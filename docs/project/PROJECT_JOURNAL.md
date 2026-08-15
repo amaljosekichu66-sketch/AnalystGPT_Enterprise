@@ -2123,6 +2123,196 @@ Sprint 12 is officially complete with **201/201 passing tests** and 0 regression
 
 ---
 
+# Sprint 13 — Enterprise Identity & Multi-User Platform
+
+## Overview
+
+Sprint 13 introduces enterprise identity, authentication, role-based access control (RBAC), resource ownership, and cross-user data isolation to AnalystGPT Enterprise, transforming the application from a single-user tool into an authenticated multi-user platform.
+
+---
+
+## Phase 1 — Architecture Reconnaissance & Foundation
+
+### Objectives
+- Conduct deep architectural reconnaissance and lightweight threat modeling.
+- Establish clean domain abstractions for user identity, roles, and status.
+- Implement fine-grained permission enumeration and RBAC role matrix.
+- Implement thread-safe security request context (`UserContext`).
+- Implement cryptographic password hashing (PBKDF2-HMAC-SHA256, 600k iterations).
+- Create abstract repository protocols and in-memory/database user repositories.
+- Add database schema migrations for `users` table and resource ownership foreign keys.
+- Create FastAPI authentication and authorization dependency injection hooks.
+- Register global API exception handlers mapping identity errors to standard HTTP status codes.
+- Create Architecture Decision Record `ADR-024`.
+- Preserve 100% backward compatibility for all existing business modules and API contracts.
+
+### Delivered Artifacts
+- `src/identity/models.py`: `User`, `UserRole`, `UserStatus`, `UserCreate`, `UserUpdate`, `UserResponse`, `UserLogin`.
+- `src/identity/context.py`: `UserContext`, `get_current_user_context`, `set_current_user_context`.
+- `src/identity/permissions.py`: `Permission`, `ROLE_PERMISSIONS`, `has_permission`.
+- `src/identity/interfaces.py`: `IPasswordHasher`, `IUserRepository`, `IAuthenticator`, `IAuthorizationService`.
+- `src/identity/password_hasher.py`: `PBKDF2PasswordHasher`.
+- `src/identity/in_memory_user_repository.py`: `InMemoryUserRepository`.
+- `src/identity/exceptions.py`: Domain security exceptions (`AuthenticationError`, `AuthorizationError`, `PermissionDeniedError`, etc.).
+- `src/database/repositories/user_repository.py`: `UserRepository` database implementation.
+- `src/database/schema_manager.py`: Added `users` table schema and optional `user_id` relations.
+- `src/api/dependencies/auth_dependencies.py`: Dependency injection providers for auth and RBAC.
+- `src/api/exceptions/exception_handlers.py`: Exception handlers for identity errors.
+- `src/core/config.py`: Identity configuration settings.
+- `docs/adr/ADR-024-Enterprise-Identity-and-Multi-User-Architecture.md`: Architecture Decision Record.
+- 54 new automated unit tests in `tests/identity/` and `tests/api/test_auth_dependencies.py`.
+
+---
+
+## Phase 2 — Core Identity & Authentication Engine
+
+### Objectives
+- Implement domain `UserService` coordinating registration, credential validation, account status enforcement, and authentication workflows.
+- Implement cryptographically signed stateless HMAC-SHA256 `TokenService` conforming to JWT claims standard (`sub`, `username`, `email`, `role`, `type`, `iat`, `exp`).
+- Implement `TokenRevocationService` managing server-side token invalidation upon user logout.
+- Implement authentication REST API endpoints:
+  - `POST /api/auth/register` (201 Created)
+  - `POST /api/auth/login` (200 OK)
+  - `GET  /api/auth/me` (200 OK)
+  - `POST /api/auth/logout` (200 OK)
+- Integrate Bearer token extraction and user context resolution with existing FastAPI dependency injection (`get_user_context`, `get_current_active_user`, `require_role`, `require_permission`).
+- Ensure full security review: constant-time password verification, timing attack mitigation on nonexistent users, credential leakage protection, and token validation.
+- Maintain 100% backward compatibility with all business modules and existing API endpoints.
+
+### Delivered Artifacts
+- `src/identity/token_service.py`: `TokenService` implementing `ITokenService`.
+- `src/identity/token_revocation.py`: `TokenRevocationService` implementing `ITokenRevocationService`.
+- `src/identity/user_service.py`: `UserService` domain service.
+- `src/api/routes/auth.py`: Authentication API endpoints (`register`, `login`, `get_current_user_profile`, `logout`).
+- `src/api/dependencies/auth_dependencies.py`: Integrated `Authorization: Bearer <token>` resolution and `get_user_service` provider.
+- `src/identity/models.py`: Added `TokenResponse` and `LogoutResponse` schemas.
+- `tests/identity/test_token_service.py`: 8 unit tests.
+- `tests/identity/test_user_service.py`: 11 unit tests.
+- `tests/api/test_auth_routes.py`: 12 integration tests.
+- Total automated tests expanded to **286 passed tests** (31 new tests in Phase 2).
+
+---
+
+## Phase 3 — Resource Ownership & Data Isolation
+
+### Objectives
+- Transition AnalystGPT Enterprise from authenticated users accessing shared resources to secure, user-owned resources with server-side ownership enforcement.
+- Prevent Insecure Direct Object References (IDOR) across datasets, pipeline runs, reports, and AI insight results.
+- Implement server-side query scoping (`get_by_id_scoped`, `get_all_scoped`, `delete_scoped`) in `BaseRepository`, `PipelineRunRepository`, `DatasetRepository`, and `ReportRepository`.
+- Maintain multi-user in-memory cache isolation in `Application` (`_user_pipeline_results: dict[int | None, PipelineResult]`) ensuring one tenant's cached result is never returned to another tenant.
+- Add database performance indexes on ownership foreign keys for both SQLite and PostgreSQL.
+- Add migration logic to ensure seamless compatibility with existing database instances.
+- Preserve backward compatibility for anonymous / CLI execution (`user_id = None`) while preventing anonymous users from accessing user-owned resources.
+- Validate cross-user data isolation and IDOR protections with a comprehensive automated test suite.
+
+### Delivered Artifacts
+- `src/database/schema_manager.py`: Added safe column migration for `user_id` and created performance indexes on `(user_id)` across `pipeline_runs`, `datasets`, and `reports`.
+- `src/database/repositories/base_repository.py`: Added `get_by_id_scoped`, `get_all_scoped`, and `delete_scoped` helper methods.
+- `src/database/repositories/pipeline_run_repository.py`: Updated `create`, `get_by_id`, `get_all`, and `delete` with user ownership filtering.
+- `src/database/repositories/dataset_repository.py`: Updated `create`, `get_by_id`, `get_all`, `get_by_pipeline_run`, and `delete` with user ownership filtering.
+- `src/database/repositories/report_repository.py`: Updated `create`, `get_by_id`, `get_all`, `get_by_pipeline_run`, `get_latest_report`, and `delete` with user ownership filtering.
+- `src/persistence/persistence_manager.py`: Propagated `user_id` across pipeline execution lifecycle and entity persistence.
+- `src/application/app.py`: Updated `Application` with tenant-isolated pipeline result caching (`_user_pipeline_results`), `get_result_for_user`, and context propagation.
+- `src/application/reporting_orchestrator.py`: Updated `get_reports` to resolve user-scoped results.
+- `src/application/dashboard_orchestrator.py`: Updated `get_dashboard` to pass authenticated security context.
+- `src/api/routes/pipeline.py`: Injected `UserContext` and propagated to `Application.run`.
+- `src/api/routes/reports.py`: Injected `UserContext` and passed `user_id` to `ReportingOrchestrator`.
+- `src/api/routes/dashboard.py`: Injected `UserContext` and passed to `DashboardOrchestrator`.
+- `tests/identity/test_resource_ownership.py`: Comprehensive test suite verifying database repository isolation, IDOR prevention, cache isolation, and API endpoint user scoping.
+- Total automated tests expanded to **291 passed tests** (5 new tests in Phase 3).
+
+---
+
+## Phase 4 — API Security & Role-Based Access Control (RBAC)
+
+### Objectives
+- Establish declarative, centralized authorization across the REST API boundary using FastAPI dependency injection (`require_permission`, `require_role`, `require_authenticated_user`).
+- Enforce strict 401 Unauthorized (unauthenticated, invalid, or expired tokens) vs 403 Forbidden (authenticated active users lacking required permissions or suspended accounts).
+- Implement protected core API routes (`/api/pipeline`, `/reports`, `/powerbi/*`) declaring fine-grained permissions (`PIPELINE_EXECUTE`, `REPORT_VIEW`, `DASHBOARD_VIEW`).
+- Implement administrative user management REST endpoints (`GET /api/admin/users`, `GET /api/admin/users/{user_id}`, `PATCH /api/admin/users/{user_id}`, `DELETE /api/admin/users/{user_id}`) protected by `Permission.USER_MANAGE`.
+- Implement administrative safety guards preventing demotion, deactivation, suspension, or deletion of the last remaining active system administrator.
+- Prevent mass-assignment / overposting vulnerabilities using dedicated schemas (`AdminUserUpdate`, `PaginatedUserResponse`).
+- Implement structured security audit trail service (`AuditService`) with strict sanitization ensuring zero plaintext credentials, hashes, secrets, or tokens enter logs.
+- Protect against privilege escalation attempts and verify ownership + permission interaction.
+
+### Delivered Artifacts
+- `src/identity/permissions.py`: Added `USER_READ` and `AUDIT_READ` permissions and mapped complete RBAC matrix across `ADMIN`, `ANALYST`, and `VIEWER`.
+- `src/identity/models.py`: Added `AdminUserUpdate`, `PaginatedUserResponse`, `AuditEventType`, and `AuditEvent` models.
+- `src/identity/exceptions.py`: Added `AdminOperationError` for administrative guard violations.
+- `src/identity/audit.py`: Created `AuditService` with sanitization against password, hash, token, and secret leakage.
+- `src/identity/user_service.py`: Added `list_users`, `count_users`, `update_user_admin`, `delete_user_admin` with last-admin safeguards and audit event emission.
+- `src/api/dependencies/auth_dependencies.py`: Enhanced `require_permission` and `require_role` with active user enforcement and denial audit logging.
+- `src/api/exceptions/exception_handlers.py`: Registered exception handler for `AdminOperationError` (400 Bad Request).
+- `src/api/routes/admin.py`: Created administrative user management router (`/api/admin/users`).
+- `src/api/routes/pipeline.py`: Protected with `require_permission(Permission.PIPELINE_EXECUTE)`.
+- `src/api/routes/reports.py`: Protected with `require_permission(Permission.REPORT_VIEW)`.
+- `src/api/routes/dashboard.py`: Protected with `require_permission(Permission.DASHBOARD_VIEW)`.
+- `src/api/routes/powerbi.py`: Protected with `require_permission(Permission.REPORT_VIEW)` / `Permission.DASHBOARD_VIEW`.
+- `src/api/routes/__init__.py` & `src/api/server.py`: Exported and registered `admin_router`.
+- `tests/identity/test_rbac.py`: 10 comprehensive RBAC and 401/403 authorization tests.
+- `tests/api/test_admin_routes.py`: 10 integration tests for admin user management and last-admin safeguards.
+- `tests/identity/test_audit.py`: 4 tests for structured audit trail and credential sanitization.
+- Total automated tests expanded from 291 to **315 passed tests** (24 new tests in Phase 4).
+
+---
+
+## Phase 5 — Frontend Authentication, End-to-End Security Integration & Sprint Validation
+
+### Objectives
+- Connect the existing Streamlit frontend to the backend identity, authentication, resource ownership, and RBAC authorization engine.
+- Implement an enterprise Sign In view (`src/frontend/views/login_page.py`) communicating with `POST /api/auth/login`.
+- Extend `SessionManager` (`src/frontend/services/session_manager.py`) with authentication state keys (`AUTH_TOKEN_KEY`, `AUTH_USER_KEY`, `AUTH_STATUS_KEY`), getters, setters, and comprehensive session cleanup (`clear_authenticated_session()`).
+- Upgrade `APIClient` (`src/frontend/services/api_client.py`) with automatic `Authorization: Bearer <token>` injection for authenticated requests, authentication endpoints (`login`, `register`, `me`, `logout`), and administration endpoints (`admin_list_users`, `admin_get_user`, `admin_update_user`, `admin_delete_user`).
+- Create `AuthService` (`src/frontend/services/auth_service.py`) encapsulating login, current user resolution, logout, and administration workflows with friendly error translation.
+- Build administrative user management view (`src/frontend/views/admin_page.py`) visible only to administrators for user inspection and role/status lifecycle management.
+- Update frontend entry point (`src/frontend/streamlit_app.py`) and sidebar (`src/frontend/components/sidebar.py`) with role badges, user identity display, dynamic navigation, and clean logout triggers.
+- Preserve public access to the "About" page while strictly gating "Dashboard", "Upload", "Reports", and "Admin" behind authentication.
+- Thoroughly validate cross-tenant session and data isolation across User A $\to$ logout $\to$ User B lifecycle, ensuring zero cached datasets, reports, or tokens leak between tenants.
+- Validate full regression test suite across the entire repository.
+
+### Delivered Artifacts
+- `src/frontend/services/session_manager.py`: Added authentication session state helpers and cross-tenant session purger.
+- `src/frontend/services/api_client.py`: Enhanced with Bearer token injection, auth routes, and administrative routes.
+- `src/frontend/services/auth_service.py`: Domain frontend service for authentication and user administration.
+- `src/frontend/views/login_page.py`: Enterprise login view with input validation and user-friendly error banners.
+- `src/frontend/views/admin_page.py`: Administrative user management view for user listing and role/status updates.
+- `src/frontend/views/__init__.py`: Exported all frontend views.
+- `src/frontend/services/__init__.py`: Exported all frontend services.
+- `src/frontend/components/sidebar.py`: Updated sidebar with user profile, role badge, navigation, and Sign Out button.
+- `src/frontend/streamlit_app.py`: Integrated authentication state gating and role-aware navigation.
+- `tests/frontend/test_frontend_auth.py`: 14 comprehensive tests verifying frontend authentication, API client header injection, auth service workflows, and cross-tenant data isolation.
+- Total automated tests expanded from 315 to **329 passed tests** (14 new tests in Phase 5).
+
+---
+
+## Sprint 13 Result
+
+Sprint 13 is officially complete with **329/329 passing automated tests** across 66 test modules, zero regressions, and full identity and security integration.
+
+**Release Version:** **v13.0.0**
+
+---
+
+# Sprint 14 — Pre-Sprint Planning & Architectural Foundation
+
+**Date:** August 2026
+
+## Objective
+
+Establish the baseline and technical scope for Sprint 14: UX stabilization, perceived performance improvements, transparent data-cleaning governance, decoupling of AI generation from pipeline rendering via an asynchronous job lifecycle, reporting export reliability, and frontend-independent service interfaces for React migration readiness.
+
+## Approved Scope & Strategy
+
+1. **Frontend UX Stabilization:** Ensure Dashboard and Reports open scrolled to top; reorder metrics and visual hierarchy; separate AI Insights into its own dedicated navigation item; preserve public About page; improve loading and transition states.
+2. **Asynchronous AI Job Lifecycle:** Decouple deterministic analytics pipeline from Ollama LLM execution; implement database-persisted job state machine (`PENDING → GENERATING → READY / FAILED`); prevent duplicate generation; isolate AI failures from core pipeline execution.
+3. **Data Cleaning Governance & Lineage:** Store immutable raw source dataset versions with checksums; maintain separate cleaned analytical dataset; implement configurable missing-value policies; provide cleaning preview/approval workflow; track before/after data-quality metrics and provenance.
+4. **AI Analytical Context & Data Integrity:** Build privacy-safe aggregated prompts; include cleaning transformation metadata to prevent hallucinated data loss assumptions; distinguish source-data observations from post-cleaning analytical findings.
+5. **Reporting & Export Reliability:** Fix report download and PDF export mechanisms; enforce authenticated ownership checks; verify export idempotency.
+6. **React Migration Readiness:** Freeze OpenAPI 3.1 contracts; implement frontend-independent service interfaces (`AuthService`, `DashboardService`, `ReportService`, `AIInsightService`, `UploadService`, `AdminService`); document Streamlit-to-React migration mapping.
+7. **Regression & Quality Validation:** Validate complete test suite (329+ tests), multi-user isolation, concurrent pipeline execution, and CI quality gates.
+
+---
+
 # Journal Summary
 
 | Sprint | Version | Primary Achievement | Status |
@@ -2143,7 +2333,10 @@ Sprint 12 is officially complete with **201/201 passing tests** and 0 regression
 | Sprint 10 | v10.0.0 | Enterprise Streamlit Frontend | ✅ |
 | Sprint 11 | v11.0.0 | AI Insight Engine | ✅ |
 | Sprint 12 | v12.0.0 | Production Deployment & Containerization | ✅ |
+| Sprint 13 | v13.0.0 | Enterprise Identity & Multi-User Platform | ✅ |
+| Sprint 14 | Planned (v14.0.0) | UX Stabilization, Performance, Data Governance & React Migration Readiness | 📋 |
+| Sprint 15 | Planned (v15.0.0) | React Migration & Modern Presentation Layer | 📋 |
 
 ---
 
-**Current Journal Version:** **v12.0.0**
+**Current Journal Version:** **v13.0.0 (Sprint 13 Complete / Sprint 14 Planned)**

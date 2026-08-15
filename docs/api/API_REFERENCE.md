@@ -14,7 +14,7 @@
 >
 > Business logic remains inside the Application Layer.
 >
-> Current Version: **v12.0.0**
+> Current Version: **v13.0.0**
 
 ---
 
@@ -22,447 +22,133 @@
 
 | Item | Value |
 |------|--------|
-| API Version | v12.0.0 |
+| API Version | **v13.0.0** |
 | Framework | FastAPI |
 | Specification | OpenAPI 3.1 |
-| Documentation | Swagger UI |
+| Documentation | Swagger UI & ReDoc |
 | Architecture | REST API |
-| Authentication | Not Required (Sprint 8) |
-| Content Type | application/json |
+| Authentication | Bearer Token (`Authorization: Bearer <token>`) |
+| Password Hashing | PBKDF2-HMAC-SHA256 (600,000 iterations) |
+| Authorization | Declarative RBAC (`ADMIN`, `ANALYST`, `VIEWER`) |
+| Content Type | `application/json` |
 
 ---
 
-# Base URL
+# Base URL & Interactive Docs
 
-Local Development
-
-```text
-http://127.0.0.1:8000
-```
-
----
-
-# Interactive Documentation
-
-Swagger UI
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-ReDoc
-
-```text
-http://127.0.0.1:8000/redoc
-```
-
-OpenAPI Specification
-
-```text
-http://127.0.0.1:8000/openapi.json
-```
-
----
-
-# API Architecture
-
-```text
-Client
-   │
-   ▼
-REST API
-   │
-   ▼
-Request Validation
-   │
-   ▼
-API Route
-   │
-   ▼
-Dependency Injection
-   │
-   ▼
-Application.run()
-   │
-   ▼
-Business Modules
-   │
-   ▼
-Persistence
-   │
-   ▼
-Response Model
-```
-
-The API layer contains no business logic.
-
-All business operations are delegated to the Application Layer.
-
----
-
-# Common Response Format
-
-Successful responses return JSON.
-
-Example
-
-```json
-{
-    "success": true
-}
-```
-
-Failed responses return
-
-```json
-{
-    "success": false,
-    "message": "...",
-    "error": "..."
-}
-```
+| Resource | URL |
+|---|---|
+| Base API URL | `http://127.0.0.1:8000` |
+| Swagger UI | `http://127.0.0.1:8000/docs` |
+| ReDoc | `http://127.0.0.1:8000/redoc` |
+| OpenAPI JSON | `http://127.0.0.1:8000/openapi.json` |
 
 ---
 
 # Endpoint Summary
 
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| GET | / | API Root |
-| GET | /api/health | Health Status |
-| GET | /api/version | Current Version |
-| POST | /api/pipeline | Execute Analytics Pipeline |
+### System & Health Endpoints
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `GET` | `/` | API Root Information | No |
+| `GET` | `/api/health` | Service Health Status | No |
+| `GET` | `/api/version` | Current Application Version | No |
+
+### Authentication Endpoints (`/api/auth`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Register new user account | No |
+| `POST` | `/api/auth/login` | Authenticate & acquire Bearer token | No |
+| `GET` | `/api/auth/me` | Current authenticated user profile | Yes (Active User) |
+| `POST` | `/api/auth/logout` | Invalidate token & logout session | Yes (Active User) |
+
+### Administrative User Management (`/api/admin`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `GET` | `/api/admin/users` | List users with pagination | Yes (`ADMIN` / `USER_MANAGE`) |
+| `GET` | `/api/admin/users/{user_id}` | Get detailed user metadata | Yes (`ADMIN` / `USER_MANAGE`) |
+| `PATCH` | `/api/admin/users/{user_id}` | Update user role or status | Yes (`ADMIN` / `USER_MANAGE`) |
+| `DELETE` | `/api/admin/users/{user_id}` | Delete user account | Yes (`ADMIN` / `USER_MANAGE`) |
+
+### Analytics Pipeline & Execution
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `POST` | `/api/pipeline` | Execute full analytics pipeline | Yes / Scoped |
+| `POST` | `/api/pipeline/run` | Execute pipeline with context & params | Yes / Scoped |
+
+### Business Intelligence & Dashboard (`/api/dashboard`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `GET` | `/api/dashboard/summary` | Executive KPI summaries & metadata | Yes / Scoped |
+| `GET` | `/api/dashboard/correlations` | Numeric correlation matrices | Yes / Scoped |
+| `GET` | `/api/dashboard/distributions` | Distribution metrics & histograms | Yes / Scoped |
+| `GET` | `/api/dashboard/categorical` | Categorical frequencies & counts | Yes / Scoped |
+| `GET` | `/api/dashboard/quality` | Data quality metric scores | Yes / Scoped |
+
+### Reports Centre (`/api/reports`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `GET` | `/api/reports` | List generated reports for user | Yes / Scoped |
+| `GET` | `/api/reports/latest` | Retrieve latest generated report | Yes / Scoped |
+| `GET` | `/api/reports/{report_id}` | Retrieve report by identifier | Yes / Scoped |
 
 ---
 
-# GET /
+# Authentication & Security Details
 
-Returns general information about the API.
+## Headers
 
-## Request
-
-```
-GET /
-```
-
-No request body.
-
----
-
-## Successful Response
-
-HTTP 200
-
-```json
-{
-    "success": true,
-    "application": "AnalystGPT Enterprise",
-    "version": "12.0.0",
-    "status": "running",
-    "documentation": "/docs"
-}
-```
-
----
-
-## Response Fields
-
-| Field | Type | Description |
-|------|------|-------------|
-| success | boolean | Request status |
-| application | string | Application name |
-| version | string | Current version |
-| status | string | Application status |
-| documentation | string | Swagger URL |
-
----
-
-# GET /api/health
-
-Returns current API health.
-
----
-
-## Request
-
-```
-GET /api/health
-```
-
----
-
-## Successful Response
-
-HTTP 200
-
-```json
-{
-    "success": true,
-    "status": "healthy"
-}
-```
-
----
-
-## Response Fields
-
-| Field | Type | Description |
-|------|------|-------------|
-| success | boolean | Request status |
-| status | string | Health status |
-
----
-
-# GET /api/version
-
-Returns the current application version.
-
----
-
-## Request
-
-```
-GET /api/version
-```
-
----
-
-## Successful Response
-
-HTTP 200
-
-```json
-{
-    "success": true,
-    "version": "12.0.0"
-}
-```
-
----
-
-## Response Fields
-
-| Field | Type | Description |
-|------|------|-------------|
-| success | boolean | Request status |
-| version | string | Application version |
-
----
-
-# POST /api/pipeline
-
-Executes the complete AnalystGPT Enterprise pipeline.
-
----
-
-## Request
+For protected endpoints, clients must include the Bearer token in the `Authorization` header:
 
 ```http
-POST /api/pipeline
-Content-Type: application/json
+Authorization: Bearer <jwt_access_token>
 ```
 
----
-
-## Request Body
-
-```json
-{
-    "input_path": "sample_data/customer_data.csv"
-}
-```
-
----
-
-## Request Fields
-
-| Field | Type | Required | Description |
-|------|------|----------|-------------|
-| input_path | string | Yes | Path to dataset |
-
----
-
-## Successful Response
-
-HTTP 200
-
-```json
-{
-    "success": true,
-    "output_path": "reports/analystgpt_report.txt",
-    "execution_time": 0.08,
-    "error": null
-}
-```
-
----
-
-## Failure Response
-
-Example
-
-```json
-{
-    "success": false,
-    "output_path": null,
-    "execution_time": 0.01,
-    "error": "File not found: invalid.csv"
-}
-```
-
----
-
-## Response Fields
-
-| Field | Type | Description |
-|------|------|-------------|
-| success | boolean | Pipeline status |
-| output_path | string/null | Generated report |
-| execution_time | float | Pipeline runtime |
-| error | string/null | Error message |
+## Security Invariants
+1. **Server-Side Ownership Enforcement**: Requests accessing user resources (`datasets`, `pipeline_runs`, `reports`) are strictly scoped to the authenticated `user_id`. Attempting to access another user's resources returns 404 or 403 (IDOR immunity).
+2. **Last-Admin Safeguard**: The system rejects administrative attempts to deactivate, demote, or delete the last remaining active system administrator.
 
 ---
 
 # HTTP Status Codes
 
-| Code | Meaning |
-|------|----------|
-| 200 | Request completed successfully |
-| 400 | Invalid request |
-| 404 | Resource not found |
-| 422 | Request validation failed |
-| 500 | Internal server error |
+| Code | Meaning | Usage |
+|---|---|---|
+| `200` | OK | Request succeeded |
+| `201` | Created | Resource (user/pipeline) created successfully |
+| `400` | Bad Request | Invalid parameter or administrative guard violation |
+| `401` | Unauthorized | Missing, invalid, expired, or revoked Bearer token |
+| `403` | Forbidden | Authenticated user lacks required role/permission or account disabled |
+| `404` | Not Found | Requested resource does not exist or belongs to another user |
+| `409` | Conflict | Resource conflict (e.g., username/email already registered) |
+| `422` | Unprocessable Entity | Pydantic schema validation failure |
+| `500` | Internal Server Error | Unhandled server exception |
 
 ---
 
-# Validation
+# Future API Enhancements (Sprint 14 Planned)
 
-Input validation is performed automatically using Pydantic.
+> **Status:** PLANNED / NOT YET IMPLEMENTED
 
-Examples include:
+The following endpoints are specified for Sprint 14 implementation:
 
-- Missing required fields
-- Invalid JSON
-- Invalid data types
-- Empty dataset path
+### Asynchronous AI Job Lifecycle (`/api/ai`)
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/ai/jobs/{job_id}` | Poll background AI generation job status (`PENDING`, `GENERATING`, `READY`, `FAILED`) |
+| `POST` | `/api/ai/jobs/retry/{job_id}` | Retry a failed AI generation job |
 
-Validation failures return HTTP 422.
+### Data Cleaning Governance & Preview (`/api/cleaning`)
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/cleaning/preview` | Generate cleaning impact assessment without destructive modification |
+| `GET` | `/api/cleaning/lineage/{dataset_id}` | Retrieve provenance metadata and transformation lineage |
 
----
-
-# Error Responses
-
-Global exception handlers provide a consistent error structure.
-
-Example
-
-```json
-{
-    "success": false,
-    "message": "Dataset not found.",
-    "error": "File not found: customer.csv"
-}
-```
-
----
-
-# OpenAPI
-
-The complete API specification is generated automatically.
-
-Location
-
-```text
-/openapi.json
-```
-
----
-
-# Swagger UI
-
-Interactive API documentation is available at
-
-```text
-/docs
-```
-
-Developers can
-
-- Execute requests
-- Inspect schemas
-- Validate responses
-- Test endpoints
-
-without external tools.
-
----
-
-# ReDoc
-
-Alternative documentation
-
-```text
-/redoc
-```
-
-Provides a documentation-focused interface generated directly from the OpenAPI specification.
-
----
-
-# API Models
-
-Current request models
-
-- PipelineRequest
-
-Current response models
-
-- APIResponse
-- RootResponse
-- HealthResponse
-- VersionResponse
-- PipelineResponse
-
----
-
-# Design Principles
-
-The REST API follows the following principles:
-
-- RESTful Design
-- Stateless Communication
-- Thin Controllers
-- Dependency Injection
-- Strong Typing
-- Stable Contracts
-- Separation of Concerns
-- OpenAPI Compliance
-- Consistent Error Responses
-
----
-
-# Future API Enhancements
-
-Planned for future sprints
-
-Sprint 9
-
-- Power BI REST integration
-
-Sprint 10
-
-- Streamlit frontend integration
-
-Sprint 11
-
-- AI Insight endpoints
-
-Sprint 12
-
-- Authentication
-- Authorization
-- Docker deployment
-- Production API configuration
+### Report Exports (`/api/reports/{id}/export`)
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/reports/{id}/export/text` | Stream text report artifact |
+| `GET` | `/api/reports/{id}/export/pdf` | Stream structured PDF report artifact |
 
 ---
 
@@ -470,18 +156,16 @@ Sprint 12
 
 | Item | Status |
 |------|--------|
-| REST API | ✅ Stable |
-| FastAPI | ✅ Operational |
-| Swagger UI | ✅ Operational |
-| OpenAPI | ✅ Generated |
-| Request Validation | ✅ Complete |
-| Response Validation | ✅ Complete |
-| Exception Handling | ✅ Complete |
-| Integration Tests | ✅ Passed |
-| Live Endpoint Validation | ✅ Passed |
+| REST API Layer | ✅ Stable |
+| FastAPI Server | ✅ Operational |
+| Authentication Subsystem | ✅ Complete (v13.0.0) |
+| Role-Based Access Control | ✅ Complete (v13.0.0) |
+| Admin User Management API | ✅ Complete (v13.0.0) |
+| Resource Ownership & IDOR Defense | ✅ Complete (v13.0.0) |
+| Swagger UI & ReDoc | ✅ Operational |
+| OpenAPI 3.1 Spec | ✅ Generated |
+| Automated Integration Tests | ✅ 329 Passed |
 
 ---
 
-**API Version:** **v8.0.0**
-
-**Next Planned API Enhancement:** **Sprint 9 – Power BI Integration**
+**API Version:** **v13.0.0**

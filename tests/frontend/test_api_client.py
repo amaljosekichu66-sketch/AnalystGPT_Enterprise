@@ -39,6 +39,7 @@ def test_get_success(mock_request, client):
         url="/health",
         params=None,
         json=None,
+        headers=None,
     )
 
 
@@ -63,6 +64,7 @@ def test_post_success(mock_request, client):
         url="/pipeline",
         params=None,
         json=payload,
+        headers=None,
     )
 
 
