@@ -51,6 +51,9 @@ class PipelineResult:
         UTC,
     )
 
+    ai_job_id: str | None = None
+    ai_job_status: str | None = None
+
     # ==========================================================
     # Error
     # ==========================================================
@@ -91,6 +94,8 @@ class PipelineResult:
             "success": self.success,
             "output_path": self.output_path,
             "execution_time": self.execution_time,
+            "ai_job_id": self.ai_job_id,
+            "ai_job_status": self.ai_job_status,
             "generated_at": (
                 self.generated_at.isoformat()
             ),

@@ -10,6 +10,12 @@ from __future__ import annotations
 
 import streamlit as st
 
+from src.frontend.services.dashboard_service import (
+    clear_dashboard_cache,
+)
+from src.frontend.services.report_service import (
+    clear_reports_cache,
+)
 from src.frontend.services.session_manager import (
     clear_dataset,
 )
@@ -58,6 +64,17 @@ def render_quick_actions() -> None:
 
             st.rerun()
 
+        if st.button(
+            "🧠 AI Insights",
+            width="stretch",
+        ):
+
+            st.session_state[
+                "current_page"
+            ] = "AI Insights"
+
+            st.rerun()
+
     # ==========================================================
     # Session Actions
     # ==========================================================
@@ -69,6 +86,8 @@ def render_quick_actions() -> None:
             width="stretch",
         ):
 
+            clear_dashboard_cache()
+            clear_reports_cache()
             st.cache_data.clear()
 
             st.rerun()

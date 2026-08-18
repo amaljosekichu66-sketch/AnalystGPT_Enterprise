@@ -121,3 +121,50 @@ def test_text_report_exporter_handles_empty_sections(tmp_path):
     )
 
     assert "No recommendations available." in content
+
+def test_text_report_exporter_with_ai_and_lineage(tmp_path):
+    report = StructuredReport(
+        title="Audited Sales Report",
+        executive_summary="Core sales remained stable.",
+        kpis={"Revenue": "$500k"},
+        analytics={"descriptive": {"rows": 100}},
+        recommendations=["Maintain stock."],
+    )
+
+    ai_report = {
+        "executive_summary": "AI identified rising momentum.",
+        "recommendations": ["AI Rec: Invest in ads."],
+        "explanations": ["Seasonality contributed to stability."],
+        "narrative": "Detailed narrative story.",
+        "model": "qwen2.5-coder:7b",
+        "provider": "ollama",
+    }
+
+    lineage = {
+        "pipeline_run_id": 99,
+        "source_version_id": "src_123",
+        "cleaned_version_id": "clean_456",
+        "cleaning_execution_id": "exec_789",
+        "context_schema_version": "1.0",
+    }
+
+    exporter = TextReportExporter()
+    output_file = tmp_path / "audited_report.txt"
+
+    exporter.export(
+        report=report,
+        output_path=str(output_file),
+        ai_report=ai_report,
+        lineage=lineage,
+    )
+
+    content = output_file.read_text(encoding="utf-8")
+
+    assert "DATASET LINEAGE & PROVENANCE" in content
+    assert "Pipeline Run ID       : 99" in content
+    assert "Source Version ID     : src_123" in content
+    assert "AI INSIGHTS & INTERPRETATION (AI-GENERATED)" in content
+    assert "DISCLAIMER: AI-generated insights provide strategic narratives" in content
+    assert "Model: qwen2.5-coder:7b | Provider: ollama" in content
+    assert "AI Executive Summary:" in content
+    assert "AI Rec: Invest in ads." in content

@@ -26,6 +26,7 @@ from src.api.exceptions.exception_handlers import (
 
 from src.api.routes import (
     admin_router,
+    ai_router,
     auth_router,
     health_router,
     pipeline_router,
@@ -45,16 +46,9 @@ from src.api.routes.reports import (
     router as reports_router,
 )
 
-# ----------------------------------------------------------
-# AI Router
-#
-# Enable this router after the dedicated AI endpoint is
-# implemented (Sprint 12 or later).
-# ----------------------------------------------------------
-#
-# from src.api.routes.ai import (
-#     router as ai_router,
-# )
+from src.api.routes.governance import (
+    router as governance_router,
+)
 
 from src.core.constants import (
     API_DOCS_URL,
@@ -196,21 +190,27 @@ def register_routes(
     )
 
     application.include_router(
+        reports_router,
+        prefix=API_PREFIX,
+        tags=["Reports"],
+    )
+
+    application.include_router(
         powerbi_router,
         tags=["Power BI"],
     )
 
-    # ------------------------------------------------------
-    # AI Router
-    #
-    # Uncomment after AI endpoint implementation.
-    # ------------------------------------------------------
-    #
-    # application.include_router(
-    #     ai_router,
-    #     prefix=API_PREFIX,
-    #     tags=["AI"],
-    # )
+    application.include_router(
+        ai_router,
+        prefix=API_PREFIX,
+        tags=["AI Insights"],
+    )
+
+    application.include_router(
+        governance_router,
+        prefix=API_PREFIX,
+        tags=["Governance"],
+    )
 
 
 register_routes(app)

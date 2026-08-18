@@ -152,3 +152,63 @@ def test_report_http_error(mock_get_path, mock_local, mock_client):
     assert result["source"] == "session"
     mock_client.return_value.__enter__.assert_called_once()
     mock_client.return_value.__exit__.assert_called_once()
+
+
+# ==========================================================
+# Cache Tests
+# ==========================================================
+
+
+def test_clear_reports_cache():
+    """Test clearing the reports cache."""
+    import streamlit as st
+    from src.frontend.services.report_service import clear_reports_cache
+
+    with patch("streamlit.session_state", {"reports_cache": "data", "reports_dataset": "path"}):
+        clear_reports_cache()
+        assert "reports_cache" not in st.session_state
+        assert "reports_dataset" not in st.session_state
+
+
+@patch("src.frontend.services.report_service.get_dataset_path")
+@patch("src.frontend.services.report_service._get_cached_reports")
+def test_report_uses_cache(mock_cache, mock_get_path):
+    """Reports service returns cached data when available."""
+    dataset_path = "/fake/path/dataset.csv"
+    mock_get_path.return_value = dataset_path
+
+    cached_data = {
+        "dataset_loaded": True,
+        "source": "api",
+        "reports": ["Dataset Summary", "Quality Report"],
+        "api_status": {"success": True},
+        "report": {"summary": "Cached summary"},
+        "ai_report": {"executive_summary": "AI Cached"},
+    }
+    mock_cache.return_value = cached_data
+
+    with patch("streamlit.session_state", {}):
+        result = get_report_data()
+
+    assert result["source"] == "api"
+    assert result["reports"] == ["Dataset Summary", "Quality Report"]
+    assert result["report"] == {"summary": "Cached summary"}
+    assert result["ai_report"] == {"executive_summary": "AI Cached"}
+    mock_cache.assert_called_once_with(dataset_path)
+
+# ==========================================================
+# Export Service Tests
+# ==========================================================
+
+
+def test_export_text_and_pdf_report_service():
+    from src.frontend.services.report_service import export_pdf_report, export_text_report
+
+    with patch("streamlit.session_state", {}):
+        text_res = export_text_report()
+        assert "success" in text_res
+        assert "message" in text_res
+
+        pdf_res = export_pdf_report()
+        assert "success" in pdf_res
+        assert "message" in pdf_res

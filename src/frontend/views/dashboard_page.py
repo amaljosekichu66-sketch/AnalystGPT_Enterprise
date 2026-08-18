@@ -3,189 +3,104 @@ Enterprise Dashboard Page
 
 AnalystGPT Enterprise
 
-Sprint 11
+Sprint 14 Remediation — Data Profiling, Null Governance & Visual Analytics.
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from src.core.config import (
-    DATAFRAME_PREVIEW_ROWS,
-)
-
-from src.frontend.components.ai_insights import (
-    render_ai_insights,
-)
-from src.frontend.components.dashboard_summary import (
-    render_dashboard_summary,
-)
-from src.frontend.components.empty_state import (
-    render_empty_state,
-)
-from src.frontend.components.kpi_cards import (
-    render_kpi_cards,
-)
-from src.frontend.components.loading_state import (
-    loading,
-)
-from src.frontend.components.pipeline_status import (
-    render_pipeline_status,
-)
-from src.frontend.components.quick_actions import (
-    render_quick_actions,
-)
-from src.frontend.services.dashboard_service import (
-    get_dashboard_data,
-)
+from src.core.config import DATAFRAME_PREVIEW_ROWS
+from src.frontend.components.charts import render_charts
+from src.frontend.components.column_profile import render_column_profile
+from src.frontend.components.dashboard_summary import render_dashboard_summary
+from src.frontend.components.empty_state import render_empty_state
+from src.frontend.components.kpi_cards import render_kpi_cards
+from src.frontend.components.loading_state import loading
+from src.frontend.components.pipeline_status import render_pipeline_status
+from src.frontend.components.quick_actions import render_quick_actions
+from src.frontend.components.scroll_to_top import scroll_to_top
+from src.frontend.services.dashboard_service import get_dashboard_data
 
 
 def render() -> None:
     """
     Render the enterprise dashboard.
     """
+    scroll_to_top()
 
-    st.title(
-        "📊 Enterprise Dashboard"
-    )
+    st.title("📊 Enterprise Dashboard")
+    st.caption("High-level analytical overview, visual analytics, and operational health of the active dataset.")
 
-    st.caption(
-        "Enterprise overview of the current analytics pipeline."
-    )
-
-    with loading(
-        "Loading dashboard..."
-    ):
-
+    with loading("Loading dashboard analytics..."):
         dashboard_data = get_dashboard_data()
 
     # ==========================================================
-    # Empty State
+    # 1. Empty State
     # ==========================================================
-
-    if not dashboard_data["dataset_loaded"]:
-
+    if not dashboard_data.get("dataset_loaded"):
         render_empty_state(
             title="No Dataset Loaded",
-            message=(
-                "Upload a CSV, Excel or JSON dataset "
-                "from the Upload page."
-            ),
+            message="Upload a CSV, Excel or JSON dataset from the Upload page to view dashboard analytics.",
+            icon="📊",
             button_label="Go to Upload",
+            target_page="Upload",
         )
-
         return
 
-    # ==========================================================
-    # Dataset Banner
-    # ==========================================================
+    df = dashboard_data["dataframe"]
 
-    st.success(
-        f"Current Dataset: {dashboard_data['filename']}"
-    )
+    # ==========================================================
+    # 2. Dataset Context Banner
+    # ==========================================================
+    st.success(f"Active Dataset: **{dashboard_data['filename']}** ({len(df):,} rows, {len(df.columns)} columns)")
 
     st.divider()
 
     # ==========================================================
-    # KPI Cards
+    # 3. Primary Key Performance Indicators (Top-Level)
     # ==========================================================
-
-    render_kpi_cards(
-        dashboard_data,
-    )
+    render_kpi_cards(dashboard_data)
 
     st.divider()
 
     # ==========================================================
-    # Status + Summary
+    # 4. Pipeline Execution & Operational Health Summary
     # ==========================================================
-
-    left, right = st.columns(
-        2,
-        gap="large",
-    )
-
+    left, right = st.columns(2, gap="large")
     with left:
-
-        render_pipeline_status(
-            dashboard_data,
-        )
-
+        render_pipeline_status(dashboard_data)
     with right:
-
-        render_dashboard_summary(
-            dashboard_data,
-        )
+        render_dashboard_summary(dashboard_data)
 
     st.divider()
 
     # ==========================================================
-    # AI Insights
+    # 5. Visual Analytics (2x2 / 3x3 Responsive Grid)
     # ==========================================================
-
-    render_ai_insights(
-        dashboard_data.get(
-            "ai_report",
-        )
-    )
+    st.subheader("📈 Visual Analytics")
+    st.caption("Selective high-value charts planned from semantic column profiles and distributions.")
+    render_charts(df)
 
     st.divider()
 
     # ==========================================================
-    # Quick Actions + Preview
+    # 6. Data Exploration & Schema Overview
     # ==========================================================
+    st.subheader("🔍 Dataset Preview & Semantic Profile")
 
-    left, right = st.columns(
-        [1, 2],
-        gap="large",
-    )
+    tab_preview, tab_schema = st.tabs(["Dataset Preview", "Semantic Column Profile"])
 
-    with left:
+    with tab_preview:
+        st.caption(f"Displaying first {DATAFRAME_PREVIEW_ROWS} rows of dataset.")
+        st.dataframe(df.head(DATAFRAME_PREVIEW_ROWS), width="stretch")
 
-        render_quick_actions()
-
-    with right:
-
-        st.subheader(
-            "🔍 Dataset Preview"
-        )
-
-        st.dataframe(
-            dashboard_data[
-                "dataframe"
-            ].head(
-                DATAFRAME_PREVIEW_ROWS
-            ),
-            width="stretch",
-        )
+    with tab_schema:
+        render_column_profile(df)
 
     st.divider()
 
     # ==========================================================
-    # Dataset Schema
+    # 7. Quick Actions
     # ==========================================================
-
-    st.subheader(
-        "📋 Dataset Schema"
-    )
-
-    schema = (
-        dashboard_data[
-            "dataframe"
-        ]
-        .dtypes
-        .astype(str)
-        .rename("Data Type")
-        .reset_index()
-    )
-
-    schema.columns = [
-        "Column",
-        "Data Type",
-    ]
-
-    st.dataframe(
-        schema,
-        hide_index=True,
-        width="stretch",
-    )
+    render_quick_actions()

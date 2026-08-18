@@ -16,6 +16,7 @@ from __future__ import annotations
 import re
 import time
 from dataclasses import dataclass
+from typing import Any
 
 from src.core.logger import logger
 from src.llm.base_llm import BaseLLM
@@ -151,24 +152,30 @@ class UnifiedReportEngine:
     # Public API
     # ==========================================================
 
-    def generate(self, reporting_report: ReportingReport) -> AISections:
+    def generate(
+        self,
+        reporting_report: ReportingReport | None,
+        data_context: Any | None = None,
+    ) -> AISections:
         """
-        Execute the full report generation pipeline.
+        Generate all four report sections in a single LLM request.
 
         Parameters
         ----------
-        reporting_report : ReportingReport
-            The input report from the analytics stage.
+        reporting_report : ReportingReport | None
+            The input business report containing KPIs and analytics.
+        data_context : AIDataContext | None
+            Optional structured source, cleaning, analytics, and lineage context.
 
         Returns
         -------
         AISections
-            An immutable container with all required sections.
+            Container with the four generated sections.
 
         Raises
         ------
         ValueError
-            If the report is None, the LLM response is empty,
+            If the report is None and data_context is None, the LLM response is empty,
             required sections are missing, or sections are empty.
         RuntimeError
             For unexpected errors during generation or parsing.
@@ -178,8 +185,8 @@ class UnifiedReportEngine:
         This method does not catch exceptions; the caller is responsible
         for handling them (e.g., AIManager wraps them in AIResult).
         """
-        if reporting_report is None:
-            raise ValueError("reporting_report cannot be None.")
+        if reporting_report is None and data_context is None:
+            raise ValueError("reporting_report and data_context cannot both be None.")
 
         logger.info(_LOG_SEPARATOR)
         logger.info("UNIFIED REPORT ENGINE")
@@ -189,7 +196,7 @@ class UnifiedReportEngine:
 
         # ---- Prompt Building ----
         prompt_start = time.perf_counter()
-        prompt = self._build_prompt(reporting_report)
+        prompt = self._build_prompt(reporting_report, data_context=data_context)
         prompt_time = time.perf_counter() - prompt_start
 
         # ---- LLM Call ----
@@ -221,14 +228,20 @@ class UnifiedReportEngine:
     # Prompt Building
     # ==========================================================
 
-    def _build_prompt(self, reporting_report: ReportingReport) -> str:
+    def _build_prompt(
+        self,
+        reporting_report: ReportingReport | None,
+        data_context: Any | None = None,
+    ) -> str:
         """
         Build the full prompt for the LLM.
 
         Parameters
         ----------
-        reporting_report : ReportingReport
+        reporting_report : ReportingReport | None
             The input report.
+        data_context : AIDataContext | None
+            Optional structured data context.
 
         Returns
         -------
@@ -240,7 +253,10 @@ class UnifiedReportEngine:
         ValueError
             If the prompt is empty after construction.
         """
-        prompt = PromptBuilder.full_report(reporting_report)
+        prompt = PromptBuilder.full_report(
+            reporting_report,
+            data_context=data_context,
+        )
 
         if not prompt or not prompt.strip():
             raise ValueError("Built prompt is empty.")

@@ -1,7 +1,14 @@
 """
 Frontend services package for AnalystGPT Enterprise.
+
+Sprint 14 Phase 6 — OpenAPI / React Migration Readiness.
 """
 
+from .admin_service import AdminService
+from .ai_service import (
+    get_ai_job_status,
+    retry_ai_job,
+)
 from .api_client import APIClient
 from .auth_service import AuthService
 from .dashboard_service import get_dashboard_data
@@ -25,10 +32,15 @@ from .session_manager import (
     store_dataset,
     store_pipeline_result,
 )
+from .upload_service import UploadService
 
 __all__ = [
     "APIClient",
     "AuthService",
+    "AdminService",
+    "UploadService",
+    "get_ai_job_status",
+    "retry_ai_job",
     "get_dashboard_data",
     "get_report_data",
     "is_authenticated",

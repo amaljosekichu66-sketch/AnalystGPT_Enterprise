@@ -22,7 +22,7 @@ from src.database.schema_manager import SchemaManager
 from src.database.sqlite_connection import SQLiteConnection
 from src.identity.context import UserContext
 from src.identity.in_memory_user_repository import InMemoryUserRepository
-from src.identity.models import UserCreate, UserLogin, UserRole, UserStatus
+from src.identity.models import User, UserCreate, UserLogin, UserRole, UserStatus
 from src.identity.password_hasher import PBKDF2PasswordHasher
 from src.identity.token_revocation import TokenRevocationService
 from src.identity.token_service import TokenService
@@ -251,24 +251,38 @@ class TestApplicationCacheIsolation:
         self, sample_csv: str
     ) -> None:
         app_instance = Application()
+        app_instance.persistence.initialize()
+        user_repo = app_instance.persistence.user_repository
 
-        context_user_1 = UserContext(
-            user_id=1,
-            username="user_alpha",
-            email="alpha@enterprise.com",
-            role=UserRole.ANALYST,
-            status=UserStatus.ACTIVE,
-            is_authenticated=True,
-        )
+        # Ensure user records exist in DB for FK validation
+        user_1_entity = user_repo.get_by_id(1)
+        if not user_1_entity:
+            user_1_entity = user_repo.create(
+                UserCreate(
+                    username="user_alpha",
+                    email="alpha@enterprise.com",
+                    password="Password123!",
+                    role=UserRole.ANALYST,
+                ),
+                hashed_password="hash",
+            )
 
-        context_user_2 = UserContext(
-            user_id=2,
-            username="user_beta",
-            email="beta@enterprise.com",
-            role=UserRole.ANALYST,
-            status=UserStatus.ACTIVE,
-            is_authenticated=True,
-        )
+        user_2_entity = user_repo.get_by_id(2)
+        if not user_2_entity:
+            user_2_entity = user_repo.create(
+                UserCreate(
+                    username="user_beta",
+                    email="beta@enterprise.com",
+                    password="Password123!",
+                    role=UserRole.ANALYST,
+                ),
+                hashed_password="hash",
+            )
+
+        context_user_1 = UserContext.from_user(user_1_entity)
+        context_user_2 = UserContext.from_user(user_2_entity)
+
+
 
         # Execute for User 1
         result_1 = app_instance.run(
@@ -282,6 +296,7 @@ class TestApplicationCacheIsolation:
 
         # User 2 cache has NOT run yet and is None
         assert app_instance.get_result_for_user(user_id=2) is None
+
 
         # User 3 cache is None
         assert app_instance.get_result_for_user(user_id=3) is None

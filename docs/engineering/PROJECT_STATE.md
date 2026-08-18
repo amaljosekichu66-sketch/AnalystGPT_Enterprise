@@ -28,38 +28,33 @@ Cleaning → Quality → Analytics → Reporting → **AI Insight Engine** → R
 built as a self-directed software engineering exercise to develop production-level
 architecture, testing, and delivery skills.
 
-**Standing as of v13.0.0:** all business modules, the Application orchestration layer,
+**Standing as of v14.0.0:** all business modules, the Application orchestration layer,
 the enterprise-grade Database Abstraction Layer, the REST API Layer, the Business
 Intelligence Integration Layer, the enterprise Streamlit frontend, the **AI Insight Engine**,
-the **Production Deployment Infrastructure**, and the **Enterprise Identity & Multi-User Platform**
-are complete and stable. The project is fully containerized with multi-stage Docker targets,
-orchestrated via Docker Compose, secured with PBKDF2-HMAC-SHA256 password hashing, signed HMAC-SHA256
-access tokens, declarative RBAC, server-side resource ownership and data isolation, monitored with
-bounded rotating file logging, and verified by a 5-job GitHub Actions CI pipeline with 329 automated tests.
+the **Production Deployment Infrastructure**, the **Enterprise Identity & Multi-User Platform**,
+and the **Sprint 14 Enterprise Stabilization Suite** (asynchronous AI job lifecycle, data cleaning
+governance & provenance lineage, semantic profiling & visualization planning, publication-grade
+PDF/TXT reporting, evidence-grounded AI interpretation with strict cardinality/frequency disambiguation)
+are complete, fully integrated, and verified by 531 passing automated tests.
 
-Sprint 13 introduced the **Enterprise Identity & Multi-User Platform**, including:
+Sprint 14 introduced the **Enterprise Stabilization & Governance Platform**, including:
 
-- Domain user entity and role/status lifecycle models (`User`, `UserRole`, `UserStatus`)
-- Cryptographic password hasher (`PBKDF2PasswordHasher` with 600,000 iterations and 16-byte salts)
-- Signed stateless token service (`TokenService`) and server-side token revocation (`TokenRevocationService`)
-- Application-level domain service (`UserService`) coordinating authentication, status, and last-admin guards
-- Database repository implementations (`UserRepository`, `InMemoryUserRepository`) and schema migrations
-- Server-side query scoping and IDOR prevention across `datasets`, `pipeline_runs`, and `reports`
-- Multi-user in-memory application cache isolation (`_user_pipeline_results`)
-- Declarative RBAC permission matrix and FastAPI dependency injection hooks
-- Protected REST API endpoints (`/api/auth/*`, `/api/admin/*`, authenticated `/api/pipeline/run`, etc.)
-- Structured security audit logging (`AuditService`) with zero-credential leakage sanitization
-- Streamlit authentication UI (`login_page.py`), session manager (`SessionManager`), and role-aware navigation
-- Architecture Decision Record (`ADR-024`) and 128 new automated tests (329 total tests passing)
+- Asynchronous AI job lifecycle (`PENDING` → `GENERATING` → `READY` / `FAILED`) with non-blocking background workers and database-backed state machine (`ai_jobs`, `ai_reports`)
+- Transparent data cleaning governance (`CleaningGovernanceService`, `DatasetVersionRepository`, `CleaningExecutionRepository`, immutable blob storage)
+- Semantic data profiling (`SemanticClassifier`, `DataProfiler`) and intelligent chart budgeting (`VisualizationPlanner`)
+- Publication-grade enterprise reporting (`PdfReportExporter`, `TextReportExporter`) with empirical distribution charts, executive KPI summaries, and data lineage cards
+- Evidence-grounded AI serialization in `ReportSerializer` and `PromptBuilder` strictly distinguishing distinct category cardinality from percentage frequencies
+- Grounded categorical terminology guards preventing unobserved "dominance" claims on low-concentration categories
+- Frozen OpenAPI 3.1 contract (`docs/api/openapi.json`) and technology-neutral frontend service layer preparing for React migration (`docs/api/REACT_MIGRATION_MAPPING.md`)
+- 531 automated tests passing with zero flake8 errors, formatted by black/isort, and clean mypy verification across 208 source files.
 
 All existing backend and frontend contracts remain fully backward compatible.
 
-The application has been validated through automated testing (**329 tests passing**),
-integration testing, REST API testing, Swagger validation, large dataset validation,
-stress testing up to approximately one million rows, comprehensive frontend validation,
-AI pipeline validation, and CI workflow validation.
+The application has been validated through automated testing (**531 tests passing**),
+real Streamlit E2E validation against real-world data (`Test_data.xlsx`), live Ollama `gemma3:4b` inference,
+integration testing, REST API contract testing, and CI quality gates.
 
-No open blockers. Repository is sealed for **Sprint 13 / v13.0.0**.
+No open blockers. Repository is sealed for **Sprint 14 / v14.0.0**.
 
 ---
 
@@ -68,12 +63,28 @@ No open blockers. Repository is sealed for **Sprint 13 / v13.0.0**.
 | Area | Status |
 |------|--------|
 | Project | AnalystGPT Enterprise |
-| Version | **v13.0.0** |
-| Repository Status | 🟢 Active Development / Sprint 13 Complete |
-| Current Sprint | ✅ Sprint 13 Complete |
-| Current Focus | **Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness** |
-| Architecture | ✅ Enterprise Layered Architecture + REST API + Streamlit Frontend + AI Insight Engine + Docker Containerization + GitHub Actions CI + Enterprise Identity & Authentication Engine + Resource Ownership & Data Isolation + Declarative RBAC & Admin Management + Frontend Authentication & Session Isolation |
+| Version | **v14.0.0** (Sprint 14 Complete) |
+| Repository Status | 🟢 Release Candidate / Sprint 14 Complete & Verified |
+| Current Sprint | ✅ Sprint 14 Complete (All Phases Accepted & Remediation Validated) |
+| Current Focus | **Sprint 14 Final Release / Ready for Sprint 15** |
+| Architecture | ✅ Enterprise Layered Architecture + REST API + Streamlit Frontend + AI Insight Engine + Docker Containerization + GitHub Actions CI + Enterprise Identity & Authentication Engine + Resource Ownership & Data Isolation + Declarative RBAC & Admin Management + Frontend Authentication & Session Isolation + Stabilized Frontend UX + Asynchronous AI Job Lifecycle & Persistent Background Worker + Semantic Data Profiling & Visual Analytics + Data Cleaning Governance + Publication-Grade PDF/TXT Exporters |
 | Documentation | 🟢 Current |
+| Frontend UX Stabilization | ✅ Complete (Sprint 14 Phase 1 Accepted) |
+| Scroll Reset & Layout Hierarchy | ✅ Complete (Sprint 14 Phase 1 Accepted) |
+| Dedicated AI Insights Page | ✅ Complete (Sprint 14 Phase 1 Accepted) |
+| Role-Aware Navigation & Public About | ✅ Complete (Sprint 14 Phase 1 Accepted) |
+| Session Caching & Backend Call Audit | ✅ Complete (Sprint 14 Phase 1 Accepted) |
+| Asynchronous AI Execution & Decoupling | ✅ Complete (Sprint 14 Phase 2 Accepted) |
+| Persistent AI Job State Machine | ✅ Complete (Sprint 14 Phase 2 Accepted) |
+| Background AI Worker & Retry Isolation | ✅ Complete (Sprint 14 Phase 2 Accepted) |
+| Database Repositories (ai_jobs, ai_reports)| ✅ Complete (Sprint 14 Phase 2 Accepted) |
+| AI REST Endpoints & Status Polling | ✅ Complete (Sprint 14 Phase 2 Accepted) |
+| Data Cleaning Governance & Lineage | ✅ Complete (Sprint 14 Phase 3 Accepted) |
+| AI Data Context & Grounding Integrity | ✅ Complete (Sprint 14 Phase 4 Accepted) |
+| Reporting & PDF/TXT Exporter Redesign | ✅ Complete (Sprint 14 Phase 5 Accepted) |
+| OpenAPI 3.1 & React Migration Readiness| ✅ Complete (Sprint 14 Phase 6 Accepted) |
+| Semantic Profiling & Visual Analytics | ✅ Complete (Sprint 14 Phase 7 Accepted) |
+| AI Grounding & Categorical Remediation | ✅ Complete (Sprint 14 Final Remediation Accepted) |
 | Identity Domain Models & RBAC | ✅ Complete (Sprint 13 Phase 1) |
 | Security Request Context | ✅ Complete (Sprint 13 Phase 1) |
 | Cryptographic Password Hasher | ✅ Complete (Sprint 13 Phase 1) |
@@ -110,11 +121,12 @@ No open blockers. Repository is sealed for **Sprint 13 / v13.0.0**.
 | Power BI Integration | ✅ Complete |
 | Dashboard Service | ✅ Complete |
 | Dashboard Models | ✅ Complete |
-| Streamlit Frontend | ✅ Complete |
-| Dashboard View | ✅ Complete |
+| Streamlit Frontend | ✅ Complete (Stabilized) |
+| Dashboard View | ✅ Complete (Hierarchy Optimized) |
 | Upload Interface | ✅ Complete |
-| Reports Centre | ✅ Complete |
-| About Page | ✅ Complete |
+| Reports Centre | ✅ Complete (Session Cached) |
+| AI Insights Page | ✅ Complete (Dedicated Destination) |
+| About Page | ✅ Complete (Public Access Preserved) |
 | Frontend Components | ✅ Complete |
 | Frontend Services | ✅ Complete |
 | Session Management | ✅ Complete |
@@ -125,14 +137,14 @@ No open blockers. Repository is sealed for **Sprint 13 / v13.0.0**.
 | Docker Compose Topology | ✅ Complete (Sprint 12 Phase 4) |
 | GitHub Actions CI Pipeline | ✅ Complete (Sprint 12 Phase 5) |
 | Deployment Architecture & ADRs | ✅ Complete (Sprint 12 Phase 6) |
-| Automated Testing | ✅ 329 tests passing |
+| Automated Testing | ✅ 531 tests passing |
 | Integration Testing | ✅ Passed |
 | Frontend Validation | ✅ Passed |
 | Large Dataset Validation | ✅ Passed |
 | Stress Testing | ✅ Passed |
-| AI Pipeline Validation | ✅ Passed |
+| AI Pipeline Validation | ✅ Passed (Ollama gemma3:4b verified) |
 | Technical Debt | 🟢 Very Low |
-| Next Sprint | **Sprint 14 — Performance Optimization & High-Concurrency Scaling** |
+| Next Sprint | **Sprint 15 — React Migration & Modern Presentation Layer** |
 
 ---
 
@@ -611,13 +623,13 @@ Sprint 13 has been completed and released (**v13.0.0**).
 
 Objectives:
 
-- **Phase 1 — Frontend UX Stabilization:** Scroll reset on page changes, redesigned hierarchy, dedicated AI Insights page, public About, role-aware Admin nav.
-- **Phase 2 — Asynchronous AI Job Lifecycle:** Decouple pipeline request from Ollama inference; database-backed job state machine (`PENDING → GENERATING → READY / FAILED`), idempotency, failure isolation.
-- **Phase 3 — Data Cleaning Governance & Lineage:** Versioned immutable raw dataset vs separate cleaned analytical dataset, configurable missing-value policies, before/after quality metrics, provenance tracking.
-- **Phase 4 — AI Analytical Context & Data Integrity:** Privacy-safe aggregated context vs source-data quality metadata, cleaning transformation context in prompts.
-- **Phase 5 — Reporting & Export Reliability:** Repair report download & PDF export, ownership verification, export idempotency.
-- **Phase 6 — React Migration Readiness:** OpenAPI 3.1 contract freeze, typed API response models, frontend-independent service interfaces (`AuthService`, `DashboardService`, `ReportService`, `AIInsightService`, `UploadService`, `AdminService`), Streamlit $\to$ React mapping.
-- **Phase 7 — Regression, Contract & Quality Gates:** Full regression suite validation (329+ tests), multi-user isolation tests, CI gates.
+- **Phase 1 — Frontend UX Stabilization:** ✅ Complete — Scroll reset on page changes, redesigned hierarchy, dedicated AI Insights page, public About, role-aware Admin nav.
+- **Phase 2 — Asynchronous AI Job Lifecycle:** ✅ Complete — Decouple pipeline request from Ollama inference; database-backed job state machine (`PENDING → GENERATING → READY / FAILED`), idempotency, failure isolation.
+- **Phase 3 — Data Cleaning Governance & Lineage:** ✅ Complete — Versioned immutable raw dataset vs separate cleaned analytical dataset, configurable missing-value policies, before/after quality metrics, provenance tracking.
+- **Phase 4 — AI Analytical Context & Data Integrity:** ✅ Complete — Privacy-safe aggregated context vs source-data quality metadata, cleaning transformation context in prompts.
+- **Phase 5 — Reporting & Export Reliability:** ✅ Complete — Repaired report download & PDF export via `PdfReportExporter`, authenticated ownership verification, export idempotency, direct REST export endpoints.
+- **Phase 6 — React Migration Readiness:** ✅ Complete — OpenAPI 3.1 contract freeze, strongly typed API response models across all 40 endpoints, frontend-independent service interfaces (`AuthService`, `DashboardService`, `ReportService`, `AIService`, `UploadService`, `AdminService`), Streamlit $\to$ React migration blueprint in `docs/api/REACT_MIGRATION_MAPPING.md`, exported `docs/api/openapi.json`, and contract tests.
+- **Phase 7 — Regression, Contract & Quality Gates:** ✅ Complete — Full regression suite validation (478 tests passing), multi-user isolation tests, AI duplicate-job prevention under concurrency, PDF/Text export validation, OpenAPI 3.1 contract validation, and quality gates.
 
 ---
 

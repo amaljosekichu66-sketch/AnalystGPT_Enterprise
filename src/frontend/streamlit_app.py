@@ -28,6 +28,7 @@ from src.frontend.services.session_manager import (
 from src.frontend.views import (
     about_page,
     admin_page,
+    ai_insights_page,
     dashboard_page,
     login_page,
     report_page,
@@ -46,6 +47,7 @@ PAGES = {
     "Dashboard": dashboard_page.render,
     "Upload": upload_page.render,
     "Reports": report_page.render,
+    "AI Insights": ai_insights_page.render,
     "Admin": admin_page.render,
     "About": about_page.render,
     "Sign In": login_page.render,
@@ -98,6 +100,9 @@ with st.sidebar:
 
         if st.button("📄 Reports", use_container_width=True):
             st.session_state.current_page = "Reports"
+
+        if st.button("🧠 AI Insights", use_container_width=True):
+            st.session_state.current_page = "AI Insights"
 
         if is_admin():
             if st.button("⚙️ User Admin", use_container_width=True):

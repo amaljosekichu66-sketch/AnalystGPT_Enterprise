@@ -56,9 +56,17 @@ class PostgreSQLConnection(DatabaseConnection):
 
     def get_connection(self):
         """
-        Return the active PostgreSQL connection.
+        Return the active PostgreSQL connection, connecting lazily if necessary.
         """
+        if self._connection is None:
+            self.connect()
         return self._connection
+
+    def close(self):
+        """
+        Alias for disconnect.
+        """
+        self.disconnect()
 
     # ---------------------------------------------------------
 

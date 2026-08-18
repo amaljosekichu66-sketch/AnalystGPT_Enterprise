@@ -16,9 +16,23 @@ def render_empty_state(
     message: str,
     icon: str = "📂",
     button_label: str | None = None,
+    target_page: str = "Upload",
 ) -> bool:
     """
     Render a reusable enterprise empty state.
+
+    Parameters
+    ----------
+    title : str
+        Header title for the empty state.
+    message : str
+        Descriptive explanation or next steps.
+    icon : str, default "📂"
+        Emoji or symbol icon displayed above the title.
+    button_label : str | None, default None
+        Optional call-to-action button label.
+    target_page : str, default "Upload"
+        Target page to navigate to when the button is clicked.
 
     Returns
     -------
@@ -71,7 +85,7 @@ def render_empty_state(
 
                 st.session_state[
                     "current_page"
-                ] = "Upload"
+                ] = target_page
 
                 st.rerun()
 

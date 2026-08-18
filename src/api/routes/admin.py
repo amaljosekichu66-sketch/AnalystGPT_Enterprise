@@ -21,6 +21,7 @@ from src.identity.context import UserContext
 from src.identity.models import (
     AdminUserUpdate,
     PaginatedUserResponse,
+    UserDeleteResponse,
     UserResponse,
 )
 from src.identity.permissions import Permission
@@ -137,6 +138,7 @@ async def update_user(
 
 @admin_router.delete(
     "/users/{user_id}",
+    response_model=UserDeleteResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete user account (Admin)",
     description="Delete a user entity with last active administrator protection.",
@@ -145,7 +147,7 @@ async def delete_user(
     user_id: int,
     context: UserContext = Depends(require_permission(Permission.USER_MANAGE)),
     user_service: UserService = Depends(get_user_service),
-) -> dict[str, str | bool | int]:
+) -> UserDeleteResponse:
     """
     Delete a user account.
     """
@@ -154,8 +156,8 @@ async def delete_user(
         actor_context=context,
     )
 
-    return {
-        "success": True,
-        "message": f"User with ID {user_id} deleted successfully.",
-        "user_id": user_id,
-    }
+    return UserDeleteResponse(
+        success=True,
+        message=f"User with ID {user_id} deleted successfully.",
+        user_id=user_id,
+    )

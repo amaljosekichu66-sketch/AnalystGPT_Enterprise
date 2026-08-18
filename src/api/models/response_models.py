@@ -45,9 +45,38 @@ class APIResponse(BaseModel):
         description="Human-readable response message.",
     )
 
-    data: dict[str, Any] = Field(
+    data: Any = Field(
         default_factory=dict,
         description="Endpoint-specific response payload.",
+    )
+
+
+# ==========================================================
+# Standard Error Model
+# ==========================================================
+
+class ErrorResponse(BaseModel):
+    """
+    Standard API error response schema.
+    """
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+    detail: str = Field(
+        ...,
+        description="Human-readable explanation of the error.",
+    )
+
+    error_code: str | None = Field(
+        default=None,
+        description="Machine-readable error classification code.",
+    )
+
+    timestamp: str | None = Field(
+        default=None,
+        description="ISO timestamp when the error occurred.",
     )
 
 
@@ -142,6 +171,34 @@ class AIReportResponse(BaseModel):
 
     execution_time: float
 
+    key_findings: list[str] = Field(
+        default_factory=list,
+    )
+
+    business_implications: list[str] = Field(
+        default_factory=list,
+    )
+
+    risks: list[str] = Field(
+        default_factory=list,
+    )
+
+    opportunities: list[str] = Field(
+        default_factory=list,
+    )
+
+    actions: list[str] = Field(
+        default_factory=list,
+    )
+
+    limitations: list[str] = Field(
+        default_factory=list,
+    )
+
+    confidence: str = Field(
+        default="High (Grounded in Deterministic Analytics)",
+    )
+
 
 # ==========================================================
 # Pipeline Response
@@ -156,6 +213,109 @@ class PipelineResponse(APIResponse):
 
     execution_time: float = 0.0
 
+    ai_job_id: str | None = None
+
+    ai_job_status: str | None = None
+
     ai_report: AIReportResponse | None = None
 
     error: str | None = None
+
+
+# ==========================================================
+# Report Metadata & Response
+# ==========================================================
+
+class ReportSectionItem(BaseModel):
+    """
+    Metadata for an individual report section.
+    """
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+    name: str = Field(
+        ...,
+        description="Report section name.",
+    )
+
+    status: str = Field(
+        default="Available",
+        description="Section availability status.",
+    )
+
+
+class ReportDataResponse(BaseModel):
+    """
+    Report payload returned by reporting endpoints.
+    """
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+    reports: list[ReportSectionItem] = Field(
+        default_factory=list,
+        description="List of available report sections.",
+    )
+
+    report: dict[str, Any] | None = Field(
+        default=None,
+        description="Structured analytics and KPI reporting payload.",
+    )
+
+    ai_report: dict[str, Any] | None = Field(
+        default=None,
+        description="AI-generated insights and narrative payload.",
+    )
+
+    execution_time: float | None = Field(
+        default=None,
+        description="Pipeline execution duration in seconds.",
+    )
+
+    output_path: str | None = Field(
+        default=None,
+        description="File path of the generated report artifact.",
+    )
+
+
+class ReportsListResponse(APIResponse):
+    """
+    Response envelope for the latest reports listing.
+    """
+
+    data: ReportDataResponse = Field(
+        default_factory=ReportDataResponse,
+        description="Reporting metadata and result payload.",
+    )
+
+
+# ==========================================================
+# Dashboard Status Response
+# ==========================================================
+
+class DashboardStatusResponse(BaseModel):
+    """
+    Response model for dashboard status endpoint.
+    """
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
+    application: str = Field(
+        ...,
+        description="Application name.",
+    )
+
+    version: str = Field(
+        ...,
+        description="Current application version.",
+    )
+
+    status: str = Field(
+        ...,
+        description="Current dashboard status.",
+    )

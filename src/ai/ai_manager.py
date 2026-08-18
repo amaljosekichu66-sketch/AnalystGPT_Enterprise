@@ -1,27 +1,28 @@
 """
-AI Insight Engine manager.
+AI Manager Module for AnalystGPT Enterprise.
 
-Coordinates execution of the AI subsystem.
+Sprint 14 Phase 2 — Asynchronous AI Execution, Persistent Job Lifecycle & Performance
+Sprint 14 Phase 4 — AI Data Context & Analytical Integrity
+Sprint 14 Remediation & Phase 2 Quality Gate — Evidence-Based Confidence and Explicit Structured Sections.
+
+Orchestrates the AI insight generation pipeline via UnifiedReportEngine.
 """
 
 from __future__ import annotations
 
 import time
-from dataclasses import fields
 from datetime import UTC, datetime
+from typing import Any
 
 from src.ai.ai_report import AIReport
 from src.ai.ai_result import AIResult
+from src.ai.confidence_evaluator import compute_evidence_confidence
 from src.ai.unified_report_engine import AISections, UnifiedReportEngine
 from src.core import config
 from src.core.logger import logger
+from src.llm.base_llm import BaseLLM
 from src.llm.llm_factory import LLMFactory
 from src.reporting.reporting_report import ReportingReport
-
-
-# ==========================================================
-# Constants
-# ==========================================================
 
 _LOG_SEPARATOR = "=" * 60
 _PROMPT_COUNT = 1
@@ -29,78 +30,53 @@ _PROMPT_COUNT = 1
 
 class AIManager:
     """
-    Coordinates execution of the AI subsystem.
-
-    This manager encapsulates the complete AI insight generation
-    pipeline, including LLM initialization, report generation,
-    validation, logging, and result packaging.
+    Coordinates the execution of the AI Insight Engine.
     """
 
-    def __init__(
-        self,
-    ) -> None:
-        """Initialise the AI subsystem."""
+    def __init__(self, llm: BaseLLM | None = None) -> None:
         logger.info("Initialising AI Manager...")
+        self._llm = llm or LLMFactory.create()
+        self._engine = UnifiedReportEngine(self._llm)
 
-        self._llm = LLMFactory.create()
-
-        logger.info(
-            "LLM Initialised | Provider=%s | Model=%s",
-            config.LLM_PROVIDER,
-            self._llm.model,
-        )
-
-        self._engine = UnifiedReportEngine(
-            self._llm,
-        )
-
-    # ==========================================================
-    # Public API
-    # ==========================================================
+    @property
+    def llm(self) -> BaseLLM:
+        return self._llm
 
     def generate_ai_report(
         self,
         reporting_report: ReportingReport | None,
+        data_context: Any | None = None,
     ) -> AIResult:
         """
-        Generate the complete AI report from a reporting result.
-
-        Exceptions during generation are captured and returned in
-        a failed AIResult so pipeline execution can continue.
+        Generate a complete AI business insight report.
         """
-        if reporting_report is None:
-            return self._failure_result(
-                ValueError("reporting_report cannot be None."),
-                0.0,
-            )
-
-        self._log_start()
+        logger.info(_LOG_SEPARATOR)
+        logger.info("Starting AI Insight Engine...")
+        logger.info(_LOG_SEPARATOR)
 
         start_time = time.perf_counter()
 
         try:
+            if reporting_report is None and data_context is None:
+                raise ValueError("reporting_report cannot be None.")
+
             sections = self._generate_sections(
                 reporting_report,
+                data_context=data_context,
             )
 
-            engine_time = (
-                time.perf_counter() - start_time
-            )
-
+            engine_time = time.perf_counter() - start_time
             build_start = time.perf_counter()
 
             report = self._build_report(
                 sections,
                 engine_time,
+                reporting_report=reporting_report,
+                data_context=data_context,
             )
 
-            build_time = (
-                time.perf_counter() - build_start
-            )
-
-            total_time = (
-                time.perf_counter() - start_time
-            )
+            build_time = time.perf_counter() - build_start
+            total_time = time.perf_counter() - start_time
 
             self._log_success(
                 total_time,
@@ -115,81 +91,49 @@ class AIManager:
             )
 
         except Exception as exc:
-            total_time = (
-                time.perf_counter() - start_time
-            )
-
+            total_time = time.perf_counter() - start_time
             self._log_failure(
                 exc,
                 total_time,
             )
-
             return self._failure_result(
                 exc,
                 total_time,
             )
 
-    # ==========================================================
-    # Internal Helpers
-    # ==========================================================
-
     def _generate_sections(
         self,
-        reporting_report: ReportingReport,
+        reporting_report: ReportingReport | None,
+        data_context: Any | None = None,
     ) -> AISections:
-        """
-        Generate and validate all AI report sections.
-
-        Raises
-        ------
-        TypeError
-            If the engine does not return AISections.
-        ValueError
-            If a required section is None.
-        """
-        logger.info(
-            "Generating AI report using model: %s",
-            self._llm.model,
-        )
-
-        sections = self._engine.generate(
-            reporting_report,
-        )
+        logger.info("Calling UnifiedReportEngine.generate()...")
+        if data_context is not None:
+            sections = self._engine.generate(
+                reporting_report,
+                data_context=data_context,
+            )
+        else:
+            sections = self._engine.generate(
+                reporting_report,
+            )
 
         if not isinstance(sections, AISections):
-            raise TypeError(
-                "UnifiedReportEngine must return AISections. "
-                f"Got {type(sections).__name__} instead."
+            logger.error(
+                "UnifiedReportEngine returned invalid type: %s",
+                type(sections).__name__,
             )
+            raise TypeError("UnifiedReportEngine must return AISections.")
 
-        for section_field in fields(sections):
-            value = getattr(
-                sections,
-                section_field.name,
-            )
+        for field_name in ("executive_summary", "recommendations", "explanations", "narrative"):
+            if getattr(sections, field_name, None) is None:
+                raise ValueError(f"Section '{field_name}' is None.")
 
-            if value is None:
-                raise ValueError(
-                    f"Section '{section_field.name}' is None."
-                )
-
+        logger.info(_LOG_SEPARATOR)
         logger.info("Generated AI sections successfully.")
-        logger.info(
-            "Executive Summary : %d chars",
-            len(sections.executive_summary),
-        )
-        logger.info(
-            "Recommendations   : %d items",
-            len(sections.recommendations),
-        )
-        logger.info(
-            "Explanations      : %d items",
-            len(sections.explanations),
-        )
-        logger.info(
-            "Narrative         : %d chars",
-            len(sections.narrative),
-        )
+        logger.info("Executive Summary : %d chars", len(sections.executive_summary or ""))
+        logger.info("Recommendations   : %d items", len(sections.recommendations or []))
+        logger.info("Explanations      : %d items", len(sections.explanations or []))
+        logger.info("Narrative         : %d chars", len(sections.narrative or ""))
 
         return sections
 
@@ -197,35 +141,62 @@ class AIManager:
         self,
         sections: AISections,
         execution_time: float,
+        reporting_report: ReportingReport | None = None,
+        data_context: Any | None = None,
     ) -> AIReport:
-        """Build an immutable AIReport from generated sections."""
         logger.info("Building AIReport object...")
+
+        expls = sections.explanations or []
+        recs = sections.recommendations or []
+
+        # Extract analytics dictionary if present
+        analytics_data: dict[str, Any] = {}
+        if reporting_report is not None and hasattr(reporting_report, "report") and hasattr(reporting_report.report, "analytics"):
+            raw_analytics = reporting_report.report.analytics
+            if isinstance(raw_analytics, dict):
+                analytics_data = raw_analytics
+
+        # Evidence-based confidence evaluation
+        confidence = compute_evidence_confidence(analytics_data, data_context=data_context)
+
+        # Explicit structured fields without keyword matching
+        key_findings = list(expls)
+        actions = list(recs)
+        opportunities = list(recs)
+        business_implications = expls[:2] if expls else []
+
+        # Dataset-grounded risks & limitations
+        risks: list[str] = []
+        if data_context and hasattr(data_context, "source") and data_context.source.total_missing > 0:
+            risks.append(f"Source dataset contained {data_context.source.total_missing} missing cells requiring pre-processing governance.")
+        else:
+            risks.append("Dataset dimension distribution should be monitored for operational concentrations.")
+
+        limitations: list[str] = [
+            "Observational records describe correlation and distribution; causal conclusions require experimental validation.",
+        ]
+        desc = analytics_data.get("descriptive_statistics", {})
+        if desc.get("numeric_column_count", 0) == 0:
+            limitations.append("The available dataset does not contain governed numerical measure columns; revenue/financial forecasting is unavailable.")
 
         report = AIReport(
             executive_summary=sections.executive_summary,
-            recommendations=sections.recommendations,
-            explanations=sections.explanations,
+            recommendations=recs,
+            explanations=expls,
             narrative=sections.narrative,
             model=self._llm.model,
             provider=config.LLM_PROVIDER,
             execution_time=execution_time,
             prompt_count=_PROMPT_COUNT,
-            # Keep this as datetime, not .isoformat().
-            # AIReport.to_dict() performs serialization.
             generated_at=datetime.now(UTC),
+            key_findings=key_findings,
+            business_implications=business_implications,
+            risks=risks,
+            opportunities=opportunities,
+            actions=actions,
+            limitations=limitations,
+            confidence=confidence,
         )
-
-        if not report.executive_summary.strip():
-            logger.warning("Executive summary is empty.")
-
-        if not report.narrative.strip():
-            logger.warning("Narrative is empty.")
-
-        if not report.recommendations:
-            logger.warning("No recommendations generated.")
-
-        if not report.explanations:
-            logger.warning("No explanations generated.")
 
         return report
 
@@ -234,7 +205,6 @@ class AIManager:
         report: AIReport,
         execution_time: float,
     ) -> AIResult:
-        """Build a successful AIResult."""
         return AIResult(
             success=True,
             ai_report=report,
@@ -247,27 +217,12 @@ class AIManager:
         error: Exception,
         execution_time: float,
     ) -> AIResult:
-        """Build a failed AIResult."""
         return AIResult(
             success=False,
             ai_report=None,
             execution_time=execution_time,
             error=error,
         )
-
-    # ==========================================================
-    # Logging
-    # ==========================================================
-
-    def _log_start(
-        self,
-    ) -> None:
-        """Log AI engine startup information."""
-        logger.info(_LOG_SEPARATOR)
-        logger.info("STARTING AI INSIGHT ENGINE")
-        logger.info("Provider : %s", config.LLM_PROVIDER)
-        logger.info("Model    : %s", self._llm.model)
-        logger.info(_LOG_SEPARATOR)
 
     def _log_success(
         self,
@@ -276,68 +231,28 @@ class AIManager:
         build_time: float,
         report: AIReport,
     ) -> None:
-        """Log successful AI generation metrics."""
         logger.info(_LOG_SEPARATOR)
-        logger.info(
-            "AI Insight Engine completed successfully."
-        )
-        logger.info("Provider : %s", config.LLM_PROVIDER)
-        logger.info("Model    : %s", self._llm.model)
-        logger.info(
-            "Engine Generation : %.3f s",
-            engine_time,
-        )
-        logger.info(
-            "Report Build      : %.3f s",
-            build_time,
-        )
-        logger.info(
-            "Total Time        : %.3f s",
-            total_time,
-        )
-        logger.info(
-            "Prompt Count      : %d",
-            report.prompt_count,
-        )
-        logger.info(
-            "Recommendations   : %d",
-            len(report.recommendations),
-        )
-        logger.info(
-            "Explanations      : %d",
-            len(report.explanations),
-        )
-        logger.info(
-            "Narrative Length  : %d",
-            len(report.narrative),
-        )
-        logger.info(
-            "Executive Summary Length : %d",
-            len(report.executive_summary),
-        )
+        logger.info("AI Insight Engine completed successfully.")
+        logger.info("Provider : %s", report.provider)
+        logger.info("Model    : %s", report.model)
+        logger.info("Engine Generation : %.3f s", engine_time)
+        logger.info("Report Build      : %.3f s", build_time)
+        logger.info("Total Time        : %.3f s", total_time)
+        logger.info("Prompt Count      : %d", report.prompt_count)
+        logger.info("Recommendations   : %d", len(report.recommendations))
+        logger.info("Explanations      : %d", len(report.explanations))
+        logger.info("Narrative Length  : %d", len(report.narrative))
+        logger.info("Executive Summary Length : %d", len(report.executive_summary))
+        logger.info("Assigned Confidence : %s", report.confidence)
         logger.info(_LOG_SEPARATOR)
 
     def _log_failure(
         self,
         error: Exception,
-        execution_time: float,
+        total_time: float,
     ) -> None:
-        """Log AI generation failure details."""
-        logger.exception(
-            "AI generation failed "
-            "| Provider=%s "
-            "| Model=%s "
-            "| Time=%.3fs",
-            config.LLM_PROVIDER,
-            self._llm.model,
-            execution_time,
-        )
-        logger.error(
-            "Exception Type : %s",
-            type(error).__name__,
-        )
-        logger.error(
-            "Exception      : %s",
-            error,
-        )
-        logger.info(_LOG_SEPARATOR)
+        logger.error(_LOG_SEPARATOR)
+        logger.error("AI Insight Engine failed.")
+        logger.error("Error      : %s", error)
+        logger.error("Total Time : %.3f s", total_time)
+        logger.error(_LOG_SEPARATOR)

@@ -125,6 +125,10 @@ DEFAULT_REPORT_FILENAME = (
     "analystgpt_report.txt"
 )
 
+DEFAULT_PDF_REPORT_FILENAME = (
+    "analystgpt_report.pdf"
+)
+
 # ==========================================================
 # Database Configuration
 # ==========================================================
@@ -263,6 +267,13 @@ AI_MAX_RETRIES = int(
     os.getenv(
         "AI_MAX_RETRIES",
         "3",
+    )
+)
+
+AI_RETRY_BASE_DELAY = float(
+    os.getenv(
+        "AI_RETRY_BASE_DELAY",
+        "2.0",
     )
 )
 

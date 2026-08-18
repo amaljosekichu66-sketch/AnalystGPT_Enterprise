@@ -69,6 +69,8 @@ class DashboardResponse(BaseModel):
 
     output_path: str | None = None
 
+    ai_job_id: str | None = None
+
     generated_at: datetime | None = None   # changed from str | None
 
 
@@ -90,6 +92,8 @@ class PipelineSummary(BaseModel):
     execution_time: float | None = None
 
     output_path: str | None = None
+
+    ai_job_id: str | None = None
 
     ai_generated: bool = False
 

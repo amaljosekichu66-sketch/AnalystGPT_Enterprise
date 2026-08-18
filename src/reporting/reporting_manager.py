@@ -1,23 +1,30 @@
 """
 Reporting Manager Module
 
-Coordinates the execution of the reporting pipeline.
+Coordinates the execution of the reporting pipeline and provides
+format-specific report exporters.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 import time
+from typing import Any
 
 from src.analytics.analytics_report import AnalyticsReport
 from src.core.constants import REPORT_TITLE
 from src.core.logger import logger
 from src.reporting.executive_summary import ExecutiveSummary
+from src.reporting.exporters.pdf_report_exporter import (
+    PdfReportExporter,
+)
 from src.reporting.exporters.text_report_exporter import (
     TextReportExporter,
 )
 from src.reporting.kpi_formatter import KPIFormatter
 from src.reporting.report_builder import ReportBuilder
 from src.reporting.reporting_report import ReportingReport
+from src.reporting.structured_report import StructuredReport
 
 
 class ReportingManager:
@@ -38,6 +45,10 @@ class ReportingManager:
 
         self.text_report_exporter = (
             TextReportExporter()
+        )
+
+        self.pdf_report_exporter = (
+            PdfReportExporter()
         )
 
     # ==========================================================
@@ -115,6 +126,40 @@ class ReportingManager:
             execution_time=elapsed_time,
         )
 
+    def export_text(
+        self,
+        report: StructuredReport,
+        output_path: str | Path | None = None,
+        ai_report: Any | None = None,
+        lineage: dict[str, Any] | None = None,
+    ) -> str:
+        """
+        Export a StructuredReport as a text file.
+        """
+        return self.text_report_exporter.export(
+            report=report,
+            output_path=output_path,
+            ai_report=ai_report,
+            lineage=lineage,
+        )
+
+    def export_pdf(
+        self,
+        report: StructuredReport,
+        output_path: str | Path | None = None,
+        ai_report: Any | None = None,
+        lineage: dict[str, Any] | None = None,
+    ) -> str:
+        """
+        Export a StructuredReport as a PDF file.
+        """
+        return self.pdf_report_exporter.export(
+            report=report,
+            output_path=output_path,
+            ai_report=ai_report,
+            lineage=lineage,
+        )
+
     # ==========================================================
     # Internal Helpers
     # ==========================================================
@@ -159,13 +204,7 @@ class ReportingManager:
         self,
     ) -> list[str]:
         """
-        Return the default business
-        recommendations.
-
-        Sprint 12+
-        ----------
-        This method will eventually delegate to
-        configurable recommendation providers.
+        Return the default business recommendations.
         """
 
         return [
@@ -185,7 +224,7 @@ class ReportingManager:
         executive_summary: str,
         kpis,
         recommendations: list[str],
-    ):
+    ) -> StructuredReport:
         """
         Build the structured report.
         """
@@ -206,18 +245,10 @@ class ReportingManager:
 
     def _export_report(
         self,
-        structured_report,
+        structured_report: StructuredReport,
     ) -> str:
         """
-        Export the report.
-
-        Sprint 11
-        ---------
-        Exports a text report.
-
-        Sprint 12
-        ---------
-        Will support PDF, DOCX and HTML exporters.
+        Export the default text report.
         """
 
         logger.info(

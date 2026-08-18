@@ -10,9 +10,10 @@ processing pipeline.
 
 """
 
-
+from __future__ import annotations
 
 import time
+from typing import Any
 
 from datetime import datetime, UTC
 
@@ -54,15 +55,27 @@ from .pipeline_report import PipelineReport
 
 
 
-# AI Layer
+# AI Layer (Sprint 11 & Sprint 14 Phase 2)
+from src.ai.ai_job_service import AIJobService
 from src.ai.ai_manager import AIManager
 from src.ai.ai_result import AIResult
+from src.ai.job_executor import AIJobExecutor
 
 # Identity Layer (Sprint 13)
 from src.identity.context import (
     UserContext,
     get_current_user_context,
 )
+
+# Governance Layer (Sprint 14 Phase 3)
+from src.governance.governance_service import (
+    CleaningGovernanceService,
+    GovernedCleaningError,
+    GovernedExecutionResult,
+)
+from src.governance.models import CleaningConfig, DatasetVersion, MissingValuePolicy
+from src.governance.preview_service import CleaningPreviewResult, CleaningPreviewService
+from src.storage.artifact_store import LocalArtifactStore
 
 
 class Application:
@@ -101,24 +114,39 @@ class Application:
 
         self.reporting_manager = ReportingManager()
 
-
-
+        # -------------------------------------------------
+        # Storage & Governance Layer (Sprint 14 Phase 3)
         # -------------------------------------------------
 
-        # AI Insight Engine
+        self.artifact_store = LocalArtifactStore()
+        self.governance_service = CleaningGovernanceService(
+            artifact_store=self.artifact_store,
+            quality_manager=self.quality_manager,
+            cleaning_manager=self.cleaning_manager,
+        )
+        self.preview_service = CleaningPreviewService(
+            quality_manager=self.quality_manager,
+            cleaning_manager=self.cleaning_manager,
+        )
 
         # -------------------------------------------------
-
-
+        # AI Insight Engine & Job Subsystem (Sprint 14 Phase 2)
+        # -------------------------------------------------
 
         self.ai_manager = AIManager()
-
-
+        self.ai_job_executor = AIJobExecutor(
+            ai_manager=self.ai_manager
+        )
+        self.ai_job_service = AIJobService(
+            job_executor=self.ai_job_executor
+        )
+        try:
+            self.ai_job_service.recover_stale_jobs()
+        except Exception as exc:
+            logger.warning("Could not run stale AI job recovery: %s", exc)
 
         # --------------------------------------------
-
         # Persistence Layer
-
         # --------------------------------------------
 
 
@@ -227,9 +255,13 @@ class Application:
 
             self.persistence.initialize()
 
+            # Ensure user_id exists in the database if specified (to satisfy foreign key)
+            eff_user_id = user_id
+            if eff_user_id is not None and self.persistence.user_repository is not None:
+                if self.persistence.user_repository.get_by_id(eff_user_id) is None:
+                    eff_user_id = None
 
-
-            self.persistence.start_pipeline(user_id=user_id)
+            self.persistence.start_pipeline(user_id=eff_user_id)
 
 
 
@@ -241,41 +273,42 @@ class Application:
 
 
 
-            raw_dataframe = self._upload_dataset(
+            # -------------------------------------------------
+            # Upload & Immutable Artifact Preservation (Sprint 14 Phase 3)
+            # -------------------------------------------------
 
-                input_path
-
+            source_version, raw_dataframe = self.governance_service.register_source_dataset(
+                file_path_or_bytes=Path(input_path),
+                filename=Path(input_path).name,
+                user_id=eff_user_id,
             )
-
-
 
             self.persistence.save_dataset(
-
-                dataset_name=Path(input_path).name,
-
-                row_count=len(raw_dataframe),
-
-                column_count=len(raw_dataframe.columns),
-
+                dataset_name=source_version.source_filename,
+                row_count=source_version.row_count,
+                column_count=source_version.column_count,
+                user_id=eff_user_id,
             )
 
-
-
+            # -------------------------------------------------
+            # Cleaning Configuration & Governed Execution (Sprint 14 Phase 3)
             # -------------------------------------------------
 
-            # Cleaning
-
-            # -------------------------------------------------
-
-
-
-            cleaned_dataframe = self._clean_dataset(
-
-                raw_dataframe
-
+            cleaning_config = self.governance_service.create_default_config(
+                user_id=eff_user_id,
             )
 
+            governed_result = self._clean_dataset_governed(
+                raw_dataframe=raw_dataframe,
+                cleaning_config=cleaning_config,
+                source_version=source_version,
+                pipeline_run_id=self.persistence._pipeline_run_id,
+                user_id=eff_user_id,
+            )
+            cleaned_dataframe = governed_result.cleaned_df
 
+            # Persist all governance artifacts
+            self.persistence.save_governance(governed_result)
 
             # -------------------------------------------------
 
@@ -358,99 +391,43 @@ class Application:
 
 
             # -------------------------------------------------
-
-            # AI Insight Engine (enhancement)
-
+            # Finalise Pipeline – deterministic processing complete
             # -------------------------------------------------
-
-
-
-            ai_result = self._generate_ai(
-
-                reporting_report
-
-            )
-
-
-
-            logger.info("=" * 60)
-
-            logger.info("AI DEBUG")
-
-            logger.info("=" * 60)
-
-
-
-            logger.info("Success      : %s", ai_result.success)
-
-            logger.info("AI Report    : %s", ai_result.ai_report)
-
-            logger.info("Execution    : %s", ai_result.execution_time)
-
-            logger.info("Error        : %s", ai_result.error)
-
-            logger.info("=" * 60)
-
-
-
-            # Optionally persist AI report (Sprint 12)
-
-            # if ai_result.success:
-
-            #     self.persistence.save_ai_report(ai_result)
-
-
-
-            # -------------------------------------------------
-
-            # Finalise Pipeline – everything is complete now
-
-            # -------------------------------------------------
-
-
 
             self.persistence.finish_pipeline()
 
-
-
+            # -------------------------------------------------
+            # Asynchronous AI Insight Job Creation & Dispatch (Sprint 14 Phase 2)
             # -------------------------------------------------
 
+            ai_job = self.ai_job_service.create_and_dispatch_job(
+                pipeline_run_id=self.persistence._pipeline_run_id,
+                reporting_report=reporting_report,
+                user_id=user_id,
+                report_id=self.persistence._report_id,
+            )
+
+            # -------------------------------------------------
             # Pipeline Summary
-
             # -------------------------------------------------
-
-
 
             self._log_pipeline_summary(
-
                 quality_report,
-
                 analytics_report,
-
                 reporting_report,
-
-                ai_result,
-
+                ai_job=ai_job,
             )
-
-
 
             execution_time = (
-
                 time.perf_counter() - start_time
-
             )
 
-
-
             result = self._build_pipeline_result(
-
                 reporting_report=reporting_report,
-
-                ai_result=ai_result,
-
+                ai_result=None,
                 execution_time=execution_time,
-
+                ai_job_id=ai_job.job_id,
+                ai_job_status=ai_job.status.value,
             )
 
 
@@ -729,6 +706,63 @@ class Application:
 
 
 
+    def _clean_dataset_governed(
+        self,
+        raw_dataframe: DataFrame,
+        cleaning_config: "Any",
+        source_version: "Any",
+        pipeline_run_id: int,
+        user_id: "int | None" = None,
+    ) -> "Any":
+        """
+        Execute the governance-aware cleaning stage (Sprint 14 Phase 3).
+
+        Wraps CleaningGovernanceService to produce:
+        - GovernedCleaningResult with cleaned DataFrame
+        - Immutable source and cleaned DatasetVersions
+        - CleaningProvenance audit record
+        - Before/after QualityComparison
+
+        Parameters
+        ----------
+        raw_dataframe:
+            Unmodified raw DataFrame from UploadManager.
+        cleaning_config:
+            CleaningConfig with policy + parameters.
+        source_version:
+            Immutable DatasetVersion for the raw dataset.
+        pipeline_run_id:
+            Owning pipeline run.
+        user_id:
+            Authenticated user.
+
+        Returns
+        -------
+        GovernedCleaningResult
+        """
+        logger.info("-" * 60)
+        logger.info("CLEANING STAGE (Governance-Aware)")
+        logger.info("-" * 60)
+
+        governed_result = self.governance_service.execute_governed_cleaning(
+            raw_df=raw_dataframe,
+            config=cleaning_config,
+            source_version=source_version,
+            pipeline_run_id=pipeline_run_id,
+            user_id=user_id,
+        )
+
+        logger.info(
+            "Data Preview After Cleaning:"
+        )
+        logger.info(
+            "\n%s",
+            governed_result.cleaned_df.head(),
+        )
+
+        return governed_result
+
+
     def _assess_quality(
 
         self,
@@ -992,17 +1026,12 @@ class Application:
 
 
     def _log_pipeline_summary(
-
         self,
-
         quality_report: QualityReport,
-
         analytics_report: AnalyticsReport,
-
         reporting_report: ReportingReport,
-
-        ai_result: AIResult,
-
+        ai_result: AIResult | None = None,
+        ai_job: Any | None = None,
     ) -> None:
 
         """
@@ -1166,168 +1195,58 @@ class Application:
 
 
         # AI Stage
-
-        logger.info(
-
-            "AI Generated            : %s",
-
-            ai_result.success,
-
-        )
-
-        if ai_result.success:
-
-            logger.info(
-
-                "AI Model               : %s",
-
-                ai_result.ai_report.model,
-
-            )
-
-            logger.info(
-
-                "AI Provider            : %s",
-
-                ai_result.ai_report.provider,
-
-            )
-
-            logger.info(
-
-                "AI Time (s)            : %.4f",
-
-                ai_result.execution_time,
-
-            )
-
+        if ai_job is not None:
+            logger.info("AI Job ID               : %s", ai_job.job_id)
+            logger.info("AI Job Status           : %s", ai_job.status.value)
+            logger.info("AI Model                : %s", ai_job.model)
+            logger.info("AI Provider             : %s", ai_job.provider)
+        elif ai_result is not None and ai_result.success and ai_result.ai_report is not None:
+            logger.info("AI Model                : %s", ai_result.ai_report.model)
+            logger.info("AI Provider             : %s", ai_result.ai_report.provider)
+            logger.info("AI Time (s)            : %.4f", ai_result.execution_time)
         else:
-
-            logger.info(
-
-                "AI Stage               : Skipped"
-
-            )
-
-
+            logger.info("AI Stage                : Dispatched Asynchronously")
 
         # Final output
-
         logger.info(
-
             "Report Exported         : %s",
-
             reporting_report.export_path,
-
         )
-
-
-
         logger.info("=" * 60)
-
-        logger.info(
-
-            "Pipeline persisted successfully."
-
-        )
-
-        logger.info(
-
-            "AnalystGPT Enterprise completed successfully."
-
-        )
-
-
+        logger.info("Pipeline persisted successfully.")
+        logger.info("AnalystGPT Enterprise completed successfully.")
 
     def _build_pipeline_result(
-
         self,
-
         reporting_report: ReportingReport,
-
-        ai_result: AIResult,
-
-        execution_time: float,
-
+        ai_result: AIResult | None = None,
+        execution_time: float = 0.0,
+        ai_job_id: str | None = None,
+        ai_job_status: str | None = None,
     ) -> PipelineResult:
-
         """
-
         Build the final application result.
-
-
-
-        Parameters
-
-        ----------
-
-        reporting_report:
-
-            Final reporting result.
-
-
-
-        ai_result:
-
-            Result from the AI Insight Engine.
-
-
-
-        execution_time:
-
-            Total pipeline execution time.
-
-
-
-        Returns
-
-        -------
-
-        PipelineResult
-
-            Final application execution result.
-
         """
-
-
-
         generated_at = datetime.now(UTC)
 
-
+        ai_report_obj = None
+        if ai_result is not None and ai_result.success:
+            ai_report_obj = ai_result.ai_report
 
         pipeline_report = PipelineReport(
-
             reporting_report=reporting_report,
-
-            ai_report=(
-
-                ai_result.ai_report
-
-                if ai_result.success
-
-                else None
-
-            ),
-
+            ai_report=ai_report_obj,
             generated_at=generated_at,
-
         )
-
-
 
         return PipelineResult(
-
             success=True,
-
             pipeline_report=pipeline_report,
-
             output_path=reporting_report.export_path,
-
             execution_time=execution_time,
-
+            ai_job_id=ai_job_id,
+            ai_job_status=ai_job_status,
         )
-
-
 
     def _cache_pipeline_result(
 
@@ -1685,3 +1604,12 @@ class Application:
 
 
         return self._last_pipeline_result
+
+    def shutdown(self) -> None:
+        """
+        Gracefully shutdown application background executors and persistence resources.
+        """
+        if hasattr(self, "ai_job_executor") and self.ai_job_executor is not None:
+            self.ai_job_executor.shutdown(wait=False)
+        if hasattr(self, "persistence") and self.persistence is not None:
+            self.persistence.shutdown()

@@ -17,12 +17,16 @@ from src.frontend.components.about_card import (
 from src.frontend.components.loading_state import (
     loading,
 )
+from src.frontend.components.scroll_to_top import (
+    scroll_to_top,
+)
 
 
 def render() -> None:
     """
     Render the enterprise About page.
     """
+    scroll_to_top()
 
     st.title("ℹ️ About AnalystGPT Enterprise")
 

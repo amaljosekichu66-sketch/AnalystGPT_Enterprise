@@ -90,6 +90,8 @@ class FakePipelineResult:
         )
         self.ai_generated = True
         self.generated_at = "2026-07-29T00:00:00"  # used by models
+        self.ai_job_id = None
+        self.ai_job_status = None
 
     def to_dict(self):
         return {
@@ -101,6 +103,8 @@ class FakePipelineResult:
             "report": self.reporting_report.to_dict(),
             "ai_report": self.ai_report.to_dict() if self.ai_report else None,
             "generated_at": self.generated_at,
+            "ai_job_id": self.ai_job_id,
+            "ai_job_status": self.ai_job_status,
         }
 
 

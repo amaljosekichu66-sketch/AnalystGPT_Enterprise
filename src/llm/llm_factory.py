@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from src.core import config
 from src.core.logger import logger
-
 from src.llm.base_llm import BaseLLM
 from src.llm.ollama_client import OllamaClient
 
@@ -33,7 +32,6 @@ class LLMFactory:
         BaseLLM
             Configured provider.
         """
-
         provider = (
             config.LLM_PROVIDER
             .strip()
@@ -50,25 +48,23 @@ class LLMFactory:
         )
 
         if provider_class is not None:
-
             llm = provider_class()
-
             logger.info(
                 "LLM Initialised | Provider=%s | Model=%s",
                 provider,
                 llm.model,
             )
-
             return llm
 
-        supported = ", ".join(
-            sorted(cls._PROVIDERS)
+        logger.error(
+            "Unsupported LLM Provider: %s",
+            provider,
+        )
+        raise ValueError(
+            f"Unsupported LLM Provider: {provider}"
         )
 
-        raise ValueError(
-            (
-                f"Unsupported LLM provider "
-                f"'{provider}'. "
-                f"Supported providers: {supported}"
-            )
-        )
+    @classmethod
+    def create_llm(cls) -> BaseLLM:
+        """Alias for create() for backwards compatibility."""
+        return cls.create()

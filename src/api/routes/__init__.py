@@ -10,6 +10,7 @@ This module intentionally contains no endpoint logic.
 """
 
 from .admin import admin_router
+from .ai import router as ai_router
 from .auth import auth_router
 from .health import router as health_router
 from .pipeline import router as pipeline_router
@@ -23,4 +24,5 @@ __all__ = [
     "pipeline_router",
     "auth_router",
     "admin_router",
+    "ai_router",
 ]

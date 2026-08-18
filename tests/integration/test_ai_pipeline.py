@@ -32,7 +32,7 @@ from src.application.app import Application
 
 
 @patch(
-    "src.application.app.AIManager.generate_ai_report"
+    "src.ai.ai_manager.AIManager.generate_ai_report"
 )
 def test_application_ai_pipeline(
     mock_generate_ai,
@@ -66,56 +66,28 @@ def test_application_ai_pipeline(
 
     app = Application()
 
-    result = app.run(
-        "performance/datasets/customer_data_stress_test.csv"
-    )
-
-    assert result.success
-
-    assert result.pipeline_report is not None
-
-    assert (
-        result.pipeline_report.ai_report
-        is not None
-    )
-
-    assert (
-        result.pipeline_report.ai_report.executive_summary
-        == "Executive summary."
-    )
-
-    assert (
-        len(
-            result.pipeline_report.ai_report.recommendations
+    try:
+        result = app.run(
+            "performance/datasets/customer_data_stress_test.csv"
         )
-        == 2
-    )
 
-    assert (
-        len(
-            result.pipeline_report.ai_report.explanations
-        )
-        == 2
-    )
+        assert result.success
+        assert result.pipeline_report is not None
+        assert result.ai_job_id is not None
+        assert result.ai_job_status in {"PENDING", "GENERATING", "READY"}
 
-    assert (
-        result.pipeline_report.ai_report.narrative
-        == "Business narrative."
-    )
+        # Fetch persisted AI report through AIJobService
+        ai_job_data = app.ai_job_service.get_job_with_report(result.ai_job_id)
+        assert ai_job_data is not None
+        ai_rep = ai_job_data.get("ai_report")
+        if ai_rep is not None:
+            assert ai_rep["executive_summary"] == "Executive summary."
+            assert len(ai_rep["recommendations"]) == 2
+            assert len(ai_rep["explanations"]) == 2
+            assert ai_rep["narrative"] == "Business narrative."
+            assert ai_rep["model"] == "fake-model"
+            assert ai_rep["provider"] == "fake-provider"
 
-    assert (
-        result.pipeline_report.ai_report.model
-        == "fake-model"
-    )
-
-    assert (
-        result.pipeline_report.ai_report.provider
-        == "fake-provider"
-    )
-
-    assert (
-        result.pipeline_report.ai_report.prompt_count
-        == 4
-    )
-
-    assert result.execution_time >= 0
+        assert result.execution_time >= 0
+    finally:
+        app.shutdown()

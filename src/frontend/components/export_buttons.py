@@ -22,7 +22,7 @@ def render_export_buttons(
 
     export_path = export_result.get(
         "export_path"
-    )
+    ) or export_result.get("path")
 
     if not export_path:
         return
@@ -37,15 +37,18 @@ def render_export_buttons(
 
         return
 
+    mime = "application/pdf" if path.suffix.lower() == ".pdf" else "text/plain"
+    label = "⬇ Download PDF Report" if path.suffix.lower() == ".pdf" else "⬇ Download Text Report"
+
     with open(
         path,
         "rb",
     ) as file:
 
         st.download_button(
-            label="⬇ Download Report",
+            label=label,
             data=file,
             file_name=path.name,
-            mime="text/plain",
+            mime=mime,
             width="stretch",
         )

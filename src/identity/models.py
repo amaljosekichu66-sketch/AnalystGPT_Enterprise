@@ -171,6 +171,16 @@ class LogoutResponse(BaseModel):
     message: str = "Logged out successfully."
 
 
+class UserDeleteResponse(BaseModel):
+    """User deletion response schema."""
+
+    model_config = ConfigDict(frozen=True)
+
+    success: bool = True
+    message: str = "User deleted successfully."
+    user_id: int
+
+
 class AdminUserUpdate(BaseModel):
     """Administrative user management update schema preventing overposting."""
 

@@ -19,8 +19,12 @@ import streamlit as st
 
 from src.frontend.services.api_client import APIClient
 from src.frontend.services.session_manager import (
+    get_ai_job_id,
+    get_ai_report,
     get_dataset,
     get_dataset_path,
+    set_ai_job_id,
+    set_ai_report,
 )
 from src.core.logger import logger
 
@@ -167,7 +171,7 @@ def _local_dashboard_data() -> dict[str, Any]:
         "output_path": None,
         "dataframe": dataframe,
         "backend_report": {},
-        "ai_report": None,
+        "ai_report": get_ai_report(),
         "api_status": None,
         "api_error": None,
         "source": "session",
@@ -212,6 +216,26 @@ def get_dashboard_data() -> dict[str, Any]:
 
     cached = _get_cached_dashboard(dataset_path)
     if cached is not None:
+        # Check if AI report is in session state or was missing but has now become READY
+        session_ai_report = get_ai_report()
+        if session_ai_report is not None:
+            cached["ai_report"] = session_ai_report
+            _cache_dashboard(dataset_path, cached)
+        elif cached.get("ai_report") is None:
+            active_job_id = get_ai_job_id()
+            if active_job_id:
+                try:
+                    from src.frontend.services.ai_service import get_ai_job_status
+
+                    job_data = get_ai_job_status(active_job_id)
+                    if job_data.get("status") == "READY" and job_data.get("ai_report"):
+                        cached["ai_report"] = job_data["ai_report"]
+                        set_ai_report(job_data["ai_report"])
+                        _cache_dashboard(dataset_path, cached)
+                        logger.info("Hydrated READY AI report into cached dashboard data.")
+                except Exception as exc:
+                    logger.debug("Could not lazy-hydrate AI report: %s", exc)
+
         logger.info("Using cached dashboard data (no backend call).")
         return cached
 
@@ -237,11 +261,24 @@ def get_dashboard_data() -> dict[str, Any]:
 
         logger.info("Backend response received successfully.")
 
+        # Extract and persist ai_job_id in session
+        ai_job_id = response.get("ai_job_id")
+        if ai_job_id:
+            set_ai_job_id(ai_job_id)
+            dashboard["ai_job_id"] = ai_job_id
+
         # Populate dashboard from API response
         dashboard["api_status"] = response
         dashboard["source"] = "api"
         dashboard["backend_report"] = response.get("report", {})
-        dashboard["ai_report"] = _extract_ai_report(response)
+        extracted_ai = _extract_ai_report(response)
+        if extracted_ai is not None:
+            set_ai_report(extracted_ai)
+            dashboard["ai_report"] = extracted_ai
+        else:
+            # Preserve existing READY AI report if available in session state
+            dashboard["ai_report"] = get_ai_report()
+
         dashboard["execution_time"] = response.get("execution_time")
         dashboard["output_path"] = response.get("output_path")
 

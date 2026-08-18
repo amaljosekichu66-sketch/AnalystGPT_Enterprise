@@ -194,3 +194,47 @@ def test_clear_empty_session(mock_session_state):
     session_manager.clear_dataset()
 
     assert mock_session_state == {}
+
+
+# ==========================================================
+# Cache Invalidation Tests
+# ==========================================================
+
+
+@patch("streamlit.session_state", new_callable=dict)
+def test_store_dataset_invalidates_caches(mock_session_state):
+    """
+    Storing a new dataset must clear existing dashboard and report caches.
+    """
+    mock_session_state["dashboard_cache"] = {"data": 1}
+    mock_session_state["dashboard_dataset"] = "/old/path.csv"
+    mock_session_state["reports_cache"] = {"reports": 1}
+    mock_session_state["reports_dataset"] = "/old/path.csv"
+
+    dataframe = create_dataframe()
+    uploaded_file = MagicMock()
+    uploaded_file.name = "new_data.csv"
+
+    session_manager.store_dataset(uploaded_file, dataframe, "/new/path.csv")
+
+    assert "dashboard_cache" not in mock_session_state
+    assert "dashboard_dataset" not in mock_session_state
+    assert "reports_cache" not in mock_session_state
+    assert "reports_dataset" not in mock_session_state
+    assert mock_session_state[session_manager.DATASET_PATH_KEY] == "/new/path.csv"
+
+
+@patch("streamlit.session_state", new_callable=dict)
+def test_store_pipeline_result_invalidates_caches(mock_session_state):
+    """
+    Storing a new pipeline result must clear dashboard and report caches so fresh data is loaded.
+    """
+    mock_session_state["dashboard_cache"] = {"old": True}
+    mock_session_state["reports_cache"] = {"old": True}
+
+    mock_result = MagicMock()
+    session_manager.store_pipeline_result(mock_result)
+
+    assert "dashboard_cache" not in mock_session_state
+    assert "reports_cache" not in mock_session_state
+    assert mock_session_state[session_manager.PIPELINE_RESULT_KEY] is mock_result

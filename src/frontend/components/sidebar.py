@@ -11,8 +11,11 @@ from src.core.constants import (
 )
 from src.frontend.config.settings import (
     ABOUT_PAGE,
+    ADMIN_PAGE,
+    AI_INSIGHTS_PAGE,
     DASHBOARD_PAGE,
     REPORTS_PAGE,
+    SIGN_IN_PAGE,
     UPLOAD_PAGE,
 )
 from src.frontend.services.auth_service import AuthService
@@ -59,9 +62,10 @@ def render_sidebar() -> str:
             DASHBOARD_PAGE,
             UPLOAD_PAGE,
             REPORTS_PAGE,
+            AI_INSIGHTS_PAGE,
         ]
         if is_admin():
-            nav_options.append("Admin")
+            nav_options.append(ADMIN_PAGE)
         nav_options.append(ABOUT_PAGE)
 
         selected_page = st.sidebar.radio(
@@ -79,7 +83,7 @@ def render_sidebar() -> str:
         st.sidebar.info("🔒 Authentication Required")
         selected_page = st.sidebar.radio(
             "Navigation",
-            ("Sign In", ABOUT_PAGE),
+            (SIGN_IN_PAGE, ABOUT_PAGE),
         )
 
     st.sidebar.divider()

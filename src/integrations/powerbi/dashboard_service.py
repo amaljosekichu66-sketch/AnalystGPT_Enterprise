@@ -244,12 +244,15 @@ class DashboardService:
         if ai_model is not None:
             report["ai"] = ai_model.model_dump()
 
+        job_id = getattr(pipeline_result, "ai_job_id", None)
+
         return DashboardResponse(
             success=pipeline_result.success,
             execution_time=pipeline_result.execution_time,
             report=report,
             ai_report=ai_model,
             output_path=pipeline_result.output_path,
+            ai_job_id=job_id,
             generated_at=self._generated_at(
                 pipeline_result,
             ),
@@ -268,6 +271,7 @@ class DashboardService:
             success=pipeline_result.success,
             execution_time=pipeline_result.execution_time,
             output_path=pipeline_result.output_path,
+            ai_job_id=getattr(pipeline_result, "ai_job_id", None),
             ai_generated=(
                 self._ai_report(
                     pipeline_result,

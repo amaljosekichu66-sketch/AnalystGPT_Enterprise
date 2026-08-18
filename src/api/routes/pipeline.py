@@ -90,6 +90,8 @@ def execute_pipeline(
         success=result.success,
         output_path=result.output_path,
         execution_time=result.execution_time or 0.0,
+        ai_job_id=result.ai_job_id,
+        ai_job_status=result.ai_job_status,
         ai_report=ai_response,
         error=(
             str(result.error)

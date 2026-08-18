@@ -3,14 +3,14 @@ Enterprise AI Report.
 
 Represents the complete output produced by the
 AnalystGPT Enterprise AI Insight Engine.
+
+Sprint 14 Remediation — AI Insights + Enterprise Reporting Reliability Remediation.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from dataclasses import field
-from datetime import UTC
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -52,13 +52,29 @@ class AIReport:
 
     execution_time: float
 
-    prompt_count: int
+    prompt_count: int = 1
 
     generated_at: datetime = field(
-        default_factory=lambda: datetime.now(
-            UTC,
-        )
+        default_factory=lambda: datetime.now(UTC)
     )
+
+    # ==========================================================
+    # Structured Enterprise Sections
+    # ==========================================================
+
+    key_findings: list[str] = field(default_factory=list)
+
+    business_implications: list[str] = field(default_factory=list)
+
+    risks: list[str] = field(default_factory=list)
+
+    opportunities: list[str] = field(default_factory=list)
+
+    actions: list[str] = field(default_factory=list)
+
+    limitations: list[str] = field(default_factory=list)
+
+    confidence: str = "High (Grounded in Deterministic Analytics)"
 
     # ==========================================================
     # Optional Metadata
@@ -72,22 +88,30 @@ class AIReport:
     # Serialization
     # ==========================================================
 
-    def to_dict(
-        self,
-    ) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the AI report into a serialisable dictionary.
         """
-
         return {
             "executive_summary": self.executive_summary,
             "recommendations": self.recommendations,
             "explanations": self.explanations,
             "narrative": self.narrative,
+            "key_findings": self.key_findings,
+            "business_implications": self.business_implications,
+            "risks": self.risks,
+            "opportunities": self.opportunities,
+            "actions": self.actions,
+            "limitations": self.limitations,
+            "confidence": self.confidence,
             "model": self.model,
             "provider": self.provider,
             "execution_time": self.execution_time,
             "prompt_count": self.prompt_count,
-            "generated_at": self.generated_at.isoformat(),
+            "generated_at": (
+                self.generated_at.isoformat()
+                if isinstance(self.generated_at, datetime)
+                else str(self.generated_at)
+            ),
             "metadata": self.metadata,
         }

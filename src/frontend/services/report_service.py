@@ -6,6 +6,7 @@ Sprint 11
 
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +17,56 @@ import streamlit as st
 from src.frontend.services.api_client import APIClient
 from src.frontend.services.session_manager import (
     get_dataset,
+    get_dataset_path,
 )
+
+# ==========================================================
+# Reports Cache (Session-Level)
+# ==========================================================
+
+_REPORTS_CACHE_KEY = "reports_cache"
+_REPORTS_DATASET_KEY = "reports_dataset"
+
+
+def _get_cached_reports(
+    dataset_path: str | None,
+) -> dict[str, Any] | None:
+    """
+    Retrieve cached report data if valid for the current dataset.
+    """
+    if not dataset_path:
+        return None
+
+    if st.session_state.get(_REPORTS_DATASET_KEY) != dataset_path:
+        return None
+
+    cached = st.session_state.get(_REPORTS_CACHE_KEY)
+    if cached is None:
+        return None
+
+    return deepcopy(cached)
+
+
+def _cache_reports(
+    dataset_path: str | None,
+    report_data: dict[str, Any],
+) -> None:
+    """
+    Cache successful report data in session state.
+    """
+    if not dataset_path:
+        return
+
+    st.session_state[_REPORTS_DATASET_KEY] = dataset_path
+    st.session_state[_REPORTS_CACHE_KEY] = deepcopy(report_data)
+
+
+def clear_reports_cache() -> None:
+    """
+    Clear cached report data.
+    """
+    st.session_state.pop(_REPORTS_CACHE_KEY, None)
+    st.session_state.pop(_REPORTS_DATASET_KEY, None)
 
 
 # ==========================================================
@@ -113,9 +163,14 @@ def get_report_data() -> dict[str, Any]:
     """
     Retrieve report information.
 
-    Falls back to the local session when
-    the REST API is unavailable.
+    Uses session-level cache to avoid repeated backend calls.
+    Falls back to the local session when the REST API is unavailable.
     """
+    dataset_path = get_dataset_path()
+
+    cached = _get_cached_reports(dataset_path)
+    if cached is not None:
+        return cached
 
     report_data = (
         _local_report_data()
@@ -192,6 +247,9 @@ def get_report_data() -> dict[str, Any]:
             }
         )
 
+        if api_response.get("success", True):
+            _cache_reports(dataset_path, report_data)
+
         return report_data
 
     except (
@@ -243,12 +301,23 @@ def _existing_report() -> Path | None:
 
 def export_text_report() -> dict[str, Any]:
     """
-    Return information about an existing
-    text report.
-
-    The actual download is handled by the
-    Streamlit download button.
+    Generate and export a plain-text report artifact.
     """
+    user = st.session_state.get("authenticated_user") or st.session_state.get("user")
+    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
+
+    app = st.session_state.get("application")
+    if app is None:
+        try:
+            from src.application.app import Application
+            app = Application()
+        except Exception:
+            app = None
+
+    if app is not None:
+        from src.application.reporting_orchestrator import ReportingOrchestrator
+        orchestrator = ReportingOrchestrator(app)
+        return orchestrator.export_text_report(user_id=user_id)
 
     report = _existing_report()
 
@@ -268,15 +337,29 @@ def export_text_report() -> dict[str, Any]:
         ),
         "path": str(report),
         "filename": report.name,
+        "mime_type": "text/plain",
     }
 
 
 def export_pdf_report() -> dict[str, Any]:
     """
-    PDF export placeholder.
-
-    Sprint 11 does not generate PDF reports.
+    Generate and export a PDF report artifact.
     """
+    user = st.session_state.get("authenticated_user") or st.session_state.get("user")
+    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
+
+    app = st.session_state.get("application")
+    if app is None:
+        try:
+            from src.application.app import Application
+            app = Application()
+        except Exception:
+            app = None
+
+    if app is not None:
+        from src.application.reporting_orchestrator import ReportingOrchestrator
+        orchestrator = ReportingOrchestrator(app)
+        return orchestrator.export_pdf_report(user_id=user_id)
 
     pdf = Path(
         "reports/analystgpt_report.pdf"
@@ -291,12 +374,12 @@ def export_pdf_report() -> dict[str, Any]:
             ),
             "path": str(pdf),
             "filename": pdf.name,
+            "mime_type": "application/pdf",
         }
 
     return {
         "success": False,
         "message": (
-            "PDF export is not yet available. "
-            "Generate a PDF exporter in Sprint 12."
+            "No generated report was found to export as PDF."
         ),
     }

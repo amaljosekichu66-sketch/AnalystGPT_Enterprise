@@ -55,6 +55,8 @@ class APIClient:
 
     ADMIN_USERS = "/api/admin/users"
 
+    AI_JOBS = "/api/ai/jobs"
+
     # ==========================================================
     # Construction
     # ==========================================================
@@ -477,6 +479,48 @@ class APIClient:
         """
         return self._delete(
             f"{self.ADMIN_USERS}/{user_id}",
+            token=token,
+        )
+
+    # ==========================================================
+    # AI Insight Jobs (Sprint 14 Phase 2)
+    # ==========================================================
+
+    def get_ai_job(
+        self,
+        job_id: str,
+        token: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        GET /api/ai/jobs/{job_id}
+        """
+        return self._get(
+            f"{self.AI_JOBS}/{job_id}",
+            token=token,
+        )
+
+    def get_latest_ai_job(
+        self,
+        token: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        GET /api/ai/jobs/latest/status
+        """
+        return self._get(
+            f"{self.AI_JOBS}/latest/status",
+            token=token,
+        )
+
+    def retry_ai_job(
+        self,
+        job_id: str,
+        token: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        POST /api/ai/jobs/{job_id}/retry
+        """
+        return self._post(
+            f"{self.AI_JOBS}/{job_id}/retry",
             token=token,
         )
 

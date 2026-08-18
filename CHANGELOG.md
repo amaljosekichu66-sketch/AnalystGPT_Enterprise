@@ -1187,6 +1187,26 @@ Sprint 12 successfully packages AnalystGPT Enterprise for production deployment 
 
 ---
 
+## [14.0.0] - 2026-08-16
+
+### Sprint 14 Remediation — Data Profiling, Null Governance & Visual Analytics Refactor
+- **Semantic Profiling (`src/profiling/`):** Added 20-category `SemanticType` taxonomy and `AnalyticalRole` classification to separate physical storage types from analytical domain semantics.
+- **Null Governance:** Added semantically aware policy recommendations (e.g. median for continuous measures, mode for categories, never numeric interpolation for phones/postal codes) and interactive non-destructive preview.
+- **VisualizationPlanner (`src/analytics/`):** Introduced authoritative visualization planner with 4–8 chart budget, identifier/constant exclusion, top-N horizontal bars, and responsive 2×2 / 3×3 grid layout.
+- **Enhanced Column Profile:** Upgraded column profile table with physical types, semantic types, analytical roles, missingness, uniqueness, and governance recommendations.
+- **Export Redesign:** Enhanced PDF and text exporters with clean typography, column semantic profiles, complete lineage, and clearly demarcated AI insights.
+
+### Sprint 14 — Enterprise Platform Stabilization & Governance-First Maturation
+- **Phase 1 (Frontend UX):** Navigation state stabilization, top scroll enforcement, and decoupled AI Insights page.
+- **Phase 2 (Async AI Engine):** Complete decoupling of pipeline response from LLM inference; state machine and background worker.
+- **Phase 3 (Cleaning Governance & Lineage):** Immutable raw storage, SHA-256 versioning, dataset version lineage.
+- **Phase 4 (AI Data Context):** Domain context builder preventing fabricated metrics.
+- **Phase 5 (Reporting & PDF Export):** Standards-compliant PDF and text exporters with IDOR protection.
+- **Phase 6 (OpenAPI / React Readiness):** Frozen OpenAPI 3.1 contracts and migration blueprint.
+- **Phase 7 (Regression & Final Validation):** 100% test coverage and static quality gates.
+
+---
+
 ## [v13.0.0] - 2026-08-15
 
 ### Added
@@ -1283,36 +1303,187 @@ Sprint 13 transforms AnalystGPT Enterprise into a multi-user enterprise platform
 
 ## [Unreleased] — Sprint 14 (UX Stabilization, Performance, Data Governance & React Migration Readiness)
 
-### Planned
+### Sprint 14 Phase 1: Frontend UX Stabilization (Formally Reviewed & Accepted)
 
-#### Frontend UX Stabilization
-- Scroll reset to top when navigating to Dashboard and Reports.
-- Redesigned Dashboard information hierarchy.
-- Relocate AI Insights to dedicated navigation item.
-- Public About page preservation and role-aware Admin navigation.
+#### Added
+- `src/frontend/components/scroll_to_top.py`: Reusable scroll-to-top presentation component executing clientside JavaScript to reset `.main` and `window` scroll position to 0 on view navigation.
+- `src/frontend/views/ai_insights_page.py`: Dedicated AI Insights view hosting Executive Summary, Recommendations, Explanations, Narrative, and AI Engine Metadata.
+- `tests/frontend/test_navigation.py`: Unit tests for router dictionary, role-aware sidebar navigation, and public access.
+- `tests/frontend/test_ux_states.py`: Unit tests for `scroll_to_top`, `render_empty_state` navigation, `loading` context manager, and progress displays.
+- `tests/frontend/test_views.py`: Unit tests for view rendering across `ai_insights_page`, `dashboard_page`, `report_page`, and `about_page`.
 
-#### Asynchronous AI Job Lifecycle
-- Decoupled pipeline execution returning analytical results immediately.
-- Background AI job state machine: `PENDING → GENERATING → READY / FAILED`.
-- Database persistence of AI generation jobs with failure isolation and retry policies.
+#### Changed
+- `src/frontend/config/settings.py`: Registered `AI_INSIGHTS_PAGE = "AI Insights"`, `ADMIN_PAGE = "Admin"`, `SIGN_IN_PAGE = "Sign In"`.
+- `src/frontend/streamlit_app.py`: Registered AI Insights page in `PAGES` router, added AI Insights navigation button, preserved public About page access and role-aware Admin visibility, and sanitized error boundaries.
+- `src/frontend/components/sidebar.py`: Updated navigation items to include `AI Insights` and role-aware `Admin` gating.
+- `src/frontend/components/empty_state.py`: Enhanced `render_empty_state` with `target_page` argument for contextual navigation routing.
+- `src/frontend/components/quick_actions.py`: Added `🧠 AI Insights` shortcut button; updated Refresh Dashboard to clear frontend caches.
+- `src/frontend/views/dashboard_page.py`: Reorganized visual layout to prioritize KPIs, pipeline status, operational health, and schema preview; removed embedded AI insights in favor of dedicated view; integrated `scroll_to_top()`.
+- `src/frontend/views/report_page.py`: Streamlined layout for report list, preview, and exports with navigation pointer to AI Insights; integrated `scroll_to_top()`.
+- `src/frontend/views/about_page.py`, `src/frontend/views/admin_page.py`, `src/frontend/views/upload_page.py`: Integrated `scroll_to_top()`.
+- `src/frontend/services/report_service.py`: Implemented session-level caching (`reports_cache`, `reports_dataset`) and `clear_reports_cache()` to prevent redundant backend `/reports` calls during presentation reruns.
+- `src/frontend/services/session_manager.py`: Updated `store_dataset()`, `store_pipeline_result()`, `clear_dataset()`, and `clear_authenticated_session()` to purge report and dashboard caches, guaranteeing strict tenant isolation.
+- `tests/frontend/test_report_service.py`: Added cache hit and cache clearing test cases.
+- `tests/frontend/test_session_manager.py`: Added cache invalidation test cases for `store_dataset` and `store_pipeline_result`.
 
-#### Data Cleaning Governance & Lineage
-- Immutable raw dataset storage with SHA-256 checksums.
-- Separated cleaned analytical dataset storage.
-- Configurable missing-value policies (NULL preservation, threshold removal, imputation).
-- Cleaning preview and approval workflow with before/after quality metrics.
-- Comprehensive provenance tracking from source to final analytical outputs.
+---
 
-#### AI Analytical Context & Data Integrity
-- Privacy-safe aggregated context formatting for LLM prompts.
-- Inclusion of data cleaning transformations and data loss statistics in AI context.
-- Distinguish original data observations from cleaned analytical findings.
+### Sprint 14 Phase 2: Asynchronous AI Execution, Persistent Job Lifecycle & Performance (Implemented, Verified)
 
-#### Reporting & Export Reliability
-- Repaired report download and PDF export functionality.
-- Export idempotency and authenticated ownership verification.
+#### Added
+- `src/ai/models.py`: Domain entity `AIJob` and enums `AIJobStatus` (`PENDING`, `GENERATING`, `READY`, `FAILED`) and `AIFailureCategory` (`TIMEOUT`, `PROVIDER_UNAVAILABLE`, `MODEL_ERROR`, `INVALID_OUTPUT`, `SYSTEM_ERROR`) with formal finite state machine transitions per ADR-025.
+- `src/ai/exceptions.py`: AI subsystem exceptions `AIError`, `AIJobNotFoundError`, `AIStateTransitionError`, `AIRetryableError`, and `AINonRetryableError`.
+- `src/ai/job_executor.py`: In-process asynchronous thread pool worker `AIJobExecutor` with atomic conditional claiming, exponential backoff retries, error categorization, and total crash isolation.
+- `src/ai/ai_job_service.py`: Domain service `AIJobService` coordinating job creation, dispatching, retrieval, report linking, and manual retries.
+- `src/database/repositories/ai_job_repository.py`: Enterprise database repository for `ai_jobs` with scoped access and atomic claiming.
+- `src/database/repositories/ai_report_repository.py`: Enterprise database repository for `ai_reports` with JSON serialization and metadata persistence.
+- `src/api/models/ai_models.py`: Pydantic response models `AIJobResponse` and `AIJobRetryResponse`.
+- `src/api/routes/ai.py`: REST API endpoints for `GET /api/ai/jobs/{job_id}`, `GET /api/ai/jobs/latest/status`, and `POST /api/ai/jobs/{job_id}/retry`.
+- `src/frontend/services/ai_service.py`: Frontend presentation service client for asynchronous AI job polling and retry triggering.
+- `tests/ai/test_ai_job_state_machine.py`: Unit tests for job state machine validation and transitions.
+- `tests/ai/test_ai_job_repository.py`: Unit tests for `ai_jobs` and `ai_reports` persistence.
+- `tests/ai/test_ai_job_executor.py`: Unit tests for asynchronous background executor and error isolation.
+- `tests/api/test_ai_routes.py`: API integration tests for `/api/ai/*` routes.
+- `tests/application/test_async_ai_pipeline.py`: End-to-end integration tests verifying deterministic non-blocking pipeline execution and failure decoupling.
 
-#### React Migration Readiness
-- OpenAPI 3.1 contract freeze with typed API models.
-- Frontend-independent service interfaces (`AuthService`, `DashboardService`, `ReportService`, `AIInsightService`, `UploadService`, `AdminService`).
-- Streamlit to React migration mapping.
+#### Changed
+- `src/application/app.py`: Decoupled synchronous AI generation in `run()`; deterministic pipeline finishes and persists immediately, dispatching AI job asynchronously to `AIJobExecutor`.
+- `src/application/pipeline_result.py`: Added `ai_job_id` and `ai_job_status` fields.
+- `src/database/schema_manager.py`: Added DDL and indexes for `ai_jobs` and `ai_reports` tables across SQLite and PostgreSQL.
+- `src/database/sqlite_connection.py` & `src/database/postgresql_connection.py`: Added auto-connection in `get_connection()` and standard `.close()` alias.
+- `src/persistence/persistence_manager.py`: Integrated `AIJobRepository` and `AIReportRepository` accessors.
+- `src/api/models/response_models.py`: Added `ai_job_id` and `ai_job_status` to `PipelineResponse`.
+- `src/api/routes/pipeline.py`: Returned `ai_job_id` and `ai_job_status` from `POST /api/pipeline/run`.
+- `src/api/server.py`: Mounted `/api/ai` router.
+- `src/frontend/services/api_client.py`: Added API client methods `get_ai_job()`, `get_latest_ai_job()`, `retry_ai_job()`.
+- `src/frontend/views/ai_insights_page.py`: Hardened view with dynamic status banners, automatic completion rendering, and retry triggers.
+
+### Sprint 14 Phase 3: Data Cleaning Governance & Lineage (Implemented, Verified)
+
+#### Added
+- `src/governance/`: Enterprise dataset governance and versioning models (`DatasetVersion`, `CleaningConfig`, `CleaningExecution`).
+- `src/database/repositories/dataset_version_repository.py`: Relational persistence for immutable dataset versions.
+- `src/database/repositories/cleaning_config_repository.py`: Configurable cleaning policy repository.
+- `src/database/repositories/cleaning_execution_repository.py`: Provenance and transformation lineage repository.
+- `src/storage/`: Local artifact store abstraction preserving immutable raw uploaded bytes.
+- `src/api/routes/governance.py`: Governance REST API endpoints for impact preview and lineage exploration.
+- `tests/governance/`: Comprehensive test suite for data governance and cleaning lineage.
+
+---
+
+### Sprint 14 Phase 4: AI Data Context & Analytical Integrity (Implemented, Verified)
+
+#### Added
+- `src/ai/context.py`: Domain data context models (`AIDataContext`, `SourceDataContext`, `CleaningContext`, `QualityContext`, `AnalyticsContext`, `LineageContext`).
+- `src/ai/context_builder.py`: Database-backed context builder querying authoritative repository records.
+- `tests/ai/test_ai_data_context.py`: Immutability and builder unit tests.
+- `tests/ai/test_ai_context_isolation.py`: Strict tenant ownership verification and provenance persistence tests.
+- `tests/ai/test_analytical_integrity.py`: Analytical integrity prompt serialization verification.
+
+---
+
+### Sprint 14 Phase 5: Reporting & PDF Export Stabilization (Implemented, Verified)
+
+#### Added
+- `src/reporting/exporters/pdf_report_exporter.py`: Standards-compliant `%PDF-1.4` multi-page PDF exporter.
+- `src/reporting/exporters/__init__.py`: Package export interface for format-specific report exporters.
+- `tests/reporting/test_pdf_report_exporter.py`: Unit tests for PDF structure, pagination, AI demarcation, and lineage.
+- `tests/api/test_report_export_api.py`: Integration tests for `/api/reports/{id}/export/*` and `/api/reports/export/*`.
+- `tests/application/test_reporting_orchestrator.py`: Orchestrator unit tests for export resolution and tenant isolation.
+
+#### Changed
+- `src/core/config.py`: Added `DEFAULT_PDF_REPORT_FILENAME`.
+- `src/reporting/exporters/text_report_exporter.py`: Added lineage and demarcated AI interpretation sections with disclaimers.
+- `src/reporting/reporting_manager.py`: Integrated `PdfReportExporter` and exposed `export_pdf()` / `export_text()`.
+- `src/application/reporting_orchestrator.py`: Implemented `export_text_report()` and `export_pdf_report()` with database-backed tenant isolation and IDOR defense.
+- `src/api/routes/reports.py`: Added authenticated file streaming endpoints for plain-text and PDF artifacts.
+- `src/api/server.py`: Mounted `/api/reports` routes under `API_PREFIX`.
+- `src/frontend/services/report_service.py`: Routed export actions through `ReportingOrchestrator` with session user context.
+- `src/frontend/components/export_buttons.py`: Rendered format-aware download buttons (`text/plain` vs `application/pdf`).
+- `src/frontend/views/report_page.py`: Rendered immediate download buttons upon export generation success.
+
+---
+
+### Sprint 14 Phase 6: OpenAPI / React Migration Readiness (Implemented, Verified)
+
+#### Added
+- `docs/api/openapi.json`: Authoritative, formatted OpenAPI 3.1 specification across all 40 registered API routes.
+- `docs/api/REACT_MIGRATION_MAPPING.md`: Complete technical migration specification (routes, component tree, TypeScript client architecture, coexistence strategy).
+- `src/frontend/services/upload_service.py`: Standalone frontend `UploadService` interface for file validation, non-destructive cleaning previews, and pipeline execution.
+- `src/frontend/services/admin_service.py`: Standalone frontend `AdminService` interface for user administration, role updates, and account lifecycle.
+- `tests/api/test_openapi_contract.py`: Automated contract validation test suite for OpenAPI 3.1 schema and response model completeness.
+- `tests/frontend/test_upload_service.py`: Unit tests for `UploadService`.
+- `tests/frontend/test_admin_service.py`: Unit tests for `AdminService`.
+
+#### Changed
+- `src/api/models/response_models.py`: Added `ReportsListResponse`, `ReportDataResponse`, `ReportSectionItem`, `DashboardStatusResponse`, and `ErrorResponse`.
+- `src/api/routes/reports.py`: Added `response_model=ReportsListResponse` and explicit error response schemas.
+- `src/api/routes/powerbi.py`: Attached explicit response models (`DashboardResponse`, `DashboardSummary`, `DashboardStatistics`, `DashboardCorrelation`, `DashboardDistribution`, `DashboardCategorical`, `PipelineSummary`, `ReportResponse`) across all PowerBI routes.
+- `src/api/routes/dashboard.py`: Attached `response_model=DashboardStatusResponse` to dashboard status endpoint.
+- `src/frontend/services/__init__.py`: Re-exported `UploadService` and `AdminService`.
+- `tests/api/test_reports.py`: Completed integration and contract test suite for reports endpoints.
+
+---
+
+### Sprint 14 Phase 7: Semantic Profiling, Visual Analytics & Publication-Grade Exporter Redesign (Implemented, Verified)
+
+#### Added
+- `src/profiling/`: Semantic profiling engine with 20-class `SemanticType` taxonomy, `AnalyticalRole` taxonomy, and deterministic `SemanticClassifier` / `DataProfiler`.
+- `src/analytics/visualization_planner.py`: Authoritative `VisualizationPlanner` with strict 4–8 chart budget and responsive 2×2 / 3×3 grid layout planning.
+- `tests/profiling/`: Unit test suite for semantic profiling and classification.
+- `tests/analytics/test_visualization_planner.py` & `tests/analytics/test_semantic_analytics_integration.py`: Integration tests for visualization planning.
+- `tests/reporting/test_enterprise_reporting_ux.py` & `tests/reporting/test_pdf_report_exporter.py`: Publication-grade PDF and text export verification.
+
+#### Changed
+- `src/reporting/exporters/pdf_report_exporter.py`: Multi-page enterprise PDF report with executive KPI cards, 13-column governance tables, empirical horizontal bar charts, and lineage provenance cards.
+- `src/reporting/exporters/text_report_exporter.py`: Demarcated AI interpretation sections with empirical distributions and analytical disclaimers.
+- `src/frontend/components/charts.py`: Replaced brute-force column iteration with responsive planned chart grids.
+- `src/frontend/components/column_profile.py`: Upgraded to full 8-column profile table displaying inferred semantic types and roles.
+
+---
+
+### Sprint 14 Final Closure: AI Grounding Remediation & E2E Validation (Implemented, Verified)
+
+#### Added
+- `tests/ai/test_ai_grounding_remediation.py`: Dedicated regression test suite ensuring distinct category cardinality cannot be converted to percentage frequency and preventing non-majority dominance claims.
+
+#### Changed
+- `src/llm/report_serializer.py`: Implemented `_categorical_section` with explicit semantic labels (`distinct_category_count`, `row_count`, `top_category: value, count, percentage`, `category_distribution: count | percentage`), resolving LLM cardinality vs frequency conflation.
+- `src/llm/prompt_builder.py`: Added explicit anti-hallucination and non-dominance rules to prompt templates.
+- `src/ai/ai_job_service.py`: Added `recover_stale_jobs()` delegation for background worker health.
+
+---
+
+## [v14.0.0] — Enterprise Stabilization, Data Governance & Grounded Reporting
+
+**Release Date:** 19 August 2026
+
+### Overview
+
+Sprint 14 delivers comprehensive enterprise stabilization, asynchronous AI execution with persistent state machines, transparent data cleaning governance, semantic data profiling, intelligent visual analytics planning, publication-grade multi-page PDF reporting, and strictly grounded AI insights verified against live Ollama `gemma3:4b` inference.
+
+### Key Deliverables
+
+1. **Streamlit UX Stabilization:** Responsive layout hierarchy, scroll-to-top component, dedicated AI Insights view, role-aware navigation, and session caching.
+2. **Asynchronous AI Job Lifecycle:** Persistent database-backed state machine (`PENDING` → `GENERATING` → `READY` / `FAILED`), thread-pool background execution, retry isolation, and polling REST endpoints.
+3. **Data Cleaning Governance & Lineage:** Versioned dataset snapshot repository, policy-driven cleaning execution audit, and immutable raw blob artifact storage.
+4. **AI Data Context & Analytical Integrity:** Authoritative typed `AIDataContext` builder, cross-tenant isolation enforcement, and semantic serialization.
+5. **Semantic Data Profiling:** 20-class domain type classification, measure vs dimension separation, and intelligent 4–8 chart budget via `VisualizationPlanner`.
+6. **Enterprise Reporting Exporters:** Multi-page `%PDF-1.4` publication report with empirical charts, governance tables, and text report exporter.
+7. **AI Grounding Remediation:** Disambiguated cardinality from frequency in serialized prompts; 0 contradicted and 0 unsupported claims.
+8. **OpenAPI 3.1 & React Migration Readiness:** Frozen OpenAPI specification across 40 routes and technology-neutral frontend service layer.
+
+### Repository Status
+
+- Upload Module → Stable
+- Cleaning Module → Stable
+- Quality Module → Stable
+- Analytics Module → Stable (Semantic Profiling & Visual Analytics)
+- Reporting Module → Stable (PDF & TXT Exporters)
+- Identity & RBAC Subsystem → Stable
+- AI Insight Engine → Stable (Async Worker & Grounded Serialization)
+- REST API Layer → Stable (40 Routes, OpenAPI 3.1)
+- Streamlit Presentation Layer → Stable
+- Automated Tests → **531 Passed** (0 failures, 0 warnings)
+- Static Analysis → Flake8: 0 errors | Black: Clean | isort: Clean | Mypy: Clean (208 source files)
+- Release Version: **v14.0.0**

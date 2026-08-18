@@ -22,7 +22,8 @@ class SQLiteConnection(DatabaseConnection):
         if self._connection is None:
 
             self._connection = sqlite3.connect(
-                self._database_path
+                self._database_path,
+                check_same_thread=False,
             )
 
             self._connection.row_factory = sqlite3.Row
@@ -43,10 +44,18 @@ class SQLiteConnection(DatabaseConnection):
 
     def get_connection(self):
         """
-        Return the active SQLite connection.
+        Return the active SQLite connection, connecting lazily if necessary.
         """
+        if self._connection is None:
+            self.connect()
 
         return self._connection
+
+    def close(self):
+        """
+        Alias for disconnect.
+        """
+        self.disconnect()
 
     # ---------------------------------------------------------
 

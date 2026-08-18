@@ -79,7 +79,10 @@ class TestUserContext:
             status=UserStatus.ACTIVE,
             is_authenticated=True,
         )
-        set_current_user_context(new_context)
-        retrieved = get_current_user_context()
-        assert retrieved.user_id == 99
-        assert retrieved.username == "context_user"
+        try:
+            set_current_user_context(new_context)
+            retrieved = get_current_user_context()
+            assert retrieved.user_id == 99
+            assert retrieved.username == "context_user"
+        finally:
+            set_current_user_context(initial)

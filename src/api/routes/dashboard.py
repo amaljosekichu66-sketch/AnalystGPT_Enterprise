@@ -31,6 +31,9 @@ from src.application.dashboard_orchestrator import (
 )
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
+from src.api.models.response_models import (
+    DashboardStatusResponse,
+)
 from src.integrations.powerbi.powerbi_models import (
     DashboardResponse,
 )
@@ -129,16 +132,23 @@ async def get_dashboard(
 
 @router.get(
     "/status",
+    response_model=DashboardStatusResponse,
     status_code=status.HTTP_200_OK,
     summary="Dashboard Status",
+    description="Return lightweight application and dashboard status.",
 )
 async def dashboard_status(
     orchestrator: DashboardOrchestrator = Depends(
         get_dashboard_orchestrator,
     ),
-) -> dict[str, str]:
+) -> DashboardStatusResponse:
     """
     Return dashboard status.
     """
 
-    return orchestrator.get_status()
+    status_data = orchestrator.get_status()
+    return DashboardStatusResponse(
+        application=status_data["application"],
+        version=status_data["version"],
+        status=status_data["status"],
+    )

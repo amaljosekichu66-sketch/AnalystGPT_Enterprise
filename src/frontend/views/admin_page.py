@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from src.frontend.components.scroll_to_top import scroll_to_top
 from src.frontend.services.auth_service import AuthService
 from src.frontend.services.session_manager import is_admin, is_authenticated
 
@@ -20,6 +21,7 @@ def render() -> None:
     """
     Render the Administrative User Management page.
     """
+    scroll_to_top()
     if not is_authenticated():
         st.error("Authentication required to access this resource.")
         return

@@ -3,18 +3,18 @@ Enterprise Reports Page
 
 AnalystGPT Enterprise
 
-Sprint 11
+Sprint 14 Phase 1 — Frontend UX Stabilization
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from src.frontend.components.ai_insights import (
-    render_ai_insights,
-)
 from src.frontend.components.empty_state import (
     render_empty_state,
+)
+from src.frontend.components.export_buttons import (
+    render_export_buttons,
 )
 from src.frontend.components.loading_state import (
     loading,
@@ -24,6 +24,9 @@ from src.frontend.components.report_list import (
 )
 from src.frontend.components.report_preview import (
     render_report_preview,
+)
+from src.frontend.components.scroll_to_top import (
+    scroll_to_top,
 )
 from src.frontend.services.report_service import (
     export_pdf_report,
@@ -36,19 +39,19 @@ def render() -> None:
     """
     Render the enterprise Reports page.
     """
+    scroll_to_top()
 
     st.title(
         "📄 Reports Centre"
     )
 
     st.caption(
-        "View generated reports, AI insights, and "
-        "submit export requests through the "
-        "Application Layer."
+        "View generated reports, inspect preview artifacts, and "
+        "submit export requests through the Application Layer."
     )
 
     with loading(
-        "Loading reports..."
+        "Loading reports and previews..."
     ):
 
         report_data = get_report_data()
@@ -57,18 +60,18 @@ def render() -> None:
     # Empty State
     # ==========================================================
 
-    if not report_data["dataset_loaded"]:
+    if not report_data.get("dataset_loaded"):
 
-        if render_empty_state(
+        render_empty_state(
             title="No Dataset Available",
             message=(
                 "Upload and process a dataset before "
                 "viewing reports."
             ),
+            icon="📄",
             button_label="Go to Upload",
-        ):
-            st.session_state.current_page = "Upload"
-            st.rerun()
+            target_page="Upload",
+        )
 
         return
 
@@ -149,16 +152,21 @@ def render() -> None:
     st.divider()
 
     # ==========================================================
-    # AI Insight Engine
+    # AI Insights Navigation Callout
     # ==========================================================
 
     st.subheader(
-        "🧠 AI Insight Engine"
+        "🧠 AI Business Insights"
     )
 
-    render_ai_insights(
-        report_data,
+    st.caption(
+        "AI executive summaries, recommendations, and narratives "
+        "are now hosted in the dedicated AI Insights page."
     )
+
+    if st.button("🚀 Open AI Insights Page", width="stretch"):
+        st.session_state.current_page = "AI Insights"
+        st.rerun()
 
     st.divider()
 
@@ -199,6 +207,7 @@ def render() -> None:
                 st.success(
                     result["message"]
                 )
+                render_export_buttons(result)
 
             else:
 
@@ -224,6 +233,7 @@ def render() -> None:
                 st.success(
                     result["message"]
                 )
+                render_export_buttons(result)
 
             else:
 
@@ -232,7 +242,6 @@ def render() -> None:
                 )
 
     st.info(
-        "Reports include both the analytical report "
-        "and AI-generated business insights when "
-        "available."
+        "Reports include structured quality metrics, descriptive statistics, "
+        "and analytical summaries generated from the pipeline."
     )

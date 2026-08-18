@@ -26,4 +26,10 @@ DASHBOARD_PAGE = "Dashboard"
 
 REPORTS_PAGE = "Reports"
 
+AI_INSIGHTS_PAGE = "AI Insights"
+
+ADMIN_PAGE = "Admin"
+
 ABOUT_PAGE = "About"
+
+SIGN_IN_PAGE = "Sign In"

@@ -96,6 +96,7 @@ class DashboardOrchestrator:
 
         return self._build_dashboard(
             result,
+            user_context=user_context,
         )
 
     # ==========================================================
@@ -122,42 +123,70 @@ class DashboardOrchestrator:
     def _build_ai_report(
         self,
         pipeline_result: PipelineResult,
+        user_context: Any | None = None,
     ) -> dict[str, Any] | None:
         """
         Convert the AI report into a serialisable dictionary.
         """
 
         if (
-            pipeline_result.pipeline_report is None
-            or pipeline_result.pipeline_report.ai_report
-            is None
+            pipeline_result.pipeline_report is not None
+            and pipeline_result.pipeline_report.ai_report is not None
         ):
-            return None
+            ai_report = (
+                pipeline_result.pipeline_report.ai_report
+            )
 
-        ai_report = (
-            pipeline_result.pipeline_report.ai_report
-        )
+            return {
+                "executive_summary":
+                    ai_report.executive_summary,
+                "recommendations":
+                    ai_report.recommendations,
+                "explanations":
+                    ai_report.explanations,
+                "narrative":
+                    ai_report.narrative,
+                "model":
+                    ai_report.model,
+                "provider":
+                    ai_report.provider,
+                "execution_time":
+                    ai_report.execution_time,
+            }
 
-        return {
-            "executive_summary":
-                ai_report.executive_summary,
-            "recommendations":
-                ai_report.recommendations,
-            "explanations":
-                ai_report.explanations,
-            "narrative":
-                ai_report.narrative,
-            "model":
-                ai_report.model,
-            "provider":
-                ai_report.provider,
-            "execution_time":
-                ai_report.execution_time,
-        }
+        # Check database if job exists and has completed
+        job_id = getattr(pipeline_result, "ai_job_id", None)
+        if job_id is not None:
+            user_id = (
+                user_context.user_id
+                if user_context and getattr(user_context, "is_authenticated", False)
+                else None
+            )
+            try:
+                ai_job_data = self._application.ai_job_service.get_job_with_report(
+                    job_id=job_id,
+                    user_id=user_id,
+                )
+                if ai_job_data is not None and ai_job_data.get("ai_report") is not None:
+                    rep = ai_job_data["ai_report"]
+                    return {
+                        "executive_summary": rep.get("executive_summary", ""),
+                        "recommendations": rep.get("recommendations", []),
+                        "explanations": rep.get("explanations", []),
+                        "narrative": rep.get("narrative", ""),
+                        "model": rep.get("model", ""),
+                        "provider": rep.get("provider", ""),
+                        "execution_time": rep.get("execution_time", 0.0),
+                    }
+            except Exception:
+                pass
+
+        return None
 
     def _build_dashboard(
         self,
         result: PipelineResult,
+        user_context: Any | None = None,
     ) -> dict[str, Any]:
         """
         Convert a PipelineResult into dashboard data.
@@ -187,6 +216,10 @@ class DashboardOrchestrator:
                     result.execution_time,
                 "output_path":
                     result.output_path,
+                "ai_job_id":
+                    getattr(result, "ai_job_id", None),
+                "ai_job_status":
+                    getattr(result, "ai_job_status", None),
             },
             "report": (
                 reporting_report.to_dict()
@@ -195,5 +228,6 @@ class DashboardOrchestrator:
             ),
             "ai_report": self._build_ai_report(
                 result,
+                user_context=user_context,
             ),
         }

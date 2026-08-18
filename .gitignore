@@ -111,13 +111,15 @@ reports/*
 *.seed
 
 # ==========================================================
-# SQLite / Local Databases
+# SQLite / Local Databases & Runtime Storage
 # ==========================================================
 
 *.db
 *.db-journal
 *.sqlite
 *.sqlite3
+data/
+storage/
 
 # ==========================================================
 # Performance Outputs
