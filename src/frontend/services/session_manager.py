@@ -117,6 +117,8 @@ def store_dataset(
         "dashboard_dataset",
         "reports_cache",
         "reports_dataset",
+        "exported_text_result",
+        "exported_pdf_result",
         AI_REPORT_KEY,
         AI_JOB_ID_KEY,
     ):
@@ -135,6 +137,8 @@ def store_pipeline_result(
         "dashboard_dataset",
         "reports_cache",
         "reports_dataset",
+        "exported_text_result",
+        "exported_pdf_result",
     ):
         st.session_state.pop(cache_key, None)
 
@@ -235,5 +239,7 @@ def clear_dataset() -> None:
         "dashboard_dataset",
         "reports_cache",
         "reports_dataset",
+        "exported_text_result",
+        "exported_pdf_result",
     ):
         st.session_state.pop(key, None)

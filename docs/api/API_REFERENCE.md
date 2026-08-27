@@ -85,12 +85,14 @@
 | `GET` | `/api/dashboard/categorical` | Categorical frequencies & counts | Yes / Scoped |
 | `GET` | `/api/dashboard/quality` | Data quality metric scores | Yes / Scoped |
 
-### Reports Centre (`/api/reports`)
+#### Reports Centre (`/reports` and `/api/reports`)
 | Method | Endpoint | Description | Auth Required |
 |---|---|---|---|
-| `GET` | `/api/reports` | List generated reports for user | Yes / Scoped |
-| `GET` | `/api/reports/latest` | Retrieve latest generated report | Yes / Scoped |
-| `GET` | `/api/reports/{report_id}` | Retrieve report by identifier | Yes / Scoped |
+| `GET` | `/reports` (or `/api/reports`) | List generated reports for user | Yes / Scoped |
+| `GET` | `/reports/latest/export/text` (or `/api/reports/latest/export/text`) | Stream plain-text report artifact for latest pipeline run | Yes (`REPORT_EXPORT`) |
+| `GET` | `/reports/latest/export/pdf` (or `/api/reports/latest/export/pdf`) | Stream executive PDF report artifact for latest pipeline run | Yes (`REPORT_EXPORT`) |
+| `GET` | `/reports/{report_id}/export/text` (or `/api/reports/{report_id}/export/text`) | Stream plain-text report artifact for specific report ID | Yes (`REPORT_EXPORT`) |
+| `GET` | `/reports/{report_id}/export/pdf` (or `/api/reports/{report_id}/export/pdf`) | Stream executive PDF report artifact for specific report ID | Yes (`REPORT_EXPORT`) |
 
 ---
 
@@ -126,46 +128,23 @@ Authorization: Bearer <jwt_access_token>
 
 ---
 
-# Future API Enhancements (Sprint 14 Planned)
-
-> **Status:** PLANNED / NOT YET IMPLEMENTED
-
-The following endpoints are specified for Sprint 14 implementation:
-
-### Asynchronous AI Job Lifecycle (`/api/ai`)
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/ai/jobs/{job_id}` | Poll background AI generation job status (`PENDING`, `GENERATING`, `READY`, `FAILED`) |
-| `POST` | `/api/ai/jobs/retry/{job_id}` | Retry a failed AI generation job |
-
-### Data Cleaning Governance & Preview (`/api/cleaning`)
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/cleaning/preview` | Generate cleaning impact assessment without destructive modification |
-| `GET` | `/api/cleaning/lineage/{dataset_id}` | Retrieve provenance metadata and transformation lineage |
-
-### Report Exports (`/api/reports/{id}/export`)
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/reports/{id}/export/text` | Stream text report artifact |
-| `GET` | `/api/reports/{id}/export/pdf` | Stream structured PDF report artifact |
-
----
-
 # Current API Status
 
 | Item | Status |
 |------|--------|
 | REST API Layer | ✅ Stable |
 | FastAPI Server | ✅ Operational |
-| Authentication Subsystem | ✅ Complete (v13.0.0) |
-| Role-Based Access Control | ✅ Complete (v13.0.0) |
-| Admin User Management API | ✅ Complete (v13.0.0) |
-| Resource Ownership & IDOR Defense | ✅ Complete (v13.0.0) |
+| Authentication Subsystem | ✅ Complete (v14.0.0) |
+| Role-Based Access Control | ✅ Complete (v14.0.0) |
+| Admin User Management API | ✅ Complete (v14.0.0) |
+| Resource Ownership & IDOR Defense | ✅ Complete (v14.0.0) |
+| Asynchronous AI Insight Engine | ✅ Complete (v14.0.0) |
+| Text & PDF Report Export Streaming | ✅ Complete (v14.0.0) |
 | Swagger UI & ReDoc | ✅ Operational |
 | OpenAPI 3.1 Spec | ✅ Generated |
-| Automated Integration Tests | ✅ 329 Passed |
+| Automated Integration Tests | ✅ 535 Passed |
 
 ---
 
-**API Version:** **v13.0.0**
+**API Version:** **v14.0.0**
+ion:** **v13.0.0**

@@ -26,12 +26,12 @@
 
 | Item | Status |
 |------|--------|
-| Current Version | **v13.0.0** |
-| Previous Version | v12.0.0 |
+| Current Version | **v14.0.0** |
+| Previous Version | v13.0.0 |
 | Repository Status | 🟢 Stable Release |
-| Current Sprint | ✅ Sprint 13 Complete |
-| Current Focus | **Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness** |
-| Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction + AI Insight Engine + Production Deployment + Enterprise Identity & RBAC Multi-User Platform |
+| Current Sprint | ✅ Sprint 14 Complete |
+| Current Focus | **Sprint 15 — React Presentation Layer Migration** |
+| Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction + AI Insight Engine + Production Deployment + Enterprise Identity & RBAC Multi-User Platform + Governance & Stabilization Platform |
 | Application Layer | ✅ Stable |
 | Persistence Layer | ✅ Stable |
 | Database Abstraction Layer | ✅ Stable |
@@ -60,7 +60,7 @@
 | Swagger | ✅ Operational |
 | Docker Multi-Stage Build | ✅ Operational |
 | Docker Compose Topology | ✅ Operational |
-| Automated Testing | ✅ 329 tests passing |
+| Automated Testing | ✅ 531 tests passing |
 | Performance Validation | ✅ Completed |
 | Technical Debt | 🟢 Very Low |
 
@@ -1186,83 +1186,83 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 ## Sprint 14 Definition of Done
 
 ### UX & Frontend
-- [ ] Dashboard opens at top
-- [ ] Reports opens at top
-- [ ] AI Insights moved to dedicated navigation item
-- [ ] Navigation does not unnecessarily trigger expensive backend operations
+- [x] Dashboard opens at top
+- [x] Reports opens at top
+- [x] AI Insights moved to dedicated navigation item
+- [x] Navigation does not unnecessarily trigger expensive backend operations
 
 ### AI Execution & Job Lifecycle
-- [ ] Pipeline completion is independent of AI generation completion
-- [ ] Dashboard/Reports can render deterministic pipeline results before AI generation completes
-- [ ] AI generation executes asynchronously from pipeline completion
-- [ ] AI generation status is persisted independently of frontend state
-- [ ] AI generation associated with `pipeline_run_id`, `user_id`, `report_id`
-- [ ] AI generation state tracking implemented (`PENDING → GENERATING → READY / FAILED`)
-- [ ] Duplicate AI generation prevented (idempotency)
-- [ ] AI retry/failure behavior defined and tested
-- [ ] AI failure does not invalidate successful pipeline execution
-- [ ] AI job status and generated insights respect authenticated user ownership and ADMIN authorization
-- [ ] Asynchronous execution uses a replaceable background-job abstraction; implementation must not couple the application layer to a specific queue/worker technology
+- [x] Pipeline completion is independent of AI generation completion
+- [x] Dashboard/Reports can render deterministic pipeline results before AI generation completes
+- [x] AI generation executes asynchronously from pipeline completion
+- [x] AI generation status is persisted independently of frontend state
+- [x] AI generation associated with `pipeline_run_id`, `user_id`, `report_id`
+- [x] AI generation state tracking implemented (`PENDING → GENERATING → READY / FAILED`)
+- [x] Duplicate AI generation prevented (idempotency)
+- [x] AI retry/failure behavior defined and tested
+- [x] AI failure does not invalidate successful pipeline execution
+- [x] AI job status and generated insights respect authenticated user ownership and ADMIN authorization
+- [x] Asynchronous execution uses a replaceable background-job abstraction; implementation must not couple the application layer to a specific queue/worker technology
 
 ### Performance
-- [ ] Performance baselines established (API latency, dashboard load, pipeline, AI, exports)
-- [ ] Performance acceptance criteria defined
-- [ ] Performance regression comparison completed and documented
+- [x] Performance baselines established (API latency, dashboard load, pipeline, AI, exports)
+- [x] Performance acceptance criteria defined
+- [x] Performance regression comparison completed and documented
 
 ### Data Governance & Lineage
-- [ ] Raw dataset preserved through versioned artifact-storage abstraction
-- [ ] Source dataset has immutable identifier and checksum/hash
-- [ ] Cleaned dataset maintained separately
-- [ ] Configurable missing-value policies implemented
-- [ ] Cleaning preview available before destructive transformations
-- [ ] Analyst can approve or modify cleaning policy before execution
-- [ ] Selected policy is persisted with the pipeline run
-- [ ] Cleaning provenance recorded (rows removed, affected columns, percentage, policy details)
-- [ ] Before/after data-quality metrics exposed
-- [ ] Data lineage traceable from source → cleaning → pipeline → reports → AI
-- [ ] Cleaning configuration is versioned and persisted
-- [ ] Cleaning execution is reproducible from recorded configuration
+- [x] Raw dataset preserved through versioned artifact-storage abstraction
+- [x] Source dataset has immutable identifier and checksum/hash
+- [x] Cleaned dataset maintained separately
+- [x] Configurable missing-value policies implemented
+- [x] Cleaning preview available before destructive transformations
+- [x] Analyst can approve or modify cleaning policy before execution
+- [x] Selected policy is persisted with the pipeline run
+- [x] Cleaning provenance recorded (rows removed, affected columns, percentage, policy details)
+- [x] Before/after data-quality metrics exposed
+- [x] Data lineage traceable from source → cleaning → pipeline → reports → AI
+- [x] Cleaning configuration is versioned and persisted
+- [x] Cleaning execution is reproducible from recorded configuration
 
 ### AI Data Context & Integrity
-- [ ] AI context includes source-data quality metadata
-- [ ] AI receives privacy-safe aggregated analytical context (not complete raw dataset)
-- [ ] AI distinguishes source-data observations from cleaned analytical findings
-- [ ] Analytical caveats included when cleaning materially changes the dataset
-- [ ] Optional controlled raw-data sampling available only where justified
+- [x] AI context includes source-data quality metadata
+- [x] AI receives privacy-safe aggregated analytical context (not complete raw dataset)
+- [x] AI distinguishes source-data observations from cleaned analytical findings
+- [x] Analytical caveats included when cleaning materially changes the dataset
+- [x] Optional controlled raw-data sampling available only where justified
 
 ### Reporting & Exports
-- [ ] Report download functional
-- [ ] PDF export functional
-- [ ] Export idempotency verified
-- [ ] Export integration tests passing
-- [ ] Exports respect authenticated user ownership
+- [x] Report download functional
+- [x] PDF export functional
+- [x] Export idempotency verified
+- [x] Export integration tests passing
+- [x] Exports respect authenticated user ownership
 
 ### React Migration Readiness
-- [ ] Core application workflows can be exercised through REST APIs without Streamlit
-- [ ] No business logic required by Sprint 15 resides exclusively inside Streamlit components
-- [ ] React migration can consume existing API contracts without backend redesign
-- [ ] Streamlit is treated as a presentation client rather than an application-layer dependency
-- [ ] Frontend/backend API contracts frozen and documented
-- [ ] API contract tests implemented (request/response schemas, backward compatibility, error responses)
-- [ ] Typed API response models stabilized
-- [ ] Frontend service interfaces established independent of Streamlit
-- [ ] React migration mapping documented
-- [ ] REST API parity validated for Sprint 15 readiness
+- [x] Core application workflows can be exercised through REST APIs without Streamlit
+- [x] No business logic required by Sprint 15 resides exclusively inside Streamlit components
+- [x] React migration can consume existing API contracts without backend redesign
+- [x] Streamlit is treated as a presentation client rather than an application-layer dependency
+- [x] Frontend/backend API contracts frozen and documented
+- [x] API contract tests implemented (request/response schemas, backward compatibility, error responses)
+- [x] Typed API response models stabilized
+- [x] Frontend service interfaces established independent of Streamlit
+- [x] React migration mapping documented
+- [x] REST API parity validated for Sprint 15 readiness
 
 ### Testing & Quality
-- [ ] Full regression suite passing
-- [ ] Concurrent pipeline execution tested
-- [ ] Concurrent AI generation tested
-- [ ] AI job idempotency tested
-- [ ] Multi-user concurrency tested
-- [ ] AI failure isolation verified
-- [ ] Export failure isolation verified
-- [ ] Performance benchmarking completed and documented
-- [ ] Flake8 / Black / Isort / Mypy quality gates passing
-- [ ] `git diff --check` passing
-- [ ] Documentation synchronized (ARCHITECTURE, PROJECT_STATE, ADRs)
-- [ ] **No Git commit by the assistant** – all changes reviewed and committed by lead engineer
-- [ ] Definition of Done satisfied
+- [x] Full regression suite passing
+- [x] Concurrent pipeline execution tested
+- [x] Concurrent AI generation tested
+- [x] AI job idempotency tested
+- [x] Multi-user concurrency tested
+- [x] AI failure isolation verified
+- [x] Export failure isolation verified
+- [x] Performance benchmarking completed and documented
+- [x] Flake8 / Black / Isort / Mypy quality gates passing
+- [x] `git diff --check` passing
+- [x] Documentation synchronized (ARCHITECTURE, PROJECT_STATE, ADRs)
+- [x] **No Git commit by the assistant** – all changes reviewed and committed by lead engineer
+- [x] Definition of Done satisfied
 
 ---
 
@@ -1442,7 +1442,7 @@ engineering maturity levels:
 | AI Layer | ✅ Complete |
 | Production Deployment | ✅ Complete |
 | Enterprise Identity & Multi-User | ✅ Complete |
-| UX Stabilization & Data Governance | 📋 Sprint 14 |
+| UX Stabilization & Data Governance | ✅ Complete |
 | React Migration | 📋 Sprint 15 |
 
 ---
@@ -1585,12 +1585,13 @@ Current repository state:
 - ✅ Stable Production Deployment & Docker Containerization
 - ✅ Stable Enterprise Identity & Multi-User Platform
 - ✅ Sprint 13 Complete
-- 🚀 Ready for Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness
+- ✅ Sprint 14 Complete
+- 🚀 Ready for Sprint 15 — React Migration & Modern Presentation Layer
 
 ---
 
-**Current Roadmap Version:** **v13.0.0**
+**Current Roadmap Version:** **v14.0.0**
 
-**Previous Version:** **v12.0.0**
+**Previous Version:** **v13.0.0**
 
-**Next Planned Release:** **v14.0.0 — Sprint 14: UX Stabilization, Performance, Data Governance & React Migration Readiness**
+**Next Planned Release:** **v15.0.0 — Sprint 15: React Migration & Modern Presentation Layer**

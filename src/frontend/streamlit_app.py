@@ -8,24 +8,32 @@ Sprint 11
 
 from __future__ import annotations
 
-import streamlit as st
+from pathlib import Path
+import sys
 
-from src.core.constants import (
+# Ensure repository root is in sys.path when launched directly via `streamlit run`
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+import streamlit as st  # noqa: E402
+
+from src.core.constants import (  # noqa: E402
     APP_NAME,
     APP_VERSION,
 )
-from src.core.logger import logger
-from src.frontend.components.footer import (
+from src.core.logger import logger  # noqa: E402
+from src.frontend.components.footer import (  # noqa: E402
     render_footer,
 )
-from src.frontend.services.auth_service import AuthService
-from src.frontend.services.session_manager import (
+from src.frontend.services.auth_service import AuthService  # noqa: E402
+from src.frontend.services.session_manager import (  # noqa: E402
     get_current_user,
     get_user_role,
     is_admin,
     is_authenticated,
 )
-from src.frontend.views import (
+from src.frontend.views import (  # noqa: E402
     about_page,
     admin_page,
     ai_insights_page,

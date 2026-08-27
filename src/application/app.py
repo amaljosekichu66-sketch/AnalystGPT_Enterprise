@@ -31,6 +31,7 @@ from src.analytics.analytics_report import AnalyticsReport
 
 from src.cleaning.cleaning_manager import CleaningManager
 
+from src.core.config import REPORT_OUTPUT_DIRECTORY
 from src.core.logger import logger
 
 from src.persistence.persistence_manager import PersistenceManager
@@ -172,6 +173,7 @@ class Application:
         self._cached_dataset_path: str | None = None
         self._user_pipeline_results: dict[int | None, PipelineResult] = {}
         self._user_cached_paths: dict[int | None, str] = {}
+        self._report_pipeline_results: dict[int, PipelineResult] = {}
 
 
 
@@ -374,7 +376,8 @@ class Application:
 
                 self._generate_report(
 
-                    analytics_report
+                    analytics_report,
+                    pipeline_run_id=self.persistence._pipeline_run_id,
 
                 )
 
@@ -864,55 +867,40 @@ class Application:
 
 
     def _generate_report(
-
         self,
-
         analytics_report: AnalyticsReport,
-
+        pipeline_run_id: int | None = None,
     ) -> ReportingReport:
-
         """
-
         Execute the reporting stage.
 
-
-
         Parameters
-
         ----------
-
         analytics_report:
-
             Analytics report.
-
-
+        pipeline_run_id:
+            Optional pipeline run identifier for artifact isolation.
 
         Returns
-
         -------
-
         ReportingReport
-
         """
 
-
-
         logger.info("-" * 60)
-
         logger.info("REPORTING STAGE")
-
         logger.info("-" * 60)
 
-
+        output_path = (
+            REPORT_OUTPUT_DIRECTORY / f"report_run_{pipeline_run_id}.txt"
+            if pipeline_run_id is not None
+            else None
+        )
 
         reporting_report = (
-
             self.reporting_manager.generate_report(
-
-                analytics_report
-
+                analytics_report,
+                output_path=output_path,
             )
-
         )
 
 
@@ -1343,6 +1331,9 @@ class Application:
             self._user_pipeline_results[user_id] = result
             self._user_cached_paths[user_id] = dataset_path
 
+            if self.persistence._report_id is not None:
+                self._report_pipeline_results[self.persistence._report_id] = result
+
             self._last_pipeline_result = result
             self._cached_dataset_path = dataset_path
 
@@ -1490,6 +1481,30 @@ class Application:
         if user_id is not None:
             return self._user_pipeline_results.get(user_id)
         return self._last_pipeline_result
+
+    def set_result_for_user(
+        self,
+        user_id: int | None,
+        result: PipelineResult,
+        report_id: int | None = None,
+    ) -> None:
+        """
+        Register a pipeline result for a specific user ID and optional report ID.
+        """
+        if user_id is not None:
+            self._user_pipeline_results[user_id] = result
+        self._last_pipeline_result = result
+        if report_id is not None:
+            self._report_pipeline_results[report_id] = result
+
+    def get_result_by_report_id(
+        self,
+        report_id: int,
+    ) -> PipelineResult | None:
+        """
+        Retrieve cached pipeline result by report ID.
+        """
+        return self._report_pipeline_results.get(report_id)
 
     @property
 

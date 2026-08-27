@@ -45,3 +45,17 @@ skip_glob = [
 python_version = "3.11"
 ignore_missing_imports = true
 disable_error_code = ["var-annotated", "union-attr", "arg-type", "return-value", "assignment"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+norecursedirs = [
+    "performance",
+    "data",
+    "venv",
+    ".venv",
+    ".git",
+    "scratch",
+    "docs",
+]
+addopts = "-ra"

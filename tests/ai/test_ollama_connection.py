@@ -180,7 +180,7 @@ def test_response_speed(client: Client) -> None:
         f"{elapsed:.2f} sec"
     )
 
-    assert elapsed < 30
+    assert elapsed < config.AI_TIMEOUT
 
 
 # ==========================================================

@@ -16,8 +16,8 @@
   <a href="#"><img src="https://img.shields.io/badge/Streamlit-1.48+-red.svg" alt="Streamlit"></a>
   <a href="#"><img src="https://img.shields.io/badge/Docker-Ready-2496ED.svg" alt="Docker"></a>
   <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License MIT"></a>
-  <a href="#"><img src="https://img.shields.io/badge/version-v13.0.0-brightgreen" alt="Version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-329%20passing-success" alt="Tests"></a>
+  <a href="#"><img src="https://img.shields.io/badge/version-v14.0.0-brightgreen" alt="Version"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-535%20passing-success" alt="Tests"></a>
 </p>
 
 <p align="center">
@@ -41,7 +41,7 @@
 - **Database**: SQLite (dev) + PostgreSQL (prod)  
 - **Frontend**: Streamlit (React‑ready for future)  
 - **AI Engine**: Ollama + Qwen/Gemma (with provider abstraction)
-- **Testing**: 329 passing tests
+- **Testing**: 535 passing tests
 
 ---
 

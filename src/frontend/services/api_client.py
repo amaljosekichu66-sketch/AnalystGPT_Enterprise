@@ -315,6 +315,48 @@ class APIClient:
 
         return self.reports()
 
+    def download_report(
+        self,
+        endpoint: str,
+        token: str | None = None,
+    ) -> bytes:
+        """
+        Download raw file bytes from a report export endpoint.
+        """
+        request_headers: dict[str, str] = {}
+        auth_token = token or get_auth_token()
+        if auth_token:
+            request_headers["Authorization"] = f"Bearer {auth_token}"
+
+        response = self._client.get(
+            endpoint,
+            headers=request_headers if request_headers else None,
+        )
+        response.raise_for_status()
+        return response.content
+
+    def export_text_report(
+        self,
+        report_id: int | None = None,
+        token: str | None = None,
+    ) -> bytes:
+        """
+        Export text report via REST API.
+        """
+        endpoint = f"/reports/{report_id}/export/text" if report_id is not None else "/reports/latest/export/text"
+        return self.download_report(endpoint, token=token)
+
+    def export_pdf_report(
+        self,
+        report_id: int | None = None,
+        token: str | None = None,
+    ) -> bytes:
+        """
+        Export PDF report via REST API.
+        """
+        endpoint = f"/reports/{report_id}/export/pdf" if report_id is not None else "/reports/latest/export/pdf"
+        return self.download_report(endpoint, token=token)
+
     # ==========================================================
     # Power BI
     # ==========================================================

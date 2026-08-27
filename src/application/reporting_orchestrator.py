@@ -134,16 +134,23 @@ class ReportingOrchestrator:
         ai_report: Any | None = None
         lineage: dict[str, Any] | None = None
 
-        # 1. Check in-memory result for user
+        # 1. Check in-memory result for report_id or user
         result = None
-        try:
-            result = self._application.get_result_for_user(user_id=user_id)
-        except AttributeError:
-            result = getattr(
-                self._application,
-                "get_last_result",
-                lambda: getattr(self._application, "last_result", None),
-            )()
+        if report_id is not None:
+            try:
+                result = self._application.get_result_by_report_id(report_id)
+            except AttributeError:
+                result = None
+
+        if result is None:
+            try:
+                result = self._application.get_result_for_user(user_id=user_id)
+            except AttributeError:
+                result = getattr(
+                    self._application,
+                    "get_last_result",
+                    lambda: getattr(self._application, "last_result", None),
+                )()
 
         if result and getattr(result, "success", False) and getattr(result, "pipeline_report", None):
             reporting_rep = result.pipeline_report.reporting_report
@@ -300,18 +307,6 @@ class ReportingOrchestrator:
         )
 
         if structured_report is None:
-            # Fall back to default candidate files ONLY when user_id is None (single-user / system mode)
-            if user_id is None:
-                default_candidate = REPORT_OUTPUT_DIRECTORY / DEFAULT_REPORT_FILENAME
-                if default_candidate.exists():
-                    return {
-                        "success": True,
-                        "message": "Report ready for download.",
-                        "export_path": str(default_candidate.resolve()),
-                        "path": str(default_candidate.resolve()),
-                        "filename": default_candidate.name,
-                        "mime_type": "text/plain",
-                    }
             return {
                 "success": False,
                 "message": "No generated report was found.",
@@ -368,17 +363,6 @@ class ReportingOrchestrator:
         )
 
         if structured_report is None:
-            if user_id is None:
-                default_pdf = REPORT_OUTPUT_DIRECTORY / DEFAULT_PDF_REPORT_FILENAME
-                if default_pdf.exists():
-                    return {
-                        "success": True,
-                        "message": "PDF report ready.",
-                        "export_path": str(default_pdf.resolve()),
-                        "path": str(default_pdf.resolve()),
-                        "filename": default_pdf.name,
-                        "mime_type": "application/pdf",
-                    }
             return {
                 "success": False,
                 "message": "No generated report was found to export as PDF.",

@@ -184,62 +184,53 @@ def render() -> None:
         "enterprise architecture."
     )
 
+    report_info = report_data.get("report")
+    report_id = report_info.get("id") or report_info.get("report_id") if isinstance(report_info, dict) else None
+
     col1, col2 = st.columns(
         2,
         gap="large",
     )
 
     with col1:
-
         if st.button(
             "📄 Export Text Report",
             width="stretch",
+            key="btn_export_text",
         ):
-
             with loading(
                 "Submitting text export..."
             ):
-
-                result = export_text_report()
-
-            if result["success"]:
-
-                st.success(
-                    result["message"]
-                )
-                render_export_buttons(result)
-
+                result = export_text_report(report_id=report_id)
+            st.session_state["exported_text_result"] = result
+            if result.get("success"):
+                st.success(result.get("message", "Text report ready for download."))
             else:
+                st.warning(result.get("message", "Text export failed."))
 
-                st.warning(
-                    result["message"]
-                )
+        text_result = st.session_state.get("exported_text_result")
+        if text_result and text_result.get("success"):
+            render_export_buttons(text_result, key_prefix="text")
 
     with col2:
-
         if st.button(
             "📑 Export PDF Report",
             width="stretch",
+            key="btn_export_pdf",
         ):
-
             with loading(
                 "Submitting PDF export..."
             ):
-
-                result = export_pdf_report()
-
-            if result["success"]:
-
-                st.success(
-                    result["message"]
-                )
-                render_export_buttons(result)
-
+                result = export_pdf_report(report_id=report_id)
+            st.session_state["exported_pdf_result"] = result
+            if result.get("success"):
+                st.success(result.get("message", "PDF report ready."))
             else:
+                st.warning(result.get("message", "PDF export failed."))
 
-                st.warning(
-                    result["message"]
-                )
+        pdf_result = st.session_state.get("exported_pdf_result")
+        if pdf_result and pdf_result.get("success"):
+            render_export_buttons(pdf_result, key_prefix="pdf")
 
     st.info(
         "Reports include structured quality metrics, descriptive statistics, "

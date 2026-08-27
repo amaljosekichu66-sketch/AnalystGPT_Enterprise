@@ -88,13 +88,13 @@ PYTHONPATH=. pytest tests/frontend/test_frontend_auth.py -v
 ### Run Full Repository Test Suite
 
 ```bash
-PYTHONPATH=. pytest tests/ -q
+DATABASE_ENGINE=sqlite pytest -q
 ```
 
 Expected Output:
 
 ```text
-329 passed in ~4m40s
+535 passed in ~50s
 0 failed
 0 errors
 ```
@@ -107,13 +107,15 @@ Expected Output:
 |---|---|
 | `tests/api/test_auth_routes.py` | Registration, login, profile (`/me`), logout, credential validation |
 | `tests/api/test_admin_routes.py` | Admin user listing, role/status mutation, last-admin safeguards |
+| `tests/api/test_report_export_api.py` | Text and PDF export endpoints, ownership enforcement, IDOR checks |
 | `tests/api/test_auth_dependencies.py` | Bearer token extraction, UserContext resolution, RBAC injection |
 | `tests/identity/test_token_service.py` | HMAC-SHA256 token issuance, claims validation, expiration |
 | `tests/identity/test_password_hasher.py` | PBKDF2-HMAC-SHA256 hashing, salting, constant-time verification |
 | `tests/identity/test_rbac.py` | Declarative RBAC matrices (`ADMIN`, `ANALYST`, `VIEWER`), 401/403 errors |
 | `tests/identity/test_resource_ownership.py` | Server-side query scoping, IDOR immunity, cross-user isolation |
 | `tests/identity/test_audit.py` | Structured audit logging & credential sanitization |
-| `tests/frontend/test_frontend_auth.py` | Streamlit login view, session state management, tenant cleanup |
+| `tests/reporting/` | Multi-page PDF generation, text report serialization, lineage isolation |
+| `tests/frontend/` | Streamlit views, session state management, tenant cleanup, export buttons |
 
 ---
 
@@ -127,12 +129,10 @@ Expected Output:
 | Server-Side Data Isolation | ✅ Passed |
 | Admin Safety Guards | ✅ Passed |
 | Swagger & OpenAPI Spec | ✅ Passed |
-| Full Automated Test Suite | ✅ **329 / 329 Passed** |
+| Full Automated Test Suite | ✅ **535 / 535 Passed** |
 
 ---
 
-**API Version:** **v13.0.0**
+**API Version:** **v14.0.0**
 
-**Testing Status:** **329 / 329 Automated Tests Passed (0 Regressions)**
-
-**Next Milestone:** **Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness**
+**Testing Status:** **535 / 535 Automated Tests Passed (0 Regressions)**

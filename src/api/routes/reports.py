@@ -91,60 +91,6 @@ def get_reports(
 
 
 @router.get(
-    "/reports/{report_id}/export/text",
-    responses={
-        200: {
-            "content": {"text/plain": {}},
-            "description": "Plain-text report file stream",
-        },
-        401: {"model": ErrorResponse, "description": "Authentication required"},
-        403: {"model": ErrorResponse, "description": "Permission denied"},
-        404: {"model": ErrorResponse, "description": "Report not found or access denied"},
-    },
-    summary="Export Text Report by ID",
-    description="Stream the plain-text report artifact for a specific report ID.",
-)
-def export_text_report_by_id(
-    report_id: int,
-    context: UserContext = Depends(
-        require_permission(Permission.REPORT_EXPORT),
-    ),
-    application: Application = Depends(
-        get_application,
-    ),
-) -> FileResponse:
-    """
-    Export and stream a text report artifact for an identified report.
-    """
-    user_id = context.user_id if context.is_authenticated else None
-    orchestrator = ReportingOrchestrator(application)
-
-    result = orchestrator.export_text_report(
-        user_id=user_id,
-        report_id=report_id,
-    )
-
-    if not result.get("success") or not result.get("path"):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=result.get("message", "Report not found or access denied."),
-        )
-
-    file_path = Path(result["path"])
-    if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exported report file not found on disk.",
-        )
-
-    return FileResponse(
-        path=str(file_path),
-        media_type="text/plain",
-        filename=result.get("filename", file_path.name),
-    )
-
-
-@router.get(
     "/reports/export/text",
     responses={
         200: {
@@ -211,20 +157,20 @@ def export_latest_text_report(
 
 
 @router.get(
-    "/reports/{report_id}/export/pdf",
+    "/reports/{report_id}/export/text",
     responses={
         200: {
-            "content": {"application/pdf": {}},
-            "description": "Formatted PDF report file stream",
+            "content": {"text/plain": {}},
+            "description": "Plain-text report file stream",
         },
         401: {"model": ErrorResponse, "description": "Authentication required"},
         403: {"model": ErrorResponse, "description": "Permission denied"},
         404: {"model": ErrorResponse, "description": "Report not found or access denied"},
     },
-    summary="Export PDF Report by ID",
-    description="Stream the formatted PDF report artifact for a specific report ID.",
+    summary="Export Text Report by ID",
+    description="Stream the plain-text report artifact for a specific report ID.",
 )
-def export_pdf_report_by_id(
+def export_text_report_by_id(
     report_id: int,
     context: UserContext = Depends(
         require_permission(Permission.REPORT_EXPORT),
@@ -234,12 +180,12 @@ def export_pdf_report_by_id(
     ),
 ) -> FileResponse:
     """
-    Export and stream a PDF report artifact for an identified report.
+    Export and stream a text report artifact for an identified report.
     """
     user_id = context.user_id if context.is_authenticated else None
     orchestrator = ReportingOrchestrator(application)
 
-    result = orchestrator.export_pdf_report(
+    result = orchestrator.export_text_report(
         user_id=user_id,
         report_id=report_id,
     )
@@ -254,12 +200,12 @@ def export_pdf_report_by_id(
     if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exported PDF report file not found on disk.",
+            detail="Exported report file not found on disk.",
         )
 
     return FileResponse(
         path=str(file_path),
-        media_type="application/pdf",
+        media_type="text/plain",
         filename=result.get("filename", file_path.name),
     )
 
@@ -314,6 +260,60 @@ def export_latest_pdf_report(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=result.get("message", "No generated report was found to export as PDF."),
+        )
+
+    file_path = Path(result["path"])
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Exported PDF report file not found on disk.",
+        )
+
+    return FileResponse(
+        path=str(file_path),
+        media_type="application/pdf",
+        filename=result.get("filename", file_path.name),
+    )
+
+
+@router.get(
+    "/reports/{report_id}/export/pdf",
+    responses={
+        200: {
+            "content": {"application/pdf": {}},
+            "description": "Formatted PDF report file stream",
+        },
+        401: {"model": ErrorResponse, "description": "Authentication required"},
+        403: {"model": ErrorResponse, "description": "Permission denied"},
+        404: {"model": ErrorResponse, "description": "Report not found or access denied"},
+    },
+    summary="Export PDF Report by ID",
+    description="Stream the formatted PDF report artifact for a specific report ID.",
+)
+def export_pdf_report_by_id(
+    report_id: int,
+    context: UserContext = Depends(
+        require_permission(Permission.REPORT_EXPORT),
+    ),
+    application: Application = Depends(
+        get_application,
+    ),
+) -> FileResponse:
+    """
+    Export and stream a PDF report artifact for an identified report.
+    """
+    user_id = context.user_id if context.is_authenticated else None
+    orchestrator = ReportingOrchestrator(application)
+
+    result = orchestrator.export_pdf_report(
+        user_id=user_id,
+        report_id=report_id,
+    )
+
+    if not result.get("success") or not result.get("path"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=result.get("message", "Report not found or access denied."),
         )
 
     file_path = Path(result["path"])
