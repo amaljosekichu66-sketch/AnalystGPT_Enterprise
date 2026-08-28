@@ -142,7 +142,7 @@ performance/*.csv
 !performance/datasets/**
 
 # ==========================================================
-# Temporary Files
+# Temporary Files & Scratch Space
 # ==========================================================
 
 *.tmp
@@ -151,6 +151,9 @@ performance/*.csv
 *.orig
 *.swp
 *.swo
+scratch/
+.agents/
+FULL_REPOSITORY_*.txt
 
 # ==========================================================
 # Python Version Files

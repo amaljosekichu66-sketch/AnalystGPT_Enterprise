@@ -255,7 +255,7 @@ class TestApplicationCacheIsolation:
         user_repo = app_instance.persistence.user_repository
 
         # Ensure user records exist in DB for FK validation
-        user_1_entity = user_repo.get_by_id(1)
+        user_1_entity = user_repo.get_by_username("user_alpha")
         if not user_1_entity:
             user_1_entity = user_repo.create(
                 UserCreate(
@@ -267,7 +267,7 @@ class TestApplicationCacheIsolation:
                 hashed_password="hash",
             )
 
-        user_2_entity = user_repo.get_by_id(2)
+        user_2_entity = user_repo.get_by_username("user_beta")
         if not user_2_entity:
             user_2_entity = user_repo.create(
                 UserCreate(
@@ -291,15 +291,17 @@ class TestApplicationCacheIsolation:
         )
         assert result_1.success is True
 
+        uid_1 = user_1_entity.id
+        uid_2 = user_2_entity.id
+
         # User 1 cache contains result_1
-        assert app_instance.get_result_for_user(user_id=1) is not None
+        assert app_instance.get_result_for_user(user_id=uid_1) is not None
 
         # User 2 cache has NOT run yet and is None
-        assert app_instance.get_result_for_user(user_id=2) is None
+        assert app_instance.get_result_for_user(user_id=uid_2) is None
 
-
-        # User 3 cache is None
-        assert app_instance.get_result_for_user(user_id=3) is None
+        # Unknown User cache is None
+        assert app_instance.get_result_for_user(user_id=99999) is None
 
         # Execute for User 2
         result_2 = app_instance.run(
@@ -309,14 +311,14 @@ class TestApplicationCacheIsolation:
         assert result_2.success is True
 
         # Both have independent cached results
-        assert app_instance.get_result_for_user(user_id=1) is not None
-        assert app_instance.get_result_for_user(user_id=2) is not None
-        assert app_instance.get_result_for_user(user_id=999) is None
+        assert app_instance.get_result_for_user(user_id=uid_1) is not None
+        assert app_instance.get_result_for_user(user_id=uid_2) is not None
+        assert app_instance.get_result_for_user(user_id=99999) is None
 
         # Clear cache for User 1 only
-        app_instance.clear_cache(user_id=1)
-        assert app_instance.get_result_for_user(user_id=1) is None
-        assert app_instance.get_result_for_user(user_id=2) is not None
+        app_instance.clear_cache(user_id=uid_1)
+        assert app_instance.get_result_for_user(user_id=uid_1) is None
+        assert app_instance.get_result_for_user(user_id=uid_2) is not None
 
 
 class TestAPIDataIsolation:

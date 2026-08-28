@@ -133,11 +133,15 @@ def test_api_export_by_report_id_isolation_between_multiple_runs(tmp_path):
     import uuid
     from starlette.testclient import TestClient
 
-    from src.api.dependencies.auth_dependencies import get_user_service
+    from src.api.dependencies.auth_dependencies import (
+        get_user_service,
+        set_user_service_instance,
+    )
     from src.api.server import app as fastapi_app
     from src.identity.models import UserCreate, UserLogin
     from src.persistence.persistence_manager import PersistenceManager
 
+    set_user_service_instance(None)
     user_service = get_user_service()
     unique_username = f"auditor_{uuid.uuid4().hex[:6]}"
     user = user_service.register_user(
@@ -180,9 +184,14 @@ def test_api_export_by_report_id_isolation_between_multiple_runs(tmp_path):
     res_a = client.post("/api/pipeline", json={"input_path": str(csv_a)}, headers=headers)
     assert res_a.status_code == 200
 
-    pm = PersistenceManager()
-    pm.initialize()
-    reports_after_a = pm._report_repository.get_all(user_id=user_id)
+    from src.database.connection_factory import ConnectionFactory
+    from src.database.repositories.report_repository import ReportRepository
+
+    conn = ConnectionFactory.create_connection()
+    conn.connect()
+    rep_repo = ReportRepository(conn)
+
+    reports_after_a = rep_repo.get_all(user_id=user_id)
     assert len(reports_after_a) >= 1
     report_id_a = reports_after_a[0]["id"]
 
@@ -190,7 +199,7 @@ def test_api_export_by_report_id_isolation_between_multiple_runs(tmp_path):
     res_b = client.post("/api/pipeline", json={"input_path": str(csv_b)}, headers=headers)
     assert res_b.status_code == 200
 
-    reports_after_b = pm._report_repository.get_all(user_id=user_id)
+    reports_after_b = rep_repo.get_all(user_id=user_id)
     report_id_b = [r["id"] for r in reports_after_b if r["id"] != report_id_a][0]
 
     # Explicitly request Report A text (historical run)
