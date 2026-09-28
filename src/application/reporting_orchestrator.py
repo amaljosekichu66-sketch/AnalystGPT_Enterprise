@@ -16,6 +16,7 @@ Business logic belongs in ReportingManager.
 
 from __future__ import annotations
 
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -260,6 +261,20 @@ class ReportingOrchestrator:
     # Export Operations
     # ==========================================================
 
+    @staticmethod
+    def _ephemeral_export_path(suffix: str) -> Path:
+        """
+        A fresh file for one export request (SEC-12).
+
+        Exports without an explicit target used to share the exporter's
+        default file, so a concurrent export by another user could overwrite
+        it before this response was streamed. The route deletes the file once
+        the response has been sent.
+        """
+        directory = Path(config.REPORT_OUTPUT_DIRECTORY) / "exports"
+        directory.mkdir(parents=True, exist_ok=True)
+        return directory / f"export_{uuid.uuid4().hex}{suffix}"
+
     def _owned_report_record(
         self,
         report_id: int,
@@ -327,6 +342,9 @@ class ReportingOrchestrator:
         target_path = output_path
         if target_path is None and filename is not None:
             target_path = config.REPORT_OUTPUT_DIRECTORY / filename
+        ephemeral = target_path is None
+        if ephemeral:
+            target_path = self._ephemeral_export_path(".txt")
 
         export_path = self._application.reporting_manager.export_text(
             report=structured_report,
@@ -341,8 +359,9 @@ class ReportingOrchestrator:
             "message": "Text report exported successfully.",
             "export_path": str(p.resolve()),
             "path": str(p.resolve()),
-            "filename": p.name,
+            "filename": DEFAULT_REPORT_FILENAME if ephemeral else p.name,
             "mime_type": "text/plain",
+            "ephemeral": ephemeral,
         }
 
     def export_pdf_report(
@@ -379,6 +398,9 @@ class ReportingOrchestrator:
         target_path = output_path
         if target_path is None and filename is not None:
             target_path = config.REPORT_OUTPUT_DIRECTORY / filename
+        ephemeral = target_path is None
+        if ephemeral:
+            target_path = self._ephemeral_export_path(".pdf")
 
         export_path = self._application.reporting_manager.export_pdf(
             report=structured_report,
@@ -393,6 +415,7 @@ class ReportingOrchestrator:
             "message": "PDF report exported successfully.",
             "export_path": str(p.resolve()),
             "path": str(p.resolve()),
-            "filename": p.name,
+            "filename": DEFAULT_PDF_REPORT_FILENAME if ephemeral else p.name,
             "mime_type": "application/pdf",
+            "ephemeral": ephemeral,
         }

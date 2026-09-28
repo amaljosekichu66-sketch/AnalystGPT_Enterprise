@@ -17,6 +17,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 
 from src.api.dependencies.application_dependency import (
     get_application,
@@ -35,6 +36,14 @@ from src.application.reporting_orchestrator import (
 )
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
+
+
+def _discard_after_send(result: dict, file_path: Path) -> BackgroundTask | None:
+    """Delete a per-request export file once it has been streamed (SEC-12)."""
+    if not result.get("ephemeral"):
+        return None
+    return BackgroundTask(file_path.unlink, missing_ok=True)
+
 
 router = APIRouter(
     tags=["Reports"],
@@ -148,6 +157,7 @@ def export_latest_text_report(
         path=str(file_path),
         media_type="text/plain",
         filename=result.get("filename", file_path.name),
+        background=_discard_after_send(result, file_path),
     )
 
 
@@ -202,6 +212,7 @@ def export_text_report_by_id(
         path=str(file_path),
         media_type="text/plain",
         filename=result.get("filename", file_path.name),
+        background=_discard_after_send(result, file_path),
     )
 
 
@@ -268,6 +279,7 @@ def export_latest_pdf_report(
         path=str(file_path),
         media_type="application/pdf",
         filename=result.get("filename", file_path.name),
+        background=_discard_after_send(result, file_path),
     )
 
 
@@ -322,4 +334,5 @@ def export_pdf_report_by_id(
         path=str(file_path),
         media_type="application/pdf",
         filename=result.get("filename", file_path.name),
+        background=_discard_after_send(result, file_path),
     )
