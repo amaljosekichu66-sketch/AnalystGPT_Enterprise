@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.api.dependencies.auth_dependencies import get_user_service  # noqa: E402
 from src.identity.exceptions import UserAlreadyExistsError  # noqa: E402
 from src.identity.models import UserCreate, UserRole  # noqa: E402
+from src.identity.password_policy import WeakPasswordError, validate_password_strength  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -40,6 +41,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     password = os.getenv("ADMIN_BOOTSTRAP_PASSWORD") or getpass.getpass("Admin password: ")
+
+    try:
+        validate_password_strength(password, args.username, args.email)
+    except WeakPasswordError as exc:
+        print(f"Rejected: {exc}", file=sys.stderr)
+        return 2
 
     try:
         user = get_user_service().register_user(

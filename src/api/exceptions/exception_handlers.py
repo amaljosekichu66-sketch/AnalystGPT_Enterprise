@@ -5,9 +5,11 @@ Global exception handlers for AnalystGPT Enterprise REST API.
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
+from src.api.rate_limit import RateLimitExceededError
 from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError
 from src.core.redaction import redact_server_paths
 from src.identity.exceptions import (
+    AccountLockedError,
     AdminOperationError,
     AuthenticationError,
     AuthorizationError,
@@ -52,6 +54,32 @@ def register_exception_handlers(app: FastAPI) -> None:
     """
     Register all global exception handlers.
     """
+
+    @app.exception_handler(AccountLockedError)
+    async def account_locked_handler(
+        _request: Request,
+        exc: AccountLockedError,
+    ) -> JSONResponse:
+        response = _error_response(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "Too many failed login attempts.",
+            str(exc),
+        )
+        response.headers["Retry-After"] = str(exc.retry_after)
+        return response
+
+    @app.exception_handler(RateLimitExceededError)
+    async def rate_limited_handler(
+        _request: Request,
+        exc: RateLimitExceededError,
+    ) -> JSONResponse:
+        response = _error_response(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "Too many requests.",
+            str(exc),
+        )
+        response.headers["Retry-After"] = str(exc.retry_after)
+        return response
 
     @app.exception_handler(AuthenticationError)
     async def authentication_error_handler(

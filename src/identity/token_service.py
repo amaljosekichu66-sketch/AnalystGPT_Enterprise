@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import json
 import time
+import uuid
 from typing import Any
 
 from src.core import config
@@ -83,6 +84,11 @@ class TokenService:
             "typ": "JWT",
         }
 
+        # `jti` makes every token unique - two logins in the same second used
+        # to produce the identical token, so revoking one revoked both (and a
+        # user who logged out and back in within that second was locked out).
+        # It is also the key revocation is recorded under. `iss` / `aud` bind
+        # the token to this service.
         payload: dict[str, Any] = {
             "sub": str(user.id),
             "username": user.username,
@@ -91,6 +97,9 @@ class TokenService:
             "type": "access",
             "iat": now,
             "exp": exp,
+            "jti": uuid.uuid4().hex,
+            "iss": config.AUTH_TOKEN_ISSUER,
+            "aud": config.AUTH_TOKEN_AUDIENCE,
         }
 
         header_json = json.dumps(header, separators=(",", ":")).encode("utf-8")
@@ -126,6 +135,11 @@ class TokenService:
         """
         if not token or not isinstance(token, str):
             raise InvalidTokenError("Authentication token is missing or invalid.")
+
+        # A token is base64url text. Anything else is malformed - reject it as
+        # a 401 before `.encode("ascii")` raises a raw UnicodeEncodeError (400).
+        if not token.isascii():
+            raise InvalidTokenError("Malformed authentication token format.")
 
         parts = token.strip().split(".")
         if len(parts) != 3:
@@ -166,5 +180,14 @@ class TokenService:
 
         if "sub" not in payload:
             raise InvalidTokenError("Token missing subject identifier.")
+
+        if not isinstance(payload.get("jti"), str) or not payload["jti"]:
+            raise InvalidTokenError("Token missing unique identifier.")
+
+        if payload.get("iss") != config.AUTH_TOKEN_ISSUER:
+            raise InvalidTokenError("Token issuer is not accepted.")
+
+        if payload.get("aud") != config.AUTH_TOKEN_AUDIENCE:
+            raise InvalidTokenError("Token audience is not accepted.")
 
         return payload

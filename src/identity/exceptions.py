@@ -107,3 +107,15 @@ class AdminOperationError(IdentityError):
     """
 
     pass
+
+
+class AccountLockedError(AuthenticationError):
+    """
+    Raised when an identifier is temporarily locked after repeated failed logins.
+
+    `retry_after` is the number of seconds until another attempt is accepted.
+    """
+
+    def __init__(self, message: str, retry_after: int) -> None:
+        super().__init__(message)
+        self.retry_after = retry_after

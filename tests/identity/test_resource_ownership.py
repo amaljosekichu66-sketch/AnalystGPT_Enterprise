@@ -5,6 +5,7 @@ Resource ownership, cross-user isolation, and IDOR prevention test suite for Ana
 from __future__ import annotations
 
 import tempfile
+import uuid
 from pathlib import Path
 
 import pandas as pd
@@ -310,7 +311,16 @@ class TestAPIDataIsolation:
     """Test API endpoint data isolation and token-driven UserContext."""
 
     def test_api_reports_user_scoped(self, sample_csv: str) -> None:
-        user_repo = InMemoryUserRepository()
+        # Real DB users: uploads are owned by rows in the users table. With an
+        # in-memory repository this test only passed when other tests had
+        # already created users with the same ids.
+        from src.database.connection_factory import ConnectionFactory
+
+        conn = ConnectionFactory.create_connection()
+        conn.connect()
+        SchemaManager(conn).initialize_schema()
+        user_repo = UserRepository(conn)
+        suffix = uuid.uuid4().hex[:6]
         hasher = PBKDF2PasswordHasher(iterations=10_000)
         token_service = TokenService(secret_key="test-secret-key-32-bytes-long!!")
         revocation = TokenRevocationService()
@@ -321,8 +331,8 @@ class TestAPIDataIsolation:
         # Register User A and User B
         user_a = user_service.register_user(
             UserCreate(
-                username="analyst_a",
-                email="a@enterprise.com",
+                username=f"analyst_a_{suffix}",
+                email=f"a_{suffix}@enterprise.com",
                 password="Password123!",
                 role=UserRole.ANALYST,
             )
@@ -331,16 +341,16 @@ class TestAPIDataIsolation:
 
         user_b = user_service.register_user(
             UserCreate(
-                username="analyst_b",
-                email="b@enterprise.com",
+                username=f"analyst_b_{suffix}",
+                email=f"b_{suffix}@enterprise.com",
                 password="Password123!",
                 role=UserRole.ANALYST,
             )
         )
         assert user_b.id is not None
 
-        _, token_a, _ = user_service.login(UserLogin(username="analyst_a", password="Password123!"))
-        _, token_b, _ = user_service.login(UserLogin(username="analyst_b", password="Password123!"))
+        _, token_a, _ = user_service.login(UserLogin(username=f"analyst_a_{suffix}", password="Password123!"))
+        _, token_b, _ = user_service.login(UserLogin(username=f"analyst_b_{suffix}", password="Password123!"))
 
         client = TestClient(app)
 
@@ -363,3 +373,5 @@ class TestAPIDataIsolation:
         )
         assert rep_res_b.status_code == 200
         assert rep_res_b.json()["data"]["report"] is None
+
+        set_user_service_instance(None)

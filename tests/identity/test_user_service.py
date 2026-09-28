@@ -69,7 +69,7 @@ class TestUserService:
             )
         )
 
-        with pytest.raises(UserAlreadyExistsError, match="Username 'duplicate_user' is already registered"):
+        with pytest.raises(UserAlreadyExistsError, match="already exists"):
             user_service.register_user(
                 UserCreate(
                     username="duplicate_user",
@@ -87,7 +87,7 @@ class TestUserService:
             )
         )
 
-        with pytest.raises(UserAlreadyExistsError, match="Email address 'same@enterprise.com' is already registered"):
+        with pytest.raises(UserAlreadyExistsError, match="already exists"):
             user_service.register_user(
                 UserCreate(
                     username="user_two",

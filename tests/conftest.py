@@ -94,6 +94,10 @@ def _isolate_persistence_roots() -> None:
     # Development mode must be explicit (an unset APP_ENVIRONMENT fails closed
     # to production, which refuses the built-in signing key).
     os.environ.setdefault("APP_ENVIRONMENT", "development")
+
+    # Hundreds of tests register and log in from the same client address.
+    # Rate limiting is enabled explicitly by the tests that exercise it.
+    os.environ.setdefault("AUTH_RATE_LIMIT_ENABLED", "false")
     os.environ.setdefault("REPORT_OUTPUT_DIRECTORY", str(reports_dir))
     os.environ.setdefault("ARTIFACT_STORE_DIRECTORY", str(artifacts_dir))
 

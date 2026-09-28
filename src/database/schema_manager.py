@@ -395,6 +395,42 @@ class SchemaManager:
                 """)
 
             # -------------------------------------------------
+            # Revoked access tokens (pre-Sprint-15 hardening, SEC-09)
+            # -------------------------------------------------
+            # Keyed by the token's `jti`; rows are pruned once `expires_at`
+            # (epoch seconds) has passed, so the table stays bounded.
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS revoked_tokens(
+                    jti TEXT PRIMARY KEY,
+                    expires_at BIGINT NOT NULL,
+                    revoked_at BIGINT NOT NULL
+                );
+                """)
+
+            # -------------------------------------------------
+            # Durable audit trail (pre-Sprint-15 hardening, SEC-25)
+            # -------------------------------------------------
+            # No foreign keys on purpose: audit rows must outlive the users and
+            # resources they describe.
+
+            cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS audit_events(
+                    id {pk},
+                    event_id TEXT UNIQUE NOT NULL,
+                    event_type TEXT NOT NULL,
+                    occurred_at {ts} NOT NULL,
+                    actor_id INTEGER,
+                    actor_username TEXT,
+                    target_id INTEGER,
+                    target_resource TEXT,
+                    action TEXT NOT NULL,
+                    outcome TEXT NOT NULL,
+                    details_json TEXT
+                );
+                """)
+
+            # -------------------------------------------------
             # Performance Indexes (Sprint 13 & Sprint 14 Phase 2)
             # -------------------------------------------------
 
@@ -416,6 +452,9 @@ class SchemaManager:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_reports_job_id ON ai_reports(job_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_reports_pipeline_run_id ON ai_reports(pipeline_run_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_reports_user_id ON ai_reports(user_id);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_revoked_tokens_expires ON revoked_tokens(expires_at);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_type ON audit_events(event_type);")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_actor ON audit_events(actor_id);")
 
             # Sprint 14 Phase 4 & Remediation — AI Report Structured & Provenance Migrations
             for col_def in [

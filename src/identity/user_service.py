@@ -16,6 +16,7 @@ from src.core.logger import logger
 from src.identity.audit import AuditService, get_audit_service
 from src.identity.context import UserContext
 from src.identity.exceptions import (
+    AccountLockedError,
     AdminOperationError,
     AuthenticationError,
     InvalidCredentialsError,
@@ -30,6 +31,7 @@ from src.identity.interfaces import (
     ITokenService,
     IUserRepository,
 )
+from src.identity.login_throttle import LoginThrottle
 from src.identity.models import (
     AdminUserUpdate,
     AuditEventType,
@@ -42,8 +44,12 @@ from src.identity.models import (
     UserUpdate,
 )
 from src.identity.password_hasher import PBKDF2PasswordHasher
+from src.identity.password_policy import validate_password_strength
 from src.identity.token_revocation import TokenRevocationService
 from src.identity.token_service import TokenService
+
+#: Returned for any registration conflict; deliberately does not say which field.
+DUPLICATE_ACCOUNT_MESSAGE = "An account with this username or email address already exists."
 
 # Constant dummy hash used to neutralize timing attacks on nonexistent user logins
 _DUMMY_HASH = "$pbkdf2-sha256$600000$ZHVtbXlzYWx0MTIzNDU2Nw$ZHVtbXloYXNoMTIzNDU2Nzg5MDEyMzQ1Njc4OTA="
@@ -64,12 +70,14 @@ class UserService:
         token_service: ITokenService | None = None,
         revocation_service: ITokenRevocationService | None = None,
         audit_service: AuditService | None = None,
+        login_throttle: LoginThrottle | None = None,
     ) -> None:
         self._user_repository = user_repository
         self._password_hasher = password_hasher if password_hasher is not None else PBKDF2PasswordHasher()
         self._token_service = token_service if token_service is not None else TokenService()
         self._revocation_service = revocation_service if revocation_service is not None else TokenRevocationService()
         self._audit_service = audit_service if audit_service is not None else get_audit_service()
+        self._login_throttle = login_throttle if login_throttle is not None else LoginThrottle()
 
     # ==========================================================
     # User Registration
@@ -80,8 +88,10 @@ class UserService:
         Register an account through the public, unauthenticated flow.
 
         The role is always `SELF_REGISTRATION_ROLE`; the registration payload
-        has no way to express another one.
+        has no way to express another one. The password must pass the
+        acceptance policy (SEC-08).
         """
+        validate_password_strength(registration.password, registration.username, registration.email)
         return self.register_user(
             UserCreate(
                 username=registration.username,
@@ -120,11 +130,15 @@ class UserService:
             user_create.role.value,
         )
 
-        if self._user_repository.get_by_username(user_create.username) is not None:
-            raise UserAlreadyExistsError(f"Username '{user_create.username}' is already registered.")
-
-        if self._user_repository.get_by_email(user_create.email) is not None:
-            raise UserAlreadyExistsError(f"Email address '{user_create.email}' is already registered.")
+        # One generic message for both cases (SEC-15): naming which of the two
+        # already exists told an anonymous caller whether a given username or
+        # email address has an account.
+        if (
+            self._user_repository.get_by_username(user_create.username) is not None
+            or self._user_repository.get_by_email(user_create.email) is not None
+        ):
+            logger.info("Registration rejected: username or email already in use.")
+            raise UserAlreadyExistsError(DUPLICATE_ACCOUNT_MESSAGE)
 
         hashed_password = self._password_hasher.hash(user_create.password)
 
@@ -190,6 +204,20 @@ class UserService:
         clean_identifier = username_or_email.strip()
         user: User | None = None
 
+        # Locked identifiers are refused before the password is checked, so a
+        # correct guess during the lockout is indistinguishable from a wrong one.
+        retry_after = self._login_throttle.retry_after(clean_identifier)
+        if retry_after:
+            self._audit_service.record_event(
+                event_type=AuditEventType.LOGIN_FAILURE,
+                action="USER_LOGIN",
+                actor_username=clean_identifier,
+                target_resource="AUTH",
+                outcome="DENIED",
+                details={"reason": "LOCKED_OUT", "retry_after_seconds": retry_after},
+            )
+            raise AccountLockedError("Too many failed login attempts. Try again later.", retry_after)
+
         if "@" in clean_identifier:
             user = self._user_repository.get_by_email(clean_identifier)
         else:
@@ -210,6 +238,7 @@ class UserService:
                 outcome="FAILED",
                 details={"reason": "USER_NOT_FOUND"},
             )
+            self._register_failed_login(clean_identifier)
             raise InvalidCredentialsError("Invalid username or password.")
 
         if not self._password_hasher.verify(password, user.hashed_password):
@@ -227,6 +256,7 @@ class UserService:
                 outcome="FAILED",
                 details={"reason": "INVALID_PASSWORD"},
             )
+            self._register_failed_login(clean_identifier)
             raise InvalidCredentialsError("Invalid username or password.")
 
         if not user.is_active:
@@ -247,6 +277,8 @@ class UserService:
             )
             raise UserDisabledError(f"User account is {user.status.value.lower()}.")
 
+        self._login_throttle.record_success(clean_identifier)
+
         logger.info(
             "User '%s' (ID=%d, Role=%s) authenticated successfully.",
             user.username,
@@ -266,6 +298,22 @@ class UserService:
         )
 
         return user
+
+    def _register_failed_login(self, identifier: str) -> None:
+        lockout = self._login_throttle.record_failure(identifier)
+        if lockout:
+            logger.warning(
+                "SECURITY_ALERT | Login identifier locked for %ds after repeated failures.",
+                lockout,
+            )
+            self._audit_service.record_event(
+                event_type=AuditEventType.LOGIN_FAILURE,
+                action="ACCOUNT_LOCKOUT",
+                actor_username=identifier,
+                target_resource="AUTH",
+                outcome="DENIED",
+                details={"reason": "LOCKOUT_TRIGGERED", "lockout_seconds": lockout},
+            )
 
     def login(self, user_login: UserLogin) -> tuple[User, str, int]:
         """
@@ -316,10 +364,10 @@ class UserService:
         UserDisabledError
             If user account is inactive or suspended.
         """
-        if self._revocation_service.is_revoked(token):
-            raise InvalidTokenError("Authentication token has been revoked.")
-
         claims = self._token_service.verify_access_token(token)
+
+        if self._revocation_service.is_revoked(claims["jti"]):
+            raise InvalidTokenError("Authentication token has been revoked.")
 
         try:
             user_id = int(claims["sub"])
@@ -341,10 +389,14 @@ class UserService:
 
     def logout(self, token: str | None = None, actor_context: UserContext | None = None) -> bool:
         """
-        Invalidate the given access token in the revocation registry.
+        Revoke a VALID access token by its `jti` until it expires.
+
+        Invalid, expired or foreign strings raise `InvalidTokenError` and are
+        never stored (SEC-09: logout used to accept and keep any string).
         """
         if token:
-            self._revocation_service.revoke_token(token)
+            claims = self._token_service.verify_access_token(token)
+            self._revocation_service.revoke(claims["jti"], int(claims["exp"]))
             logger.info("Access token successfully revoked on logout.")
 
         self._audit_service.record_event(

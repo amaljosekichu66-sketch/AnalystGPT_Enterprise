@@ -56,7 +56,13 @@ def get_user_service() -> UserService:
         schema_mgr.initialize_schema()
 
         user_repo = UserRepository(connection)
-        _global_user_service = UserService(user_repository=user_repo)
+        # Persistent revocations: survive restarts and are shared by workers.
+        from src.identity.token_revocation import DatabaseTokenRevocationService
+
+        _global_user_service = UserService(
+            user_repository=user_repo,
+            revocation_service=DatabaseTokenRevocationService(),
+        )
 
     return _global_user_service
 

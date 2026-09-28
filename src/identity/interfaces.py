@@ -169,10 +169,10 @@ class ITokenRevocationService(Protocol):
     Protocol for tracking revoked access tokens upon logout.
     """
 
-    def revoke_token(self, token: str) -> None:
-        """Mark a token as revoked/invalidated."""
+    def revoke(self, jti: str, expires_at: int) -> None:
+        """Mark the token with this `jti` as revoked until `expires_at` (epoch seconds)."""
         ...
 
-    def is_revoked(self, token: str) -> bool:
-        """Check if a token has been revoked."""
+    def is_revoked(self, jti: str) -> bool:
+        """Check whether the token with this `jti` has been revoked."""
         ...

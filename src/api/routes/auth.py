@@ -17,6 +17,8 @@ from src.api.dependencies.auth_dependencies import (
     get_current_active_user,
     get_user_service,
 )
+from src.api.rate_limit import rate_limit
+from src.core import config
 from src.identity.context import UserContext
 from src.identity.models import (
     LogoutResponse,
@@ -38,6 +40,7 @@ auth_router = APIRouter(
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user account",
+    dependencies=[Depends(rate_limit("register", lambda: config.AUTH_REGISTER_RATE_LIMIT))],
 )
 async def register(
     registration: UserRegistration,
@@ -66,6 +69,7 @@ async def register(
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
     summary="Authenticate user and issue access token",
+    dependencies=[Depends(rate_limit("login", lambda: config.AUTH_LOGIN_RATE_LIMIT))],
 )
 async def login(
     user_login: UserLogin,
@@ -129,16 +133,20 @@ async def get_current_user_profile(
 )
 async def logout(
     authorization: str | None = Header(None, alias="Authorization"),
+    context: UserContext = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),
 ) -> LogoutResponse:
     """
-    Revoke the provided Bearer token and invalidate active server-side session state.
+    Revoke the caller's own Bearer token.
+
+    Requires a valid token (401 otherwise). Previously anonymous callers could
+    post arbitrary strings here and each one was stored forever (SEC-09).
     """
     token: str | None = None
     if authorization and authorization.strip().lower().startswith("bearer "):
         token = authorization.strip()[7:].strip()
 
-    user_service.logout(token)
+    user_service.logout(token, actor_context=context)
     return LogoutResponse(
         success=True,
         message="Logged out successfully.",

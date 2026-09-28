@@ -150,3 +150,13 @@ class TestAdminBootstrapScript:
         create_admin.main(["--username", "boot_admin", "--email", "boot_admin@example.com"])
 
         assert create_admin.main(["--username", "boot_admin", "--email", "other@example.com"]) == 1
+
+    def test_create_admin_script_enforces_password_policy(
+        self, service: UserService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from scripts import create_admin
+
+        monkeypatch.setenv("ADMIN_BOOTSTRAP_PASSWORD", "password")
+
+        assert create_admin.main(["--username", "weak_admin", "--email", "weak_admin@example.com"]) == 2
+        assert service._user_repository.get_by_username("weak_admin") is None

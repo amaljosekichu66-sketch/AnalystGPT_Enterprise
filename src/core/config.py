@@ -558,6 +558,32 @@ if AUTH_ALLOW_HEADER_IDENTITY and not IS_DEVELOPMENT:
         "enabled in a deployed environment."
     )
 
+#: Issuer / audience claims stamped on and required of every access token.
+AUTH_TOKEN_ISSUER = os.getenv("AUTH_TOKEN_ISSUER", "analystgpt-enterprise").strip()
+AUTH_TOKEN_AUDIENCE = os.getenv("AUTH_TOKEN_AUDIENCE", "analystgpt-api").strip()
+
+# ----------------------------------------------------------
+# Brute-force protection (SEC-08)
+# ----------------------------------------------------------
+#
+# Per-account lockout: after AUTH_LOGIN_MAX_FAILURES consecutive failed logins
+# for one identifier, further attempts are refused (HTTP 429) for
+# AUTH_LOGIN_LOCKOUT_BASE_SECONDS, doubling with each additional failure up to
+# AUTH_LOGIN_LOCKOUT_MAX_SECONDS. Unknown identifiers are throttled the same
+# way, so a lockout does not reveal whether an account exists.
+#
+# Per-client rate limits ("<requests>/<seconds>") on login and registration.
+#
+# Both are in-process: with several API workers each keeps its own counters.
+
+AUTH_LOGIN_MAX_FAILURES = int(os.getenv("AUTH_LOGIN_MAX_FAILURES", "5"))
+AUTH_LOGIN_LOCKOUT_BASE_SECONDS = int(os.getenv("AUTH_LOGIN_LOCKOUT_BASE_SECONDS", "60"))
+AUTH_LOGIN_LOCKOUT_MAX_SECONDS = int(os.getenv("AUTH_LOGIN_LOCKOUT_MAX_SECONDS", "900"))
+
+AUTH_RATE_LIMIT_ENABLED = _env_flag("AUTH_RATE_LIMIT_ENABLED", default=True)
+AUTH_LOGIN_RATE_LIMIT = os.getenv("AUTH_LOGIN_RATE_LIMIT", "20/60").strip()
+AUTH_REGISTER_RATE_LIMIT = os.getenv("AUTH_REGISTER_RATE_LIMIT", "5/600").strip()
+
 AUTH_ALGORITHM = os.getenv(
     "AUTH_ALGORITHM",
     "HS256",

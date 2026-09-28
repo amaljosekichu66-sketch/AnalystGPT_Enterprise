@@ -120,7 +120,7 @@ class TestAuthRoutes:
             json={
                 "username": "login_user",
                 "email": "login@enterprise.com",
-                "password": "LoginPassword123!",
+                "password": "Str0ng-Passw0rd!",
             },
         )
 
@@ -128,7 +128,7 @@ class TestAuthRoutes:
             "/api/auth/login",
             json={
                 "username": "login_user",
-                "password": "LoginPassword123!",
+                "password": "Str0ng-Passw0rd!",
             },
         )
 
