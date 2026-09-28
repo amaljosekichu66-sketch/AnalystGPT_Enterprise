@@ -149,11 +149,8 @@ def list_dataset_versions(
     is_admin = context.has_permission(Permission.USER_MANAGE)
     scoped_user_id = None if is_admin else context.user_id
 
-    repo = application.persistence.dataset_version_repository
-    if repo is None:
-        return []
-
-    rows = repo.get_all(user_id=scoped_user_id, is_source=is_source)
+    with application.persistence_session() as persistence:
+        rows = persistence.dataset_version_repository.get_all(user_id=scoped_user_id, is_source=is_source)
     return [_dataset_version_row_to_response(r) for r in rows]
 
 
@@ -171,14 +168,8 @@ def get_dataset_version(
     is_admin = context.has_permission(Permission.USER_MANAGE)
     scoped_user_id = None if is_admin else context.user_id
 
-    repo = application.persistence.dataset_version_repository
-    if repo is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Governance persistence not initialized.",
-        )
-
-    row = repo.get_by_version_id(version_id, user_id=scoped_user_id)
+    with application.persistence_session() as persistence:
+        row = persistence.dataset_version_repository.get_by_version_id(version_id, user_id=scoped_user_id)
     if row is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -206,30 +197,25 @@ def get_pipeline_run_lineage(
     is_admin = context.has_permission(Permission.USER_MANAGE)
     scoped_user_id = None if is_admin else context.user_id
 
-    dv_repo = application.persistence.dataset_version_repository
-    cc_repo = application.persistence.cleaning_config_repository
-    ce_repo = application.persistence.cleaning_execution_repository
+    with application.persistence_session() as persistence:
+        dv_repo = persistence.dataset_version_repository
+        cc_repo = persistence.cleaning_config_repository
+        ce_repo = persistence.cleaning_execution_repository
 
-    if None in (dv_repo, cc_repo, ce_repo):
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Governance persistence not initialized.",
+        exec_row = ce_repo.get_by_pipeline_run(pipeline_run_id, user_id=scoped_user_id)
+        if not exec_row:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No lineage found for pipeline_run_id {pipeline_run_id}",
+            )
+
+        src_row = dv_repo.get_by_version_id(exec_row["source_version_id"], user_id=scoped_user_id)
+        clean_row = (
+            dv_repo.get_by_version_id(exec_row["cleaned_version_id"], user_id=scoped_user_id)
+            if exec_row.get("cleaned_version_id")
+            else None
         )
-
-    exec_row = ce_repo.get_by_pipeline_run(pipeline_run_id, user_id=scoped_user_id)
-    if not exec_row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No lineage found for pipeline_run_id {pipeline_run_id}",
-        )
-
-    src_row = dv_repo.get_by_version_id(exec_row["source_version_id"], user_id=scoped_user_id)
-    clean_row = (
-        dv_repo.get_by_version_id(exec_row["cleaned_version_id"], user_id=scoped_user_id)
-        if exec_row.get("cleaned_version_id")
-        else None
-    )
-    cfg_row = cc_repo.get_by_config_id(exec_row["config_id"], user_id=scoped_user_id)
+        cfg_row = cc_repo.get_by_config_id(exec_row["config_id"], user_id=scoped_user_id)
 
     return LineageResponse(
         source_dataset_version=_dataset_version_row_to_response(src_row) if src_row else None,

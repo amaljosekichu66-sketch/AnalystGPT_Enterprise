@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -125,8 +126,17 @@ class Application:
         # --------------------------------------------
         # Persistence Layer
         # --------------------------------------------
+        #
+        # There is deliberately NO shared PersistenceManager. The Application
+        # is a process-wide singleton serving concurrent requests, and a
+        # PersistenceManager holds per-run state (connection, repositories,
+        # pipeline_run_id, user_id, report_id). One shared instance let
+        # concurrent runs swap and close each other's SQLite connection and
+        # write rows under each other's run and user ids - reproduced as FK /
+        # UNIQUE violations and a native crash of the API process (B-03).
+        # Every run and every request opens its own via `persistence_session()`.
 
-        self.persistence = PersistenceManager()
+        self._persistence_factory = PersistenceManager
 
         # --------------------------------------------
 
@@ -145,6 +155,23 @@ class Application:
 
         #: (runner user_id, dataset_version_id) -> latest result, for read-only views.
         self._dataset_results: dict[tuple[int | None, str], PipelineResult] = {}
+
+    # ==========================================================
+    # Persistence sessions
+    # ==========================================================
+
+    @contextmanager
+    def persistence_session(self) -> Iterator[PersistenceManager]:
+        """
+        Yield a PersistenceManager with its own database connection, closed
+        on exit. Never share one across requests or runs.
+        """
+        persistence = self._persistence_factory()
+        persistence.initialize()
+        try:
+            yield persistence
+        finally:
+            persistence.shutdown()
 
     # ==========================================================
     # Managed datasets (server-issued identifiers)
@@ -166,9 +193,7 @@ class Application:
         """
         context = user_context or get_current_user_context()
 
-        persistence = PersistenceManager()
-        persistence.initialize()
-        try:
+        with self.persistence_session() as persistence:
             owner_id = self._persisted_user_id(persistence, context)
             if owner_id is None:
                 raise PermissionDeniedError("Dataset uploads require a registered, authenticated account.")
@@ -188,8 +213,6 @@ class Application:
                 raise UnparseableUploadError("Uploaded file could not be parsed as a dataset.") from exc
 
             persistence.dataset_version_repository.create(source_version)
-        finally:
-            persistence.shutdown()
 
         logger.info(
             "Registered uploaded dataset version_id=%s owner=%s rows=%d",
@@ -218,15 +241,11 @@ class Application:
 
         scoped_user_id = None if context.has_permission(Permission.USER_MANAGE) else context.user_id
 
-        persistence = PersistenceManager()
-        persistence.initialize()
-        try:
+        with self.persistence_session() as persistence:
             row = persistence.dataset_version_repository.get_by_version_id(
                 dataset_version_id,
                 user_id=scoped_user_id,
             )
-        finally:
-            persistence.shutdown()
 
         if row is None or not bool(row.get("is_source", 1)):
             raise DatasetNotFoundError("Dataset not found.")
@@ -420,17 +439,21 @@ class Application:
 
         start_time = time.perf_counter()
 
+        # Run-local: this run's connection, repositories and ids are never
+        # visible to a concurrent run.
+        persistence = self._persistence_factory()
+
         try:
 
-            self.persistence.initialize()
+            persistence.initialize()
 
             # Ensure user_id exists in the database if specified (to satisfy foreign key)
             eff_user_id = user_id
-            if eff_user_id is not None and self.persistence.user_repository is not None:
-                if self.persistence.user_repository.get_by_id(eff_user_id) is None:
+            if eff_user_id is not None and persistence.user_repository is not None:
+                if persistence.user_repository.get_by_id(eff_user_id) is None:
                     eff_user_id = None
 
-            self.persistence.start_pipeline(user_id=eff_user_id)
+            persistence.start_pipeline(user_id=eff_user_id)
 
             # -------------------------------------------------
 
@@ -444,7 +467,7 @@ class Application:
 
             source_version, raw_dataframe = load_source(eff_user_id)
 
-            self.persistence.save_dataset(
+            persistence.save_dataset(
                 dataset_name=source_version.source_filename,
                 row_count=source_version.row_count,
                 column_count=source_version.column_count,
@@ -463,13 +486,13 @@ class Application:
                 raw_dataframe=raw_dataframe,
                 cleaning_config=cleaning_config,
                 source_version=source_version,
-                pipeline_run_id=self.persistence._pipeline_run_id,
+                pipeline_run_id=persistence._pipeline_run_id,
                 user_id=eff_user_id,
             )
             cleaned_dataframe = governed_result.cleaned_df
 
             # Persist all governance artifacts
-            self.persistence.save_governance(governed_result)
+            persistence.save_governance(governed_result)
 
             # -------------------------------------------------
 
@@ -479,7 +502,7 @@ class Application:
 
             quality_report = self._assess_quality(cleaned_dataframe)
 
-            self.persistence.save_quality(
+            persistence.save_quality(
                 quality_report,
             )
 
@@ -491,7 +514,7 @@ class Application:
 
             analytics_report = self._generate_analytics(cleaned_dataframe)
 
-            self.persistence.save_analytics(
+            persistence.save_analytics(
                 analytics_report,
             )
 
@@ -503,10 +526,10 @@ class Application:
 
             reporting_report = self._generate_report(
                 analytics_report,
-                pipeline_run_id=self.persistence._pipeline_run_id,
+                pipeline_run_id=persistence._pipeline_run_id,
             )
 
-            self.persistence.save_report(
+            persistence.save_report(
                 reporting_report,
             )
 
@@ -514,17 +537,17 @@ class Application:
             # Finalise Pipeline – deterministic processing complete
             # -------------------------------------------------
 
-            self.persistence.finish_pipeline()
+            persistence.finish_pipeline()
 
             # -------------------------------------------------
             # Asynchronous AI Insight Job Creation & Dispatch (Sprint 14 Phase 2)
             # -------------------------------------------------
 
             ai_job = self.ai_job_service.create_and_dispatch_job(
-                pipeline_run_id=self.persistence._pipeline_run_id,
+                pipeline_run_id=persistence._pipeline_run_id,
                 reporting_report=reporting_report,
                 user_id=user_id,
-                report_id=self.persistence._report_id,
+                report_id=persistence._report_id,
             )
 
             # -------------------------------------------------
@@ -547,6 +570,10 @@ class Application:
                 ai_job_id=ai_job.job_id,
                 ai_job_status=ai_job.status.value,
                 dataset_version_id=source_version.version_id,
+                pipeline_run_id=persistence._pipeline_run_id,
+                report_id=persistence._report_id,
+                cleaned_version_id=persistence._cleaned_version_id,
+                cleaning_execution_id=persistence._cleaning_execution_id,
             )
 
             logger.info("=" * 60)
@@ -588,7 +615,12 @@ class Application:
 
             # --------------------------------------------
 
-            self._cache_pipeline_result(result, cache_key, user_context=active_context)
+            self._cache_pipeline_result(
+                result,
+                cache_key,
+                user_context=active_context,
+                report_id=persistence._report_id,
+            )
 
             return result
 
@@ -608,7 +640,7 @@ class Application:
             logger.exception("Pipeline execution failed.")
 
             try:
-                self.persistence.fail_pipeline()
+                persistence.fail_pipeline()
             except Exception:
                 logger.exception("Unable to mark pipeline as FAILED.")
 
@@ -622,7 +654,7 @@ class Application:
 
         finally:
 
-            self.persistence.shutdown()
+            persistence.shutdown()
 
     def _upload_dataset(
         self,
@@ -1084,6 +1116,10 @@ class Application:
         ai_job_id: str | None = None,
         ai_job_status: str | None = None,
         dataset_version_id: str | None = None,
+        pipeline_run_id: int | None = None,
+        report_id: int | None = None,
+        cleaned_version_id: str | None = None,
+        cleaning_execution_id: str | None = None,
     ) -> PipelineResult:
         """
         Build the final application result.
@@ -1108,6 +1144,10 @@ class Application:
             ai_job_id=ai_job_id,
             ai_job_status=ai_job_status,
             dataset_version_id=dataset_version_id,
+            pipeline_run_id=pipeline_run_id,
+            report_id=report_id,
+            cleaned_version_id=cleaned_version_id,
+            cleaning_execution_id=cleaning_execution_id,
         )
 
     def _cache_pipeline_result(
@@ -1115,6 +1155,7 @@ class Application:
         result: PipelineResult,
         dataset_path: str,
         user_context: UserContext | None = None,
+        report_id: int | None = None,
     ) -> None:
         """
 
@@ -1166,21 +1207,22 @@ class Application:
         if result.success:
             context = user_context or get_current_user_context()
             user_id = context.user_id if context.is_authenticated else None
-            self._user_pipeline_results[user_id] = result
-            self._user_cached_paths[user_id] = dataset_path
 
-            if result.dataset_version_id is not None:
-                key = (user_id, result.dataset_version_id)
-                with self._cache_lock:
+            with self._cache_lock:
+                self._user_pipeline_results[user_id] = result
+                self._user_cached_paths[user_id] = dataset_path
+
+                if result.dataset_version_id is not None:
+                    key = (user_id, result.dataset_version_id)
                     # Re-insert so iteration order tracks recency.
                     self._dataset_results.pop(key, None)
                     self._dataset_results[key] = result
 
-            if self.persistence._report_id is not None:
-                self._report_pipeline_results[self.persistence._report_id] = result
+                if report_id is not None:
+                    self._report_pipeline_results[report_id] = result
 
-            self._last_pipeline_result = result
-            self._cached_dataset_path = dataset_path
+                self._last_pipeline_result = result
+                self._cached_dataset_path = dataset_path
 
             logger.info(
                 "PipelineResult cached successfully for dataset: %s (user_id=%s)",
@@ -1294,11 +1336,12 @@ class Application:
         """
         Register a pipeline result for a specific user ID and optional report ID.
         """
-        if user_id is not None:
-            self._user_pipeline_results[user_id] = result
-        self._last_pipeline_result = result
-        if report_id is not None:
-            self._report_pipeline_results[report_id] = result
+        with self._cache_lock:
+            if user_id is not None:
+                self._user_pipeline_results[user_id] = result
+            self._last_pipeline_result = result
+            if report_id is not None:
+                self._report_pipeline_results[report_id] = result
 
     def get_result_by_report_id(
         self,
@@ -1377,9 +1420,10 @@ class Application:
 
     def shutdown(self) -> None:
         """
-        Gracefully shutdown application background executors and persistence resources.
+        Gracefully shutdown application background executors.
+
+        Persistence needs no teardown here: every run and request closes its
+        own connection when its `persistence_session()` ends.
         """
         if hasattr(self, "ai_job_executor") and self.ai_job_executor is not None:
             self.ai_job_executor.shutdown(wait=False)
-        if hasattr(self, "persistence") and self.persistence is not None:
-            self.persistence.shutdown()

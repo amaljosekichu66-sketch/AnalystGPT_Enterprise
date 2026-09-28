@@ -27,6 +27,7 @@ from src.identity.password_hasher import PBKDF2PasswordHasher
 from src.identity.token_revocation import TokenRevocationService
 from src.identity.token_service import TokenService
 from src.identity.user_service import UserService
+from src.persistence.persistence_manager import PersistenceManager
 from tests.fixtures.datasets import run_pipeline_on_file
 
 
@@ -236,8 +237,9 @@ class TestApplicationCacheIsolation:
 
     def test_multi_user_pipeline_result_isolation(self, sample_csv: str) -> None:
         app_instance = Application()
-        app_instance.persistence.initialize()
-        user_repo = app_instance.persistence.user_repository
+        persistence = PersistenceManager()
+        persistence.initialize()
+        user_repo = persistence.user_repository
 
         # Ensure user records exist in DB for FK validation
         user_1_entity = user_repo.get_by_username("user_alpha")

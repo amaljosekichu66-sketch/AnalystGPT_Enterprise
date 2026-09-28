@@ -56,6 +56,13 @@ class PipelineResult:
     #: Server-issued id of the source dataset this run processed.
     dataset_version_id: str | None = None
 
+    # Lineage of THIS run. Carried on the result because the persistence
+    # state that produced it is run-local and gone once the run ends.
+    pipeline_run_id: int | None = None
+    report_id: int | None = None
+    cleaned_version_id: str | None = None
+    cleaning_execution_id: str | None = None
+
     # ==========================================================
     # Error
     # ==========================================================
@@ -95,6 +102,8 @@ class PipelineResult:
             "ai_job_id": self.ai_job_id,
             "ai_job_status": self.ai_job_status,
             "dataset_version_id": self.dataset_version_id,
+            "pipeline_run_id": self.pipeline_run_id,
+            "report_id": self.report_id,
             "generated_at": (self.generated_at.isoformat()),
             "pipeline_report": (self.pipeline_report.to_dict() if self.pipeline_report else None),
             "error": (str(self.error) if self.error else None),

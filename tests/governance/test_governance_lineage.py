@@ -115,25 +115,27 @@ def test_end_to_end_governance_persistence_and_lineage_query(tmp_path, sample_cs
     from src.application.app import Application
     from src.database.schema_manager import SchemaManager
     from src.database.sqlite_connection import SQLiteConnection
+    from src.persistence.persistence_manager import PersistenceManager
 
-    # Initialize application with live persistence
     app = Application()
-    app.persistence.initialize()
 
     # 1. Execute complete pipeline
     pipeline_result = app.run(str(sample_csv))
     assert pipeline_result.success is True
 
-    # 2. Query persistence repositories
-    dv_repo = app.persistence.dataset_version_repository
-    cc_repo = app.persistence.cleaning_config_repository
-    ce_repo = app.persistence.cleaning_execution_repository
+    # 2. Query persistence repositories through an independent session: the
+    #    run's own persistence state is run-local and closed when it ends.
+    persistence = PersistenceManager()
+    persistence.initialize()
+    dv_repo = persistence.dataset_version_repository
+    cc_repo = persistence.cleaning_config_repository
+    ce_repo = persistence.cleaning_execution_repository
 
     assert dv_repo is not None
     assert cc_repo is not None
     assert ce_repo is not None
 
-    run_id = app.persistence._pipeline_run_id
+    run_id = pipeline_result.pipeline_run_id
     assert run_id is not None
 
     # Verify CleaningExecution row

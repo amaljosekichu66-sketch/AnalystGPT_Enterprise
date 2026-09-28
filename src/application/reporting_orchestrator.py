@@ -170,14 +170,15 @@ class ReportingOrchestrator:
                 except Exception:
                     pass
 
-        # 2. Extract lineage
-        persistence = getattr(self._application, "persistence", None)
-        if persistence:
+        # 2. Extract lineage from the resolved result itself. It used to be
+        #    read from the Application's shared persistence state, i.e. from
+        #    whichever run - by any user - happened to finish last.
+        if result is not None:
             lineage = {
-                "pipeline_run_id": getattr(persistence, "_pipeline_run_id", None),
-                "source_version_id": getattr(persistence, "_source_version_id", None),
-                "cleaned_version_id": getattr(persistence, "_cleaned_version_id", None),
-                "cleaning_execution_id": getattr(persistence, "_cleaning_execution_id", None),
+                "pipeline_run_id": getattr(result, "pipeline_run_id", None),
+                "source_version_id": getattr(result, "dataset_version_id", None),
+                "cleaned_version_id": getattr(result, "cleaned_version_id", None),
+                "cleaning_execution_id": getattr(result, "cleaning_execution_id", None),
                 "context_schema_version": "1.0",
             }
 
