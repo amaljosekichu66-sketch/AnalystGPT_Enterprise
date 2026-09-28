@@ -1,0 +1,1 @@
+Claude attribution hook verification test.
