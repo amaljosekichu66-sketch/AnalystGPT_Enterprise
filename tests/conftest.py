@@ -90,6 +90,10 @@ def _isolate_persistence_roots() -> None:
     # setdefault, not assignment: a developer debugging against a specific
     # fixture database should be able to pin these explicitly.
     os.environ.setdefault("SQLITE_DATABASE_PATH", str(root / "analystgpt-test.db"))
+
+    # Development mode must be explicit (an unset APP_ENVIRONMENT fails closed
+    # to production, which refuses the built-in signing key).
+    os.environ.setdefault("APP_ENVIRONMENT", "development")
     os.environ.setdefault("REPORT_OUTPUT_DIRECTORY", str(reports_dir))
     os.environ.setdefault("ARTIFACT_STORE_DIRECTORY", str(artifacts_dir))
 

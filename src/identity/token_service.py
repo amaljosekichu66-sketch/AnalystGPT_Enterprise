@@ -43,7 +43,9 @@ class TokenService:
         algorithm: str | None = None,
         expire_minutes: int | None = None,
     ) -> None:
-        self._secret_key = (secret_key if secret_key is not None else config.AUTH_SECRET_KEY).encode("utf-8")
+        # Building from configuration re-checks the key, so nothing can sign
+        # with an unsafe key even if it bypassed the API startup check.
+        self._secret_key = (secret_key if secret_key is not None else config.require_auth_secret_key()).encode("utf-8")
         self._algorithm = (algorithm if algorithm is not None else config.AUTH_ALGORITHM).upper()
         self._expire_seconds = (
             expire_minutes if expire_minutes is not None else config.AUTH_ACCESS_TOKEN_EXPIRE_MINUTES

@@ -138,9 +138,15 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
+      - name: Generate Ephemeral Signing Key
+        run: |
+          key=$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")
+          echo "::add-mask::$key"
+          echo "AUTH_SECRET_KEY=$key" >> "$GITHUB_ENV"
+
       - name: Validate Docker Compose Schema & Configuration
         run: |
-          docker compose config
+          docker compose config --quiet
 
   # ==========================================================
   # Job 5: Docker Compose End-to-End Integration & Health
@@ -155,6 +161,12 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
+
+      - name: Generate Ephemeral Signing Key
+        run: |
+          key=$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")
+          echo "::add-mask::$key"
+          echo "AUTH_SECRET_KEY=$key" >> "$GITHUB_ENV"
 
       - name: Start Full Multi-Service Stack
         run: |

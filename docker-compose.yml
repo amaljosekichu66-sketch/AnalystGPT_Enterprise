@@ -44,6 +44,13 @@ services:
     ports:
       - "${API_PORT:-8000}:8000"
     environment:
+      # Security posture. Production refuses the built-in signing key, empty
+      # or short keys, and unauthenticated identity headers. AUTH_SECRET_KEY
+      # has NO default: `docker compose` fails fast if it is not provided
+      # (via the shell or a .env file next to this compose file).
+      APP_ENVIRONMENT: production
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?AUTH_SECRET_KEY must be set to a private random value of at least 32 characters (see .env.example)}
+
       # Database Connection (Routed to internal postgres service)
       DATABASE_ENGINE: postgresql
       POSTGRES_HOST: postgres
@@ -104,6 +111,10 @@ services:
     ports:
       - "${FRONTEND_PORT:-8501}:8501"
     environment:
+      # The frontend never signs or verifies tokens, so it does not receive
+      # AUTH_SECRET_KEY.
+      APP_ENVIRONMENT: production
+
       # Inter-Service API Routing via Docker DNS
       API_BASE_URL: http://api:8000
       LOG_LEVEL: ${LOG_LEVEL:-INFO}

@@ -171,26 +171,36 @@ def test_wildcard_origin_is_not_configured() -> None:
 def test_default_secret_key_is_refused_outside_development(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Startup must fail rather than sign tokens with a public key."""
+    """
+    The API must refuse to sign tokens with a public key.
+
+    Enforcement moved from `config` import (which the frontend shares) to the
+    point of use; `tests/core/test_auth_secret_config.py` covers real process
+    startup.
+    """
     monkeypatch.setenv("APP_ENVIRONMENT", "production")
     monkeypatch.delenv("AUTH_SECRET_KEY", raising=False)
 
-    with pytest.raises(RuntimeError, match="AUTH_SECRET_KEY"):
+    try:
+        reloaded = importlib.reload(config)
+        assert reloaded.AUTH_SECRET_KEY != reloaded.INSECURE_DEFAULT_AUTH_SECRET_KEY
+        with pytest.raises(RuntimeError, match="AUTH_SECRET_KEY"):
+            reloaded.require_auth_secret_key()
+    finally:
+        monkeypatch.undo()
         importlib.reload(config)
-
-    monkeypatch.undo()
-    importlib.reload(config)
 
 
 def test_explicit_secret_key_is_accepted_in_production(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    key = "a-private-deployment-key-of-sufficient-length"
     monkeypatch.setenv("APP_ENVIRONMENT", "production")
-    monkeypatch.setenv("AUTH_SECRET_KEY", "a-private-deployment-key")
+    monkeypatch.setenv("AUTH_SECRET_KEY", key)
 
     try:
         reloaded = importlib.reload(config)
-        assert reloaded.AUTH_SECRET_KEY == "a-private-deployment-key"
+        assert reloaded.require_auth_secret_key() == key
         assert reloaded.IS_DEVELOPMENT is False
     finally:
         monkeypatch.undo()
@@ -202,7 +212,7 @@ def test_header_identity_cannot_be_enabled_outside_development(
 ) -> None:
     """The flag is development-only; the combination is refused outright."""
     monkeypatch.setenv("APP_ENVIRONMENT", "production")
-    monkeypatch.setenv("AUTH_SECRET_KEY", "a-private-deployment-key")
+    monkeypatch.setenv("AUTH_SECRET_KEY", "a-private-deployment-key-of-sufficient-length")
     monkeypatch.setenv("AUTH_ALLOW_HEADER_IDENTITY", "true")
 
     with pytest.raises(RuntimeError, match="AUTH_ALLOW_HEADER_IDENTITY"):

@@ -50,15 +50,19 @@ def _env_flag(name: str, default: bool) -> bool:
 # Drives the security posture. Anything other than "development" is treated as
 # a deployed environment, where insecure developer conveniences (forgeable
 # identity headers, the built-in signing key) must not be available.
+#
+# Development mode must be chosen EXPLICITLY. An unset APP_ENVIRONMENT used to
+# mean "development", so a deployment that simply forgot the variable (Docker
+# Compose did) ran with the published signing key. Unset now fails closed.
 
 APP_ENVIRONMENT = (
     os.getenv(
         "APP_ENVIRONMENT",
-        "development",
+        "production",
     )
     .strip()
     .lower()
-)
+) or "production"
 
 IS_DEVELOPMENT = APP_ENVIRONMENT == "development"
 
@@ -458,22 +462,77 @@ CLAUDE_API_KEY = os.getenv(
 # Enterprise Identity & Security (Sprint 13)
 # ==========================================================
 
-#: The built-in signing key. Usable for local development only; a deployed
-#: environment must supply its own, and startup fails if it does not.
+#: The built-in signing key. It is published in this repository, so anyone
+#: can forge a token for any user and role with it. Usable ONLY when
+#: APP_ENVIRONMENT=development is set explicitly.
 INSECURE_DEFAULT_AUTH_SECRET_KEY = "analystgpt-enterprise-insecure-dev-secret-key-change-in-production"
 
-AUTH_SECRET_KEY = os.getenv(
-    "AUTH_SECRET_KEY",
-    INSECURE_DEFAULT_AUTH_SECRET_KEY,
-).strip()
+#: Minimum signing-key length in bytes. Tokens are HMAC-SHA256 (HS256), and
+#: RFC 7518 section 3.2 requires an HS256 key of at least the hash output size:
+#: 256 bits = 32 bytes. `secrets.token_urlsafe(48)` yields 64 characters.
+AUTH_SECRET_KEY_MIN_LENGTH = 32
 
-if not IS_DEVELOPMENT and AUTH_SECRET_KEY == INSECURE_DEFAULT_AUTH_SECRET_KEY:
-    raise RuntimeError(
-        "AUTH_SECRET_KEY is still the built-in development key while "
-        f"APP_ENVIRONMENT='{APP_ENVIRONMENT}'. Access tokens signed with a "
-        "publicly known key can be forged for any user and role. Set "
-        "AUTH_SECRET_KEY to a private random value."
-    )
+
+def validate_auth_secret_key(environment: str, raw_key: str | None) -> str:
+    """
+    Return the signing key to use, or raise `RuntimeError` if it is unsafe.
+
+    Outside development the key must be present, non-empty, not the
+    published default, and at least `AUTH_SECRET_KEY_MIN_LENGTH` bytes.
+    Explicit development mode may fall back to the built-in key.
+    """
+    is_development = environment == "development"
+    key = (raw_key or "").strip()
+
+    if not key:
+        if is_development:
+            return INSECURE_DEFAULT_AUTH_SECRET_KEY
+        state = "missing" if raw_key is None else "empty"
+        raise RuntimeError(
+            f"AUTH_SECRET_KEY is {state} while APP_ENVIRONMENT='{environment}'. "
+            "The API refuses to start without a private signing key. Generate one with: "
+            'python -c "import secrets; print(secrets.token_urlsafe(48))"'
+        )
+
+    if is_development:
+        return key
+
+    if key == INSECURE_DEFAULT_AUTH_SECRET_KEY:
+        raise RuntimeError(
+            "AUTH_SECRET_KEY is the built-in development key while "
+            f"APP_ENVIRONMENT='{environment}'. Access tokens signed with a "
+            "publicly known key can be forged for any user and role. Set "
+            "AUTH_SECRET_KEY to a private random value."
+        )
+
+    if len(key.encode("utf-8")) < AUTH_SECRET_KEY_MIN_LENGTH:
+        raise RuntimeError(
+            f"AUTH_SECRET_KEY is shorter than {AUTH_SECRET_KEY_MIN_LENGTH} bytes while "
+            f"APP_ENVIRONMENT='{environment}'. HS256 requires a key of at least 256 bits."
+        )
+
+    return key
+
+
+# Resolved at import WITHOUT raising: the Streamlit frontend imports this
+# module too, but it never signs or verifies tokens and must not need the key.
+# Enforcement happens where the key is used - `require_auth_secret_key()` is
+# called when the API package loads and when a TokenService is built from
+# configuration - so the API refuses to start while other processes do not.
+try:
+    AUTH_SECRET_KEY = validate_auth_secret_key(APP_ENVIRONMENT, os.getenv("AUTH_SECRET_KEY"))
+    AUTH_SECRET_KEY_ERROR: str | None = None
+except RuntimeError as _auth_secret_error:
+    AUTH_SECRET_KEY = ""
+    AUTH_SECRET_KEY_ERROR = str(_auth_secret_error)
+
+
+def require_auth_secret_key() -> str:
+    """Return the configured signing key, or raise if it is unsafe for this environment."""
+    if AUTH_SECRET_KEY_ERROR is not None:
+        raise RuntimeError(AUTH_SECRET_KEY_ERROR)
+    return AUTH_SECRET_KEY
+
 
 # ----------------------------------------------------------
 # Unauthenticated identity headers (development only)
