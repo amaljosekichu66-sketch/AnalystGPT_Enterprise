@@ -57,7 +57,38 @@ class SchemaManager:
 
     # ---------------------------------------------------------
 
+    def _add_column_if_missing(self, cursor, table: str, column: str, definition: str) -> None:
+        """
+        Add a column only when it is absent, WITHOUT relying on a failed statement.
+
+        The migrations used to try `ALTER TABLE ... ADD COLUMN` and swallow the
+        error when the column already existed. On PostgreSQL that is fatal:
+        DDL is transactional, so the `rollback()` after the (expected) failure
+        discarded every CREATE TABLE issued before it, and the bare `pass`
+        variant left the transaction aborted so every later statement failed.
+        Verified against PostgreSQL 16: a fresh database ended with 0 of 11
+        tables and could never recover on retry.
+
+        `table`, `column` and `definition` are internal constants, never input.
+        """
+        if self._database_type == "postgresql":
+            cursor.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {definition};")
+            return
+
+        # SQLite has no ADD COLUMN IF NOT EXISTS.
+        cursor.execute(f"PRAGMA table_info({table});")
+        if any(row[1] == column for row in cursor.fetchall()):
+            return
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition};")
+
     def _create_schema(self):
+        """
+        Create or migrate the whole schema in ONE transaction.
+
+        On PostgreSQL this makes initialization atomic: it either commits
+        completely or rolls back to the previous state, so a failed attempt
+        can simply be retried.
+        """
 
         connection = self._database_connection.get_connection()
 
@@ -264,11 +295,7 @@ class SchemaManager:
             # -------------------------------------------------
 
             for table_name in ["pipeline_runs", "datasets", "reports"]:
-                try:
-                    cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN user_id INTEGER;")
-                    self._database_connection.commit()
-                except Exception:
-                    self._database_connection.rollback()
+                self._add_column_if_missing(cursor, table_name, "user_id", "INTEGER")
 
             # -------------------------------------------------
             # Dataset Versions (Sprint 14 Phase 3 Governance)
@@ -405,10 +432,7 @@ class SchemaManager:
                 ("confidence", "TEXT"),
                 ("structured_payload", "TEXT"),
             ]:
-                try:
-                    cursor.execute(f"ALTER TABLE ai_reports ADD COLUMN {col_def[0]} {col_def[1]};")
-                except Exception:
-                    pass
+                self._add_column_if_missing(cursor, "ai_reports", col_def[0], col_def[1])
 
             # Sprint 14 Phase 3 — Governance indexes
             cursor.execute(
