@@ -5,7 +5,10 @@ Provides optimized REST endpoints for Power BI dashboards.
 
 Responsibilities
 ----------------
-- Execute the complete AnalystGPT Enterprise pipeline.
+- Serve the latest pipeline result for an uploaded dataset. READ-ONLY:
+  these routes need only view permissions (which VIEWER holds), so they must
+  never execute the pipeline. Execution is `POST /api/pipeline`, gated on
+  PIPELINE_EXECUTE.
 - Delegate response construction to DashboardService.
 - Expose dashboard-friendly analytics and AI insights.
 
@@ -70,15 +73,15 @@ _DATASET_QUERY_HELP = "Identifier returned by POST /api/datasets."
 # ==========================================================
 
 
-def _execute_pipeline(
+def _load_result(
     dataset_version_id: str,
     application: Application,
     context: UserContext | None = None,
 ) -> PipelineResult:
     """
-    Execute the enterprise analytics pipeline.
+    Return the stored pipeline result for this dataset. Never executes.
 
-    Uses the cached PipelineResult whenever possible.
+    404 when the dataset is not the caller's, or has not been run yet.
     """
 
     logger.info("=" * 80)
@@ -90,7 +93,7 @@ def _execute_pipeline(
         dataset_version_id,
     )
 
-    result = application.get_or_run_dataset_version(
+    result = application.get_result_for_dataset(
         dataset_version_id,
         user_context=context,
     )
@@ -134,7 +137,7 @@ def dashboard(
     Return the complete dashboard response.
     """
 
-    result = _execute_pipeline(
+    result = _load_result(
         dataset_version_id,
         application,
         context=context,
@@ -174,7 +177,7 @@ def summary(
     Return dashboard summary.
     """
 
-    result = _execute_pipeline(
+    result = _load_result(
         dataset_version_id,
         application,
         context=context,
@@ -214,7 +217,7 @@ def statistics(
     Return descriptive statistics.
     """
 
-    result = _execute_pipeline(
+    result = _load_result(
         dataset_version_id,
         application,
         context=context,
@@ -254,7 +257,7 @@ def correlation(
     Return correlation analysis.
     """
 
-    result = _execute_pipeline(
+    result = _load_result(
         dataset_version_id,
         application,
         context=context,
@@ -294,7 +297,7 @@ def distribution(
     Return distribution analysis.
     """
 
-    result = _execute_pipeline(
+    result = _load_result(
         dataset_version_id,
         application,
         context=context,
@@ -334,7 +337,7 @@ def categorical(
     Return categorical analysis.
     """
 
-    result = _execute_pipeline(
+    result = _load_result(
         dataset_version_id,
         application,
         context=context,
@@ -374,7 +377,7 @@ def report(
     Return reporting and AI results.
     """
 
-    result = _execute_pipeline(
+    result = _load_result(
         dataset_version_id,
         application,
         context=context,
@@ -414,7 +417,7 @@ def pipeline(
     Return pipeline execution summary.
     """
 
-    result = _execute_pipeline(
+    result = _load_result(
         dataset_version_id,
         application,
         context=context,

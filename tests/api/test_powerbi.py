@@ -109,11 +109,8 @@ class FakePipelineResult:
 
 
 class FakeApplication:
-    def run_dataset_version(self, dataset_version_id: str, user_context=None):
+    def get_result_for_dataset(self, dataset_version_id: str, user_context=None):
         return FakePipelineResult()
-
-    def get_or_run_dataset_version(self, dataset_version_id: str, user_context=None):
-        return self.run_dataset_version(dataset_version_id, user_context=user_context)
 
 
 # ==========================================================
@@ -150,7 +147,7 @@ DATASET = "0b7c1f2e-3d4a-4b5c-8d9e-0f1a2b3c4d5e"
 
 
 @patch("os.path.exists", return_value=True)
-@patch("src.api.routes.powerbi._execute_pipeline", return_value=FakePipelineResult())
+@patch("src.api.routes.powerbi._load_result", return_value=FakePipelineResult())
 def test_pipeline_endpoint(mock_execute, mock_exists):
     response = client.get("/api/powerbi/pipeline", params={"dataset_version_id": DATASET})
     assert response.status_code == 200
@@ -160,7 +157,7 @@ def test_pipeline_endpoint(mock_execute, mock_exists):
 
 
 @patch("os.path.exists", return_value=True)
-@patch("src.api.routes.powerbi._execute_pipeline", return_value=FakePipelineResult())
+@patch("src.api.routes.powerbi._load_result", return_value=FakePipelineResult())
 def test_report_endpoint(mock_execute, mock_exists):
     response = client.get("/api/powerbi/report", params={"dataset_version_id": DATASET})
     assert response.status_code == 200

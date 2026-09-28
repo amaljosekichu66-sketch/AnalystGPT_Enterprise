@@ -256,6 +256,9 @@ def get_dashboard_data() -> dict[str, Any]:
         logger.info("Calling backend API for dashboard data...")
 
         with APIClient(timeout=180) as client:
+            # Dashboard reads are read-only on the server, so execution is an
+            # explicit, separately authorized call (PIPELINE_EXECUTE).
+            client.run_pipeline({"dataset_version_id": dataset_version_id})
             response = client.powerbi_dashboard(dataset_version_id)
 
         logger.info("Backend response received successfully.")

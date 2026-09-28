@@ -12,6 +12,7 @@ processing pipeline.
 
 from __future__ import annotations
 
+import threading
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -29,7 +30,7 @@ from src.analytics.analytics_manager import AnalyticsManager
 from src.analytics.analytics_report import AnalyticsReport
 from src.cleaning.cleaning_manager import CleaningManager
 from src.core import config as _core_config
-from src.core.exceptions import DatasetNotFoundError
+from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError
 from src.core.logger import logger
 
 # Governance Layer (Sprint 14 Phase 3)
@@ -135,10 +136,15 @@ class Application:
 
         self._last_pipeline_result: PipelineResult | None = None
 
+        self._cache_lock = threading.RLock()
+
         self._cached_dataset_path: str | None = None
         self._user_pipeline_results: dict[int | None, PipelineResult] = {}
         self._user_cached_paths: dict[int | None, str] = {}
         self._report_pipeline_results: dict[int, PipelineResult] = {}
+
+        #: (runner user_id, dataset_version_id) -> latest result, for read-only views.
+        self._dataset_results: dict[tuple[int | None, str], PipelineResult] = {}
 
     # ==========================================================
     # Managed datasets (server-issued identifiers)
@@ -271,17 +277,41 @@ class Application:
             load_source=lambda _owner_id: (source_version, self.load_source_dataframe(source_version)),
         )
 
-    def get_or_run_dataset_version(
+    def get_result_for_dataset(
         self,
         dataset_version_id: str,
         user_context: UserContext | None = None,
     ) -> PipelineResult:
-        """Return the caller's cached result for this dataset, or run it."""
-        return self.get_or_run(
-            input_path=self.dataset_cache_key(dataset_version_id),
-            user_context=user_context,
-            _runner=lambda ctx: self.run_dataset_version(dataset_version_id, user_context=ctx),
-        )
+        """
+        Return the latest pipeline result for an uploaded dataset. READ-ONLY.
+
+        This never executes the pipeline. Dashboard and Power BI views are
+        gated on view permissions that VIEWER holds; they used to fall through
+        to `run()` on a cache miss, which let a VIEWER trigger execution
+        without PIPELINE_EXECUTE. Execution is only reachable through
+        `POST /api/pipeline`.
+
+        Raises `DatasetNotFoundError` for datasets the caller may not use
+        (checked first, so a cached result is never served across owners) and
+        `PipelineResultNotFoundError` when the dataset has not been run yet.
+        """
+        context = user_context or get_current_user_context()
+        self.resolve_source_version(dataset_version_id, context)
+
+        user_id = context.user_id if context.is_authenticated else None
+        with self._cache_lock:
+            result = self._dataset_results.get((user_id, dataset_version_id))
+            if result is None and context.has_permission(Permission.USER_MANAGE):
+                for (_, cached_dataset_id), cached in reversed(list(self._dataset_results.items())):
+                    if cached_dataset_id == dataset_version_id:
+                        result = cached
+                        break
+
+        if result is None:
+            raise PipelineResultNotFoundError(
+                "No pipeline result for this dataset yet. Execute it with POST /api/pipeline first."
+            )
+        return result
 
     @staticmethod
     def dataset_cache_key(dataset_version_id: str) -> str:
@@ -1139,6 +1169,13 @@ class Application:
             self._user_pipeline_results[user_id] = result
             self._user_cached_paths[user_id] = dataset_path
 
+            if result.dataset_version_id is not None:
+                key = (user_id, result.dataset_version_id)
+                with self._cache_lock:
+                    # Re-insert so iteration order tracks recency.
+                    self._dataset_results.pop(key, None)
+                    self._dataset_results[key] = result
+
             if self.persistence._report_id is not None:
                 self._report_pipeline_results[self.persistence._report_id] = result
 
@@ -1200,7 +1237,6 @@ class Application:
         self,
         input_path: str,
         user_context: UserContext | None = None,
-        _runner: Callable[[UserContext], PipelineResult] | None = None,
     ) -> PipelineResult:
         """
 
@@ -1235,9 +1271,6 @@ class Application:
         logger.info("RUNNING PIPELINE")
 
         logger.info("=" * 80)
-
-        if _runner is not None:
-            return _runner(active_context)
 
         return self.run(
             input_path=input_path,

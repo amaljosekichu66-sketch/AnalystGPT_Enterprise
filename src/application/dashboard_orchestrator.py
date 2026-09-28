@@ -57,10 +57,10 @@ class DashboardOrchestrator:
         user_context: Any | None = None,
     ) -> dict[str, Any]:
         """
-        Execute the analytics pipeline and return dashboard information.
+        Return dashboard information for an already-processed dataset.
 
-        Uses the shared Application's cached pipeline result if available,
-        otherwise runs the pipeline.
+        Read-only: this never executes the pipeline. A dataset that has not
+        been run yet raises `PipelineResultNotFoundError`.
 
         Parameters
         ----------
@@ -82,8 +82,7 @@ class DashboardOrchestrator:
         if not dataset_version_id:
             raise ValueError("dataset_version_id must not be empty.")
 
-        # Use cached or run new pipeline
-        result = self._application.get_or_run_dataset_version(
+        result = self._application.get_result_for_dataset(
             dataset_version_id,
             user_context=user_context,
         )

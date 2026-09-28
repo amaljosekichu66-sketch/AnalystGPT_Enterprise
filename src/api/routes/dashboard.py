@@ -33,7 +33,7 @@ from src.application.app import Application
 from src.application.dashboard_orchestrator import (
     DashboardOrchestrator,
 )
-from src.core.exceptions import DatasetNotFoundError
+from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError
 from src.identity.context import UserContext
 from src.identity.exceptions import IdentityError
 from src.identity.permissions import Permission
@@ -77,7 +77,10 @@ def get_dashboard_orchestrator(
     response_model=DashboardResponse,
     status_code=status.HTTP_200_OK,
     summary="Get Dashboard",
-    description=("Return the complete enterprise dashboard, " "including analytics, reporting and AI insights."),
+    description=(
+        "Return the complete enterprise dashboard for an already-processed dataset. "
+        "Read-only: never executes the pipeline (use POST /api/pipeline)."
+    ),
 )
 async def get_dashboard(
     dataset_version_id: str = Query(
@@ -113,7 +116,7 @@ async def get_dashboard(
             ai_report=dashboard["ai_report"],
         )
 
-    except (DatasetNotFoundError, IdentityError):
+    except (DatasetNotFoundError, PipelineResultNotFoundError, IdentityError):
         # Ownership / authorization outcomes keep their own status codes.
         raise
 

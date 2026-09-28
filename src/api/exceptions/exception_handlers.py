@@ -5,7 +5,7 @@ Global exception handlers for AnalystGPT Enterprise REST API.
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
-from src.core.exceptions import DatasetNotFoundError
+from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError
 from src.core.redaction import redact_server_paths
 from src.identity.exceptions import (
     AdminOperationError,
@@ -127,6 +127,17 @@ def register_exception_handlers(app: FastAPI) -> None:
         return _error_response(
             status.HTTP_404_NOT_FOUND,
             "Dataset not found.",
+            str(exc),
+        )
+
+    @app.exception_handler(PipelineResultNotFoundError)
+    async def pipeline_result_not_found_handler(
+        _request: Request,
+        exc: PipelineResultNotFoundError,
+    ) -> JSONResponse:
+        return _error_response(
+            status.HTTP_404_NOT_FOUND,
+            "Pipeline result not found.",
             str(exc),
         )
 

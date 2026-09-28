@@ -55,6 +55,15 @@ class FileTooLargeError(AnalystGPTError):
     pass
 
 
+class PipelineResultNotFoundError(AnalystGPTError):
+    """
+    Raised when a read-only view is requested for a dataset that has not been
+    processed yet. Views never execute the pipeline to fill the gap.
+    """
+
+    pass
+
+
 class DatasetNotFoundError(AnalystGPTError):
     """
     Raised when a dataset identifier does not resolve to a source dataset the
