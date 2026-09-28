@@ -23,6 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.exceptions.exception_handlers import (
     register_exception_handlers,
 )
+from src.api.request_context import RequestIdMiddleware
 from src.api.routes import (
     admin_router,
     ai_router,
@@ -141,6 +142,10 @@ app.add_middleware(
 register_exception_handlers(
     app,
 )
+
+# Correlation id for every request (SEC-11): attached to error bodies and the
+# X-Request-ID response header, and used to find the logged exception.
+app.add_middleware(RequestIdMiddleware)
 
 
 # ==========================================================

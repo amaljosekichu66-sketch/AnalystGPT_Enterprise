@@ -6,7 +6,9 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from src.api.rate_limit import RateLimitExceededError
+from src.api.request_context import REQUEST_ID_HEADER, current_request_id
 from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError
+from src.core.logger import logger
 from src.core.redaction import redact_server_paths
 from src.identity.exceptions import (
     AccountLockedError,
@@ -18,6 +20,7 @@ from src.identity.exceptions import (
     UserDisabledError,
     UserNotFoundError,
 )
+from src.identity.password_policy import WeakPasswordError
 from src.upload.upload_policy import UploadRejectedError
 
 
@@ -38,15 +41,37 @@ def _error_response(
         JSONResponse with consistent error structure.
 
     Every error body passes through here, so this is where server
-    filesystem paths are scrubbed from exception text.
+    filesystem paths are scrubbed from exception text, and where the request
+    id (SEC-11) is attached to the body and the `X-Request-ID` header.
     """
+    request_id = current_request_id()
     return JSONResponse(
         status_code=status_code,
         content={
             "success": False,
             "message": redact_server_paths(message),
             "error": redact_server_paths(error),
+            "request_id": request_id,
         },
+        headers={REQUEST_ID_HEADER: request_id} if request_id else None,
+    )
+
+
+def internal_error_message(request_id: str | None = None) -> str:
+    """Client-facing text for an unexpected failure; details stay in the server log."""
+    request_id = request_id or current_request_id()
+    suffix = f" Reference: {request_id}." if request_id else ""
+    return f"An unexpected error occurred.{suffix}"
+
+
+def _log_unexpected(exc: BaseException, where: str) -> None:
+    logger.error(
+        "Unexpected error in %s [request_id=%s]: %s: %s",
+        where,
+        current_request_id(),
+        type(exc).__name__,
+        exc,
+        exc_info=exc,
     )
 
 
@@ -180,15 +205,29 @@ def register_exception_handlers(app: FastAPI) -> None:
             str(exc),
         )
 
+    @app.exception_handler(WeakPasswordError)
+    async def weak_password_handler(
+        _request: Request,
+        exc: WeakPasswordError,
+    ) -> JSONResponse:
+        # Intentional, user-facing policy message.
+        return _error_response(
+            status.HTTP_400_BAD_REQUEST,
+            "Password does not meet the password policy.",
+            str(exc),
+        )
+
     @app.exception_handler(FileNotFoundError)
     async def file_not_found_handler(
         _request: Request,
         exc: FileNotFoundError,
     ) -> JSONResponse:
+        # The message of an OS-level FileNotFoundError names server files.
+        _log_unexpected(exc, "file lookup")
         return _error_response(
             status.HTTP_404_NOT_FOUND,
-            "Dataset not found.",
-            str(exc),
+            "Resource not found.",
+            internal_error_message(),
         )
 
     @app.exception_handler(ValueError)
@@ -196,10 +235,14 @@ def register_exception_handlers(app: FastAPI) -> None:
         _request: Request,
         exc: ValueError,
     ) -> JSONResponse:
+        # A bare ValueError here comes from library or pipeline internals
+        # (intentional client errors have their own handlers above), so its
+        # text is logged, not returned.
+        _log_unexpected(exc, "request validation")
         return _error_response(
             status.HTTP_400_BAD_REQUEST,
             "Invalid request.",
-            str(exc),
+            internal_error_message(),
         )
 
     @app.exception_handler(AdminOperationError)
@@ -229,8 +272,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         _request: Request,
         exc: Exception,
     ) -> JSONResponse:
+        _log_unexpected(exc, "request handling")
         return _error_response(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             "Internal server error.",
-            str(exc),
+            internal_error_message(),
         )

@@ -21,6 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.api.dependencies.application_dependency import get_application
 from src.api.dependencies.auth_dependencies import require_permission
+from src.api.exceptions.exception_handlers import internal_error_message
 from src.api.models.governance_models import (
     CleaningConfigRequest,
     CleaningConfigResponse,
@@ -31,8 +32,10 @@ from src.api.models.governance_models import (
     LineageResponse,
     QualityComparisonResponse,
 )
+from src.api.request_context import current_request_id
 from src.application.app import Application
 from src.core.exceptions import DatasetNotFoundError
+from src.core.logger import logger
 from src.governance.models import CleaningConfig, MissingValuePolicy
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
@@ -107,9 +110,10 @@ def preview_cleaning(
             sample_rows=request.sample_rows,
         )
     except Exception as exc:
+        logger.error("Cleaning preview failed [request_id=%s]: %s", current_request_id(), exc, exc_info=exc)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Preview failed: {exc}",
+            detail=f"Preview failed. {internal_error_message()}",
         ) from exc
 
     cmp = preview_res.quality_comparison

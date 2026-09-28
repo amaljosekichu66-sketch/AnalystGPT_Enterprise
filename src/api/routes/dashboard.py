@@ -25,15 +25,18 @@ from src.api.dependencies.application_dependency import (
 from src.api.dependencies.auth_dependencies import (
     require_permission,
 )
+from src.api.exceptions.exception_handlers import internal_error_message
 from src.api.models.request_models import DATASET_VERSION_ID_PATTERN
 from src.api.models.response_models import (
     DashboardStatusResponse,
 )
+from src.api.request_context import current_request_id
 from src.application.app import Application
 from src.application.dashboard_orchestrator import (
     DashboardOrchestrator,
 )
 from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError
+from src.core.logger import logger
 from src.identity.context import UserContext
 from src.identity.exceptions import IdentityError
 from src.identity.permissions import Permission
@@ -122,9 +125,10 @@ async def get_dashboard(
 
     except Exception as exc:
 
+        logger.error("Dashboard failed [request_id=%s]: %s", current_request_id(), exc, exc_info=exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(exc),
+            detail=internal_error_message(),
         ) from exc
 
 

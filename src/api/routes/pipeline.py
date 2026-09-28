@@ -20,6 +20,7 @@ from src.api.dependencies.application_dependency import (
 from src.api.dependencies.auth_dependencies import (
     require_permission,
 )
+from src.api.exceptions.exception_handlers import internal_error_message
 from src.api.models.request_models import (
     PipelineRequest,
 )
@@ -89,5 +90,7 @@ def execute_pipeline(
         ai_job_id=result.ai_job_id,
         ai_job_status=result.ai_job_status,
         ai_report=ai_response,
-        error=(redact_server_paths(str(result.error)) if result.error else None),
+        # The pipeline's exception text (already logged with its traceback)
+        # is internal; the caller gets a reference id instead (SEC-11).
+        error=(internal_error_message() if result.error else None),
     )
