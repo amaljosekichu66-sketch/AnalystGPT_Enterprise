@@ -81,6 +81,10 @@ class IUserRepository(Protocol):
         """Count total persisted users."""
         ...
 
+    def count_active_admins(self) -> int:
+        """Count active administrators."""
+        ...
+
 
 # ==========================================================
 # Authentication Service Protocol

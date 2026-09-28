@@ -11,6 +11,9 @@ Responsibilities
 
 from __future__ import annotations
 
+import threading
+from collections.abc import Callable
+
 from src.core import config
 from src.core.logger import logger
 from src.identity.audit import AuditService, get_audit_service
@@ -47,6 +50,12 @@ from src.identity.password_hasher import PBKDF2PasswordHasher
 from src.identity.password_policy import validate_password_strength
 from src.identity.token_revocation import TokenRevocationService
 from src.identity.token_service import TokenService
+
+#: Serializes every "is this the last active admin?" check together with the
+#: write it guards (SEC-21). Two admins demoting each other concurrently could
+#: both pass the check and leave no administrator. The shipped image runs one
+#: API process; several processes would need a database-level guard as well.
+_ADMIN_GUARD_LOCK = threading.RLock()
 
 #: Returned for any registration conflict; deliberately does not say which field.
 DUPLICATE_ACCOUNT_MESSAGE = "An account with this username or email address already exists."
@@ -433,10 +442,9 @@ class UserService:
 
     def _count_active_admins(self) -> int:
         """
-        Helper method counting total active administrators.
+        Count ALL active administrators (was: only within the first 10,000 users).
         """
-        all_users = self._user_repository.list_all(limit=10000, offset=0)
-        return sum(1 for u in all_users if u.is_admin and u.is_active)
+        return self._user_repository.count_active_admins()
 
     def update_user_admin(
         self,
@@ -477,24 +485,25 @@ class UserService:
         demoting_role = user_update.role is not None and user_update.role != UserRole.ADMIN
         disabling_status = user_update.status is not None and user_update.status != UserStatus.ACTIVE
 
-        if is_currently_active_admin and (demoting_role or disabling_status):
-            active_admin_count = self._count_active_admins()
-            if active_admin_count <= 1:
-                logger.warning(
-                    "Admin operation blocked: Cannot demote or disable last active admin '%s' (ID=%d).",
-                    target_user.username,
-                    target_user.id,
-                )
-                raise AdminOperationError("Cannot demote, deactivate, or suspend the last active administrator.")
-
-        # Execute repository update
         repo_update = UserUpdate(
             email=user_update.email,
             role=user_update.role,
             status=user_update.status,
             password=None,
         )
-        updated_user = self._user_repository.update(user_id=user_id, user_update=repo_update)
+
+        with _ADMIN_GUARD_LOCK:
+            if is_currently_active_admin and (demoting_role or disabling_status):
+                active_admin_count = self._count_active_admins()
+                if active_admin_count <= 1:
+                    logger.warning(
+                        "Admin operation blocked: Cannot demote or disable last active admin '%s' (ID=%d).",
+                        target_user.username,
+                        target_user.id,
+                    )
+                    raise AdminOperationError("Cannot demote, deactivate, or suspend the last active administrator.")
+
+            updated_user = self._user_repository.update(user_id=user_id, user_update=repo_update)
 
         # Audit events
         actor_id = actor_context.user_id if actor_context else None
@@ -551,6 +560,7 @@ class UserService:
         self,
         user_id: int,
         actor_context: UserContext | None = None,
+        before_delete: Callable[[User], object] | None = None,
     ) -> bool:
         """
         Delete a user entity with last-admin safeguards.
@@ -578,17 +588,23 @@ class UserService:
         if target_user is None:
             raise UserNotFoundError(f"User with ID {user_id} not found.")
 
-        if target_user.is_admin and target_user.is_active:
-            active_admin_count = self._count_active_admins()
-            if active_admin_count <= 1:
-                logger.warning(
-                    "Admin operation blocked: Cannot delete last active admin '%s' (ID=%d).",
-                    target_user.username,
-                    target_user.id,
-                )
-                raise AdminOperationError("Cannot delete the last active administrator.")
+        with _ADMIN_GUARD_LOCK:
+            if target_user.is_admin and target_user.is_active:
+                active_admin_count = self._count_active_admins()
+                if active_admin_count <= 1:
+                    logger.warning(
+                        "Admin operation blocked: Cannot delete last active admin '%s' (ID=%d).",
+                        target_user.username,
+                        target_user.id,
+                    )
+                    raise AdminOperationError("Cannot delete the last active administrator.")
 
-        result = self._user_repository.delete(user_id)
+            # SEC-20: remove the account's data first (callers supply the purge),
+            # so nothing is left behind ownerless if the delete succeeds.
+            if before_delete is not None:
+                before_delete(target_user)
+
+            result = self._user_repository.delete(user_id)
 
         actor_id = actor_context.user_id if actor_context else None
         actor_name = actor_context.username if actor_context else None

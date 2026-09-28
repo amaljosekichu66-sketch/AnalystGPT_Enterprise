@@ -206,6 +206,24 @@ class Application:
                 else:
                     self._active_jobs.pop(user_id, None)
 
+    def purge_user_data(self, user_id: int, username: str) -> dict[str, int]:
+        """
+        Delete everything the account owns (SEC-20) and forget its cached results.
+        """
+        from src.persistence.user_data_purge import UserDataPurger
+
+        deleted = UserDataPurger(self.artifact_store).purge(user_id, expected_username=username)
+        with self._cache_lock:
+            removed = self._user_pipeline_results.pop(user_id, None)
+            self._user_cached_paths.pop(user_id, None)
+            for key in [k for k in self._dataset_results if k[0] == user_id]:
+                del self._dataset_results[key]
+            if removed is not None and self._last_pipeline_result is removed:
+                self._last_pipeline_result = None
+            for report_id in [r for r, res in self._report_pipeline_results.items() if res is removed]:
+                del self._report_pipeline_results[report_id]
+        return deleted
+
     # ==========================================================
     # Managed datasets (server-issued identifiers)
     # ==========================================================

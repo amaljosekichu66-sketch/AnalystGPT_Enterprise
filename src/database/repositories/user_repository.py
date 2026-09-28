@@ -208,6 +208,14 @@ class UserRepository(BaseRepository):
         rows = self.fetch_all(query, (limit, offset))
         return [self._row_to_user(row) for row in rows]
 
+    def count_active_admins(self) -> int:
+        """Count ACTIVE users with the ADMIN role (all of them, not one page)."""
+        row = self.fetch_one(
+            f"SELECT COUNT(*) as total FROM {self.TABLE_NAME} WHERE role = ? AND status = ?;",
+            (UserRole.ADMIN.value, UserStatus.ACTIVE.value),
+        )
+        return 0 if row is None else int(row.get("total", 0))
+
     def count(self) -> int:
         """Return total user count."""
         query = f"""

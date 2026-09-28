@@ -11,15 +11,21 @@ Responsibilities
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, status
+from typing import Any
 
+from fastapi import APIRouter, Depends, Query, status
+from starlette.concurrency import run_in_threadpool
+
+from src.api.dependencies.application_dependency import get_application
 from src.api.dependencies.auth_dependencies import (
     get_user_service,
     require_permission,
 )
+from src.application.app import Application
 from src.identity.context import UserContext
 from src.identity.models import (
     AdminUserUpdate,
+    AuditEventType,
     PaginatedUserResponse,
     UserDeleteResponse,
     UserResponse,
@@ -147,17 +153,43 @@ async def delete_user(
     user_id: int,
     context: UserContext = Depends(require_permission(Permission.USER_MANAGE)),
     user_service: UserService = Depends(get_user_service),
+    application: Application = Depends(get_application),
 ) -> UserDeleteResponse:
     """
-    Delete a user account.
+    Delete a user account AND the data it owns (SEC-20).
     """
     user_service.delete_user_admin(
         user_id=user_id,
         actor_context=context,
+        before_delete=lambda target: application.purge_user_data(target.id, target.username),
     )
 
     return UserDeleteResponse(
         success=True,
         message=f"User with ID {user_id} deleted successfully.",
         user_id=user_id,
+    )
+
+
+@admin_router.get(
+    "/audit-events",
+    response_model=list[dict[str, Any]],
+    status_code=status.HTTP_200_OK,
+    summary="List audit events (Admin)",
+    description="Most recent durable audit events, newest first. Requires AUDIT_READ.",
+)
+async def list_audit_events(
+    limit: int = Query(100, ge=1, le=1000),
+    event_type: AuditEventType | None = Query(None),
+    actor_id: int | None = Query(None),
+    _context: UserContext = Depends(require_permission(Permission.AUDIT_READ)),
+) -> list[dict[str, Any]]:
+    """Read the persisted audit trail."""
+    from src.identity.audit_store import DatabaseAuditSink
+
+    return await run_in_threadpool(
+        DatabaseAuditSink().recent,
+        limit,
+        event_type.value if event_type else None,
+        actor_id,
     )

@@ -127,6 +127,11 @@ class InMemoryUserRepository:
             all_users = list(self._users.values())
             return all_users[offset : offset + limit]
 
+    def count_active_admins(self) -> int:
+        """Count ACTIVE users with the ADMIN role."""
+        with self._lock:
+            return sum(1 for u in self._users.values() if u.is_admin and u.is_active)
+
     def count(self) -> int:
         """Return total user count."""
         with self._lock:

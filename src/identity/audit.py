@@ -41,9 +41,11 @@ class AuditService:
     Structured security and application audit trail service.
     """
 
-    def __init__(self, max_in_memory_events: int = 1000) -> None:
+    def __init__(self, max_in_memory_events: int = 1000, sink: Any | None = None) -> None:
         self._max_in_memory_events = max_in_memory_events
         self._events: list[AuditEvent] = []
+        #: Durable store (SEC-25). None = in-memory only (unit tests).
+        self._sink = sink
 
     def sanitize_details(self, details: dict[str, Any] | None) -> dict[str, str | int | bool | None]:
         """
@@ -103,6 +105,27 @@ class AuditService:
         if len(self._events) > self._max_in_memory_events:
             self._events.pop(0)
 
+        if self._sink is not None:
+            try:
+                self._sink.write(event)
+            except Exception:
+                # Never fail the audited operation because the audit store is
+                # down - but make the gap loud.
+                logger.error("SECURITY_ALERT | AUDIT_PERSIST_FAILED | event_id=%s", event.event_id, exc_info=True)
+
+        if _is_alertable(event):
+            logger.warning(
+                "SECURITY_ALERT | Type=%s | Action=%s | Actor=%s (ID=%s) | Target=%s (ID=%s) | Outcome=%s | Details=%s",
+                event.event_type.value,
+                event.action,
+                event.actor_username or "ANONYMOUS",
+                event.actor_id,
+                event.target_resource or "N/A",
+                event.target_id,
+                event.outcome,
+                event.details,
+            )
+
         logger.info(
             "AUDIT_EVENT | Type=%s | Action=%s | Actor=%s (ID=%s) | Target=%s (ID=%s) | Outcome=%s | Details=%s",
             event.event_type.value,
@@ -141,8 +164,32 @@ class AuditService:
         self._events.clear()
 
 
-# Global audit service singleton
-_audit_service = AuditService()
+#: Events that warrant attention. They are logged at WARNING with a fixed
+#: `SECURITY_ALERT` prefix so a log pipeline can alert on them.
+_ALERT_EVENT_TYPES = frozenset(
+    {
+        AuditEventType.ACCESS_DENIED,
+        AuditEventType.USER_ROLE_CHANGED,
+        AuditEventType.USER_STATUS_CHANGED,
+        AuditEventType.USER_DELETED,
+    }
+)
+
+
+def _is_alertable(event: AuditEvent) -> bool:
+    if event.event_type in _ALERT_EVENT_TYPES:
+        return True
+    return event.event_type == AuditEventType.LOGIN_FAILURE and event.outcome == "DENIED"
+
+
+def _default_sink() -> Any:
+    from src.identity.audit_store import DatabaseAuditSink
+
+    return DatabaseAuditSink()
+
+
+# Global audit service singleton: persisted to `audit_events` (SEC-25).
+_audit_service = AuditService(sink=_default_sink())
 
 
 def get_audit_service() -> AuditService:
