@@ -5,9 +5,18 @@
 # Python: 3.11+
 # ==========================================================
 #
+# RUNTIME dependencies only - what the API, frontend and CLI images need.
+# Test and code-quality tools live in requirements-dev.txt and are not
+# installed into the production image (SEC-14).
+#
 # Every entry below is justified by actual repository usage: a direct import
-# under src/, tests/, performance/ or scripts/, an engine loaded at runtime by
-# pandas, or a tool invoked by .github/workflows/ci.yml.
+# under src/ or scripts/, or an engine loaded at runtime by pandas.
+#
+# Container builds install requirements.lock instead: the same set, fully
+# resolved for Linux inside the Dockerfile's digest-pinned base image,
+# constrained to requirements-constraints.txt (the versions the test suite
+# validated), every package pinned by sha256 (pip install --require-hashes).
+# Regenerate it after editing this file - see scripts/build_requirements_lock.py.
 #
 # Speculative dependencies carried since Sprint 12 were removed in the v14.0.0
 # audit - see CHANGELOG.md, "Dependencies" under v14.0.0.
@@ -92,20 +101,10 @@ httpx>=0.28.1
 python-dotenv>=1.1.1
 
 # ==========================================================
-# Testing
+# Packaging toolchain (SEC-23)
 # ==========================================================
-pytest>=8.4.1
-pytest-cov>=6.2.1
-# performance/stress_test.py samples process CPU and RSS.
-psutil>=6.0.0
-
-# ==========================================================
-# Code Quality
 #
-# Each of these is a blocking gate in the CI `quality` job.
-# ==========================================================
-black>=25.1.0
-flake8>=7.3.0
-isort>=6.0.1
-mypy>=1.17.1
-pre-commit>=4.3.0
+# Not imported by the application. Pinned so the image's setuptools is
+# upgraded past the releases with known advisories (65.5.x ships in the
+# python:3.11 base images; the last advisory is fixed in 83.0.0).
+setuptools>=83.0.0

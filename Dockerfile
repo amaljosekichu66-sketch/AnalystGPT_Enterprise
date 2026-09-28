@@ -13,7 +13,9 @@
 # ----------------------------------------------------------
 # Stage 1: Base Runtime Environment
 # ----------------------------------------------------------
-FROM python:3.11-slim AS base
+# Pinned by digest (SEC-14): the tag `python:3.11-slim` is mutable. To update,
+# pull the tag, take its RepoDigest, and regenerate requirements.lock with it.
+FROM python:3.11-slim@sha256:e41613d42d4891e4930f79523f93f81bbc7632584ec65e36ab055f41a800b41e AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -43,10 +45,11 @@ RUN apt-get update && \
 USER appuser
 
 # Copy dependency specification only to leverage Docker layer caching
-COPY --chown=appuser:appuser requirements.txt .
+COPY --chown=appuser:appuser requirements.lock .
 
-# Install dependencies into user local directory
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Runtime dependencies only, every package verified against the sha256 in the
+# lock (SEC-14). Test and lint tools (requirements-dev.txt) are not installed.
+RUN pip install --no-cache-dir --user --require-hashes -r requirements.lock
 
 # ----------------------------------------------------------
 # Stage 3: Runtime Base (Shared Application Layer)

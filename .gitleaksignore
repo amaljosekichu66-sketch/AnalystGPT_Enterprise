@@ -1,0 +1,6 @@
+# Reviewed false positives for gitleaks (SEC-22). Each entry is a fingerprint
+# (commit:file:rule:line) of a finding confirmed NOT to be a real secret.
+#
+# Test-only HMAC key for an in-memory TokenService fixture; never used
+# outside the test process.
+00e33af4e1527381ff95e658a400257c883b8c65:tests/api/test_ai_routes.py:generic-api-key:44

@@ -1,0 +1,33 @@
+# ==========================================================
+# AnalystGPT Enterprise - Development & CI requirements
+# ==========================================================
+#
+# Runtime dependencies plus the test and code-quality toolchain. Never
+# installed into the production image (see requirements.txt / .lock).
+
+-r requirements.txt
+
+# ==========================================================
+# Testing
+# ==========================================================
+pytest>=8.4.1
+pytest-cov>=6.2.1
+# performance/stress_test.py samples process CPU and RSS.
+psutil>=6.0.0
+
+# ==========================================================
+# Code Quality
+#
+# Each of these is a blocking gate in the CI `quality` job.
+# ==========================================================
+black>=25.1.0
+flake8>=7.3.0
+isort>=6.0.1
+mypy>=1.17.1
+pre-commit>=4.3.0
+
+# ==========================================================
+# Security scanning (CI `security` job)
+# ==========================================================
+bandit>=1.8.0
+pip-audit>=2.9.0

@@ -45,6 +45,8 @@ EXPECTED_TABLES = {
     "dataset_versions",
     "cleaning_configs",
     "cleaning_executions",
+    "revoked_tokens",
+    "audit_events",
 }
 
 _ENV = {key: os.getenv(f"TEST_POSTGRES_{key}") for key in ("HOST", "PORT", "DB", "USER", "PASSWORD")}
