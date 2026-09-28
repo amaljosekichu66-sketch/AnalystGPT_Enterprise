@@ -16,8 +16,9 @@
   <a href="#"><img src="https://img.shields.io/badge/Streamlit-1.48+-red.svg" alt="Streamlit"></a>
   <a href="#"><img src="https://img.shields.io/badge/Docker-Ready-2496ED.svg" alt="Docker"></a>
   <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License MIT"></a>
-  <a href="#"><img src="https://img.shields.io/badge/version-v14.0.0-brightgreen" alt="Version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-535%20passing-success" alt="Tests"></a>
+  <a href="#"><img src="https://img.shields.io/badge/released-v13.0.0-brightgreen" alt="Released version"></a>
+  <a href="#"><img src="https://img.shields.io/badge/in%20preparation-v14.0.0%20(unreleased)-orange" alt="Version in preparation"></a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-714%20passed%20%7C%200%20failed-brightgreen" alt="Tests"></a>
 </p>
 
 <p align="center">
@@ -39,9 +40,11 @@
 
 - **Architecture**: Layered + REST + BI + Multi-Tenant Identity
 - **Database**: SQLite (dev) + PostgreSQL (prod)  
-- **Frontend**: Streamlit (React‑ready for future)  
-- **AI Engine**: Ollama + Qwen/Gemma (with provider abstraction)
-- **Testing**: 535 passing tests
+- **Frontend**: Streamlit (React + TypeScript migration planned for Sprint 17)
+- **AI Engine**: Ollama + `gemma3:4b` via the `BaseLLM` / `LLMFactory` provider abstraction (Google Cloud / Gemini planned for Sprint 16)
+- **Testing**: **714 passed, 0 failed**; 15 live-LLM tests marked `integration` are deselected by
+  default (they need a local `gemma3:4b`) —
+  see [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md) § *Executed Validation*
 
 ---
 
@@ -175,7 +178,7 @@ flowchart LR
 | **Web Framework** | FastAPI, Uvicorn |
 | **Data Processing** | Pandas, NumPy |
 | **Validation** | Pydantic V2 |
-| **Frontend** | Streamlit, Plotly |
+| **Frontend** | Streamlit, Matplotlib (charts) |
 | **Database** | SQLite (dev), PostgreSQL (prod) |
 | **AI** | Ollama, Gemma models |
 | **Testing** | pytest, pytest‑cov, HTTPX |
@@ -295,42 +298,53 @@ curl -X POST http://localhost:8000/api/v1/pipeline \
 ```text
 AnalystGPT_Enterprise/
 ├── src/
-│   ├── api/                    # REST API Layer
-│   │   ├── server.py           # FastAPI app
+│   ├── api/                    # REST API Layer (FastAPI)
+│   │   ├── server.py           # FastAPI app, routers mounted under /api
 │   │   ├── routes/             # Endpoint definitions
-│   │   ├── models/             # Pydantic schemas
-│   │   └── dependencies/       # DI setup
+│   │   ├── models/             # Pydantic request/response schemas
+│   │   ├── dependencies/       # DI, auth dependencies
+│   │   └── exceptions/         # Exception handlers
 │   ├── application/            # Application Layer
-│   │   ├── pipeline_service.py # Orchestrator
-│   │   ├── dashboard_service.py
-│   │   └── ai_service.py
-│   ├── analytics/              # Business: Analytics
+│   │   ├── app.py              # Application.run() orchestration
+│   │   ├── ai_orchestrator.py
+│   │   ├── dashboard_orchestrator.py
+│   │   └── reporting_orchestrator.py
+│   ├── upload/                 # Business: Data ingestion
 │   ├── cleaning/               # Business: Data cleaning
 │   ├── quality/                # Business: Quality validation
-│   ├── reporting/              # Business: Report generation
-│   ├── upload/                 # Business: Data ingestion
-│   ├── infrastructure/         # Infrastructure Layer
-│   │   ├── persistence/        # Repository pattern
-│   │   ├── ai/                 # AI providers
-│   │   └── config/             # Configuration
-│   ├── frontend/               # Streamlit UI
-│   │   ├── streamlit_app.py    # Main app
-│   │   └── services/           # UI services
-│   ├── llm/                    # LLM abstraction & providers
+│   ├── analytics/              # Business: Analytics & statistical interpretation
+│   ├── reporting/              # Business: Report generation & PDF/TXT exporters
+│   ├── profiling/              # Semantic data profiling
+│   ├── governance/             # Cleaning governance, policies, preview
+│   ├── storage/                # Immutable artifact store
+│   ├── ai/                     # AI Insight Engine, async job lifecycle
+│   ├── llm/                    # LLM abstraction (BaseLLM, LLMFactory, Ollama client)
+│   ├── identity/               # Authentication, RBAC, user service
+│   ├── persistence/            # Persistence manager
+│   ├── database/               # Database adapters, schema, repositories
 │   ├── integrations/           # External integrations (Power BI)
-│   ├── database/               # Database adapters
-│   └── core/                   # Core utilities (logging, settings)
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   ├── stress/
+│   ├── frontend/               # Streamlit UI (views, components, services, theme)
+│   └── core/                   # Config, constants, logging, exceptions, PII rule
+├── tests/                      # pytest suite, one folder per package
+│   ├── integration/            # Live-LLM tests (marker: integration, deselected by default)
 │   └── ...
 ├── docs/
 │   ├── adr/                    # Architecture Decision Records
-│   ├── image/                  # Screenshots & diagrams
-│   └── project/                # Project documentation
+│   ├── api/                    # API reference, OpenAPI contract, React mapping
+│   ├── deployment/             # Deployment guide
+│   ├── development/            # Developer runbook
+│   ├── engineering/            # PROJECT_STATE and engineering manuals
+│   ├── project/                # Roadmap, architecture, journal, standards
+│   ├── sprints/                # Sprint release reports
+│   └── image/                  # Screenshots & diagrams
+├── performance/                # Benchmarks and performance reports
+├── scripts/                    # lint.ps1, run_tests.ps1, benchmarks
+├── sample_data/                # Example datasets
 ├── data/                       # Data storage (gitignored)
 ├── main.py                     # CLI entry point
+├── Dockerfile
+├── docker-compose.yml
+├── pyproject.toml
 ├── requirements.txt
 ├── .env.example
 ├── LICENSE
@@ -398,14 +412,25 @@ timeline
 
 ### Current & Future Sprints
 
+> This table was previously out of date: it listed Sprint 13 as planned (it shipped as
+> v13.0.0) and attributed the React frontend to Sprint 14. The roadmap has since been
+> re-baselined: React is **Sprint 17**, after Sprint 15 (stabilization) and Sprint 16 (AI
+> provider abstraction and the final React-readiness gate). Corrected below against `git tag`,
+> CHANGELOG.md and ROADMAP.md.
+
 | Sprint | Focus | Status |
 |--------|-------|--------|
-| **12** | Production Deployment & Containerization | ✅ Completed |
-| 13 | Multi‑user support | 📅 Planned |
-| 14 | React frontend | 📅 Planned |
-| 15 | Multi‑AI provider support | 📅 Planned |
-| 16 | Real‑time streaming analytics | 📅 Planned |
-| 17 | Machine learning integration | 📅 Planned |
+| **12** | Production Deployment & Containerization | ✅ Released (v12.0.0) |
+| **13** | Enterprise Identity & Multi‑User Platform | ✅ Released (v13.0.0) |
+| **14** | Enterprise Stabilization, Data Governance & Grounded Reporting | 🟡 Implemented — **not released**; no `v14.0.0` tag, branch `sprint-14-stabilization` unmerged |
+| 15 | Enterprise Stabilization, Governance Completion & Product/UX Remediation | 📅 Planned (v15.0.0) |
+| 16 | AI Provider Abstraction (Ollama + Gemini) & Complete React Readiness | 📅 Planned (v16.0.0) |
+| 17 | React Migration & Modern Presentation Layer | 📅 Planned (v17.0.0) |
+
+The following were listed in earlier revisions of this README but are **not defined in**
+[ROADMAP.md](docs/project/ROADMAP.md), which plans through Sprint 17. They are retained here as
+aspirations, not commitments: real‑time streaming analytics, machine learning integration.
+(Multi‑AI provider support is now planned — Sprint 16.)
 
 ### Progress Visual
 
@@ -432,15 +457,14 @@ CI/CD      ████████████████████ 100%
 | Document | Description |
 |----------|-------------|
 | [README.md](README.md) | Project overview and quick start |
-| [PROJECT_STATE.md](docs/project/PROJECT_STATE.md) | Current project status and health |
+| [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md) | Current project status and health |
 | [ARCHITECTURE.md](docs/project/ARCHITECTURE.md) | Detailed system architecture |
 | [ROADMAP.md](docs/project/ROADMAP.md) | Long‑term development roadmap |
 | [PROJECT_JOURNAL.md](docs/project/PROJECT_JOURNAL.md) | Engineering journey per sprint |
 | [CHANGELOG.md](CHANGELOG.md) | Release notes and version history |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
-| [API_GUIDE.md](docs/API_GUIDE.md) | REST API usage and examples |
-| [AI_GUIDE.md](docs/AI_GUIDE.md) | AI Insight Engine usage |
-| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment guide |
+| [API_REFERENCE.md](docs/api/API_REFERENCE.md) | REST API endpoints and contracts |
+| [DEVELOPER_COMMANDS.md](docs/development/DEVELOPER_COMMANDS.md) | Developer runbook: setup, tests, quality gates |
+| [DEPLOYMENT_GUIDE.md](docs/deployment/DEPLOYMENT_GUIDE.md) | Deployment guide |
 | [ADR/](docs/adr/) | Architecture Decision Records |
 
 ---
@@ -480,9 +504,9 @@ The codebase adheres to:
 - **Data Engineering**: Pandas, Data Pipelines, ETL, Data Validation, Data Quality, CSV/Excel/JSON.
 - **Database**: SQLite, PostgreSQL, Schema Design, Query Optimisation, Migration Management.
 - **AI/ML**: LLM Integration, Prompt Engineering, Provider Abstraction, Hallucination Prevention, Ollama/Gemma.
-- **Frontend**: Streamlit, Plotly, Interactive Dashboards, Session Management.
+- **Frontend**: Streamlit, Matplotlib, Interactive Dashboards, Session Management.
 - **Testing**: pytest, Unit Testing, Integration Testing, Stress Testing.
-- **DevOps**: Environment Configuration, Docker (planned), CI/CD (planned).
+- **DevOps**: Environment Configuration, Docker & Docker Compose, CI/CD (GitHub Actions).
 
 ### Concepts Demonstrated
 - **Enterprise Software Architecture** – Layered, modular, scalable.
@@ -495,7 +519,7 @@ The codebase adheres to:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please review our [Contributing Guidelines](CONTRIBUTING.md).
+We welcome contributions! Please follow the standards in [DEFINITION_OF_DONE.md](docs/project/DEFINITION_OF_DONE.md) and [CODE_REVIEW_CHECKLIST.md](docs/project/CODE_REVIEW_CHECKLIST.md).
 
 ### How to Contribute
 

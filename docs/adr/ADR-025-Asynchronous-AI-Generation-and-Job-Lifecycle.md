@@ -1,6 +1,25 @@
 # ADR-025 — Asynchronous AI Generation and Job Lifecycle
 
-**Status:** Proposed (Planned for Sprint 14)
+**Status:** ✅ **Accepted** — implemented in Sprint 14 (v14.0.0 prepared; not yet tagged or merged to `main`)
+
+> Implemented in `src/ai/job_executor.py`, `src/ai/models.py`, `src/ai/ai_job_service.py`, `src/database/repositories/ai_job_repository.py`, `src/database/repositories/ai_report_repository.py`, and the `/api/ai/jobs/*` routes.
+>
+> This ADR was authored as *Proposed (Planned for Sprint 14)*. Sprint 14 is implemented
+> and the decision it records is in force; the status is promoted accordingly. The
+> decision text below is unchanged.
+>
+> **Re-baseline note (ROADMAP.md, Sprints 15–17).** Sprint 15 — Enterprise Stabilization,
+> Governance Completion & Product/UX Remediation → Sprint 16 — AI Provider Abstraction &
+> Complete React Readiness → Sprint 17 — React Migration. The "React Migration Readiness"
+> in the Sprint line below refers to the Sprint 14 *initial* foundation; the definitive
+> readiness gate is Sprint 16.
+>
+> *Impact on later sprints.* Implemented and tested; Sprint 15 Phase 1/7 must verify the job
+> lifecycle end-to-end through the real API/frontend path (async AI job problems are in Sprint 15
+> Phase 5 scope). Sprint 16 provider adapters (Ollama, Google Cloud / Gemini) run *inside*
+> this lifecycle: provider timeouts, retries and provider-specific exceptions must map onto the
+> existing `PENDING → GENERATING → READY / FAILED` states without changing them. The job states
+> are the contract the Sprint 17 React async-job UX consumes.
 
 **Date:** 2026-08-15
 
@@ -102,3 +121,4 @@ Persisted AI Report (Available via GET /api/ai/jobs/{id})
 - ADR-011 — REST API Architecture
 - ADR-020 — AI Insight Engine Architecture
 - ADR-024 — Enterprise Identity and Multi-User Architecture
+- ADR-021 — LLM Provider Abstraction

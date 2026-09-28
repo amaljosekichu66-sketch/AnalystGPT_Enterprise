@@ -1,6 +1,18 @@
 # ADR-020 — AI Insight Engine Architecture
 
-**Status:** Proposed
+**Status:** ✅ **Accepted** — delivered in Sprint 11 (v11.0.0)
+
+> The design this ADR records has been in production since v11.0.0 (`src/ai/`,
+> `src/llm/`) and was extended by ADR-025 and ADR-027 in Sprint 14. The status line
+> read *Proposed*, which no longer described reality; the decision text is unchanged.
+
+> **Re-baseline note (2026-09-28).** References below to a "future React frontend" now map
+> to **Sprint 17**.
+> Sequencing is defined in ROADMAP.md: Sprint 15 — Enterprise Stabilization, Governance
+> Completion & Product/UX Remediation (no React work) → Sprint 16 — AI Provider Abstraction &
+> Complete React Readiness (final readiness audit; React architecture defined, not built) →
+> **Sprint 17 — React Migration & Modern Presentation Layer** (React + TypeScript implemented).
+> The decision text is unchanged.
 
 **Date:** 2026-07-25
 

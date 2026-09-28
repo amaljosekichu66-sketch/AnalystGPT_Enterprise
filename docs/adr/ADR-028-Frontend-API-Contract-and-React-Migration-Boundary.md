@@ -1,6 +1,25 @@
 # ADR-028 — Frontend API Contract and React Migration Boundary
 
-**Status:** Proposed (Planned for Sprint 14)
+**Status:** ✅ **Accepted** — implemented in Sprint 14 (v14.0.0 prepared; not yet tagged or merged to `main`)
+
+> Implemented in `docs/api/openapi.json` (33 paths), `docs/api/REACT_MIGRATION_MAPPING.md`, and the technology-neutral service layer under `src/frontend/services/`.
+>
+> This ADR was authored as *Proposed (Planned for Sprint 14)*. Sprint 14 is implemented
+> and the decision it records is in force; the status is promoted accordingly. The
+> decision text below is unchanged.
+>
+> **Re-baseline note (roadmap Sprints 15–17).** The decision text refers to the React
+> migration as "Sprint 15". That sequencing is superseded by ROADMAP.md:
+>
+> | Sprint | Purpose |
+> |---|---|
+> | Sprint 15 | Enterprise Stabilization, Governance Completion & Product/UX Remediation — no React work |
+> | Sprint 16 | AI Provider Abstraction & Complete React Readiness — final, definitive React-readiness audit; React technical architecture documented in a new ADR, not built |
+> | Sprint 17 | React Migration & Modern Presentation Layer — React + TypeScript implemented here |
+>
+> Read every "Sprint 15" in the Context, Decision and diagram below as **Sprint 17**. The
+> boundary this ADR establishes is the *initial* React-readiness foundation; the Sprint 16
+> audit re-verifies it before any React implementation begins.
 
 **Date:** 2026-08-15
 

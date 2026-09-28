@@ -6,7 +6,11 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v13.0.0**.
+> This document reflects the implementation on `sprint-14-stabilization`, prepared as
+> **v14.0.0** (Sprint 14 — Stabilization / Production Hardening). Sprint 14 is implemented
+> and validated locally but **not released**: no `v14.0.0` tag exists and the branch is not
+> merged to `main` (last release: v13.0.0). Future sequencing (Sprints 15–17) is defined in
+> ROADMAP.md.
 
 ---
 
@@ -138,7 +142,7 @@ LLMFactory
 OllamaClient
    │
    ▼
-Ollama (Qwen3:8B)
+Ollama (gemma3:4b — `OLLAMA_MODEL` default)
    │
    ▼
 AIResult
@@ -449,102 +453,198 @@ The AI Layer:
 
 # Layered Architecture
 
+The load-bearing dependency chain is linear and one-directional. Each layer depends only on
+the layer beneath it; nothing calls upward.
+
 ```text
-Frontend Layer
-
-Browser → Streamlit → Views → Components → Frontend Services
-
-↓
-
-REST API Layer
-
-FastAPI Server
-API Routes
-Dependency Injection
-Request/Response Models
-Exception Handlers
-
-↓
-
-Business Intelligence Layer
-
-DashboardService
-Dashboard Models
-
-↓
-
-Application Layer
-
-Application
-PipelineResult
-PipelineReport
-
-↓
-
-AI Insight Engine Layer
-
-AIManager
-Engines (Executive Summary, Recommendation, Explanation, Narrative)
-PromptBuilder
-ReportSerializer
-ResponseParser
-
-↓
-
-LLM Infrastructure
-
-BaseLLM
-LLMFactory
-OllamaClient
-
-↓
-
-Business Layer
-
-Upload
-Cleaning
-Quality
-Analytics
-Reporting
-
-↓
-
-Persistence Layer
-
-PersistenceManager
-
-↓
-
-Infrastructure Layer
-
-Repository Layer
-DatabaseManager
-ConnectionFactory
-DatabaseConnection
-SQLiteConnection
-PostgreSQLConnection
-Logger
-Configuration
-Exceptions
-Constants
-
-↓
-
-External Libraries
-
-FastAPI
-Pydantic
-Uvicorn
-Pytest
-Pandas
-SQLite3
-psycopg 3
-OpenPyXL
-JSON
-Streamlit
-Plotly
-Ollama (ollama SDK)
+┌──────────────────────────────────────────────────────────────────────────┐
+│ PRESENTATION                                              src/frontend/  │
+│   streamlit_app.py → views/ → components/ → services/                    │
+│   Views hold no business logic; components are presentation-only.        │
+│   Frontend services speak HTTP only — never to src/application/ direct.  │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │  HTTP / JSON  (the only channel)
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│ API                                                            src/api/  │
+│   server.py  · routes/ · models/ · dependencies/ · exceptions/           │
+│   Validates, authenticates, authorizes, serializes. No business logic.   │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │  Depends() → Application
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│ APPLICATION                                            src/application/  │
+│   Application.run()  — sole owner of end-to-end orchestration            │
+│   ai_orchestrator · dashboard_orchestrator · reporting_orchestrator      │
+│   PipelineResult · PipelineReport                                        │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │  calls each Manager; Managers never
+                                 │  call one another
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│ BUSINESS MODULES                    one Manager per capability           │
+│   src/upload/     UploadManager        → DataFrame                       │
+│   src/cleaning/   CleaningManager      → cleaned DataFrame               │
+│   src/quality/    QualityManager       → QualityReport                   │
+│   src/analytics/  AnalyticsManager     → AnalyticsReport                 │
+│   src/reporting/  ReportingManager     → ReportingReport (+ exporters)   │
+│   Persistence-agnostic. Never execute SQL. Never orchestrate each other. │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│ PERSISTENCE                                            src/persistence/  │
+│   PersistenceManager coordinates the repositories                        │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│ DATABASE ABSTRACTION                                      src/database/  │
+│   repositories/  (12) — own every SQL statement, scoped by user_id       │
+│   DatabaseManager → ConnectionFactory → DatabaseConnection               │
+│                        ├── SQLiteConnection                              │
+│                        └── PostgreSQLConnection   (psycopg 3)            │
+│   SchemaManager emits DDL for both dialects (11 tables)                  │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 ▼
+                        SQLite file  /  PostgreSQL 16
 ```
+
+---
+
+## Where the cross-cutting subsystems actually sit
+
+These do **not** sit between Presentation and Database in the chain above. Each attaches at
+one specific layer, and knowing which one is the point of this section.
+
+### Identity, Authentication & Authorization — `src/identity/`
+
+A domain package consumed by the **API layer**, not by business modules.
+
+| Concern | Location | Attaches at |
+|---|---|---|
+| Domain models (`User`, `UserRole`, `UserStatus`) | `src/identity/models.py` | — |
+| Password hashing (PBKDF2-HMAC-SHA256, 600,000 iterations, 16-byte salt) | `src/identity/password_hasher.py` | `UserService` |
+| Token issue/verify (HMAC-SHA256, `HS256`, standard JWT claims — no third-party JWT library) | `src/identity/token_service.py` | `UserService` |
+| Server-side revocation on logout | `src/identity/token_revocation.py` | `UserService` |
+| Permission matrix (`Permission` × `ROLE_PERMISSIONS`) | `src/identity/permissions.py` | route dependencies |
+| Per-request identity | `src/identity/context.py` (`UserContext`) | route dependencies |
+| Security audit trail | `src/identity/audit.py` | `UserService`, routes |
+| Persistence | `src/database/repositories/user_repository.py` | Database layer |
+| Enforcement | `src/api/dependencies/auth_dependencies.py` — `get_current_active_user`, `require_permission`, `require_role` | **API layer** |
+
+Authorization is declarative: a route declares
+`Depends(require_permission(Permission.REPORT_EXPORT))` and the dependency resolves the
+bearer token, loads the user, and checks the matrix before the handler runs.
+
+**Data isolation is enforced below the API, not at it.** Repository queries are scoped by
+`user_id` in `src/database/repositories/`, so a handler cannot accidentally widen a query.
+This is what makes IDOR structurally hard rather than a per-route discipline.
+
+### AI Insight Engine — `src/ai/` + `src/llm/`
+
+Attaches **after** the deterministic pipeline, dispatched by the Application layer. An AI
+failure never fails a pipeline run.
+
+```text
+Application.run()  ──► deterministic pipeline completes and persists
+        │
+        └──► AIJobService.create()        ai_jobs row, status PENDING
+                   │
+                   ▼
+             AIJobExecutor                ThreadPoolExecutor, background
+                   │                      atomic claim, retry, error class
+                   ▼
+             PENDING → GENERATING → READY | FAILED
+                   │
+                   ├── AIManager ── engines: executive summary, recommendation,
+                   │                explanation, narrative, unified report
+                   ├── context_builder.py → AIDataContext (repository-backed,
+                   │                        tenant-scoped, privacy-safe)
+                   └── src/llm/: PromptBuilder → ReportSerializer → LLMFactory
+                                 → OllamaClient → Ollama (gemma3:4b)
+                   │
+                   ▼
+             ai_reports row ── polled by GET /api/ai/jobs/{job_id}
+```
+
+`LLMFactory` registers exactly one provider, `"ollama"`, and raises
+`ValueError: Unsupported LLM Provider` for anything else.
+
+**Grounding safeguards.** `src/analytics/statistical_interpretation.py` turns skewness and
+kurtosis into deterministic, mathematically correct prose (and flags identifier-like numeric
+columns); `ReportSerializer` hands that wording to the model as authoritative.
+`src/ai/insight_validator.py`, called from `AIManager`, checks generated text against the
+computed statistics and records contradictions or unsupported conclusions on the report's
+`limitations` list rather than failing the report.
+
+The former `src/llm/llm_service.py` wrapper was removed in the Sprint 14 stabilization pass;
+all LLM access goes through `LLMFactory`.
+
+### Business Intelligence — `src/integrations/powerbi/`
+
+Sits **beside** the API layer, not between it and the Application layer.
+`DashboardService` consumes a `ReportingReport` produced by the Application layer and emits
+immutable dashboard models. The `/api/powerbi/*` routes call it through
+`DashboardOrchestrator`; they never touch business modules directly.
+
+### Data Governance & Lineage — `src/governance/` + `src/storage/`
+
+Attaches at the **business-module boundary**, around Cleaning.
+
+- `src/storage/artifact_store.py` — immutable raw upload bytes (SHA-256) and the cleaned
+  analytical dataset as `.parquet`.
+- `src/governance/policies.py` — configurable missing-value and outlier policies.
+- `src/governance/preview_service.py` — non-destructive impact preview before any write.
+- `src/governance/governance_service.py` — records provenance.
+- Persisted through `dataset_versions`, `cleaning_configs`, `cleaning_executions`.
+
+Lineage is therefore end-to-end: raw version + policy version → cleaned version → report →
+AI report.
+
+### Semantic Profiling — `src/profiling/`
+
+A pure analytical service consumed by Analytics and the frontend. `SemanticClassifier`
+separates domain semantics (`SemanticType`, `AnalyticalRole`) from pandas dtypes, so a
+postal code is not charted as a number. `src/analytics/visualization_planner.py` consumes
+it to plan a bounded 4–8 chart set.
+
+### Configuration, Logging & Shared Infrastructure — `src/core/`
+
+The only package every layer may import, and it imports none of them.
+
+| Module | Responsibility |
+|---|---|
+| `config.py` | Every environment-driven setting, read once at import. Enforces the deployment guards: a non-development `APP_ENVIRONMENT` refuses the built-in `AUTH_SECRET_KEY` and refuses `AUTH_ALLOW_HEADER_IDENTITY`. |
+| `constants.py` | `APP_NAME`, `APP_VERSION`, API prefixes, AI section names, frontend chrome. |
+| `logger.py` | One configured logger; stdout always, optional bounded `RotatingFileHandler`. Handlers are torn down on reconfiguration so reloads cannot duplicate output. |
+| `exceptions.py` | `AnalystGPTError` hierarchy, including the identity errors. |
+| `pii.py` | Shared token-level rule for deciding whether a column name denotes contact PII. |
+
+### Where the frontend services stop — `src/frontend/services/`
+
+`APIClient` is the single HTTP boundary; `AuthService`, `DashboardService`,
+`ReportService`, `AIService`, `UploadService` and `AdminService` are built on it, and
+`SessionManager` holds presentation state only. This is the seam a future React client
+replaces: it consumes the same REST contract, so nothing below the API layer changes.
+
+---
+
+## External libraries
+
+Only what the repository actually imports.
+
+| Layer | Libraries |
+|---|---|
+| Presentation | `streamlit`, `matplotlib` (charts) |
+| API | `fastapi`, `starlette`, `uvicorn`, `pydantic` |
+| Business | `pandas`, `numpy`, `openpyxl` (Excel via pandas), `pyarrow` (parquet via pandas) |
+| Reporting | `matplotlib` (`PdfPages`, `pyplot`, `patches`) |
+| Database | `sqlite3` (stdlib), `psycopg` 3 |
+| AI | `ollama` |
+| HTTP | `httpx` |
+| Configuration | `python-dotenv` |
+| Identity | `hashlib`, `hmac`, `secrets`, `base64` (stdlib only — no third-party crypto or JWT library) |
 
 ---
 
@@ -694,7 +794,9 @@ Generated text (string)
 
 ### Responsibility
 
-Provide a pluggable interface to various LLM providers, currently supporting local Ollama with Qwen3:8B.
+Provide a pluggable interface to LLM providers. Currently only local Ollama is registered
+(default model `gemma3:4b`); additional providers (Google Cloud / Gemini, future adapters such
+as Groq) are planned for Sprint 16.
 
 ### Status
 
@@ -1631,7 +1733,13 @@ Validated through:
 
 Current results:
 
-**180 automated tests passing** (as of Sprint 11).
+**714 automated tests passing** on the Sprint 14 working tree (v14.0.0 in preparation; 729 collected, 714 passed, 0 failed,
+15 `integration`-marked tests deselected by default) across 118 test modules. The executed
+accounting, including the four static gates, is recorded once in PROJECT_STATE.md, section
+*Executed Validation*.
+
+> The figure of **180 automated tests** shown in earlier revisions of this section was the
+> **Sprint 11** total and is retained here only as historical scope.
 
 Every completed component must include automated unit tests before release. Automated testing validates every architectural change.
 
@@ -1898,8 +2006,14 @@ The architecture follows:
 | Persistence | ✅ Stable |
 | Database Abstraction Layer | ✅ Stable |
 | Core Infrastructure | ✅ Stable |
-| OpenAPI | ✅ Stable |
+| OpenAPI | ✅ Stable (3.1, 33 paths, contract in sync) |
 | Swagger | ✅ Stable |
+| Identity / Authentication / Authorization | ✅ Stable (`src/identity/`, Sprint 13) |
+| Data Governance & Lineage | 🟡 Implemented & tested (`src/governance/`, `src/storage/`, Sprint 14); end-to-end workflow verification/remediation pending Sprint 15 |
+| Semantic Profiling & Visual Analytics | ✅ Stable (`src/profiling/`, `VisualizationPlanner`, Sprint 14) |
+| Asynchronous AI Job Lifecycle | ✅ Stable (`ai_jobs` / `ai_reports`, `AIJobExecutor`, Sprint 14) |
+| Report Exporters (PDF / TXT) | ✅ Stable (`src/reporting/exporters/`, Sprint 14) |
+| Containerization & CI | ✅ Stable (Docker multi-stage, Compose, 5-job GitHub Actions) |
 
 ---
 
@@ -2032,14 +2146,18 @@ Major improvements:
 
 The Streamlit frontend serves as the MVP presentation layer.
 
-Future React migration shall preserve:
+The React migration is planned for **Sprint 17**. It follows Sprint 15 (stabilization and
+remediation) and Sprint 16 (AI provider abstraction and the final React-readiness audit, which
+is the definitive gate). No React implementation may begin before Sprint 17.
+
+The React migration shall preserve:
 
 - REST API contracts
 - Application Layer
 - Business modules
 - Persistence Layer
 - Database Abstraction Layer
-- AI Insight Engine contracts
+- AI Insight Engine contracts and the provider abstraction (Sprint 16)
 
 Only the Presentation Layer (Frontend) may be replaced.
 
@@ -2092,11 +2210,22 @@ Sprint 13 transforms AnalystGPT Enterprise into a multi-tenant, secure enterpris
                     └─────────────────────────┘
 ```
 
-# Sprint 14 Target Architecture (Planned)
+# Sprint 14 — Stabilization & Governance Architecture (Delivered)
 
-> **Status:** PLANNED / NOT YET IMPLEMENTED
+> **Status: DELIVERED (implemented & tested; release pending).** Sprint 14 is prepared as
+> v14.0.0 but not yet tagged or merged to `main`. Earlier
+> revisions of this section were headed *Target Architecture* and marked
+> "PLANNED / NOT YET IMPLEMENTED"; every element below is now implemented, test-covered and
+> passing the quality gates. The implementing modules are named inline.
+>
+> The cross-cutting placement of these subsystems — where each one attaches to the
+> Presentation → API → Application → Business → Persistence → Database chain — is documented
+> under *Layered Architecture* above.
 
-Sprint 14 introduces performance stabilization, asynchronous AI job execution, data-cleaning governance and lineage tracking, privacy-safe AI context formatting, report export reliability, and stable frontend API contracts preparing for the React migration.
+Sprint 14 delivered performance stabilization, asynchronous AI job execution, data-cleaning
+governance and lineage tracking, privacy-safe AI context construction, report export
+reliability, and a frozen API contract with a technology-neutral frontend service layer.
+
 
 ### 1. Asynchronous AI Job Lifecycle & State Machine
 - **Decoupled Pipeline Execution**: Pipeline API requests return deterministic analytical results immediately (`Upload → Cleaning → Quality → Analytics → Reporting → Persistence`).
@@ -2138,7 +2267,12 @@ Pipeline Execution (Deterministic) ───────────► Dashboar
   - `UploadService`
   - `AdminService`
 - **Zero Backend Logic in Streamlit**: Streamlit views operate strictly as presentation components consuming the REST API via services.
-- **OpenAPI 3.1 Contract Freeze**: Authoritative backend API contract ensuring seamless drop-in replacement by the React presentation layer in Sprint 15.
+- **OpenAPI 3.1 Contract Freeze**: Authoritative backend API contract forming the initial React-readiness foundation. The final readiness audit is a Sprint 16 gate; the React presentation layer itself is Sprint 17.
+
+> **Known gaps carried into Sprint 15** (see ROADMAP.md): the governance workflow is not yet
+> verified end-to-end through the real API/frontend path; the Dashboard largely duplicates the
+> pipeline result; and `DELETE /api/admin/users/{user_id}` exists but is not exposed in
+> `src/frontend/views/admin_page.py`.
 
 ---
 
@@ -2154,26 +2288,36 @@ The current architecture provides a stable foundation for continued, sequenced e
 - Phase 4: API Security & Role-Based Access Control (RBAC) ✅
 - Phase 5: Frontend Authentication & Sprint Closure ✅
 
-## Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness (Planned)
+## Sprint 14 — Stabilization / Production Hardening (Implemented — release pending)
+
+> Prepared as **v14.0.0** (not tagged, not merged). All seven phases are implemented,
+> test-covered, and passing the full quality gate set.
 
 - Phase 1: Frontend UX Stabilization (Scroll reset, information hierarchy, dedicated AI Insights nav, public About)
 - Phase 2: Asynchronous AI Execution & Job Lifecycle (Decoupled execution, state machine, failure isolation)
 - Phase 3: Data Cleaning Governance & Lineage (Immutable raw dataset, configurable policies, provenance)
 - Phase 4: AI Analytical Context & Data Integrity (Source metadata vs analytical context, privacy-safe prompts)
 - Phase 5: Reporting & Export Reliability (Repaired report download & PDF export, ownership enforcement)
-- Phase 6: React Migration Readiness (OpenAPI contract freeze, typed models, frontend-independent service interfaces)
-- Phase 7: Regression, Contract & Quality Gates (329+ tests, multi-user isolation, CI quality gates)
+- Phase 6: React Migration Readiness — initial foundation (OpenAPI contract freeze, typed models, frontend-independent service interfaces); final gate in Sprint 16
+- Phase 7: Semantic Profiling, Visual Analytics & Quality Gates (`src/profiling/`, `VisualizationPlanner`, AI grounding remediation, 714 tests, multi-user isolation, CI quality gates)
 
-## Sprint 15 — React Migration & Modern Presentation Layer (Planned)
+## Sprints 15–17 — Planned (not started)
 
-- Replace Streamlit presentation layer with production-grade React application
-- Consume existing REST API contracts without backend modifications
-- Reusable component architecture, responsive design tokens, and a11y compliance
+Scope and Definitions of Done are defined in ROADMAP.md. No work for these sprints exists in
+this repository. Dependency chain: Sprint 14 release → Sprint 15 → Sprint 16 → Sprint 17.
+
+| Sprint | Release | Architectural impact |
+|---|---|---|
+| **15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** | v15.0.0 | No new architecture. Root-cause fixes and justified refactoring only (module boundaries, duplicated business logic, dependency direction). Business logic stays in the backend. React out of scope. |
+| **16 — AI Provider Abstraction & Complete React Readiness** | v16.0.0 | Extends the existing `BaseLLM` / `LLMFactory` abstraction to configuration-driven providers (Ollama, Google Cloud / Gemini; future adapters such as Groq), with normalized errors, timeouts, retries and observability. Final React-readiness audit; React architecture documented (ADR), not built. |
+| **17 — React Migration & Modern Presentation Layer** | v17.0.0 | React + TypeScript replaces Streamlit incrementally as the presentation layer, consuming the existing REST API. Streamlit coexists until parity. See *React Migration Constraint* above. |
 
 Every architectural change affecting module boundaries or dependency direction must be documented through a new Architecture Decision Record (ADR).
 
 ---
 
-**Current Architecture Version:** **v13.0.0**
+**Current Architecture Version:** **v14.0.0 (prepared, not released)** — Sprint 14, Stabilization / Production Hardening
 
-**Previous Version:** **v12.0.0**
+**Last Released Version:** **v13.0.0** — Enterprise Identity & Multi-User Platform
+
+**Next Planned:** v15.0.0 (Sprint 15) → v16.0.0 (Sprint 16) → v17.0.0 (Sprint 17)

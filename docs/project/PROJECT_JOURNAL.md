@@ -2469,6 +2469,8 @@ Sprint 14 Phase 6 establishes complete OpenAPI 3.1 contract stability, typed Pyd
 
 1. **OpenAPI 3.1 Contract Freeze & Export (`docs/api/openapi.json`):**
    - Exported authoritative, frozen OpenAPI 3.1 specification representing all 40 registered API routes.
+     *(Historical: 40 counted the duplicate registrations of `reports_router`. Later in the
+     sprint the unprefixed aliases were removed and the contract settled at **33 paths**.)*
    - Synchronized schema metadata, operation IDs, parameter documentation, and error responses.
 2. **Strongly Typed Response Models (`src/api/models/response_models.py`, `src/api/routes/`):**
    - Defined `ReportsListResponse`, `ReportDataResponse`, `ReportSectionItem`, `DashboardStatusResponse`, and standardized `ErrorResponse`.
@@ -2517,6 +2519,12 @@ Resolve critical real-world analytical shortcomings exposed during live dataset 
 
 ## 2026-08-19 — Sprint 14 Final Closure: AI Grounding Remediation & E2E Validation
 
+> **Historical entry, retained as written.** "Final Closure" here refers to closing this
+> phase of the sprint's engineering work; stabilization continued afterwards. The "531
+> automated tests" figure below is a historical in-flight count and has been superseded: the
+> executed total at the v14.0.0 baseline is **714 passing**. See PROJECT_STATE.md, section
+> *Executed Validation*, and the Sprint 14 completion milestone at the end of this journal.
+
 ### Objective
 Complete the final acceptance audit and AI grounding remediation:
 - Eliminate cardinality vs frequency conflation in serialized AI prompts.
@@ -2542,6 +2550,166 @@ Complete the final acceptance audit and AI grounding remediation:
 
 ---
 
+## 2026-08-28 — Sprint 14 Milestone: Stabilization Complete (v14.0.0)
+
+**Sprint:** Sprint 14 — Stabilization / Production Hardening
+**Status:** ✅ **COMPLETE**
+
+This entry closes Sprint 14. It separates what was *built* from what was *verified*, records
+the engineering decisions taken during stabilization, and states what was deliberately left
+for Sprint 15.
+
+### Implementation
+
+The seven Sprint 14 phases were delivered across commits `00e33af`, `b59df37` and `0f6d5eb`,
+plus the stabilization work that followed. Per-phase detail is recorded in the entries above
+and in SPRINT_14_RELEASE_REPORT.md; the delivered subsystems are:
+
+| Subsystem | Modules |
+|---|---|
+| Asynchronous AI job lifecycle | `src/ai/models.py`, `job_executor.py`, `ai_job_service.py`, `exceptions.py`; `ai_job_repository.py`, `ai_report_repository.py`; `/api/ai/*` |
+| Data cleaning governance & lineage | `src/governance/`, `src/storage/artifact_store.py`; `dataset_version_repository.py`, `cleaning_config_repository.py`, `cleaning_execution_repository.py`; `/api/governance/*` |
+| AI analytical context & integrity | `src/ai/context.py`, `src/ai/context_builder.py` |
+| Publication-grade reporting | `src/reporting/exporters/pdf_report_exporter.py`, `text_report_exporter.py`; `src/application/reporting_orchestrator.py`; `/api/reports/**/export/*` |
+| Semantic profiling & visual analytics | `src/profiling/`, `src/analytics/visualization_planner.py` |
+| AI grounding remediation | `src/llm/report_serializer.py`, `src/llm/prompt_builder.py` |
+| API contract & migration readiness | `docs/api/openapi.json`, `docs/api/REACT_MIGRATION_MAPPING.md`, `src/frontend/services/` |
+| Frontend UX stabilization | `src/frontend/components/scroll_to_top.py`, `views/ai_insights_page.py`, `services/session_manager.py` |
+
+Database schema grew to **11 tables** across both SQLite and PostgreSQL: the six pre-existing
+tables plus `users` (Sprint 13) and `ai_jobs`, `ai_reports`, `dataset_versions`,
+`cleaning_configs`, `cleaning_executions` (Sprint 14).
+
+### Validation
+
+Distinct from implementation, and executed rather than asserted:
+
+| Gate | Command | Result |
+|---|---|---|
+| Test suite | `pytest -q` | **714 passed, 0 failed, 15 deselected**, 118.73 s |
+| Full collection | `pytest --collect-only -m ""` | 729 collected across 118 modules |
+| Lint | `flake8 src tests --count` | 0 |
+| Format | `black --check src tests` | 341 files unchanged |
+| Imports | `isort --check src tests` | clean |
+| Types | `mypy src` | no issues in 210 source files |
+| API contract | live `app.openapi()` vs `docs/api/openapi.json` | 33 paths, 42 schemas, in sync |
+
+The 15 deselected tests are `integration`-marked (`tests/ai/test_ollama_connection.py`,
+`tests/ai/test_ollama_production_path.py`) and are run deliberately with
+`pytest -m integration` against a live Ollama server.
+
+### Engineering decisions taken during stabilization
+
+1. **One route convention, no aliases.** `/reports/*` had been mounted twice (prefixed and
+   unprefixed) and `/powerbi/*` only unprefixed — two of nine routers disagreeing with the
+   convention the rest followed. The unprefixed paths were removed rather than kept as
+   permanent aliases. This is a **breaking change** for external callers; every removed path
+   has an identical `/api`-prefixed equivalent. Enforced by
+   `tests/api/test_openapi_contract.py::test_every_path_is_under_the_api_prefix`.
+
+2. **Live-LLM tests are marked, not skipped by reachability.** The previous guard tested only
+   whether an Ollama *server* answered, so an environment with a reachable server and no
+   installed model produced six hard failures. Replacing the guard with an `integration`
+   marker plus `addopts = -m "not integration"` makes the default suite deterministic
+   everywhere and keeps the live path runnable on demand.
+
+3. **The formatter gates were made real.** `pyproject.toml` had excluded `tests/` and 15 of
+   17 `src/` packages, so `black` and `isort` ran, reported success, and checked almost
+   nothing. Retiring those exclusions reformatted 231 files across two passes. On Windows the
+   formatters must run under `PYTHONUTF8=1` — 35 files legitimately contain characters
+   outside cp1252, and without it `isort` silently skips them while still exiting 0.
+   `scripts/lint.ps1` and `scripts/run_tests.ps1` set it.
+
+4. **Test runs were isolated from the working tree.** `SQLITE_DATABASE_PATH`,
+   `REPORT_OUTPUT_DIRECTORY` and `ARTIFACT_STORE_DIRECTORY` were made overridable and are
+   redirected by `tests/conftest.py`. Before this, a plain `pytest -q` inserted rows into the
+   developer's live `analystgpt.db` and wrote 19 report files per run.
+
+5. **`matplotlib` was declared.** It had been imported at module level since v10.0.0 via
+   `charts.py`, affecting only the frontend. Sprint 14 made `ReportingManager` import the PDF
+   exporter at module level, which widened the blast radius: the core application and REST
+   API could no longer be imported from the declared dependency set.
+
+6. **The AI context window and timeout were sized from measurement, not guesswork.** The
+   4,096-token window overflowed on the real 21-column dataset (prompt 4,653 + 1,024
+   generated = 5,677 required); llama.cpp discards the *oldest* tokens, which silently
+   evicted the analytical integrity rules at the head of the prompt. Raised to 8,192. The
+   timeout was raised to 600 s after a full generation was measured at 340 s cold on CPU.
+
+### Lessons
+
+- **A green gate proves nothing until you check what it covers.** Black and isort passed for
+  months while checking two packages out of seventeen.
+- **A skip guard must test the condition the test actually needs.** Checking server
+  reachability when the test needs a *model* produces failures that look like defects.
+- **Silent truncation is the expensive failure mode.** Neither the context-window overflow nor
+  the cp1252 skip raised anything; both were found by measuring rather than by being told.
+- **Separate implementation, validation and release in the documentation.** Conflating them
+  produced four irreconcilable test totals (535 / 531 / 529 / 478) across five documents. The
+  fix was to execute the suite once and have every document reference a single recorded
+  figure.
+
+### Remaining work — carried into Sprint 15
+
+None of these blocks the v14.0.0 baseline; all are recorded as technical debt in
+PROJECT_STATE.md. *(Sprint 15 has since been re-scoped — see the roadmap re-baseline entry
+below.)*
+
+- `.flake8` and `[tool.mypy]` still suppress several error classes. The gates pass, but check
+  less than a default configuration would.
+- The OpenAPI contract test compares only the spec version and the path *count*; a schema
+  change that preserves the count would pass undetected.
+- The Ollama performance baseline is a single successful sample out of three attempts.
+- CI triggers only on `main`, so branch work is validated locally until merge.
+- `docker-compose.yml` still pins `AI_CONTEXT_WINDOW: 4096` and `AI_TIMEOUT: 120`, which
+  `src/core/config.py` and `.env.example` have since raised to `8192` and `600`; and
+  `src/core/config.py` defaults `POSTGRES_PORT` to `5433` where `.env.example` uses `5432`.
+
+---
+
+## 2026-09-28 — Roadmap Re-baseline: Sprints 15–17
+
+**Type:** Documentation / planning. No application code, tests or configuration changed.
+
+### Context
+
+The roadmap still defined Sprint 15 as the React migration, while PROJECT_STATE.md and
+ARCHITECTURE.md had renamed it *Refactoring & Architectural Evolution*. Neither matched the
+product's actual condition: the governance workflow is not proven end-to-end, the Dashboard
+largely duplicates the pipeline result, the Admin UI does not expose the existing
+`DELETE /api/admin/users/{user_id}` capability, and `LLMFactory` supports only Ollama.
+
+### Decision
+
+| Sprint | Release | Purpose | Main question |
+|---|---|---|---|
+| Sprint 15 | v15.0.0 | Enterprise Stabilization, Governance Completion & Product/UX Remediation | Is the existing product actually correct, reliable, and valuable? |
+| Sprint 16 | v16.0.0 | AI Provider Abstraction & Complete React Readiness | Is the backend/provider architecture truly ready for a frontend replacement? |
+| Sprint 17 | v17.0.0 | React Migration & Modern Presentation Layer | Can we replace Streamlit without redesigning the backend? |
+
+React implementation must not begin in Sprint 15 or Sprint 16. Sprint 14 Phase 6 is recorded
+as the *initial* React-readiness foundation; the Sprint 16 audit is the definitive gate.
+
+### Evidence reconciliation
+
+- **Release state.** Git has no `v14.0.0` tag and `main` is at `c5ddf06` (v13.0.0). Earlier
+  journal entries describing v14.0.0 as the released baseline recorded the intended end
+  state; Sprint 14 is implemented and validated locally (714 passed, four static gates), with
+  release pending.
+- **Status vocabulary.** Implemented · Tested · Verified (end-to-end through the real
+  API/frontend path) · Released (tagged and merged) · Planned. An endpoint, class or unit test
+  alone is not end-to-end verification.
+- **Documents reconciled:** ROADMAP.md, PROJECT_STATE.md, ARCHITECTURE.md, ADR-028,
+  REACT_MIGRATION_MAPPING.md, CHANGELOG.md and this journal.
+
+### Lesson
+
+Sprint plans drifted across documents because each was edited independently. The roadmap is
+the single authority for sequencing; other documents should reference it rather than
+restate sprint scope.
+
+---
+
 # Journal Summary
 
 | Sprint | Version | Primary Achievement | Status |
@@ -2563,9 +2731,15 @@ Complete the final acceptance audit and AI grounding remediation:
 | Sprint 11 | v11.0.0 | AI Insight Engine | ✅ |
 | Sprint 12 | v12.0.0 | Production Deployment & Containerization | ✅ |
 | Sprint 13 | v13.0.0 | Enterprise Identity & Multi-User Platform | ✅ |
-| Sprint 14 | v14.0.0 | Enterprise Stabilization, Data Governance, Async AI Lifecycle, Semantic Profiling & Grounded Reporting | ✅ |
-| Sprint 15 | Planned (v15.0.0) | React Migration & Modern Presentation Layer | 📋 |
+| Sprint 14 | **v14.0.0** (prepared) | **Stabilization / Production Hardening** — Async AI Lifecycle, Data Governance & Lineage, Semantic Profiling, Publication-Grade Reporting, Grounded AI, API Contract Freeze | 🟡 **Implemented & validated; release pending** |
+| Sprint 15 | Planned (v15.0.0) | Enterprise Stabilization, Governance Completion & Product/UX Remediation | 📋 Not started |
+| Sprint 16 | Planned (v16.0.0) | AI Provider Abstraction & Complete React Readiness | 📋 Not started |
+| Sprint 17 | Planned (v17.0.0) | React Migration & Modern Presentation Layer | 📋 Not started |
 
 ---
 
-**Current Journal Version:** **v14.0.0 (Sprint 14 Complete & Verified)**
+**Journal covers through:** **Sprint 14 — Stabilization / Production Hardening (v14.0.0 prepared, not released)** and the 2026-09-28 roadmap re-baseline
+
+**Last released version:** **v13.0.0**
+
+**Next sprint:** **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (planned, not started) → Sprint 16 → Sprint 17

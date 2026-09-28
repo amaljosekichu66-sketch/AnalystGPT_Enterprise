@@ -2,6 +2,15 @@
 
 **Status:** Accepted
 
+> **Re-baseline note (2026-09-28).** The *Sprint 10 — React Frontend* item below was the
+> original Sprint 8 forecast; Sprint 10 delivered the Streamlit frontend instead. The React
+> frontend is now planned for **Sprint 17**.
+> Sequencing is defined in ROADMAP.md: Sprint 15 — Enterprise Stabilization, Governance
+> Completion & Product/UX Remediation (no React work) → Sprint 16 — AI Provider Abstraction &
+> Complete React Readiness (final readiness audit; React architecture defined, not built) →
+> **Sprint 17 — React Migration & Modern Presentation Layer** (React + TypeScript implemented).
+> The decision text is unchanged.
+
 **Date:** 23 July 2026
 
 **Sprint:** Sprint 8 — REST API Integration

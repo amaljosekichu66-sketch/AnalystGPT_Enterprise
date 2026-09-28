@@ -80,7 +80,7 @@ Orchestrates three core services over a private bridge network (`analystgpt_netw
 
 ## Implementation
 
-- [`Dockerfile`](file:///Users/amaljose/AnalystGPT_Enterprise/Dockerfile)
-- [`.dockerignore`](file:///Users/amaljose/AnalystGPT_Enterprise/.dockerignore)
-- [`docker-compose.yml`](file:///Users/amaljose/AnalystGPT_Enterprise/docker-compose.yml)
-- [`.env.example`](file:///Users/amaljose/AnalystGPT_Enterprise/.env.example)
+- [`Dockerfile`](../../Dockerfile)
+- [`.dockerignore`](../../.dockerignore)
+- [`docker-compose.yml`](../../docker-compose.yml)
+- [`.env.example`](../../.env.example)

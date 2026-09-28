@@ -1,6 +1,25 @@
 # ADR-026 — Data Cleaning Governance and Lineage
 
-**Status:** Proposed (Planned for Sprint 14)
+**Status:** ✅ **Accepted** — implemented in Sprint 14 (v14.0.0 prepared; not yet tagged or merged to `main`)
+
+> Implemented in `src/governance/` (policies, preview service, governance service, custom registry), `src/storage/artifact_store.py`, `src/database/repositories/cleaning_execution_repository.py`, `src/database/repositories/dataset_version_repository.py`, and the `/api/governance/*` routes.
+>
+> This ADR was authored as *Proposed (Planned for Sprint 14)*. Sprint 14 is implemented
+> and the decision it records is in force; the status is promoted accordingly. The
+> decision text below is unchanged.
+>
+> **Re-baseline note (ROADMAP.md, Sprints 15–17).** Sprint 15 — Enterprise Stabilization,
+> Governance Completion & Product/UX Remediation → Sprint 16 — AI Provider Abstraction &
+> Complete React Readiness → Sprint 17 — React Migration. The "React Migration Readiness"
+> in the Sprint line below refers to the Sprint 14 *initial* foundation; the definitive
+> readiness gate is Sprint 16.
+>
+> *Impact on later sprints.* The governance components are **implemented and tested but not
+> verified end-to-end**: the preview → approval/modification/rejection → persistence →
+> execution → lineage workflow has not been proven through the real API/frontend path and is
+> reported as not functioning as intended. Proving and remediating it is **Sprint 15 Phase 2**,
+> fixed at the backend root cause, not with a frontend workaround. This ADR's decision stands;
+> Sprint 15 may amend it only through a follow-up ADR if the audit shows the design itself is at fault.
 
 **Date:** 2026-08-15
 

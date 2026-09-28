@@ -2,13 +2,20 @@
 
 **Project:** AnalystGPT Enterprise
 
-**Sprint:** Sprint 14 — UX Stabilization, Performance, Data Governance & React Migration Readiness
+**Sprint:** Sprint 14 — Stabilization / Production Hardening
 
 **Version:** v14.0.0
 
-**Release Date:** August 2026
+**Status:** 🟡 **Implemented and validated locally — release pending** (no `v14.0.0` tag;
+`sprint-14-stabilization` not merged to `main`)
 
-**Status:** ✅ Completed & Verified
+---
+
+> **How to read this report.** The delivery narrative below was written during the sprint and
+> is preserved. Every component it names was confirmed to exist and to be non-stub. The
+> *Verification & Test Results* section has been updated with executed figures; the in-flight
+> totals it originally carried (535 / 531) are superseded by the executed **714 passing**.
+> The authoritative current-state record is PROJECT_STATE.md, section *Executed Validation*.
 
 ---
 
@@ -53,12 +60,24 @@ Deliver enterprise stabilization across the presentation, analytical, and govern
 - Enforced authenticated ownership verification and IDOR prevention on report export streaming endpoints (`/api/reports/{id}/export/*`).
 
 ## Phase 6 — OpenAPI 3.1 & React Migration Readiness
-- Exported authoritative, frozen OpenAPI 3.1 specification (`docs/api/openapi.json`) across all 40 registered API routes.
+- Exported authoritative, frozen OpenAPI 3.1 specification (`docs/api/openapi.json`).
+  The initial export counted **40 paths** because `reports_router` was registered twice,
+  once unprefixed and once under `/api`. Stabilization removed the unprefixed aliases, so
+  the contract is now **33 paths / 42 schemas** — one path per route declaration.
 - Added strongly typed Pydantic response models (`src/api/models/response_models.py`).
 - Abstracted presentation logic into technology-neutral frontend service interfaces (`UploadService`, `AdminService`, `ReportService`, `AIService`, `DashboardService`, `APIClient`).
 - Authored comprehensive React migration mapping blueprint (`docs/api/REACT_MIGRATION_MAPPING.md`).
 
+> **Scope (roadmap re-baseline).** Phase 6 established the *initial* React-readiness
+> foundation. The final, definitive readiness audit is a Sprint 16 gate, and React is
+> implemented only in Sprint 17.
+
 ## Phase 7 — Semantic Profiling, Visual Analytics & AI Grounding Remediation
+
+> **Phase naming, resolved.** Phase 7 circulated under two names — the one above and
+> *Regression, Contract & Quality Gates*. Both bodies of work were delivered, so the
+> disagreement was over naming rather than scope. The authoritative combined title is
+> *Semantic Profiling, Visual Analytics & Quality Gates*; see PROJECT_STATE.md.
 - Implemented 20-class `SemanticType` and `AnalyticalRole` taxonomy with deterministic `SemanticClassifier` and `DataProfiler` (`src/profiling/`).
 - Built authoritative `VisualizationPlanner` (`src/analytics/visualization_planner.py`) enforcing a 4–8 chart budget and responsive 2×2 / 3×3 grid layout.
 - Upgraded Column Profile component (`src/frontend/components/column_profile.py`) with 8-column profiling metadata.
@@ -70,11 +89,35 @@ Deliver enterprise stabilization across the presentation, analytical, and govern
 
 # Verification & Test Results
 
-- ✅ **Total Automated Tests**: **535 / 535 Passed** (0 failures, 0 errors, 0 warnings)
-- ✅ **Test Suite Execution Time**: ~50–60s across all unit, integration, contract, and lifecycle suites.
-- ✅ **Static Analysis**: Flake8: 0 errors | Black: Clean | isort: Clean | Mypy: Clean (208 source files).
-- ✅ **Live E2E Verification**: Verified on `Test_data.xlsx` with Ollama `gemma3:4b` (`ai_job_cd456daeba2f`).
-- ✅ **AI Evidence Grounding**: 0 contradicted claims, 0 unsupported claims, 0 cardinality/frequency conflations.
+Executed on the Sprint 14 working tree (v14.0.0 prepared, not yet released).
+
+| Gate | Command | Result |
+|---|---|---|
+| Test suite | `pytest -q` | ✅ **714 passed, 0 failed, 15 deselected**, 118.73 s |
+| Full collection | `pytest --collect-only -m ""` | 729 collected across 118 modules |
+| Lint | `flake8 src tests --count` | ✅ 0 |
+| Format | `black --check src tests` | ✅ 341 files unchanged |
+| Imports | `isort --check src tests` | ✅ clean |
+| Types | `mypy src` | ✅ no issues in 210 source files |
+| API contract | live `app.openapi()` vs `docs/api/openapi.json` | ✅ 33 paths, 42 schemas, in sync |
+
+- **Deselected tests:** the 15 `integration`-marked tests in
+  `tests/ai/test_ollama_connection.py` and `tests/ai/test_ollama_production_path.py` require
+  a live Ollama server with `gemma3:4b`. `pyproject.toml` sets
+  `addopts = -ra -m "not integration"`; run them with `pytest -m integration`.
+- **Source tree:** 210 Python files under `src/`, across 18 packages.
+- **Formatter coverage:** `black` and `isort` now check all of `src/` and `tests/`. During the
+  sprint they excluded `tests/` and 15 of 17 `src/` packages, so both gates passed while
+  checking almost nothing; retiring those exclusions reformatted 231 files.
+- **Live E2E verification:** verified on `Test_data.xlsx` with Ollama `gemma3:4b`
+  (`ai_job_cd456daeba2f`).
+- **AI evidence grounding:** 0 contradicted claims, 0 unsupported claims, 0
+  cardinality/frequency conflations.
+
+> **Superseded figures.** Earlier revisions of this section reported *535 / 535 passed*, and
+> other documents reported *531* and *529*. None of those was ever reconciled; all are
+> superseded by the executed **714**. No coverage measurement exists in this repository, so
+> the "100% test coverage" claim that appeared in one CHANGELOG entry is unsupported.
 
 ---
 
@@ -85,3 +128,38 @@ Deliver enterprise stabilization across the presentation, analytical, and govern
 - Separated domain semantic classification from physical DataFrame dtypes.
 - Hardened report export fidelity against empirical data distributions.
 - Established strict contract boundary and service abstraction ready for React presentation layer.
+
+
+---
+
+# Closure Record
+
+Every item raised during the Sprint 14 documentation audit has been resolved.
+
+| # | Item | Resolution |
+|---|---|---|
+| 1 | `matplotlib` undeclared in `requirements.txt` | ✅ Declared. `ReportingManager` imports the PDF exporter at module level, so it is a hard dependency of the core application and REST API, not only the frontend. |
+| 2 | Suite not fully green — 6 live-LLM failures | ✅ Resolved. The live-LLM modules carry the `integration` marker and are deselected by default; the suite is **714 / 714**. The previous guard tested only Ollama *server* reachability, so an environment with a reachable server and no installed model failed rather than skipping. |
+| 3 | `docs/api/openapi.json` incorrect and out of sync | ✅ Re-exported from the live application — 33 paths, 42 schemas, `info.version` 14.0.0. The 9 previously missing response properties are present. |
+| 4 | Phase 7 definition conflict | ✅ Reconciled to *Semantic Profiling, Visual Analytics & Quality Gates*. Both bodies of work were delivered. |
+| 5 | Ollama performance baseline is a single sample | 🟡 Carried as technical debt. `performance/phase2_benchmark_results.md` still records `Successful / Failed: 1 / 2`. |
+| 6 | `docs/project/ARCHITECTURE.md` still described the sprint as planned | ✅ Completed. The layered architecture section now documents the delivered design, including where identity, governance, profiling, AI and BI attach to the dependency chain. |
+| 7 | Dual `reports_router` registration undecided | ✅ Resolved by removal. Every functional router is mounted once under `API_PREFIX`; the unprefixed aliases were removed as a documented breaking change. |
+| 8 | Static-analysis gates not run | ✅ All four executed and passing; the formatter exclusions that made them vacuous were removed. |
+| 9 | `src/core/constants.py` still declared `APP_VERSION = "12.0.0"` | ✅ Corrected to `14.0.0`. It feeds `GET /`, `GET /api/version` and the OpenAPI `info.version`. |
+
+## Carried into Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation
+
+Recorded as technical debt in PROJECT_STATE.md. None blocks the v14.0.0 release. (This
+section originally named Sprint 15 *Refactoring & Architectural Evolution*; that name is
+superseded by ROADMAP.md.) Sprint 15 additionally covers the governance end-to-end workflow,
+Dashboard product value and Admin user-lifecycle gaps; the single-provider `LLMFactory` is
+Sprint 16 scope.
+
+- `.flake8` and `[tool.mypy]` still suppress several error classes.
+- The OpenAPI contract test compares only the spec version and the path *count*.
+- The Ollama performance baseline needs re-running.
+- CI triggers only on `main`, so branch work is validated locally until merge.
+- `docker-compose.yml` still pins `AI_CONTEXT_WINDOW: 4096` and `AI_TIMEOUT: 120` against
+  the current defaults of `8192` and `600`; `src/core/config.py` defaults `POSTGRES_PORT`
+  to `5433` where `.env.example` uses `5432`.

@@ -4,6 +4,23 @@
 
 Accepted
 
+> **Re-baseline note (2026-09-28).**
+>
+> - *Current state.* The Qwen3:8B model named below was the Sprint 11 choice. The current
+>   default is **`gemma3:4b`** (`OLLAMA_MODEL`, `src/core/config.py`, `.env.example`).
+>   `src/llm/llm_factory.py` registers exactly one provider, `"ollama"` → `OllamaClient`.
+> - *Sprint 16 builds on this ADR.* Sprint 16 Phase 1 (AI Provider Abstraction) extends
+>   `BaseLLM` / `LLMFactory` rather than creating a parallel framework, unless its audit
+>   proves this abstraction inadequate. Scope: Ollama and Google Cloud / Gemini, selected by
+>   configuration; future providers (e.g. Groq) as isolated adapters; request/response
+>   normalization; timeouts, retries and transient-failure handling; provider exceptions
+>   mapped to stable application errors; logging, observability and provider/model metadata;
+>   backward compatibility with current AI workflows (ADR-025 job lifecycle, ADR-027
+>   privacy-safe context).
+> - *Decision record.* Any change to the provider interface or selection mechanism made in
+>   Sprint 16 is recorded in a follow-up ADR that amends this one. The decision text below
+>   is unchanged.
+
 ---
 
 ## Context

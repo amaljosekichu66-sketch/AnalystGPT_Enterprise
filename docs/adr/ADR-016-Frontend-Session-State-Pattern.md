@@ -2,6 +2,15 @@
 
 **Status:** Accepted
 
+> **Re-baseline note (2026-09-28).** This ADR's text schedules the React frontend for
+> "Sprint 15". That is superseded: read every "Sprint 15" below as **Sprint 17**.
+> Sequencing is defined in ROADMAP.md: Sprint 15 — Enterprise Stabilization, Governance
+> Completion & Product/UX Remediation (no React work) → Sprint 16 — AI Provider Abstraction &
+> Complete React Readiness (final readiness audit; React architecture defined, not built) →
+> **Sprint 17 — React Migration & Modern Presentation Layer** (React + TypeScript implemented).
+> The decision recorded here is unchanged and remains in force for the Streamlit
+> presentation layer; the React-side design is decided in the Sprint 16 architecture ADR.
+
 **Date:** 2026-07-25
 
 **Sprint:** Sprint 10 – Enterprise Streamlit Frontend

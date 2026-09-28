@@ -1,17 +1,33 @@
 # React Migration Mapping & Frontend Architecture Blueprint
 
-**Sprint:** Sprint 14 Phase 6 — OpenAPI / React Migration Readiness
-**Target Release:** Sprint 15 (React Presentation Layer)
-**Status:** Approved Architectural Blueprint
+**Sprint:** Sprint 14 Phase 6 — OpenAPI / React Migration Readiness (implemented; v14.0.0 prepared, not released)
+**Target Release:** **v17.0.0 — Sprint 17, React Migration & Modern Presentation Layer** (planned, not started)
+**Status:** Approved preliminary blueprint — to be re-validated by the Sprint 16 readiness audit and superseded where the Sprint 16 React architecture ADR decides otherwise
+
+> **Scope note.** This blueprint is design guidance, not delivered work. The backend side of
+> it — the frozen OpenAPI 3.1 contract and the technology-neutral frontend service layer —
+> is implemented on `sprint-14-stabilization` (v14.0.0 prepared, not yet released). No React
+> code exists in this repository.
+>
+> **Sequencing (ROADMAP.md is authoritative):** Sprint 15 — Enterprise Stabilization,
+> Governance Completion & Product/UX Remediation (no React work) → Sprint 16 — AI Provider
+> Abstraction & Complete React Readiness (final readiness audit; React architecture and design
+> system defined, not built) → **Sprint 17 — React Migration** (React + TypeScript implemented).
+> Earlier revisions named Sprint 15 as the React migration, and a later one called Sprint 15
+> *Refactoring & Architectural Evolution*; both are superseded.
+>
+> This document is the Sprint 14 *initial* readiness foundation. Stack choices, state strategy
+> and component decomposition below are provisional inputs to the Sprint 16 architecture
+> decision, not final decisions.
 
 ---
 
 ## 1. Executive Summary & Migration Strategy
 
-AnalystGPT Enterprise was engineered with a strict layered architecture to ensure that presentation concerns remain isolated from application core workflows. In Sprint 15, the platform will migrate from the Streamlit presentation layer to a modern, production-ready React frontend (Vite + TypeScript + TailwindCSS).
+AnalystGPT Enterprise was engineered with a strict layered architecture to ensure that presentation concerns remain isolated from application core workflows. The intent is that the platform can migrate from the Streamlit presentation layer to a modern, production-ready React + TypeScript frontend without backend changes. The migration is planned for Sprint 17. The build tooling and styling approach (this blueprint originally assumed Vite + TailwindCSS) are decided in Sprint 16, which evaluates the design-system approach rather than adopting a library by default.
 
 This document establishes the authoritative contract mapping and component decomposition required for React frontend engineers, guaranteeing that:
-1. **Zero Backend Changes Required:** The FastAPI REST API is frozen and fully typed (OpenAPI 3.1).
+1. **Zero Backend Changes Required:** The FastAPI REST API is frozen and fully typed (OpenAPI 3.1). *This is the Sprint 14 design intent; it is proven only when the Sprint 16 readiness audit passes.*
 2. **Coexistence Capability:** Both Streamlit and React frontends can operate simultaneously against the same backend services.
 3. **Purity of Presentation:** No business logic, database queries, or authorization bypasses reside in the presentation layer.
 
@@ -132,7 +148,7 @@ export class AuthService {
 // src/services/dashboard.service.ts
 export class DashboardService {
   static async getDashboard(datasetPath: string): Promise<DashboardResponse> {
-    return apiClient.get<DashboardResponse>(`/powerbi/dashboard?dataset=${encodeURIComponent(datasetPath)}`);
+    return apiClient.get<DashboardResponse>(`/api/powerbi/dashboard?dataset=${encodeURIComponent(datasetPath)}`);
   }
 }
 
@@ -215,10 +231,18 @@ npx openapi-generator-cli generate -i docs/api/openapi.json -g typescript-axios 
 
 ---
 
-## 8. Summary Checklist for Sprint 15 React Engineers
+## 8. Summary Checklist for Frontend Engineers
 
 - [x] OpenAPI 3.1 contract frozen and exported at `docs/api/openapi.json`.
-- [x] All 40 endpoints expose explicit request/response schemas in `components.schemas`.
-- [x] Streamlit views verified to be presentation-only (no backend logic to extract).
+- [x] All **33** paths expose explicit request/response schemas in `components.schemas`
+      (42 schemas). The blueprint originally said 40; that count included the duplicate
+      registrations of `reports_router`, removed later in Sprint 14.
+- [x] Every functional route is mounted under `/api`. The unprefixed `/reports/*` and
+      `/powerbi/*` aliases were removed in v14.0.0 — prepend `/api`.
+- [x] Streamlit views verified to be presentation-only (no backend logic to extract) — Sprint 14
+      assessment; re-verified by the Sprint 16 final readiness audit.
+- [ ] Sprint 15 remediation complete (governance workflow, Dashboard information architecture,
+      Admin user lifecycle) — the React migration must not reproduce known Sprint 15 defects.
+- [ ] Sprint 16 final React-readiness audit passed and React architecture ADR accepted.
 - [x] Multi-tenant isolation backend-enforced via JWT headers.
 - [x] Export streams available via direct HTTP endpoints.

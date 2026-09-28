@@ -22,7 +22,7 @@ The automated verification system must:
 
 ## Decision
 
-Adopt **GitHub Actions** as the official continuous integration platform with a 5-job pipeline defined in [`.github/workflows/ci.yml`](file:///Users/amaljose/AnalystGPT_Enterprise/.github/workflows/ci.yml):
+Adopt **GitHub Actions** as the official continuous integration platform with a 5-job pipeline defined in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml):
 
 ### 1. Job Topology
 1. **`quality`:** Executes blocking Flake8 syntax checks, Flake8 style gates, Black formatting checks, isort import ordering checks, and Mypy static type analysis on Ubuntu 22.04 with Python 3.11.
@@ -45,12 +45,12 @@ All quality and test checks are blocking. Suppressions (`|| true`, `--exit-zero`
 
 ### Trade-offs
 - CI pipeline execution requires GitHub Actions runner minutes.
-- Quality tools require synchronized configuration in [`.flake8`](file:///Users/amaljose/AnalystGPT_Enterprise/.flake8) and [`pyproject.toml`](file:///Users/amaljose/AnalystGPT_Enterprise/pyproject.toml).
+- Quality tools require synchronized configuration in [`.flake8`](../../.flake8) and [`pyproject.toml`](../../pyproject.toml).
 
 ---
 
 ## Implementation
 
-- [`.github/workflows/ci.yml`](file:///Users/amaljose/AnalystGPT_Enterprise/.github/workflows/ci.yml)
-- [`.flake8`](file:///Users/amaljose/AnalystGPT_Enterprise/.flake8)
-- [`pyproject.toml`](file:///Users/amaljose/AnalystGPT_Enterprise/pyproject.toml)
+- [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
+- [`.flake8`](../../.flake8)
+- [`pyproject.toml`](../../pyproject.toml)

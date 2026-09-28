@@ -8,7 +8,7 @@
 > It covers local execution, Swagger UI, OpenAPI validation,
 > automated testing, security validation, and endpoint verification.
 >
-> Current Version: **v13.0.0**
+> Current Version: **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
 
 ---
 
@@ -88,16 +88,32 @@ PYTHONPATH=. pytest tests/frontend/test_frontend_auth.py -v
 ### Run Full Repository Test Suite
 
 ```bash
-DATABASE_ENGINE=sqlite pytest -q
+pytest -q
 ```
 
-Expected Output:
+Expected output on the Sprint 14 working tree (v14.0.0 prepared):
 
 ```text
-535 passed in ~50s
-0 failed
-0 errors
+714 passed, 15 deselected, 1 warning in ~119s
 ```
+
+The 15 deselected tests carry the `integration` marker and require a live Ollama server with
+`gemma3:4b`. `pyproject.toml` sets `addopts = -ra -m "not integration"`, so they are excluded
+by default and the suite is deterministic on any machine.
+
+### Run the live-infrastructure tests
+
+```bash
+pytest -m integration
+```
+
+```text
+15 selected  (tests/ai/test_ollama_connection.py, tests/ai/test_ollama_production_path.py)
+```
+
+The single warning is a third-party `anyio` deprecation surfaced through
+`starlette.testclient`. The full accounting, including the static gates, is recorded in
+PROJECT_STATE.md, section *Executed Validation*.
 
 ---
 
@@ -121,6 +137,10 @@ Expected Output:
 
 # Summary & Status
 
+> **What the rows below represent.** Executed results on the Sprint 14 working tree. The suite
+> and all four static gates were run; see PROJECT_STATE.md, section *Executed Validation*,
+> for the full accounting.
+
 | Validation | Status |
 |---|---|
 | REST API Endpoints | ✅ Passed |
@@ -129,10 +149,18 @@ Expected Output:
 | Server-Side Data Isolation | ✅ Passed |
 | Admin Safety Guards | ✅ Passed |
 | Swagger & OpenAPI Spec | ✅ Passed |
-| Full Automated Test Suite | ✅ **535 / 535 Passed** |
+| Full Automated Test Suite | ✅ **714 / 714 passing** — 729 collected, 714 passed, 0 failed, 15 deselected (`integration`), 0 collection errors |
+| Static Analysis Gates | ✅ flake8 0 · black clean (341 files) · isort clean · mypy clean (210 files) |
+| OpenAPI Contract Sync | ✅ 33 paths, 42 schemas — `docs/api/openapi.json` matches the live schema |
 
 ---
 
-**API Version:** **v14.0.0**
+**Current application version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
 
-**Testing Status:** **535 / 535 Automated Tests Passed (0 Regressions)**
+**Current sprint:** Sprint 14 — Stabilization / Production Hardening (implemented and validated locally; release pending)
+
+**Testing Status:** ✅ **Passing (executed locally).** 714 passed, 0 failed, 15 `integration`-marked tests
+deselected by default. All four static gates pass. Historical totals of 535 / 531 / 529 are
+superseded; see PROJECT_STATE.md, section *Executed Validation*. A passing suite is *Tested*,
+not end-to-end *Verified*; establishing a trustworthy regression baseline and verifying the
+core workflows through the real API/frontend path is Sprint 15 scope (ROADMAP.md).

@@ -218,7 +218,10 @@ architectural regressions while preserving clean separation of concerns.
 
 # Future Benchmarks
 
-### Sprint 14 Planned Benchmarks
+### Sprint 14 Benchmark Scope
+
+Planned at the start of Sprint 14; per-item measurement status is recorded below.
+
 - End-to-end API response latency (p50, p95, p99)
 - Dashboard load time and initial scroll rendering
 - Asynchronous AI job lifecycle execution & status polling latency
@@ -226,10 +229,34 @@ architectural regressions while preserving clean separation of concerns.
 - Multi-user concurrent execution & cache isolation overhead
 - Report export and streaming latency
 
-*Status:* **Not yet measured — Sprint 14 planned benchmark.**
+*Status on the Sprint 14 working tree (v14.0.0 prepared):* **Partially measured.**
+
+> Corrected during the Sprint 14 documentation audit against
+> `performance/phase2_benchmark_results.md` (committed in `00e33af`):
+>
+> | Planned benchmark | Status |
+> |---|---|
+> | End-to-end API response latency (p50, p95, p99) | **Measured** |
+> | Dashboard load time and initial scroll rendering | **Not measured** |
+> | Asynchronous AI job lifecycle execution & status polling latency | **Measured** (AI job creation/dispatch and job-status API latency) |
+> | Ollama inference duration across report sizes | **Partially measured** — one model (`gemma3:4b`) and one dataset only, with **1 successful run of 3**; not varied across report sizes |
+> | Multi-user concurrent execution & cache isolation overhead | **Not measured** |
+> | Report export and streaming latency | **Not measured** |
+>
+> The measured items are a **baseline**, not a completed regression validation: the artifact
+> contains no comparison against any prior baseline.
 
 ---
 
-**Benchmark Version:** v13.0.0
+**Current version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
 
-**Status:** ✅ Baseline Performance Preserved (Sprint 14 Benchmarks Planned)
+**Baseline measured at:** **v13.0.0.** The deterministic pipeline figures above have not been
+re-measured since, so they are labelled with the version they were taken at rather than
+restamped to v14.0.0. **No regression comparison against this baseline has been run for
+Sprint 14**; absence of a measured regression is not evidence of none.
+
+**Status:** 🟡 Baseline preserved. Sprint 14 benchmarks **partially measured** (see the table
+above); dashboard load, governance overhead, concurrency and export latency remain
+**unmeasured**, and the Ollama figure rests on a single successful run of three. Re-running
+the baseline is carried as technical debt into Sprint 15 (Phase 7 — Regression & Quality) —
+see PROJECT_STATE.md, section *Known Technical Debt*.

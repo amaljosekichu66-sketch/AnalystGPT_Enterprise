@@ -54,7 +54,7 @@ AnalystGPT Enterprise is an enterprise-grade analytics, business intelligence, a
 
 ## 3. Services & Docker Image Architecture
 
-The deployment uses a unified multi-stage [`Dockerfile`](file:///Users/amaljose/AnalystGPT_Enterprise/Dockerfile) with named target stages:
+The deployment uses a unified multi-stage [`Dockerfile`](../../Dockerfile) with named target stages:
 
 ### 3.1 API Service (`analystgpt-api`)
 * **Stage:** `target: api`
@@ -96,7 +96,7 @@ The deployment uses a unified multi-stage [`Dockerfile`](file:///Users/amaljose/
 
 ## 5. Configuration & Secret Management
 
-All configuration is environment-driven via [`.env`](file:///Users/amaljose/AnalystGPT_Enterprise/.env) (with reference schema in [`.env.example`](file:///Users/amaljose/AnalystGPT_Enterprise/.env.example)):
+All configuration is environment-driven via `.env` (with reference schema in [`.env.example`](../../.env.example)):
 
 ```bash
 # Core Networking
@@ -116,19 +116,61 @@ LOG_FILE_PATH=logs/analystgpt.log
 LOG_MAX_BYTES=10485760
 LOG_BACKUP_COUNT=5
 
-# Identity & Authentication Configuration
-JWT_SECRET_KEY=change_this_to_a_secure_random_64_character_hex_secret_in_production
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-PBKDF2_ITERATIONS=600000
-ADMIN_DEFAULT_USERNAME=admin
-ADMIN_DEFAULT_PASSWORD=ChangeMeAdmin123!
-ADMIN_DEFAULT_EMAIL=admin@analystgpt.enterprise
+# Deployment Environment & Security
+# Any value other than 'development' is treated as deployed, and the guards below
+# become mandatory at startup.
+APP_ENVIRONMENT=production
+
+# Signing key for access tokens. The built-in default is published in this repository,
+# so anyone can forge a token for any user and role with it. Startup FAILS if this is
+# left unset while APP_ENVIRONMENT is not 'development'. Generate one with:
+#   python -c "import secrets; print(secrets.token_urlsafe(48))"
+AUTH_SECRET_KEY=
+
+# Token signing algorithm and lifetime
+AUTH_ALGORITHM=HS256
+AUTH_ACCESS_TOKEN_EXPIRE_MINUTES=60
+AUTH_PASSWORD_MIN_LENGTH=8
+
+# Bootstrap administrator identity
+AUTH_DEFAULT_ADMIN_USERNAME=admin
+AUTH_DEFAULT_ADMIN_EMAIL=admin@analystgpt.enterprise
+
+# Unauthenticated X-User-Id / X-User-Name / X-User-Role headers are a COMPLETE
+# authentication bypass. Defaults to false and CANNOT be enabled unless
+# APP_ENVIRONMENT=development - startup refuses the combination.
+AUTH_ALLOW_HEADER_IDENTITY=false
+
+# Explicit CORS allow-list. Never use '*': combined with credentials, Starlette
+# reflects the caller's Origin instead, which trusts every site.
+CORS_ALLOWED_ORIGINS=https://analytics.example.com
 
 # AI / Ollama Configuration
 LLM_PROVIDER=ollama
 OLLAMA_HOST=http://host.docker.internal:11434
 OLLAMA_MODEL=gemma3:4b
+AI_CONTEXT_WINDOW=8192
+AI_TIMEOUT=600
 ```
+
+> **Variable names matter.** These are the names `src/core/config.py` actually reads.
+> Earlier revisions of this guide listed `JWT_SECRET_KEY`, `ACCESS_TOKEN_EXPIRE_MINUTES`,
+> `PBKDF2_ITERATIONS`, `ADMIN_DEFAULT_USERNAME`, `ADMIN_DEFAULT_PASSWORD` and
+> `ADMIN_DEFAULT_EMAIL`. **None of those exists.** Setting them has no effect — in
+> particular, setting `JWT_SECRET_KEY` would leave `AUTH_SECRET_KEY` at the published
+> development default while appearing to have secured the deployment.
+>
+> The PBKDF2 iteration count is **not** configurable by environment: it is fixed at 600,000
+> in `src/identity/password_hasher.py`. There is no default-admin *password* variable; the
+> bootstrap administrator is created through the normal registration path.
+>
+> ⚠️ **Known configuration drift.** `docker-compose.yml` still pins
+> `AI_CONTEXT_WINDOW: 4096` and `AI_TIMEOUT: 120`, which `src/core/config.py` and
+> `.env.example` have since raised to `8192` and `600`. A container started from Compose
+> without an overriding `.env` therefore runs the undersized window that silently truncates
+> the prompt's analytical integrity rules. Set both explicitly in `.env` until Compose is
+> updated. Similarly, `src/core/config.py` defaults `POSTGRES_PORT` to `5433` while
+> `.env.example` and the Compose service use `5432`.
 
 ### Secret Security Rules
 * Never commit `.env` to Git (enforced via `.gitignore` and `.dockerignore`).
@@ -146,9 +188,19 @@ OLLAMA_MODEL=gemma3:4b
 
 ## 7. Continuous Integration (CI/CD)
 
-The GitHub Actions workflow ([`.github/workflows/ci.yml`](file:///Users/amaljose/AnalystGPT_Enterprise/.github/workflows/ci.yml)) executes automatically on pushes and pull requests targeting `main`:
-1. **`quality`:** Blocking validation using Flake8 syntax checks, Flake8 style gates, Black formatting (`black --check`), isort import sorting (`isort --check`), and Mypy static typing (`mypy src`).
-2. **`test`:** Runs full pytest regression suite (329 tests) in Python 3.11 runner.
+The GitHub Actions workflow ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml))
+executes automatically on pushes and pull requests targeting `main`:
+
+> Note: because the workflow triggers only on `main`, **it does not run on feature
+> branches**. Branch work is validated locally until merge — see
+> `docs/development/DEVELOPER_COMMANDS.md`.
+>
+> ℹ️ CI provisions no Ollama service. The live-LLM modules carry the `integration` marker and
+> `pyproject.toml` sets `addopts = -m "not integration"`, so they are deselected there and
+> the `test` job is deterministic.
+
+1. **`quality`:** Blocking validation using Flake8 syntax checks, Flake8 style gates, Black formatting (`black --check src tests`), isort import sorting (`isort --check src tests`), and Mypy static typing (`mypy src`). As of v14.0.0 the formatters cover **all** of `src/` and `tests/`; only non-source trees are excluded. All four gates pass — see PROJECT_STATE.md, section *Executed Validation*.
+2. **`test`:** Runs the full pytest regression suite in a Python 3.11 runner — **714 passing**, with the 15 `integration`-marked tests deselected.
 3. **`docker-build`:** Validates BuildKit compilation of `api`, `frontend`, and `cli` image targets.
 4. **`compose-validation`:** Validates `docker compose config`.
 5. **`compose-integration`:** Starts the full Compose stack, waits for healthchecks, validates live HTTP responses on `/api/health` and `/_stcore/health`, and ensures clean teardown (`docker compose down -v`).

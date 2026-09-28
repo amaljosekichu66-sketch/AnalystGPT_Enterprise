@@ -1,6 +1,23 @@
 # ADR-027 — AI Analytical Context and Data Integrity
 
-**Status:** Proposed (Planned for Sprint 14)
+**Status:** ✅ **Accepted** — implemented in Sprint 14 (v14.0.0 prepared; not yet tagged or merged to `main`)
+
+> Implemented in `src/ai/context.py`, `src/ai/context_builder.py`, and the serialization changes in `src/llm/report_serializer.py` and `src/llm/prompt_builder.py`.
+>
+> This ADR was authored as *Proposed (Planned for Sprint 14)*. Sprint 14 is implemented
+> and the decision it records is in force; the status is promoted accordingly. The
+> decision text below is unchanged.
+>
+> **Re-baseline note (ROADMAP.md, Sprints 15–17).** Sprint 15 — Enterprise Stabilization,
+> Governance Completion & Product/UX Remediation → Sprint 16 — AI Provider Abstraction &
+> Complete React Readiness → Sprint 17 — React Migration. The "React Migration Readiness"
+> in the Sprint line below refers to the Sprint 14 *initial* foundation; the definitive
+> readiness gate is Sprint 16.
+>
+> *Impact on later sprints.* Sprint 16 adds a hosted provider (Google Cloud / Gemini) alongside
+> local Ollama. The privacy-safe aggregated context defined here becomes more important, not less:
+> every provider adapter must receive the same `AIDataContext`-derived prompt, and no provider may
+> be sent raw dataset rows. Provider selection must not change context construction.
 
 **Date:** 2026-08-15
 

@@ -26,28 +26,31 @@
 
 | Item | Status |
 |------|--------|
-| Current Version | **v14.0.0** |
-| Previous Version | v13.0.0 |
-| Repository Status | 🟢 Stable Release |
-| Current Sprint | ✅ Sprint 14 Complete |
-| Current Focus | **Sprint 15 — React Presentation Layer Migration** |
+| Last Released Version | **v13.0.0** (tag `v13.0.0` = `c5ddf06`) |
+| Version In Preparation | **v14.0.0 — NOT released** (no release commit, no tag, branch unmerged) |
+| Previous Released Version | v12.0.0 |
+| Repository Status | 🟡 Sprint 14 implemented, tested and validated locally on `sprint-14-stabilization` (714 passed, 4 static gates — per PROJECT_STATE.md); release pending, main merge pending |
+| Current Sprint | 🟡 Sprint 14 — implemented, tested and validated locally; release pending; main merge pending |
+| Current Focus | **Close out Sprint 14 (validation sign-off + release)** |
+| Next Planned Sprint | 📋 Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation (v15.0.0) |
+| Subsequent Sprints | 📋 Sprint 16 — AI Provider Abstraction & Complete React Readiness (v16.0.0) → 📋 Sprint 17 — React Migration & Modern Presentation Layer (v17.0.0) |
 | Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction + AI Insight Engine + Production Deployment + Enterprise Identity & RBAC Multi-User Platform + Governance & Stabilization Platform |
 | Application Layer | ✅ Stable |
 | Persistence Layer | ✅ Stable |
 | Database Abstraction Layer | ✅ Stable |
 | REST API Layer | ✅ Stable |
 | Business Intelligence Layer | ✅ Stable |
-| Frontend Layer | ✅ Stable |
+| Frontend Layer | 🟡 Implemented & tested (Streamlit); defects, UX and state handling NEED REMEDIATION in Sprint 15 |
 | AI Layer | ✅ Stable |
 | Production Deployment & Docker | ✅ Stable |
 | Enterprise Identity & RBAC | ✅ Complete |
 | User Authentication & Sessions | ✅ Complete |
 | Resource Ownership & Isolation | ✅ Complete |
-| Admin User Management | ✅ Complete |
+| Admin User Management | 🟡 Backend implemented (incl. `DELETE /api/admin/users/{user_id}`); Streamlit Admin UI exposes status changes only — reconciliation in Sprint 15 |
 | Security Audit Trail | ✅ Complete |
 | Power BI Integration | ✅ Complete |
-| Enterprise Streamlit Frontend | ✅ Complete |
-| Dashboard | ✅ Complete |
+| Enterprise Streamlit Frontend | 🟡 Released (v10.0.0), implemented & tested; known defects/UX issues — needs remediation (pending Sprint 15) |
+| Dashboard | 🟡 Implemented; product value NEEDS REMEDIATION — overlaps the pipeline result; information architecture redesign in Sprint 15 |
 | Upload Interface | ✅ Complete |
 | Reports Centre | ✅ Complete |
 | About Page | ✅ Complete |
@@ -60,9 +63,9 @@
 | Swagger | ✅ Operational |
 | Docker Multi-Stage Build | ✅ Operational |
 | Docker Compose Topology | ✅ Operational |
-| Automated Testing | ✅ 531 tests passing |
+| Automated Testing | 🟡 PROJECT_STATE.md records **714 passed, 0 failed, 15 deselected** (`integration`, 729 collected). Earlier roadmap figure (529 / 535, 6 live-LLM failures) is superseded; not re-executed for this roadmap update. Trustworthy regression baseline is a Sprint 15 deliverable |
 | Performance Validation | ✅ Completed |
-| Technical Debt | 🟢 Very Low |
+| Technical Debt | 🟡 Not verified as low — known debt (quality-gate exclusions, duplication/dead code, UI/API mismatches) scheduled for Sprint 15 audit |
 
 ---
 
@@ -873,8 +876,10 @@ Database Repositories (Isolated per Tenant)
 | **v11.0.0** | **AI Insight Engine** ✅ |
 | **v12.0.0** | **Production Deployment** ✅ |
 | **v13.0.0** | **Enterprise Identity & Multi-User Platform** ✅ |
-| **v14.0.0** | **Enterprise Stabilization, Data Governance & Grounded Reporting** ✅ |
-| *v15.0.0* | *React Migration & Modern Presentation Layer* 📋 |
+| **v14.0.0** | **Enterprise Stabilization, Data Governance & Grounded Reporting** — 🟡 implemented, NOT released |
+| *v15.0.0* | *Enterprise Stabilization, Governance Completion & Product/UX Remediation* 📋 |
+| *v16.0.0* | *AI Provider Abstraction & Complete React Readiness* 📋 |
+| *v17.0.0* | *React Migration & Modern Presentation Layer* 📋 |
 
 ---
 
@@ -890,9 +895,17 @@ Enterprise Stabilization & Governance from Sprint 14.
 
 ---
 
-## Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting ✅
+## Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting 🟡
 
-> **Status:** COMPLETED & VERIFIED (v14.0.0)
+> **Status:** **Implemented, tested and validated locally (per PROJECT_STATE.md § *Executed Validation*). Release pending. Main merge pending.**
+>
+> All seven phases are implemented on `sprint-14-stabilization` (commits `00e33af`,
+> `b59df37`, `0f6d5eb`). No `v14.0.0` tag and no `release(v14.0.0): …` commit exist, and the
+> branch is unmerged into `main` (still at `c5ddf06` / `v13.0.0`).
+>
+> This section previously read *COMPLETED & VERIFIED (v14.0.0)*. That wording described the
+> intended end state, not verified Git state. See PROJECT_STATE.md § *Sprint 14 Status —
+> Verified Against the Repository*.
 
 ### Objective
 
@@ -986,7 +999,13 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 
 ---
 
-#### Phase 3 — Data Cleaning Governance & Lineage
+#### Phase 3 — Data Cleaning Governance & Lineage ✅ Implemented
+
+> Implemented in `00e33af`: `src/governance/` (policies, preview service, governance service,
+> custom registry), `src/storage/artifact_store.py`, and the `DatasetVersionRepository` /
+> `CleaningExecutionRepository` repositories, covered by 10 test modules under `tests/governance/`.
+> This heading previously carried no status marker while the Sprint 14 Definition of Done below
+> ticked every Phase 3 item.
 
 **Immutable Raw Dataset Storage**
 
@@ -1057,7 +1076,12 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 
 ---
 
-#### Phase 4 — AI Data Context & Analytical Integrity
+#### Phase 4 — AI Data Context & Analytical Integrity ✅ Implemented
+
+> Implemented in `00e33af`: `src/ai/context.py`, `src/ai/context_builder.py`, and the
+> serialization changes in `src/llm/report_serializer.py`, covered by `tests/ai/test_ai_data_context.py`
+> and `tests/ai/test_ai_context_isolation.py`. This heading previously carried no status marker
+> while the Sprint 14 Definition of Done below ticked every Phase 4 item.
 
 **Privacy-Safe AI Context**
 
@@ -1102,7 +1126,13 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 
 ---
 
-#### Phase 6 — React Migration Readiness (COMPLETE)
+#### Phase 6 — React Migration Readiness Foundation ✅ Implemented (foundation only)
+
+> **Scope note (re-baseline):** Sprint 14 established the *initial* React-readiness foundation
+> (API contracts, typed models, frontend service interfaces, migration mapping). It is not the
+> final readiness gate. Sprint 15 stabilizes the product and workflows; **Sprint 16 performs the
+> final, definitive React-readiness audit** after stabilization and provider changes. The
+> statements below record what Sprint 14 claimed at the time.
 
 **Critical Gate: Backend Usable Without Streamlit**
 
@@ -1114,7 +1144,7 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 **API Contracts & Typing**
 
 - Froze and documented frontend/backend API contracts (OpenAPI 3.1) in `docs/api/openapi.json`.
-- Stabilized strongly typed API response models across all 40 endpoints (`ReportsListResponse`, `ReportDataResponse`, `DashboardSummary`, `DashboardStatistics`, `DashboardCorrelation`, `DashboardDistribution`, `DashboardCategorical`, `PipelineSummary`, `ReportResponse`, `DashboardStatusResponse`, `ErrorResponse`).
+- Stabilized strongly typed API response models across all API endpoints (33 paths after the duplicate `reports_router` registration was removed; the initial export counted 40) (`ReportsListResponse`, `ReportDataResponse`, `DashboardSummary`, `DashboardStatistics`, `DashboardCorrelation`, `DashboardDistribution`, `DashboardCategorical`, `PipelineSummary`, `ReportResponse`, `DashboardStatusResponse`, `ErrorResponse`).
 - Created automated contract validation test suite in `tests/api/test_openapi_contract.py`.
 - Validated standardized API error responses (`ErrorResponse`, status codes, messages).
 - Validated authentication/authorization behavior across all frontend service boundaries.
@@ -1143,7 +1173,13 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 
 ---
 
-#### Phase 7 — Regression, Contract & Quality Validation (COMPLETE)
+#### Phase 7 — Semantic Profiling, Visual Analytics & Quality Gates ✅ Implemented
+
+> ✅ **Naming conflict resolved.** Phase 7 was previously titled *Regression, Contract &
+> Quality Validation* here and *Semantic Profiling, Visual Analytics & AI Grounding
+> Remediation* elsewhere. Both bodies of work were delivered; the combined title above is
+> authoritative, matching PROJECT_STATE.md. The "478 tests" figure has no supporting evidence
+> and is superseded by the executed **714**.
 
 **Automated Testing**
 
@@ -1185,6 +1221,12 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 
 ## Sprint 14 Definition of Done
 
+> **How to read this checklist.** The ticks below record the sprint team's self-assessment at
+> the time of writing. They are preserved unchanged for historical fidelity. Three of them are
+> **contradicted by current repository evidence** and are annotated inline with ⚠️ below; one is
+> not verifiable from the repository. Ticking this checklist did not, and does not, constitute
+> a release: see PROJECT_STATE.md § *Sprint 14 Status — Verified Against the Repository*.
+
 ### UX & Frontend
 - [x] Dashboard opens at top
 - [x] Reports opens at top
@@ -1206,8 +1248,13 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 
 ### Performance
 - [x] Performance baselines established (API latency, dashboard load, pipeline, AI, exports)
+  - ⚠️ *Qualified:* `performance/phase2_benchmark_results.md` records `Successful / Failed: 1 / 2`
+    for the Ollama benchmark; its min/p50/p95/p99/max are all `88.44 s` from one successful run.
+    The deterministic-pipeline latency figures are based on multiple runs and are unaffected.
 - [x] Performance acceptance criteria defined
 - [x] Performance regression comparison completed and documented
+  - ⚠️ *Contradicted:* the benchmark artifact contains no comparison against any prior baseline.
+    It reports absolute figures and a decoupling ratio only.
 
 ### Data Governance & Lineage
 - [x] Raw dataset preserved through versioned artifact-storage abstraction
@@ -1237,9 +1284,9 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 - [x] Export integration tests passing
 - [x] Exports respect authenticated user ownership
 
-### React Migration Readiness
+### React Migration Readiness (initial foundation — final gate is Sprint 16)
 - [x] Core application workflows can be exercised through REST APIs without Streamlit
-- [x] No business logic required by Sprint 15 resides exclusively inside Streamlit components
+- [x] No business logic required by the React migration (now Sprint 17) resides exclusively inside Streamlit components
 - [x] React migration can consume existing API contracts without backend redesign
 - [x] Streamlit is treated as a presentation client rather than an application-layer dependency
 - [x] Frontend/backend API contracts frozen and documented
@@ -1247,10 +1294,16 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 - [x] Typed API response models stabilized
 - [x] Frontend service interfaces established independent of Streamlit
 - [x] React migration mapping documented
-- [x] REST API parity validated for Sprint 15 readiness
+- [x] REST API parity validated for React migration readiness (re-verified in Sprint 16)
 
 ### Testing & Quality
 - [x] Full regression suite passing
+  - 🟡 *Partially substantiated by measurement:* executed 2026-09-12 — 535 collected, **529 passed**,
+    6 failed, 0 skipped, 0 collection errors. The suite is not fully green: all 6 failures are
+    live-LLM tests in `tests/ai/test_ollama_connection.py` that require a locally installed
+    `gemma3:4b`. See PROJECT_STATE.md § *Executed Validation*.
+  - ✅ *Superseded:* the later executed run records **714 passed, 0 failed, 15 deselected**
+    (the live-LLM tests are now marked `integration` and deselected by default).
 - [x] Concurrent pipeline execution tested
 - [x] Concurrent AI generation tested
 - [x] AI job idempotency tested
@@ -1259,104 +1312,314 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 - [x] Export failure isolation verified
 - [x] Performance benchmarking completed and documented
 - [x] Flake8 / Black / Isort / Mypy quality gates passing
+  - ⚠️ *Qualified:* `pyproject.toml` excludes `tests/` and 14 of the 18 `src/*` packages from Black and
+    isort, and `.flake8` / `[tool.mypy]` disable several error classes, so these gates cover less
+    than the wording implies. The three packages added by Sprint 14 (`src/governance/`,
+    `src/profiling/`, `src/storage/`) are *not* excluded and are genuinely checked. These
+    exclusions pre-date Sprint 14 and were inherited from `main`.
 - [x] `git diff --check` passing
 - [x] Documentation synchronized (ARCHITECTURE, PROJECT_STATE, ADRs)
+  - ⚠️ *Contradicted at the time it was ticked:* `docs/project/ARCHITECTURE.md` was not modified
+    by any Sprint 14 commit and still described Sprint 14 as *Planned*; no ADR was added or
+    revised (ADR-025–028 already existed on `main` before this branch); and
+    `docs/project/LESSONS_LEARNED.md` was likewise untouched. A documentation reconciliation
+    pass has since annotated those files.
 - [x] **No Git commit by the assistant** – all changes reviewed and committed by lead engineer
+  - ℹ️ *Not verifiable from repository evidence.* All three Sprint 14 commits are authored
+    `Amal jose <amaljose@Amals-MBP.Vortex.local>`; authorship metadata cannot establish who
+    performed the review.
 - [x] Definition of Done satisfied
 
 ---
 
-## Sprint 15 — React Migration & Modern Presentation Layer 📋
+## Re-baselined Sequence (Sprints 15–17)
 
-> **Status:** PLANNED / NOT YET IMPLEMENTED
+The earlier plan defined Sprint 15 as the React migration. That plan is **obsolete**. Before
+the presentation layer is replaced, the existing product has to be proven correct and the
+AI/provider architecture has to be proven frontend-independent.
+
+| Sprint | Purpose | Main Question |
+|--------|---------|---------------|
+| **Sprint 15** | Enterprise Stabilization, Governance Completion & Product/UX Remediation | Is the existing product actually correct, reliable, and valuable? |
+| **Sprint 16** | AI Provider Abstraction & Complete React Readiness | Is the backend/provider architecture truly ready for a frontend replacement? |
+| **Sprint 17** | React Migration & Modern Presentation Layer | Can we replace Streamlit without redesigning the backend? |
+
+### Dependencies
+
+```text
+Sprint 14 release (v14.0.0)
+      │
+      ▼
+Sprint 15 — Stabilization & Remediation (v15.0.0)
+      │
+      ▼
+Sprint 16 — AI Provider Abstraction & React Readiness (v16.0.0)
+      │
+      ▼
+Sprint 17 — React Migration (v17.0.0)
+```
+
+- Each sprint starts only after the previous one is released and merged to `main`.
+- **React implementation must not begin in Sprint 15 or Sprint 16.**
+
+### Evidence Vocabulary
+
+Roadmap claims use: **Implemented** (code exists) · **Tested** (automated tests cover it) ·
+**Verified** (exercised end-to-end through the real API/frontend path) · **Released** (tagged
+and merged to `main`) · **Planned** (not started). A class, repository, endpoint or passing
+unit test on its own does not make a feature *Verified*.
+
+---
+
+## Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation 📋
+
+> **Status:** PLANNED / NOT STARTED. Starts after the v14.0.0 release is merged to `main`.
 
 ### Objective
 
-Replace the Streamlit presentation layer with a production-grade React frontend while preserving all backend contracts, application services, business modules, persistence architecture, AI layer, authentication/authorization boundaries, and REST API contracts established by Sprints 8–14.
+Make AnalystGPT Enterprise a stable, internally consistent, tested product before introducing
+additional architectural complexity. This is a structured engineering stabilization and
+remediation release covering functional correctness, product value, governance,
+administration, UX, regression risk, technical debt, and documentation/reality
+reconciliation. It is not an open-ended bug-fixing sprint.
 
-### Critical Architectural Constraint
+**React implementation is explicitly OUT OF SCOPE.** Current Streamlit defects are fixed at the
+root cause, not deferred to the future React layer.
 
-**ONLY the Presentation Layer may be replaced.**
+### Phase 1 — End-to-End Workflow Correctness
 
-The following backend infrastructure must remain stable, unchanged, and fully backward compatible:
-- REST API endpoints and OpenAPI/Swagger specifications
-- Dependency Injection architecture
-- Application Layer orchestration (`Application.run()`)
-- Business modules (Upload, Cleaning, Quality, Analytics, Reporting)
-- Persistence Layer and Repository Pattern implementations
-- Database Abstraction Layer and PostgreSQL connection pooling
-- AI Insight Engine and LLM provider abstractions
-- Authentication, authorization, and RBAC enforcement
-- User and resource ownership models
-- Backend security boundaries and data isolation rules
-
-### Scope & Planned Deliverables
-
-#### React Application & Component Architecture
-- Modern, production-grade React application
-- Modular component architecture with strict separation of concerns
-- Enterprise design system and reusable UI component library
-- Clean styling and consistent design tokens
-
-#### User Interface & Workflow Migration
-- Authentication UI (login, registration, session renewal, password handling)
-- Secure session handling and token lifecycle management
-- Role-aware navigation and dynamic menu rendering based on user roles (ADMIN, ANALYST, VIEWER)
-- Interactive Analytics Dashboard with visual charts, metrics, and KPI summaries
-- Dataset upload interface with file validation, format feedback, and progress indicators
-- Reports Centre for browsing, filtering, viewing, and exporting structured reports
-- AI insights interface for executive summaries, explanations, narratives, and recommendations
-- User profile and account management interface
-- Administrative user management UI (user listing, role assignment, status toggling)
-
-#### API Integration & State Management
-- Strongly typed API client communicating with backend REST endpoints
-- Client-side state management for application state, active datasets, and user sessions
-- Graceful error handling with accessible, user-friendly notifications
-- Comprehensive loading, empty, and transitional states
-- Fluid, responsive layout adapting across desktop, tablet, and mobile breakpoints
-- Accessibility (a11y) foundations (semantic markup, ARIA roles, keyboard navigation, contrast compliance)
-
-#### Build, Production & Verification
-- Production-optimized build and asset bundling
-- Comprehensive frontend testing (unit tests, component tests, integration tests)
-- End-to-end REST API compatibility validation verifying complete parity with backend services
-
-### Migration Strategy
-
-Adopt a controlled, phased migration approach:
+Audit and validate the real workflow through the actual application/API/frontend path:
 
 ```text
-React Frontend (Modern Presentation Layer)
-      │
-      ▼
-Existing REST API (v8–v14 Contracts)
-      │
-      ▼
-Application Layer & Business Core
+Upload → Preprocessing/Profile → Governance/Cleaning Review → Approval
+       → Cleaning → Quality → Analytics → Reporting → AI
 ```
 
-- Streamlit frontend remains available alongside React during development and validation.
-- Migration proceeds incrementally until React reaches full functional parity.
-- Zero backend business logic is embedded into the React frontend.
+For each stage verify: input/output contracts, state transitions, persistence, error handling,
+loading/processing states, retry behavior, ownership/RBAC, frontend/backend integration,
+reproducibility, and downstream compatibility. Identify and fix broken or partially
+implemented workflows.
+
+### Phase 2 — Data Governance & Preprocessing Remediation
+
+Prove the documented governance workflow functional end-to-end, and investigate why it does
+not currently behave as intended. Audit and fix: profiling, cleaning policy generation,
+cleaning preview, approval/modification/rejection, policy persistence, execution, provenance,
+lineage, before/after quality metrics, reproducibility, dataset versioning, user ownership,
+and UI/API synchronization.
+
+No cosmetic frontend workaround for a backend governance defect.
+
+### Phase 3 — Dashboard Product Value
+
+The upload result and the Dashboard currently expose substantially overlapping information,
+which weakens the Dashboard's decision-support value. Define what the Dashboard provides that
+the immediate pipeline result/report does not, and redesign its information architecture
+around ongoing analytical/operational value — for example: executive overview, KPI
+monitoring, operational/data health, trends and changes over time, recent activity,
+dataset/report history, anomalies or notable changes, AI insight status, and drill-down into
+detailed analysis and reports.
+
+Do not duplicate the pipeline result in a new layout. The backend remains the source of
+analytical truth; no business logic moves into the frontend.
+
+### Phase 4 — Admin / Identity / RBAC
+
+Audit the admin experience against backend capability. Repository evidence at re-baseline:
+`DELETE /api/admin/users/{user_id}` exists (`src/api/routes/admin.py` → `UserService.delete_user_admin`,
+with a last-admin safeguard) and `AdminService.delete_user` exists in the frontend service
+layer, but `src/frontend/views/admin_page.py` only exposes status changes
+(ACTIVE / INACTIVE / SUSPENDED). The endpoint is *Implemented*; it is not yet *Verified*
+end-to-end.
+
+Reconcile frontend and backend. Expose user deletion only if the architecture supports it
+safely, considering: ADMIN-only authorization, confirmation flow, audit logging, consequences
+for owned datasets/reports/jobs, last-admin safeguards, soft- vs hard-delete, API/UI
+consistency, and regression tests. Security and tenant isolation must not be weakened.
+
+### Phase 5 — Functional Defect / UX Remediation
+
+Systematic defect audit covering: broken workflows, API/frontend mismatches, stale state,
+incorrect state transitions, loading/empty/error states, authentication/session issues, RBAC
+issues, export problems, async AI job problems, navigation, duplicated and dead code,
+misleading UI, edge cases, incorrect persistence, configuration issues, and
+documentation/repository contradictions. Fix root causes.
+
+### Phase 6 — Refactoring / Technical Debt
+
+Refactor only where justified by defects, coupling, duplication, maintainability, or
+React/provider readiness. Priorities: clear module boundaries, separation of concerns, stable
+contracts, low coupling, high cohesion, removal of obsolete code, elimination of duplicated
+business logic, cleaner dependency direction. No unnecessary rewrites.
+
+### Phase 7 — Regression & Quality
+
+Establish a trustworthy regression baseline: investigate every failing test, fix failures
+that represent real defects, add regression tests for important fixes, and validate
+integration workflows, security/RBAC, multi-user isolation, API contracts, async AI
+workflows, concurrency where applicable, and exports. Run all quality gates, and review the
+Black/isort/mypy/flake8 exclusions noted in the Sprint 14 Definition of Done.
+
+Not permitted: deleting useful tests, weakening assertions without evidence, marking defects
+as expected to obtain a green suite, or hiding implementation-caused failures.
+
+### Phase 8 — Documentation Reconciliation
+
+Reconcile ROADMAP, PROJECT_STATE, ARCHITECTURE, CHANGELOG, PROJECT_JOURNAL and relevant ADRs
+with repository evidence, clearly distinguishing implemented, tested, verified, released,
+pending and unresolved work.
 
 ### Sprint 15 Definition of Done
 
-- [ ] React application operational
-- [ ] Authentication integrated
-- [ ] RBAC-aware UI implemented
-- [ ] Dashboard migrated
-- [ ] Upload workflow migrated
-- [ ] Reports migrated
-- [ ] AI insights migrated
-- [ ] API integration validated
-- [ ] Existing backend contracts preserved
-- [ ] Responsive UI validated
-- [ ] Frontend tests passing
-- [ ] End-to-end workflow validated
-- [ ] Streamlit migration/deprecation strategy completed
+- [ ] Core workflow (Upload → … → AI) verified end-to-end through the real API/frontend path
+- [ ] Governance/preprocessing workflow functional end-to-end (preview, approval/modification/rejection, persistence, execution, lineage, before/after quality)
+- [ ] Dashboard information architecture redefined with value distinct from the pipeline result
+- [ ] Admin UI capabilities match backend capabilities (user lifecycle incl. deletion decision)
+- [ ] User deletion, if exposed, is ADMIN-only, confirmed, audited, and last-admin safe
+- [ ] Important functional defects resolved at the root cause
+- [ ] Regression tests added for every critical fix
+- [ ] All failing tests investigated; no assertions weakened or tests removed without evidence
+- [ ] Security, RBAC and multi-user isolation validated
+- [ ] API contracts, async AI workflows and exports validated
+- [ ] Quality gates passing
+- [ ] Documentation matches repository reality
+- [ ] No known critical / P0 / P1 blockers remain
+- [ ] No React implementation introduced
+- [ ] Definition of Done satisfied
+
+---
+
+## Sprint 16 — AI Provider Abstraction & Complete React Readiness 📋
+
+> **Status:** PLANNED / NOT STARTED. Depends on the v15.0.0 release.
+
+### Objective
+
+Make the AI layer vendor-neutral and complete the final architecture/readiness work required
+before Streamlit is replaced by React.
+
+### Phase 1 — Pluggable AI Provider Architecture
+
+Build on the existing abstraction (`src/llm/base_llm.py` `BaseLLM`, `src/llm/llm_factory.py`
+`LLMFactory`, which currently registers only `ollama` → `OllamaClient`). Do not create a
+parallel framework unless repository evidence proves the existing abstraction inadequate.
+
+```text
+AI Business Logic → Provider Interface → Selected Provider (Ollama | Gemini | future)
+```
+
+Supported providers: **Ollama** and **Google Cloud / Gemini API**, selected by configuration.
+Business logic must not know which provider executes a request; future providers (e.g. Groq)
+must be addable as isolated adapters.
+
+Define and validate: provider interface; registration/factory mechanism; model selection;
+provider configuration; environment variables/secrets; request/response normalization;
+timeouts; retries and transient-failure handling; mapping of provider-specific exceptions to
+stable application errors; logging and observability; provider/model metadata; testability;
+deterministic provider selection; backward compatibility with current AI workflows.
+Validate switching between Ollama and Gemini without changing AI business logic.
+
+### Phase 2 — Final React Readiness Audit
+
+End-to-end readiness review across core/configuration, upload, cleaning, governance, quality,
+analytics, reporting, export, persistence, database abstraction, FastAPI, OpenAPI, BI/Power
+BI, AI, authentication, authorization/RBAC, async jobs, storage, frontend services, session
+handling, Docker/deployment, testing and documentation.
+
+Verify that: React can consume the APIs without backend redesign; no business logic is trapped
+in Streamlit; API contracts are stable; request/response schemas are typed and documented;
+error responses are consistent; authentication/RBAC is API-driven; async AI job states are
+externally consumable; upload/export/download is frontend-independent; ownership/isolation is
+enforced server-side; and no hidden Streamlit dependency blocks migration.
+
+Sprint 14 Phase 6 established the initial readiness foundation; this audit is the **definitive
+readiness gate** before React implementation, run after Sprint 15 remediation and Sprint 16
+provider changes.
+
+### Phase 3 — React Technical Architecture Definition
+
+**Do not implement the React application.** Define and document (ADR) the architecture Sprint
+17 will implement: React + TypeScript, application structure, routing, API client strategy,
+server-state/data-fetching strategy, authentication/session strategy, RBAC model, component
+architecture, design system and design tokens, accessibility standards, responsive behavior,
+charting/visualization strategy, forms, error/loading/empty states, async AI job UX model,
+testing strategy, build/deployment strategy, and Streamlit + React coexistence strategy.
+
+Evaluate and document the visual-system approach rather than adopting a component library by
+default. The goal is a high-quality enterprise analytics UX, not a generic dashboard.
+
+### Sprint 16 Definition of Done
+
+- [ ] Ollama provider works through the provider interface
+- [ ] Google Cloud / Gemini provider works through the provider interface
+- [ ] Provider selection is configuration-driven and deterministic
+- [ ] Provider errors mapped to stable application errors; timeouts/retries defined and tested
+- [ ] Future providers can be added as isolated adapters
+- [ ] AI business logic remains provider-agnostic (switching verified without code changes)
+- [ ] Backend/API contracts verified for React consumption
+- [ ] Final React readiness audit (definitive gate) passes; frontend-independent backend behavior proven
+- [ ] React architecture and design-system decisions documented (ADR)
+- [ ] No React application built
 - [ ] Documentation synchronized
 - [ ] Definition of Done satisfied
+
+---
+
+## Sprint 17 — React Migration & Modern Presentation Layer 📋
+
+> **Status:** PLANNED / NOT STARTED. Depends on the v16.0.0 release.
+
+### Objective
+
+Replace Streamlit incrementally with React + TypeScript while preserving backend behavior and
+API contracts, implementing the architecture defined in Sprint 16.
+
+### Critical Architectural Constraint
+
+**Only the presentation layer may be replaced.** REST API endpoints and OpenAPI contracts,
+dependency injection, application-layer orchestration, business modules, persistence and
+database abstraction, the AI layer and provider abstraction, authentication/authorization/RBAC,
+ownership models, and security/isolation boundaries remain stable and backward compatible.
+
+### Core Scope
+
+- React + TypeScript application with an enterprise design system and reusable components
+- Authentication, session management, RBAC-aware navigation
+- Dashboard, Upload, Reports, AI Insights, Admin, Profile/account
+- API integration and async AI job states
+- Loading/error/empty states, responsive UX, accessibility
+- Analytics visualization
+- Frontend unit/component tests and E2E validation
+- Production build and deployment
+
+### Migration Principles
+
+- React consumes the existing backend/API layer; no business logic moves into React.
+- Streamlit remains available during migration and validation.
+- Migrate incrementally, workflow by workflow, preserving functional parity where applicable.
+- Apply the product/UX requirements identified in Sprint 15; do not reproduce known Sprint 15 defects.
+
+### React Design System
+
+A coherent AnalystGPT Enterprise design system defining typography, spacing, colors, surface
+hierarchy, borders/radii, elevation, interaction states, accessibility, component behavior,
+data-visualization conventions and responsive rules. Use the minimum necessary dependencies.
+
+### Sprint 17 Definition of Done
+
+- [ ] Functional parity with Streamlit demonstrated per migrated workflow
+- [ ] API contract compatibility validated
+- [ ] Authentication and RBAC-aware UI working
+- [ ] Dashboard, Upload, Reports, AI Insights, Admin and Profile workflows work end-to-end
+- [ ] Frontend unit/component and E2E tests passing
+- [ ] Accessibility baseline passes
+- [ ] Responsive behavior validated
+- [ ] No backend business logic embedded in React
+- [ ] Streamlit coexistence/deprecation plan completed
+- [ ] Documentation synchronized
+- [ ] Definition of Done satisfied
+
+React becomes the validated primary presentation layer only when all items above are met.
 
 ---
 
@@ -1442,8 +1705,10 @@ engineering maturity levels:
 | AI Layer | ✅ Complete |
 | Production Deployment | ✅ Complete |
 | Enterprise Identity & Multi-User | ✅ Complete |
-| UX Stabilization & Data Governance | ✅ Complete |
-| React Migration | 📋 Sprint 15 |
+| UX Stabilization & Data Governance | 🟡 Implemented & tested in Sprint 14 (not released); end-to-end governance behavior NEEDS REMEDIATION in Sprint 15 |
+| Product Stabilization & Governance Completion | 📋 Sprint 15 |
+| AI Provider Abstraction & React Readiness | 📋 Sprint 16 |
+| React Migration | 📋 Sprint 17 |
 
 ---
 
@@ -1504,7 +1769,8 @@ experience across multiple software engineering disciplines.
 
 - Enterprise frontend architecture
 - Service-oriented UI architecture
-- React architecture
+- React + TypeScript architecture (defined Sprint 16, implemented Sprint 17)
+- Enterprise design system
 - Component-based design
 - State management
 - API integration
@@ -1519,6 +1785,7 @@ experience across multiple software engineering disciplines.
 - Executive summaries
 - Natural language analytics
 - Explainable AI
+- Vendor-neutral LLM provider architecture (Ollama, Gemini, future adapters)
 
 ---
 
@@ -1556,6 +1823,7 @@ ability to independently:
 - Enforce strict server-side multi-user data isolation
 - Implement production observability with structured logging and request correlation
 - Deliver reliability controls, operational health probes, and disaster recovery validation
+- Operate a vendor-neutral, configuration-driven AI provider layer
 - Migrate presentation layer to modern React while preserving backend contracts
 
 ---
@@ -1567,9 +1835,9 @@ Current repository state:
 - ✅ Stable Enterprise Architecture
 - ✅ Stable Application Layer
 - ✅ Stable Module Contracts
-- ✅ Stable Automated Test Suite (329 tests passing)
+- 🟡 Automated Test Suite implemented & passing per PROJECT_STATE.md; trustworthy regression baseline pending Sprint 15
 - ✅ Stable Performance Validation
-- ✅ Stable Engineering Documentation
+- 🟡 Engineering Documentation extensive; known documentation/repository contradictions — reconciliation pending Sprint 15
 - ✅ Stable Persistence Layer
 - ✅ Stable Repository Layer
 - ✅ Stable Database Abstraction Layer
@@ -1579,19 +1847,26 @@ Current repository state:
 - ✅ Stable OpenAPI Specification
 - ✅ Stable Business Intelligence Layer
 - ✅ Stable Power BI Integration
-- ✅ Stable Frontend Layer
-- ✅ Stable Streamlit Frontend
+- 🟡 Frontend Layer implemented & tested; remediation planned in Sprint 15
+- 🟡 Streamlit Frontend released (v10.0.0); needs remediation (pending Sprint 15)
+- 🟡 Dashboard implemented; product value/information architecture needs remediation (pending Sprint 15)
 - ✅ Stable AI Insight Engine
 - ✅ Stable Production Deployment & Docker Containerization
-- ✅ Stable Enterprise Identity & Multi-User Platform
+- ✅ Enterprise Identity & Multi-User Platform released (v13.0.0); 🟡 Admin UI/backend user-lifecycle reconciliation pending Sprint 15
+- 🟡 Technical Debt not verified as low — known duplication, dead code, quality-gate exclusions and UI/API mismatches pending Sprint 15
+- 📋 AI provider abstraction (Ollama + Gemini) and final React-readiness gate pending Sprint 16
 - ✅ Sprint 13 Complete
-- ✅ Sprint 14 Complete
-- 🚀 Ready for Sprint 15 — React Migration & Modern Presentation Layer
+- 🟡 Sprint 14 implemented, tested and validated locally; release pending, main merge pending
+- ⏸️ Sprint 15 (Stabilization & Remediation) should not begin until Sprint 14 is released and merged to `main`
+- 📋 Sprint 16 (AI Provider Abstraction & React Readiness) follows v15.0.0
+- 📋 Sprint 17 (React Migration) follows v16.0.0 — no React work before then
 
 ---
 
-**Current Roadmap Version:** **v14.0.0**
+**Roadmap covers through:** **v17.0.0 (planned)** — v14.0.0 prepared, not released
 
-**Previous Version:** **v13.0.0**
+**Last released version:** **v13.0.0**
 
-**Next Planned Release:** **v15.0.0 — Sprint 15: React Migration & Modern Presentation Layer**
+**Pending Release:** **v14.0.0 — Sprint 14** (implemented, not tagged or merged)
+
+**Next Planned Sprint Release:** **v15.0.0 — Sprint 15: Enterprise Stabilization, Governance Completion & Product/UX Remediation** → v16.0.0 (Sprint 16) → v17.0.0 (Sprint 17)

@@ -8,9 +8,15 @@
 
 # Last Updated
 
-**Date:** August 2026
+**Date:** August 2026 (Sprint 14 content)
 
-**Version:** v13.0.0
+**Current version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+
+**Current sprint:** Sprint 14 — Stabilization / Production Hardening (implemented and validated locally; release pending)
+
+> The Sprint 14 section near the end of this document was written *before* the sprint began
+> and records what was anticipated. The lessons drawn from actually executing Sprint 14 are
+> recorded in PROJECT_JOURNAL.md under the Sprint 14 completion milestone.
 
 ---
 
@@ -881,6 +887,8 @@ These principles established during Sprint 8 ensure that the platform's REST API
 - Preserving service boundaries enables low-risk frontend migration.
 - A well-designed backend outlives individual frontend technologies.
 - Streamlit provides an effective MVP while maintaining a clear migration path to React.
+- Readiness should be proven, not declared: the React migration is sequenced after product
+  stabilization (Sprint 15) and a final readiness audit (Sprint 16), and happens in Sprint 17.
 
 ---
 
@@ -1078,7 +1086,20 @@ These principles established during Sprint 10 ensure that the frontend remains m
 
 ---
 
-# Sprint 14 — Architecture & Performance Insights (Pre-Sprint)
+# Sprint 14 — Architecture & Performance Insights
+
+> **Status note.** This section was authored *before* Sprint 14 began and was originally
+> headed "(Pre-Sprint)". Everything it anticipates was implemented in Sprint 14 (prepared as
+> **v14.0.0**, not yet released): the
+> asynchronous job state machine in `src/ai/job_executor.py` and `src/ai/models.py`, and
+> cleaning governance in `src/governance/` with immutable artifact storage in
+> `src/storage/artifact_store.py`.
+>
+> The insights below are retained as written, because their value is in the reasoning that
+> preceded the design. The lessons drawn from *executing* Sprint 14 — the silent formatter
+> exclusions, the skip guard that tested the wrong condition, the silent context-window
+> truncation, and the documentation drift that produced four irreconcilable test totals —
+> are recorded in PROJECT_JOURNAL.md under the Sprint 14 completion milestone.
 
 ## Synchronous AI Latency vs User Experience
 
@@ -1089,3 +1110,20 @@ These principles established during Sprint 10 ensure that the frontend remains m
 
 - Destructive transformations (row dropping, imputation) without provenance tracking lead to silent information loss.
 - Separating immutable raw source datasets from cleaned analytical datasets with explicit policy versioning and before/after quality metrics ensures data integrity and analytical reproducibility.
+
+---
+
+# Roadmap Re-baseline — Documentation Drift (September 2026)
+
+- Sprint plans drifted because each document restated sprint scope independently: the roadmap
+  called Sprint 15 *React Migration* while PROJECT_STATE.md and ARCHITECTURE.md called it
+  *Refactoring & Architectural Evolution*. ROADMAP.md is now the single authority for
+  sequencing; other documents should reference it rather than restate scope.
+- "Complete" was used for three different things — code exists, tests pass, and released.
+  The documents now distinguish Implemented · Tested · Verified (end-to-end through the real
+  API/frontend path) · Released (tagged and merged) · Planned.
+- Release status must come from Git, not from intent: v14.0.0 was recorded as the current
+  baseline in several documents although no tag or merge existed.
+- Product value needs its own gate. Components that were implemented and tested (governance,
+  Dashboard, Admin) still had workflow or product-value gaps, which is why Sprint 15 precedes
+  provider work (Sprint 16) and the React migration (Sprint 17).

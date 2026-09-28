@@ -4,6 +4,40 @@ This guide provides the authoritative, exact copy-paste-ready commands required 
 
 ---
 
+## 0. Platform Note & Path Convention
+
+> This guide was originally written for macOS only: every command hard-coded the absolute
+> path `/Users/amaljose/AnalystGPT_Enterprise` and activated the virtualenv with
+> `source venv/bin/activate`. The repository is also worked on under Windows, where neither
+> runs. The commands below are therefore path-neutral, and Windows PowerShell equivalents
+> are given in section 11.
+
+Set `PROJECT_ROOT` once per shell; every later `cd "$PROJECT_ROOT"` then resolves correctly
+regardless of where the repository is cloned.
+
+**macOS / Linux (bash / zsh):**
+
+```bash
+export PROJECT_ROOT="$HOME/AnalystGPT_Enterprise"   # adjust to your clone location
+```
+
+**Windows (PowerShell):**
+
+```powershell
+$env:PROJECT_ROOT = "C:\Users\<you>\AnalystGPT_Enterprise"   # adjust to your clone location
+```
+
+Activation differs by platform:
+
+| Platform | Activate virtualenv |
+|---|---|
+| macOS / Linux | `source venv/bin/activate` |
+| Windows PowerShell | `.\venv\Scripts\Activate.ps1` |
+| Windows cmd.exe | `venv\Scripts\activate.bat` |
+| Git Bash on Windows | `source venv/Scripts/activate` |
+
+---
+
 ## 1. Environment Setup
 
 ### 1.1 Prerequisites
@@ -14,7 +48,7 @@ This guide provides the authoritative, exact copy-paste-ready commands required 
 ### 1.2 Initial Setup & Virtual Environment
 ```bash
 # Navigate to project root
-cd /Users/amaljose/AnalystGPT_Enterprise
+cd "$PROJECT_ROOT"
 
 # Activate existing virtualenv
 source venv/bin/activate
@@ -30,10 +64,29 @@ export LOG_TO_FILE=false
 ## 2. Multi-Terminal Operational Workflow
 
 ### Terminal 1 — Full Test Suite
-Executes the comprehensive automated test suite (535 tests across unit, integration, and security layers):
+Executes the comprehensive automated test suite across unit, integration, and security layers.
+**695** test functions are defined across **118** modules, collecting to **729** cases.
+
+> **Expected result:** `714 passed, 15 deselected, 1 warning in ~119s`, 0 failures,
+> 0 collection errors.
+>
+> The 15 deselected tests carry the `integration` marker and need a live Ollama server with
+> `gemma3:4b`. `pyproject.toml` sets `addopts = -ra -m "not integration"`, so the default run
+> is deterministic on any machine. Exercise the live LLM path with:
+>
+> ```bash
+> ollama pull gemma3:4b
+> pytest -m integration
+> ```
+>
+> The single warning is a third-party `anyio` deprecation surfaced through
+> `starlette.testclient`.
+>
+> If you see a `matplotlib` import error, your virtualenv predates it being declared — run
+> `pip install -r requirements.txt`.
 
 ```bash
-cd /Users/amaljose/AnalystGPT_Enterprise
+cd "$PROJECT_ROOT"
 source venv/bin/activate
 export PYTHONPATH="$(pwd)"
 export DATABASE_ENGINE=sqlite
@@ -48,7 +101,7 @@ pytest -q
 Launches the FastAPI REST API with live hot-reloading:
 
 ```bash
-cd /Users/amaljose/AnalystGPT_Enterprise
+cd "$PROJECT_ROOT"
 source venv/bin/activate
 export PYTHONPATH="$(pwd)"
 export DATABASE_ENGINE=sqlite
@@ -67,7 +120,7 @@ uvicorn src.api.server:app --host 127.0.0.1 --port 8000 --reload
 Starts the Streamlit user interface using the project's native bootstrap (guaranteed free of `ModuleNotFoundError: No module named 'src'`):
 
 ```bash
-cd /Users/amaljose/AnalystGPT_Enterprise
+cd "$PROJECT_ROOT"
 source venv/bin/activate
 export PYTHONPATH="$(pwd)"
 export DATABASE_ENGINE=sqlite
@@ -84,7 +137,7 @@ streamlit run src/frontend/streamlit_app.py
 Independent curl commands to validate root, health, authentication, pipeline execution, report listing, and binary downloads:
 
 ```bash
-cd /Users/amaljose/AnalystGPT_Enterprise
+cd "$PROJECT_ROOT"
 source venv/bin/activate
 
 # 1. System Health & Metadata
@@ -133,7 +186,7 @@ curl -s -o report_specific.pdf http://127.0.0.1:8000/reports/<REPORT_ID>/export/
 Run the full static code quality pipeline before any code submission:
 
 ```bash
-cd /Users/amaljose/AnalystGPT_Enterprise
+cd "$PROJECT_ROOT"
 source venv/bin/activate
 export PYTHONPATH="$(pwd)"
 
@@ -166,7 +219,7 @@ isort src/ tests/
 Run specific test modules during feature development:
 
 ```bash
-cd /Users/amaljose/AnalystGPT_Enterprise
+cd "$PROJECT_ROOT"
 source venv/bin/activate
 export DATABASE_ENGINE=sqlite
 
@@ -192,7 +245,7 @@ pytest tests/governance/ -v
 > **Note**: Performance benchmarks are standalone tools and are separated from standard unit/integration test discovery in `pyproject.toml`.
 
 ```bash
-cd /Users/amaljose/AnalystGPT_Enterprise
+cd "$PROJECT_ROOT"
 source venv/bin/activate
 
 # Run pipeline throughput & resource benchmark
@@ -237,3 +290,115 @@ docker compose logs -f frontend
 # Graceful shutdown
 docker compose down
 ```
+
+
+---
+
+## 11. Windows PowerShell Equivalents
+
+The commands throughout this guide use bash syntax. Under Windows PowerShell, `export` is not a
+command, `source` does not exist, and `VAR=value cmd` inline prefixes are a parse error. Use the
+equivalents below.
+
+### 11.1 Session Setup (equivalent to sections 0 and 1.2)
+
+```powershell
+$env:PROJECT_ROOT = "C:\Users\<you>\AnalystGPT_Enterprise"
+Set-Location $env:PROJECT_ROOT
+.\venv\Scripts\Activate.ps1
+
+$env:PYTHONPATH     = (Get-Location).Path
+$env:DATABASE_ENGINE = "sqlite"
+$env:LOG_TO_FILE     = "false"
+```
+
+### 11.2 Terminal Workflow (equivalent to section 2)
+
+```powershell
+# Terminal 1 - full test suite
+pytest -q
+
+# Full suite WITH a captured UTF-8 log (see 11.3 before using `>` yourself)
+.\scripts\run_tests.ps1
+
+# Terminal 2 - FastAPI backend
+uvicorn src.api.server:app --host 127.0.0.1 --port 8000 --reload
+
+# Terminal 3 - Streamlit frontend
+python -m streamlit run src/frontend/streamlit_app.py
+```
+
+### 11.3 Quality Gates (equivalent to section 3)
+
+```powershell
+flake8 src tests
+black --check src tests
+isort --check src tests
+mypy src
+```
+
+> These four gates are exactly what CI's `quality` job runs, and all four pass on the Sprint 14
+> working tree (v14.0.0 prepared, not yet released): flake8 0, black 341 files unchanged, isort clean, mypy clean over 210 source files.
+>
+> `black` and `isort` cover **all** of `src/` and `tests/`; only non-source trees are excluded.
+> (Until the Sprint 14 stabilization pass, `pyproject.toml` excluded `tests/` and 15 of 17
+> `src/` packages, so a clean result meant almost nothing.)
+>
+> ⚠️ **On Windows, run these with `PYTHONUTF8=1`.** 35 files legitimately contain characters
+> outside cp1252; without it `isort` cannot read them, **skips them silently, and still exits
+> 0** — so a file can drift while the check reports clean. `scripts/lint.ps1` sets it.
+> `PYTHONIOENCODING` is *not* sufficient: it affects stdio only, not the locale encoding used
+> to read files.
+
+### 11.4 Syntax Translation Reference
+
+| bash | PowerShell |
+|---|---|
+| `export VAR=value` | `$env:VAR = "value"` |
+| `source venv/bin/activate` | `.\venv\Scripts\Activate.ps1` |
+| `DATABASE_ENGINE=sqlite pytest -q` | `$env:DATABASE_ENGINE="sqlite"; pytest -q` |
+| `export PYTHONPATH="$(pwd)"` | `$env:PYTHONPATH = (Get-Location).Path` |
+| `cmd1 && cmd2` | `cmd1; if ($?) { cmd2 }` |
+| `curl -s URL` | `curl.exe -s URL` (PowerShell aliases `curl` to `Invoke-WebRequest`) |
+
+---
+
+## 12. Capturing Test Output (PowerShell)
+
+### 12.1 Use the helper script
+
+```powershell
+.\scripts\run_tests.ps1                      # default suite -> test-results\pytest-<timestamp>.md
+.\scripts\run_tests.ps1 -Integration         # also run live-Ollama / live-API tests
+.\scripts\run_tests.ps1 -Verbose_            # -v instead of -q (test node ids in the log)
+```
+
+### 12.2 Why not `pytest ... > out.md 2>&1`
+
+Three problems, all of which were present in the historical `full_pytest_output.md`
+and `FULL_TEST_OUTPUT.md` captures:
+
+| Problem | Effect | Correct form |
+|---|---|---|
+| `>` / `Tee-Object` default to UTF-16LE | Log is unreadable to `grep`, `git diff`, editor search | `\| Out-File -Encoding utf8` |
+| `2>&1` on a native `.exe` | Streamlit's harmless stderr warning is wrapped in a `NativeCommandError` block that looks like a crash at the top of the log | redirect stderr separately, or drop it |
+| `-s` (no capture) | Every application log line is interleaved into the report; files reach ~2 MB | omit `-s`; pytest shows captured output for failures only |
+
+Captured logs are gitignored (`*_TEST_OUTPUT.md`, `pytest_output*.md`,
+`test-results/`) because they contain absolute developer paths and are
+regenerated on every run.
+
+### 12.3 Integration markers
+
+Tests that need live external infrastructure are marked `integration` and are
+**deselected by default** via `addopts` in `pyproject.toml`:
+
+```powershell
+pytest -q                      # default: integration tests excluded
+pytest -m integration          # only the live-infrastructure tests
+pytest -m "integration or not integration"   # everything
+```
+
+`tests/ai/test_ollama_connection.py` is the current member of that group: it
+drives a live Ollama server, so its result depends on model warmth and machine
+load rather than on application code.

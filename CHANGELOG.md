@@ -1187,25 +1187,6 @@ Sprint 12 successfully packages AnalystGPT Enterprise for production deployment 
 
 ---
 
-## [14.0.0] - 2026-08-16
-
-### Sprint 14 Remediation — Data Profiling, Null Governance & Visual Analytics Refactor
-- **Semantic Profiling (`src/profiling/`):** Added 20-category `SemanticType` taxonomy and `AnalyticalRole` classification to separate physical storage types from analytical domain semantics.
-- **Null Governance:** Added semantically aware policy recommendations (e.g. median for continuous measures, mode for categories, never numeric interpolation for phones/postal codes) and interactive non-destructive preview.
-- **VisualizationPlanner (`src/analytics/`):** Introduced authoritative visualization planner with 4–8 chart budget, identifier/constant exclusion, top-N horizontal bars, and responsive 2×2 / 3×3 grid layout.
-- **Enhanced Column Profile:** Upgraded column profile table with physical types, semantic types, analytical roles, missingness, uniqueness, and governance recommendations.
-- **Export Redesign:** Enhanced PDF and text exporters with clean typography, column semantic profiles, complete lineage, and clearly demarcated AI insights.
-
-### Sprint 14 — Enterprise Platform Stabilization & Governance-First Maturation
-- **Phase 1 (Frontend UX):** Navigation state stabilization, top scroll enforcement, and decoupled AI Insights page.
-- **Phase 2 (Async AI Engine):** Complete decoupling of pipeline response from LLM inference; state machine and background worker.
-- **Phase 3 (Cleaning Governance & Lineage):** Immutable raw storage, SHA-256 versioning, dataset version lineage.
-- **Phase 4 (AI Data Context):** Domain context builder preventing fabricated metrics.
-- **Phase 5 (Reporting & PDF Export):** Standards-compliant PDF and text exporters with IDOR protection.
-- **Phase 6 (OpenAPI / React Readiness):** Frozen OpenAPI 3.1 contracts and migration blueprint.
-- **Phase 7 (Regression & Final Validation):** 100% test coverage and static quality gates.
-
----
 
 ## [v13.0.0] - 2026-08-15
 
@@ -1301,7 +1282,222 @@ Sprint 13 transforms AnalystGPT Enterprise into a multi-user enterprise platform
 
 ---
 
-## [Unreleased] — Sprint 14 (UX Stabilization, Performance, Data Governance & React Migration Readiness)
+## [v14.0.0] — Enterprise Stabilization, Data Governance & Grounded Reporting
+
+**Sprint:** Sprint 14 — Stabilization / Production Hardening
+**Status:** 🟡 **Implemented and validated locally — not yet released** (no `v14.0.0` tag;
+`sprint-14-stabilization` not merged to `main`; last released version is v13.0.0)
+
+### Overview
+
+Sprint 14 delivers enterprise stabilization across the presentation, analytical and
+governance tiers: asynchronous AI execution with a persistent state machine, transparent
+data cleaning governance with end-to-end lineage, semantic data profiling, intelligent
+visual analytics planning, publication-grade multi-page PDF reporting, strictly grounded AI
+insights, and a frozen OpenAPI 3.1 contract with a technology-neutral frontend service layer.
+
+### Key Deliverables
+
+1. **Streamlit UX Stabilization** — responsive layout hierarchy, scroll-to-top component,
+   dedicated AI Insights view, role-aware navigation, session caching.
+2. **Asynchronous AI Job Lifecycle** — persistent database-backed state machine
+   (`PENDING` → `GENERATING` → `READY` / `FAILED`), thread-pool background execution, retry
+   isolation, polling REST endpoints. An AI failure never fails a pipeline run.
+3. **Data Cleaning Governance & Lineage** — versioned immutable dataset snapshots,
+   policy-driven cleaning execution audit, immutable raw blob artifact storage.
+4. **AI Data Context & Analytical Integrity** — authoritative typed `AIDataContext` builder,
+   cross-tenant isolation enforcement, semantic serialization.
+5. **Semantic Data Profiling** — 20-class domain type classification, measure vs dimension
+   separation, intelligent 4–8 chart budget via `VisualizationPlanner`.
+6. **Publication-Grade Reporting** — multi-page `%PDF-1.4` report with empirical charts,
+   governance tables and lineage cards, plus a rebuilt text exporter.
+7. **AI Grounding Remediation** — distinct category cardinality disambiguated from
+   percentage frequency in serialized prompts; non-dominance guards in prompt templates.
+8. **API Contract Freeze** — OpenAPI 3.1 across **33 paths**, a single `/api` route
+   convention, and a React migration blueprint (the *initial* React-readiness foundation;
+   the final readiness gate is Sprint 16 and React implementation is Sprint 17 — see ROADMAP.md).
+
+### Changed
+
+- **`src/core/constants.py`** — `APP_VERSION` corrected from `12.0.0` to `14.0.0`. This value
+  feeds `GET /`, `GET /api/version` and the OpenAPI `info.version`, so the stale constant was
+  visible in the live API surface.
+- **`src/core/config.py`** — the *Future Providers* section comment no longer implies the
+  cloud provider keys are wired up. `LLMFactory` registers only `"ollama"` and raises
+  `ValueError: Unsupported LLM Provider` for anything else; setting `OPENAI_API_KEY`,
+  `GEMINI_API_KEY` or `CLAUDE_API_KEY` does not enable those providers.
+- **`docs/api/openapi.json`** — re-exported from the live application: 33 paths, 42 schemas,
+  `info.version` 14.0.0.
+- **`pyproject.toml`** — `black` and `isort` now cover all of `src/` and `tests/`; only
+  non-source trees are excluded. Previously 15 of 17 `src/` packages plus all of `tests/`
+  were excluded, so both gates ran, reported success, and checked almost nothing. 231 files
+  were reformatted across two passes.
+- **`pyproject.toml`** — added the `integration` pytest marker and
+  `addopts = -ra -m "not integration"`, so the default suite is deterministic on machines
+  without a live Ollama server. Run the live path with `pytest -m integration`.
+
+### Dependencies
+
+`requirements.txt` was audited against actual imports across `src/`, `tests/`,
+`performance/` and `scripts/`. The header version was corrected from v12.0.0 to v14.0.0.
+
+**Added**
+
+- `psutil` — imported by `performance/stress_test.py`, previously undeclared.
+- `matplotlib` — imported at module level by `src/reporting/exporters/pdf_report_exporter.py`
+  and `src/frontend/components/charts.py`. Since `ReportingManager` imports the PDF exporter
+  at module level, this is a hard dependency of the core application and REST API, not only
+  of the frontend. The undeclared import dated to v10.0.0 via `charts.py`, where it affected
+  the Streamlit frontend alone.
+
+**Removed — no import anywhere in the repository**
+
+- `psycopg2-binary` — a second, unused driver generation. `src/database/postgresql_connection.py`
+  imports `psycopg` (v3).
+- `openai`, `tiktoken` — the AI layer is Ollama-only.
+- `plotly` — charts are matplotlib. (Note: `src/frontend/components/about_card.py` and
+  `footer.py` still list Plotly in their UI tech-stack strings.)
+- `python-multipart` — no `UploadFile`, `File()` or `Form()` declaration exists in `src/api/`.
+- `requests`, `PyYAML`, `click`, `rich`, `tenacity`, `tqdm`, `GitPython` — unused utilities.
+- `prometheus-client`, `structlog` — monitoring was never implemented; logging is stdlib
+  `logging` via `src/core/logger.py`.
+- `gunicorn` — the Dockerfile and Compose services run `uvicorn`.
+- `pywin32`, `comtypes` — unused; the Power BI integration is pure REST/JSON models.
+
+`altair`, `pydeck` and `watchdog` are retained: they are Streamlit's own runtime companions
+rather than direct imports, and pinning their floors matches the project's existing strategy.
+
+### Verification
+
+| Gate | Command | Result |
+|---|---|---|
+| Test suite | `pytest -q` | **714 passed, 0 failed, 15 deselected**, 118.73 s |
+| Full collection | `pytest --collect-only -m ""` | 729 collected, 118 modules |
+| Lint | `flake8 src tests --count` | 0 |
+| Format | `black --check src tests` | 341 files unchanged |
+| Imports | `isort --check src tests` | clean |
+| Types | `mypy src` | no issues in 210 source files |
+
+The 15 deselected tests are `integration`-marked and require a live Ollama server with
+`gemma3:4b`.
+
+> **Superseded figures.** Entries below this point were written while the sprint was in
+> flight and quote test totals of 535, 531, 529 and "100% coverage". None of those was ever
+> reconciled; all are superseded by the executed **714 passing**. No coverage measurement
+> exists in this repository. The entries are retained verbatim for historical fidelity.
+
+### Repository Status
+
+- Upload Module → Stable
+- Cleaning Module → Stable
+- Quality Module → Stable
+- Analytics Module → Stable (Semantic Profiling & Visual Analytics)
+- Reporting Module → Stable (PDF & TXT Exporters)
+- Identity & RBAC Subsystem → Stable
+- Data Governance & Lineage → Stable
+- AI Insight Engine → Stable (Async Worker & Grounded Serialization)
+- REST API Layer → Stable (33 paths, OpenAPI 3.1, single `/api` convention)
+- Streamlit Presentation Layer → Stable
+- Automated Tests → **714 passing**
+- Static Analysis → flake8 0 · black clean · isort clean · mypy clean
+- Release Version → **v14.0.0** (prepared, not released)
+
+---
+
+### Breaking Changes (v14.0.0)
+
+#### API: unprefixed routes removed
+
+Every router now answers only under the `/api` prefix. Previously `/reports/*`
+was mounted **twice** (prefixed and unprefixed), while `/powerbi/*` and the
+dashboard router answered **only** unprefixed - two of nine routers disagreeing
+with the convention the rest followed.
+
+The unprefixed paths were briefly kept as deprecated aliases while the
+Streamlit `APIClient` was migrated. Nothing in the repository uses them now,
+and they have been removed.
+
+**Removed (16 paths):**
+
+```
+/reports                                /powerbi/categorical
+/reports/export/text                    /powerbi/correlation
+/reports/export/pdf                     /powerbi/dashboard
+/reports/latest/export/text             /powerbi/distribution
+/reports/latest/export/pdf              /powerbi/pipeline
+/reports/{report_id}/export/text        /powerbi/report
+/reports/{report_id}/export/pdf         /powerbi/statistics
+                                        /powerbi/status
+                                        /powerbi/summary
+```
+
+**Migration:** prepend `/api`. Every removed path has an identical prefixed
+equivalent with the same contract - `/reports/export/text` becomes
+`/api/reports/export/text`, `/powerbi/status` becomes `/api/powerbi/status`.
+
+`docs/api/openapi.json` is regenerated (33 paths). Enforced by
+`tests/api/test_openapi_contract.py::test_every_path_is_under_the_api_prefix`.
+
+#### Tooling
+
+- Black and isort now cover **all** of `src/` and `tests/` (previously 15 of 17
+  `src/` packages plus all of `tests/` were excluded, so the gates checked
+  almost nothing). 231 files reformatted across two passes.
+- Formatters must run in UTF-8 mode on Windows. 35 files legitimately contain
+  characters outside cp1252, and without `PYTHONUTF8=1` isort cannot read them
+  and skips them silently while still exiting 0. `scripts/lint.ps1` sets this;
+  `scripts/run_tests.ps1` does too. `PYTHONIOENCODING` is **not** sufficient -
+  it affects stdio only, not the locale encoding used to read files.
+
+---
+
+### Documentation — Roadmap Re-baseline (Sprints 15–17)
+
+- `docs/project/ROADMAP.md` — the obsolete *Sprint 15 — React Migration* plan was replaced by
+  a three-sprint sequence: Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation (v15.0.0) → Sprint 16 — AI Provider Abstraction & Complete React Readiness (v16.0.0) → Sprint 17 — React Migration & Modern Presentation Layer (v17.0.0). React implementation must not begin before Sprint 17.
+- `docs/engineering/PROJECT_STATE.md`, `docs/project/ARCHITECTURE.md`, ADR-028 and
+  `docs/api/REACT_MIGRATION_MAPPING.md` reconciled to that sequence; the interim Sprint 15 name
+  *Refactoring & Architectural Evolution* is superseded.
+- Status wording made evidence-based: v14.0.0 recorded as prepared, not released; Dashboard,
+  Streamlit frontend, data governance, Admin UI and technical debt marked as needing Sprint 15
+  remediation rather than complete; Sprint 14 Phase 6 recorded as the initial React-readiness
+  foundation, with Sprint 16 as the definitive gate.
+- `docs/project/ARCHITECTURE.md` — current Ollama model corrected from Qwen3:8B to `gemma3:4b`
+  (the `OLLAMA_MODEL` default).
+- No application code, tests or configuration were changed by this re-baseline.
+
+### Sprint 14 — working entries (historical)
+
+The three entries below are the per-phase working log kept during the sprint. They overlap,
+they disagree with each other on the Phase 7 name, and they quote in-flight test totals.
+They are preserved as written; the release summary above is authoritative.
+
+Phase 7 was recorded under two names — *Regression, Contract & Quality Gates* and *Semantic
+Profiling, Visual Analytics & AI Grounding Remediation*. Both bodies of work were delivered,
+so the disagreement was over naming rather than scope. The combined authoritative title is
+*Semantic Profiling, Visual Analytics & Quality Gates* (see PROJECT_STATE.md).
+
+#### Working entry 1 — Sprint 14 remediation & phase summary (2026-08-16)
+
+### Sprint 14 Remediation — Data Profiling, Null Governance & Visual Analytics Refactor
+- **Semantic Profiling (`src/profiling/`):** Added 20-category `SemanticType` taxonomy and `AnalyticalRole` classification to separate physical storage types from analytical domain semantics.
+- **Null Governance:** Added semantically aware policy recommendations (e.g. median for continuous measures, mode for categories, never numeric interpolation for phones/postal codes) and interactive non-destructive preview.
+- **VisualizationPlanner (`src/analytics/`):** Introduced authoritative visualization planner with 4–8 chart budget, identifier/constant exclusion, top-N horizontal bars, and responsive 2×2 / 3×3 grid layout.
+- **Enhanced Column Profile:** Upgraded column profile table with physical types, semantic types, analytical roles, missingness, uniqueness, and governance recommendations.
+- **Export Redesign:** Enhanced PDF and text exporters with clean typography, column semantic profiles, complete lineage, and clearly demarcated AI insights.
+
+### Sprint 14 — Enterprise Platform Stabilization & Governance-First Maturation
+- **Phase 1 (Frontend UX):** Navigation state stabilization, top scroll enforcement, and decoupled AI Insights page.
+- **Phase 2 (Async AI Engine):** Complete decoupling of pipeline response from LLM inference; state machine and background worker.
+- **Phase 3 (Cleaning Governance & Lineage):** Immutable raw storage, SHA-256 versioning, dataset version lineage.
+- **Phase 4 (AI Data Context):** Domain context builder preventing fabricated metrics.
+- **Phase 5 (Reporting & PDF Export):** Standards-compliant PDF and text exporters with IDOR protection.
+- **Phase 6 (OpenAPI / React Readiness):** Frozen OpenAPI 3.1 contracts and migration blueprint.
+- **Phase 7 (Regression & Final Validation):** 100% test coverage and static quality gates.
+
+---
+
+#### Working entry 2 — Sprint 14 detailed per-phase log
 
 ### Sprint 14 Phase 1: Frontend UX Stabilization (Formally Reviewed & Accepted)
 
@@ -1454,7 +1650,7 @@ Sprint 13 transforms AnalystGPT Enterprise into a multi-user enterprise platform
 
 ---
 
-## [v14.0.0] — Enterprise Stabilization, Data Governance & Grounded Reporting
+#### Working entry 3 — Sprint 14 release summary as drafted during the sprint
 
 **Release Date:** 19 August 2026
 
@@ -1484,6 +1680,13 @@ Sprint 14 delivers comprehensive enterprise stabilization, asynchronous AI execu
 - AI Insight Engine → Stable (Async Worker & Grounded Serialization)
 - REST API Layer → Stable (40 Routes, OpenAPI 3.1)
 - Streamlit Presentation Layer → Stable
-- Automated Tests → **531 Passed** (0 failures, 0 warnings)
-- Static Analysis → Flake8: 0 errors | Black: Clean | isort: Clean | Mypy: Clean (208 source files)
+- Automated Tests → *(in-flight figure: 529 / 535 passing, measured 2026-09-12; superseded by
+  the final Sprint 14 total of **714 passing** — see the v14.0.0 summary above and
+  PROJECT_STATE.md § Executed Validation)*
+- Static Analysis → *(in-flight note: `pyproject.toml` then excluded `tests/` and most `src/*`
+  packages from Black and isort, so those gates covered little of the tree. Those exclusions
+  were removed before release; all four gates now run over all of `src/` and `tests/` and
+  pass. The source-file count is now 210.)*
 - Release Version: **v14.0.0**
+
+---

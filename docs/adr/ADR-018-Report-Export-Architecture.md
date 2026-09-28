@@ -2,6 +2,14 @@
 
 **Status:** Accepted
 
+> **Re-baseline note (2026-09-28).** References below to a "future React frontend" now map
+> to **Sprint 17**.
+> Sequencing is defined in ROADMAP.md: Sprint 15 — Enterprise Stabilization, Governance
+> Completion & Product/UX Remediation (no React work) → Sprint 16 — AI Provider Abstraction &
+> Complete React Readiness (final readiness audit; React architecture defined, not built) →
+> **Sprint 17 — React Migration & Modern Presentation Layer** (React + TypeScript implemented).
+> The decision text is unchanged.
+
 **Date:** 2026-07-25
 
 **Sprint:** Sprint 10 – Enterprise Reporting
@@ -403,7 +411,17 @@ Reason:
 
 ---
 
-# Sprint 14 Planned Export Reliability & Ownership Evolution
+# Sprint 14 Export Reliability & Ownership Evolution
+
+> This section was written as forward-looking design ("Planned"). It was **delivered in
+> Sprint 14 (v14.0.0)**: `src/reporting/exporters/pdf_report_exporter.py`,
+> `src/reporting/exporters/text_report_exporter.py`, the `/api/reports/**/export/*` routes in
+> `src/api/routes/reports.py`, and tests in `tests/api/test_report_export_api.py` and
+> `tests/reporting/test_report_lineage_isolation.py`. The heading is corrected; the design
+> text below is preserved as written.
+>
+> Note the v14.0.0 breaking change: the export routes answer only under `/api`. The
+> unprefixed `/reports/*` aliases were removed.
 
 In Sprint 14, report exports are extended with:
 - **Authenticated Ownership Scoping**: Export endpoints strictly enforce authenticated tenant checks (`user_id`), preventing cross-user unauthorized report downloads (IDOR defense).
