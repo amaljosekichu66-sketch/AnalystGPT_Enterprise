@@ -19,7 +19,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DATABASE:-analystgpt}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -41,8 +41,11 @@ services:
       target: api
     container_name: analystgpt-api
     restart: unless-stopped
+    # Published on loopback only by default (SEC-17): the frontend reaches the
+    # API over the compose network, and outside clients should come through a
+    # TLS-terminating reverse proxy. Set API_BIND_ADDRESS=0.0.0.0 to publish.
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "${API_BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8000}:8000"
     environment:
       # Security posture. Production refuses the built-in signing key, empty
       # or short keys, and unauthenticated identity headers. AUTH_SECRET_KEY
@@ -57,7 +60,7 @@ services:
       POSTGRES_PORT: 5432
       POSTGRES_DATABASE: ${POSTGRES_DATABASE:-analystgpt}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
 
       # Logging Configuration
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
@@ -108,8 +111,10 @@ services:
       target: frontend
     container_name: analystgpt-frontend
     restart: unless-stopped
+    # Loopback by default; put a TLS reverse proxy in front, or set
+    # FRONTEND_BIND_ADDRESS=0.0.0.0 to publish directly.
     ports:
-      - "${FRONTEND_PORT:-8501}:8501"
+      - "${FRONTEND_BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-8501}:8501"
     environment:
       # The frontend never signs or verifies tokens, so it does not receive
       # AUTH_SECRET_KEY.

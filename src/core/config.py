@@ -66,6 +66,11 @@ APP_ENVIRONMENT = (
 
 IS_DEVELOPMENT = APP_ENVIRONMENT == "development"
 
+#: Interactive API docs (/docs, /redoc) and the /openapi.json schema. Off
+#: outside development unless explicitly enabled (SEC-17): they hand an
+#: attacker a map of every endpoint and model.
+API_DOCS_ENABLED = _env_flag("API_DOCS_ENABLED", default=IS_DEVELOPMENT)
+
 # ==========================================================
 # Logging Configuration
 # ==========================================================
@@ -119,9 +124,11 @@ LOG_FORMAT = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
 # Web API & Networking Configuration
 # ==========================================================
 
+# Loopback by default (SEC-17). Containers bind 0.0.0.0 explicitly in the
+# Dockerfile CMD; a bare-metal deployment should sit behind a reverse proxy.
 API_HOST = os.getenv(
     "API_HOST",
-    "0.0.0.0",
+    "127.0.0.1",
 ).strip()
 
 API_PORT = int(

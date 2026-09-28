@@ -104,9 +104,10 @@ app = FastAPI(
     title=APP_NAME,
     description=APP_DESCRIPTION,
     version=APP_VERSION,
-    docs_url=API_DOCS_URL,
-    redoc_url=API_REDOC_URL,
-    openapi_url=API_OPENAPI_URL,
+    # Disabled outside development unless API_DOCS_ENABLED=true (SEC-17).
+    docs_url=API_DOCS_URL if config.API_DOCS_ENABLED else None,
+    redoc_url=API_REDOC_URL if config.API_DOCS_ENABLED else None,
+    openapi_url=API_OPENAPI_URL if config.API_DOCS_ENABLED else None,
     lifespan=lifespan,
     contact={
         "name": "Amal Jose",
