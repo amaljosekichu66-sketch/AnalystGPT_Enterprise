@@ -140,7 +140,10 @@ def test_prompt_builder_includes_grounding_rules() -> None:
     prompt = PromptBuilder.full_report(report)
 
     assert "CARDINALITY VS PERCENTAGE FREQUENCY (CRITICAL)" in prompt
-    assert "Never confuse distinct category count / cardinality (e.g. '7 unique categories') with percentage frequency" in prompt
+    assert (
+        "Never confuse distinct category count / cardinality (e.g. '7 unique categories') with percentage frequency"
+        in prompt
+    )
     assert "GROUNDED CATEGORICAL TERMINOLOGY (NO FALSE DOMINANCE)" in prompt
     assert "Do NOT describe a top category as 'dominant'" in prompt
     assert "the most frequent category with X records (Y%)" in prompt

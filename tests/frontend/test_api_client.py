@@ -8,10 +8,10 @@ import pytest
 
 from src.frontend.services.api_client import APIClient
 
-
 # ==========================================================
 # Fixtures
 # ==========================================================
+
 
 @pytest.fixture
 def client() -> APIClient:
@@ -22,6 +22,7 @@ def client() -> APIClient:
 # ==========================================================
 # Internal GET
 # ==========================================================
+
 
 @patch("src.frontend.services.api_client.httpx.Client.request")
 def test_get_success(mock_request, client):
@@ -46,6 +47,7 @@ def test_get_success(mock_request, client):
 # ==========================================================
 # Internal POST
 # ==========================================================
+
 
 @patch("src.frontend.services.api_client.httpx.Client.request")
 def test_post_success(mock_request, client):
@@ -72,6 +74,7 @@ def test_post_success(mock_request, client):
 # Root
 # ==========================================================
 
+
 @patch.object(APIClient, "_get")
 def test_root(mock_get, client):
     """Test root endpoint."""
@@ -83,6 +86,7 @@ def test_root(mock_get, client):
 # ==========================================================
 # Health
 # ==========================================================
+
 
 @patch.object(APIClient, "_get")
 def test_health(mock_get, client):
@@ -96,6 +100,7 @@ def test_health(mock_get, client):
 # Version
 # ==========================================================
 
+
 @patch.object(APIClient, "_get")
 def test_version(mock_get, client):
     """Test version endpoint."""
@@ -108,6 +113,7 @@ def test_version(mock_get, client):
 # Dashboard
 # ==========================================================
 
+
 @patch.object(APIClient, "_get")
 def test_dashboard(mock_get, client):
     """Test dashboard endpoint."""
@@ -115,7 +121,7 @@ def test_dashboard(mock_get, client):
     client.dashboard(dataset="test_dataset")
     # The actual call uses /powerbi/dashboard with a query parameter
     mock_get.assert_called_once_with(
-        "/powerbi/dashboard",
+        "/api/powerbi/dashboard",
         params={"dataset": "test_dataset"},
     )
 
@@ -124,17 +130,19 @@ def test_dashboard(mock_get, client):
 # Reports
 # ==========================================================
 
+
 @patch.object(APIClient, "_get")
 def test_reports(mock_get, client):
     """Test reports endpoint."""
     mock_get.return_value = {}
     client.reports()
-    mock_get.assert_called_once_with("/reports")
+    mock_get.assert_called_once_with("/api/reports")
 
 
 # ==========================================================
 # Pipeline
 # ==========================================================
+
 
 @patch.object(APIClient, "_post")
 def test_run_pipeline(mock_post, client):
@@ -149,6 +157,7 @@ def test_run_pipeline(mock_post, client):
 # Context Manager
 # ==========================================================
 
+
 @patch.object(APIClient, "close")
 def test_context_manager(mock_close):
     """Test context manager closes client."""
@@ -160,6 +169,7 @@ def test_context_manager(mock_close):
 # ==========================================================
 # Close
 # ==========================================================
+
 
 def test_close(client):
     """Test HTTP client closes correctly."""

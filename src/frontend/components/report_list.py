@@ -19,18 +19,13 @@ def render_report_list(
     Render the available reports.
     """
 
-    st.subheader(
-        "📑 Available Reports"
-    )
+    st.subheader("📑 Available Reports")
 
     if not data.get(
         "dataset_loaded",
     ):
 
-        st.info(
-            "No reports available.\n\n"
-            "Upload and process a dataset first."
-        )
+        st.info("No reports available.\n\n" "Upload and process a dataset first.")
 
         return
 
@@ -38,9 +33,7 @@ def render_report_list(
     # Reporting Layer
     # =====================================================
 
-    st.markdown(
-        "### 📊 Reporting Layer"
-    )
+    st.markdown("### 📊 Reporting Layer")
 
     reports = data.get(
         "reports",
@@ -70,16 +63,9 @@ def render_report_list(
                     "Available",
                 )
 
-                icon = (
-                    "✅"
-                    if status.lower()
-                    == "available"
-                    else "⏳"
-                )
+                icon = "✅" if status.lower() == "available" else "⏳"
 
-                st.success(
-                    f"{icon} {name}"
-                )
+                st.success(f"{icon} {name}")
 
             #
             # Session fallback
@@ -87,15 +73,11 @@ def render_report_list(
 
             else:
 
-                st.success(
-                    f"✅ {report}"
-                )
+                st.success(f"✅ {report}")
 
     else:
 
-        st.warning(
-            "No reports available."
-        )
+        st.warning("No reports available.")
 
     # =====================================================
     # AI Reports
@@ -103,9 +85,7 @@ def render_report_list(
 
     st.divider()
 
-    st.markdown(
-        "### 🧠 AI Insight Engine"
-    )
+    st.markdown("### 🧠 AI Insight Engine")
 
     ai_report = data.get(
         "ai_report",
@@ -113,9 +93,7 @@ def render_report_list(
 
     if ai_report is None:
 
-        st.info(
-            "No AI report has been generated."
-        )
+        st.info("No AI report has been generated.")
 
         return
 
@@ -163,15 +141,11 @@ def render_report_list(
 
         if available:
 
-            st.success(
-                f"✅ {title}"
-            )
+            st.success(f"✅ {title}")
 
         else:
 
-            st.warning(
-                f"⚠ {title} unavailable"
-            )
+            st.warning(f"⚠ {title} unavailable")
 
     # =====================================================
     # AI Metadata
@@ -183,13 +157,9 @@ def render_report_list(
 
     with col1:
 
-        st.caption(
-            f"**Model:** {ai_report.get('model', '-')}"
-        )
+        st.caption(f"**Model:** {ai_report.get('model', '-')}")
 
-        st.caption(
-            f"**Provider:** {ai_report.get('provider', '-')}"
-        )
+        st.caption(f"**Provider:** {ai_report.get('provider', '-')}")
 
     with col2:
 
@@ -199,6 +169,4 @@ def render_report_list(
 
         if execution_time is not None:
 
-            st.caption(
-                f"**Generation Time:** {execution_time:.2f}s"
-            )
+            st.caption(f"**Generation Time:** {execution_time:.2f}s")

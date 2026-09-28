@@ -11,11 +11,8 @@ and future React frontend.
 from __future__ import annotations
 
 import json
-
-from dataclasses import dataclass
-from dataclasses import field
-from datetime import UTC
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -121,9 +118,7 @@ class StructuredReport:
             "kpis": self.kpis,
             "analytics": self.analytics,
             "recommendations": self.recommendations,
-            "generated_at": (
-                self.generated_at.isoformat()
-            ),
+            "generated_at": (self.generated_at.isoformat()),
             "metadata": self.metadata,
         }
 

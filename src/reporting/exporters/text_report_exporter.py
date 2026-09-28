@@ -11,14 +11,15 @@ grounded strictly in observed dataset evidence.
 
 from __future__ import annotations
 
+import logging
+import textwrap
 from collections.abc import Mapping
 from datetime import datetime
-import logging
 from pathlib import Path
-import textwrap
 from typing import Any
 
-from src.core.config import DEFAULT_REPORT_FILENAME, REPORT_OUTPUT_DIRECTORY
+from src.core import config
+from src.core.pii import is_contact_pii_column
 from src.reporting.structured_report import StructuredReport
 
 logger = logging.getLogger(__name__)
@@ -31,8 +32,6 @@ class TextReportExporter:
 
     SEPARATOR = "=" * 82
     SUBSEPARATOR = "-" * 82
-
-    _PII_KEYWORDS = {"phone", "email", "ssn", "passport", "credit_card", "mobile", "address", "zip", "id"}
 
     def export(
         self,
@@ -53,13 +52,22 @@ class TextReportExporter:
         if output_path is not None:
             p = Path(output_path)
             if p.is_dir():
-                return p / DEFAULT_REPORT_FILENAME
+                return p / config.DEFAULT_REPORT_FILENAME
             return p
-        return Path(REPORT_OUTPUT_DIRECTORY) / DEFAULT_REPORT_FILENAME
+        # Read through `config` so a redirected output directory is honoured.
+        return Path(config.REPORT_OUTPUT_DIRECTORY) / config.DEFAULT_REPORT_FILENAME
 
     def _is_pii_column(self, col_name: str) -> bool:
-        low = col_name.lower()
-        return any(k in low for k in self._PII_KEYWORDS)
+        """
+        Mask personal contact columns only.
+
+        The previous keyword set included "id", tested as a substring, so
+        `ai_-_classification_confidence` was rendered as
+        "Masked identifier field" - because "confidence" contains "id". It also
+        masked every column whose name merely mentioned email or address.
+        See `src/core/pii.py`.
+        """
+        return is_contact_pii_column(col_name)
 
     def render(
         self,
@@ -81,8 +89,14 @@ class TextReportExporter:
         comp_pct = f"{completeness * 100:.1f}%" if isinstance(completeness, (int, float)) else "100.0%"
         duplicates = profile.get("duplicate_rows_count", 0) if isinstance(profile, dict) else 0
 
-        gen_date = report.generated_at.strftime("%d %b %Y, %H:%M UTC") if isinstance(report.generated_at, datetime) else str(report.generated_at)
-        run_id = lineage.get("pipeline_run_id") if lineage and lineage.get("pipeline_run_id") is not None else "Standard"
+        gen_date = (
+            report.generated_at.strftime("%d %b %Y, %H:%M UTC")
+            if isinstance(report.generated_at, datetime)
+            else str(report.generated_at)
+        )
+        run_id = (
+            lineage.get("pipeline_run_id") if lineage and lineage.get("pipeline_run_id") is not None else "Standard"
+        )
 
         # ==========================================================
         # Header & Metadata
@@ -114,7 +128,11 @@ class TextReportExporter:
         # ==========================================================
         lines.append("2. KEY PERFORMANCE INDICATORS")
         lines.append(self.SUBSEPARATOR)
-        lines.append(f"• Total Observed Records : {total_rows:,}" if isinstance(total_rows, int) else f"• Total Observed Records : {total_rows}")
+        lines.append(
+            f"• Total Observed Records : {total_rows:,}"
+            if isinstance(total_rows, int)
+            else f"• Total Observed Records : {total_rows}"
+        )
         lines.append(f"• Ingested Schema Width  : {total_cols} columns")
         lines.append(f"• Data Completeness      : {comp_pct}")
         lines.append(f"• Duplicate Rows Found   : {duplicates:,}")
@@ -123,7 +141,23 @@ class TextReportExporter:
 
         if report.kpis and isinstance(report.kpis, Mapping):
             for k, v in report.kpis.items():
-                if k not in {"Rows", "Columns", "Numeric Columns", "Categorical Columns", "Datetime Columns", "Memory Usage (MB)", "Correlation Available", "Distribution Available", "Categorical Analysis Available", "Descriptive Statistics", "Numerical Analysis", "Categorical Analysis", "Correlation Analysis", "Distribution Analysis", "Analytics Sections"}:
+                if k not in {
+                    "Rows",
+                    "Columns",
+                    "Numeric Columns",
+                    "Categorical Columns",
+                    "Datetime Columns",
+                    "Memory Usage (MB)",
+                    "Correlation Available",
+                    "Distribution Available",
+                    "Categorical Analysis Available",
+                    "Descriptive Statistics",
+                    "Numerical Analysis",
+                    "Categorical Analysis",
+                    "Correlation Analysis",
+                    "Distribution Analysis",
+                    "Analytics Sections",
+                }:
                     lines.append(f"• {k:<25}: {v}")
         lines.append("")
 
@@ -135,7 +169,9 @@ class TextReportExporter:
         lines.append(self.SUBSEPARATOR)
 
         if cols_profile:
-            lines.append(f"{'Field Name':<22} {'Semantic Type':<18} {'Analytical Role':<20} {'Missing':<10} {'Unique':<10} {'Policy'}")
+            lines.append(
+                f"{'Field Name':<22} {'Semantic Type':<18} {'Analytical Role':<20} {'Missing':<10} {'Unique':<10} {'Policy'}"
+            )
             lines.append("-" * 96)
             for cname, cdata in cols_profile.items():
                 disp_name = cname if len(cname) <= 20 else cname[:18] + ".."
@@ -164,15 +200,18 @@ class TextReportExporter:
             lines.append("Categorical Dimension Breakdown:")
             for col_name, stats in cat_data.items():
                 if self._is_pii_column(col_name):
-                    lines.append(f"  • {col_name}: Masked identifier field (cardinality: {stats.get('distinct_count') or stats.get('unique_values') or 'N/A'})")
+                    lines.append(
+                        f"  • {col_name}: Masked identifier field (cardinality: {stats.get('distinct_count') or stats.get('unique_values') or 'N/A'})"
+                    )
                     continue
                 distinct = stats.get("distinct_count") or stats.get("unique_values") or "N/A"
                 top_vals = stats.get("top_values") or stats.get("value_distribution") or {}
                 sum_rows = total_rows or (sum(top_vals.values()) if isinstance(top_vals, dict) else 1) or 1
-                top_str = ", ".join(
-                    f"'{k}' ({v:,} | {(v / sum_rows) * 100.0:.1f}%)"
-                    for k, v in list(top_vals.items())[:3]
-                ) if isinstance(top_vals, dict) else "N/A"
+                top_str = (
+                    ", ".join(f"'{k}' ({v:,} | {(v / sum_rows) * 100.0:.1f}%)" for k, v in list(top_vals.items())[:3])
+                    if isinstance(top_vals, dict)
+                    else "N/A"
+                )
                 lines.append(f"  • {col_name} ({distinct} distinct categories) -> Top cohorts: {top_str}")
             lines.append("")
 
@@ -186,11 +225,15 @@ class TextReportExporter:
                     std_s = f"{mstats.get('standard_deviation', 0.0):.2f}"
                     min_s = f"{mstats.get('minimum', 0.0):.2f}"
                     max_s = f"{mstats.get('maximum', 0.0):.2f}"
-                    lines.append(f"  • {mname}: Mean = {mean_s} | Median = {med_s} | Std Dev = {std_s} | Range = [{min_s}, {max_s}]")
+                    lines.append(
+                        f"  • {mname}: Mean = {mean_s} | Median = {med_s} | Std Dev = {std_s} | Range = [{min_s}, {max_s}]"
+                    )
             lines.append("")
         else:
             lines.append("Numerical Measure Statistics:")
-            lines.append("  • Quantitative relationship analysis was not applicable as no governed numerical measures were identified.")
+            lines.append(
+                "  • Quantitative relationship analysis was not applicable as no governed numerical measures were identified."
+            )
             lines.append("")
 
         # Correlation breakdown
@@ -200,27 +243,41 @@ class TextReportExporter:
             pos = corr_data.get("strongest_positive")
             neg = corr_data.get("strongest_negative")
             if pos and pos.get("correlation") is not None:
-                lines.append(f"  • Strongest Positive: '{pos.get('column_1')}' vs '{pos.get('column_2')}' (r = {pos.get('correlation')})")
+                lines.append(
+                    f"  • Strongest Positive: '{pos.get('column_1')}' vs '{pos.get('column_2')}' (r = {pos.get('correlation')})"
+                )
             if neg and neg.get("correlation") is not None:
-                lines.append(f"  • Strongest Negative: '{neg.get('column_1')}' vs '{neg.get('column_2')}' (r = {neg.get('correlation')})")
+                lines.append(
+                    f"  • Strongest Negative: '{neg.get('column_1')}' vs '{neg.get('column_2')}' (r = {neg.get('correlation')})"
+                )
             lines.append("  • Note: Observed relationships describe association and do not imply causal effects.")
             lines.append("")
         else:
             lines.append("Bivariate Relationships:")
-            lines.append("  • Correlation analysis was not applicable as fewer than two numerical measure columns were present.")
+            lines.append(
+                "  • Correlation analysis was not applicable as fewer than two numerical measure columns were present."
+            )
             lines.append("")
 
         # ==========================================================
         # 5. AI Business Insights (when available)
         # ==========================================================
         if ai_report is not None:
-            model_name = getattr(ai_report, "model", None) or (ai_report.get("model") if isinstance(ai_report, dict) else "Gemma 3")
-            provider = getattr(ai_report, "provider", None) or (ai_report.get("provider") if isinstance(ai_report, dict) else "Ollama")
-            conf = getattr(ai_report, "confidence", None) or (ai_report.get("confidence") if isinstance(ai_report, dict) else "Grounded in deterministic analytics")
+            model_name = getattr(ai_report, "model", None) or (
+                ai_report.get("model") if isinstance(ai_report, dict) else "Gemma 3"
+            )
+            provider = getattr(ai_report, "provider", None) or (
+                ai_report.get("provider") if isinstance(ai_report, dict) else "Ollama"
+            )
+            conf = getattr(ai_report, "confidence", None) or (
+                ai_report.get("confidence") if isinstance(ai_report, dict) else "Grounded in deterministic analytics"
+            )
 
             lines.append("5. AI BUSINESS INSIGHTS (AI-GENERATED) — AI INSIGHTS & INTERPRETATION (AI-GENERATED)")
             lines.append(self.SUBSEPARATOR)
-            lines.append("DISCLAIMER: AI-generated insights provide strategic narratives grounded in deterministic analytics.")
+            lines.append(
+                "DISCLAIMER: AI-generated insights provide strategic narratives grounded in deterministic analytics."
+            )
             lines.append(f"Model: {model_name} | Provider: {provider}")
             lines.append("")
 
@@ -291,9 +348,15 @@ class TextReportExporter:
         # ==========================================================
         lines.append("7. DATA LIMITATIONS & CAVEATS")
         lines.append(self.SUBSEPARATOR)
-        lines.append("• Scope Constraint: Analysis is strictly bounded by ingested dataset fields and observed records.")
-        lines.append("• Non-Causality   : Observational records describe correlation and distribution; causal conclusions require experimental validation.")
-        lines.append("• Domain Context  : Business actions should validate these empirical findings with domain operational experts.")
+        lines.append(
+            "• Scope Constraint: Analysis is strictly bounded by ingested dataset fields and observed records."
+        )
+        lines.append(
+            "• Non-Causality   : Observational records describe correlation and distribution; causal conclusions require experimental validation."
+        )
+        lines.append(
+            "• Domain Context  : Business actions should validate these empirical findings with domain operational experts."
+        )
         lines.append("")
 
         # ==========================================================
@@ -339,11 +402,13 @@ class TextReportExporter:
                     if top_dict:
                         top_k, top_v = next(iter(top_dict.items()))
                         pct_str = f" ({(top_v / total_rows) * 100.0:.1f}%)" if total_rows and total_rows > 0 else ""
-                        recs.append((
-                            f"'{col_name}' concentration: '{top_k}' accounts for {top_v:,} records{pct_str}.",
-                            f"Records are concentrated in the '{top_k}' category relative to other observed categories.",
-                            f"Consider segmented reporting for '{top_k}' if category segmentation aligns with operational requirements.",
-                        ))
+                        recs.append(
+                            (
+                                f"'{col_name}' concentration: '{top_k}' accounts for {top_v:,} records{pct_str}.",
+                                f"Records are concentrated in the '{top_k}' category relative to other observed categories.",
+                                f"Consider segmented reporting for '{top_k}' if category segmentation aligns with operational requirements.",
+                            )
+                        )
                         break
 
         if num_data:
@@ -352,18 +417,22 @@ class TextReportExporter:
                 min_v = stats.get("minimum", 0.0)
                 max_v = stats.get("maximum", 0.0)
                 med_v = stats.get("median", 0.0)
-                recs.append((
-                    f"'{col_name}' spans from {min_v:,.2f} to {max_v:,.2f} with a sample median of {med_v:,.2f}.",
-                    f"Continuous measure variance indicates dispersion across the observed range.",
-                    f"Incorporate '{col_name}' variance thresholds into monitoring reports if tracking this measure is required.",
-                ))
+                recs.append(
+                    (
+                        f"'{col_name}' spans from {min_v:,.2f} to {max_v:,.2f} with a sample median of {med_v:,.2f}.",
+                        f"Continuous measure variance indicates dispersion across the observed range.",
+                        f"Incorporate '{col_name}' variance thresholds into monitoring reports if tracking this measure is required.",
+                    )
+                )
         else:
             if not cat_data:
                 return []
-            recs.append((
-                "The analyzed dataset contains zero governed numerical measures.",
-                "Quantitative relationship analysis is bounded by the current categorical schema structure.",
-                "Consider enriching future data ingestion with numerical value measures if quantitative performance tracking is required.",
-            ))
+            recs.append(
+                (
+                    "The analyzed dataset contains zero governed numerical measures.",
+                    "Quantitative relationship analysis is bounded by the current categorical schema structure.",
+                    "Consider enriching future data ingestion with numerical value measures if quantitative performance tracking is required.",
+                )
+            )
 
         return recs

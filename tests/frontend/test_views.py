@@ -52,9 +52,11 @@ def sample_dashboard_data():
 
 def test_ai_insights_page_empty_state():
     """Verify AI Insights view renders empty state when no dataset is loaded."""
-    with patch("src.frontend.views.ai_insights_page.get_dashboard_data") as mock_data, \
-         patch("src.frontend.views.ai_insights_page.scroll_to_top") as mock_scroll, \
-         patch("src.frontend.views.ai_insights_page.render_empty_state") as mock_empty:
+    with (
+        patch("src.frontend.views.ai_insights_page.get_dashboard_data") as mock_data,
+        patch("src.frontend.views.ai_insights_page.scroll_to_top") as mock_scroll,
+        patch("src.frontend.views.ai_insights_page.render_empty_state") as mock_empty,
+    ):
         mock_data.return_value = {"dataset_loaded": False}
 
         ai_insights_page.render()
@@ -67,9 +69,11 @@ def test_ai_insights_page_empty_state():
 
 def test_ai_insights_page_with_insights(sample_dashboard_data):
     """Verify AI Insights view renders insights when ai_report is present."""
-    with patch("src.frontend.views.ai_insights_page.get_dashboard_data", return_value=sample_dashboard_data), \
-         patch("src.frontend.views.ai_insights_page.scroll_to_top") as mock_scroll, \
-         patch("src.frontend.views.ai_insights_page.render_ai_insights") as mock_render_insights:
+    with (
+        patch("src.frontend.views.ai_insights_page.get_dashboard_data", return_value=sample_dashboard_data),
+        patch("src.frontend.views.ai_insights_page.scroll_to_top") as mock_scroll,
+        patch("src.frontend.views.ai_insights_page.render_ai_insights") as mock_render_insights,
+    ):
 
         ai_insights_page.render()
 
@@ -79,9 +83,11 @@ def test_ai_insights_page_with_insights(sample_dashboard_data):
 
 def test_dashboard_page_empty_state():
     """Verify Dashboard view renders empty state when no dataset is loaded."""
-    with patch("src.frontend.views.dashboard_page.get_dashboard_data") as mock_data, \
-         patch("src.frontend.views.dashboard_page.scroll_to_top") as mock_scroll, \
-         patch("src.frontend.views.dashboard_page.render_empty_state") as mock_empty:
+    with (
+        patch("src.frontend.views.dashboard_page.get_dashboard_data") as mock_data,
+        patch("src.frontend.views.dashboard_page.scroll_to_top") as mock_scroll,
+        patch("src.frontend.views.dashboard_page.render_empty_state") as mock_empty,
+    ):
         mock_data.return_value = {"dataset_loaded": False}
 
         dashboard_page.render()
@@ -94,12 +100,14 @@ def test_dashboard_page_empty_state():
 
 def test_dashboard_page_hierarchy(sample_dashboard_data):
     """Verify Dashboard view renders KPI cards, pipeline status, and data tabs without embedded AI insights."""
-    with patch("src.frontend.views.dashboard_page.get_dashboard_data", return_value=sample_dashboard_data), \
-         patch("src.frontend.views.dashboard_page.scroll_to_top") as mock_scroll, \
-         patch("src.frontend.views.dashboard_page.render_kpi_cards") as mock_kpis, \
-         patch("src.frontend.views.dashboard_page.render_pipeline_status") as mock_pipe, \
-         patch("src.frontend.views.dashboard_page.render_dashboard_summary") as mock_sum, \
-         patch("src.frontend.views.dashboard_page.render_quick_actions") as mock_qa:
+    with (
+        patch("src.frontend.views.dashboard_page.get_dashboard_data", return_value=sample_dashboard_data),
+        patch("src.frontend.views.dashboard_page.scroll_to_top") as mock_scroll,
+        patch("src.frontend.views.dashboard_page.render_kpi_cards") as mock_kpis,
+        patch("src.frontend.views.dashboard_page.render_pipeline_status") as mock_pipe,
+        patch("src.frontend.views.dashboard_page.render_dashboard_summary") as mock_sum,
+        patch("src.frontend.views.dashboard_page.render_quick_actions") as mock_qa,
+    ):
 
         dashboard_page.render()
 
@@ -112,9 +120,11 @@ def test_dashboard_page_hierarchy(sample_dashboard_data):
 
 def test_report_page_empty_state():
     """Verify Reports view renders empty state when no dataset is loaded."""
-    with patch("src.frontend.views.report_page.get_report_data") as mock_data, \
-         patch("src.frontend.views.report_page.scroll_to_top") as mock_scroll, \
-         patch("src.frontend.views.report_page.render_empty_state") as mock_empty:
+    with (
+        patch("src.frontend.views.report_page.get_report_data") as mock_data,
+        patch("src.frontend.views.report_page.scroll_to_top") as mock_scroll,
+        patch("src.frontend.views.report_page.render_empty_state") as mock_empty,
+    ):
         mock_data.return_value = {"dataset_loaded": False}
 
         report_page.render()
@@ -125,8 +135,10 @@ def test_report_page_empty_state():
 
 def test_about_page_render():
     """Verify About view calls scroll_to_top and renders about card."""
-    with patch("src.frontend.views.about_page.scroll_to_top") as mock_scroll, \
-         patch("src.frontend.views.about_page.render_about_card") as mock_card:
+    with (
+        patch("src.frontend.views.about_page.scroll_to_top") as mock_scroll,
+        patch("src.frontend.views.about_page.render_about_card") as mock_card,
+    ):
         about_page.render()
         mock_scroll.assert_called_once()
         mock_card.assert_called_once()

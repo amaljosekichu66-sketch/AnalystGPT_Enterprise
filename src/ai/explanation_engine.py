@@ -52,41 +52,25 @@ class ExplanationEngine:
             Business-friendly explanations.
         """
 
-        logger.info(
-            "Generating explainable analytics..."
-        )
+        logger.info("Generating explainable analytics...")
 
         start_time = time.perf_counter()
 
         try:
 
-            prompt = PromptBuilder.explanations(
-                reporting_report
-            )
+            prompt = PromptBuilder.explanations(reporting_report)
 
-            response = self._llm.generate(
-                prompt
-            )
+            response = self._llm.generate(prompt)
 
-            explanations = [
-                line.strip("-•* ").strip()
-                for line in response.splitlines()
-                if line.strip()
-            ]
+            explanations = [line.strip("-•* ").strip() for line in response.splitlines() if line.strip()]
 
             if not explanations:
-                raise ValueError(
-                    "LLM returned no explanations."
-                )
+                raise ValueError("LLM returned no explanations.")
 
-            execution_time = (
-                time.perf_counter()
-                - start_time
-            )
+            execution_time = time.perf_counter() - start_time
 
             logger.info(
-                "Generated %d explanations "
-                "(%.3f seconds).",
+                "Generated %d explanations " "(%.3f seconds).",
                 len(explanations),
                 execution_time,
             )
@@ -95,8 +79,6 @@ class ExplanationEngine:
 
         except Exception:
 
-            logger.exception(
-                "Explanation generation failed."
-            )
+            logger.exception("Explanation generation failed.")
 
             raise

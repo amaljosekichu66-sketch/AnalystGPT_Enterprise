@@ -31,9 +31,7 @@ def test_clip_outliers_handler():
     handler.validate_params({"lower_quantile": 0.05, "upper_quantile": 0.95})
 
     df = pd.DataFrame({"val": [1, 2, 3, 4, 1000]})
-    transformed_df, cols_removed, detail = handler.apply(
-        df, {"lower_quantile": 0.0, "upper_quantile": 0.8}
-    )
+    transformed_df, cols_removed, detail = handler.apply(df, {"lower_quantile": 0.0, "upper_quantile": 0.8})
     assert transformed_df["val"].max() < 1000
     assert cols_removed == []
     assert "val" in detail
@@ -48,9 +46,7 @@ def test_clip_outliers_invalid_params_raises():
 def test_domain_fallback_handler():
     handler = ConstantFallbackCustomHandler()
     df = pd.DataFrame({"city": ["NY", None, "SF"], "country": [None, "USA", "USA"]})
-    transformed_df, _, detail = handler.apply(
-        df, {"fallbacks": {"city": "Unknown City", "country": "Global"}}
-    )
+    transformed_df, _, detail = handler.apply(df, {"fallbacks": {"city": "Unknown City", "country": "Global"}})
     assert transformed_df["city"].iloc[1] == "Unknown City"
     assert transformed_df["country"].iloc[0] == "Global"
 

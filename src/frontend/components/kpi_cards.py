@@ -16,17 +16,13 @@ def render_kpi_cards(
     Render dashboard KPI cards.
     """
 
-    st.subheader(
-        "📊 Key Performance Indicators"
-    )
+    st.subheader("📊 Key Performance Indicators")
 
     if not data.get(
         "dataset_loaded",
     ):
 
-        st.info(
-            "No dataset loaded."
-        )
+        st.info("No dataset loaded.")
 
         return
 
@@ -161,7 +157,5 @@ def render_kpi_cards(
 
         st.metric(
             "Backend",
-            "API"
-            if source == "api"
-            else "Session",
+            "API" if source == "api" else "Session",
         )

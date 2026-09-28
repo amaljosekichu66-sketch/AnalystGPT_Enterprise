@@ -20,22 +20,20 @@ Sprint 14 Phase 3 — Enterprise Report Export Redesign.
 
 from __future__ import annotations
 
+import textwrap
 from datetime import datetime
 from pathlib import Path
-import textwrap
 from typing import Any
 
 import matplotlib
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
 
-from src.core.config import (
-    DEFAULT_PDF_REPORT_FILENAME,
-    REPORT_OUTPUT_DIRECTORY,
-)
+from src.core import config
 from src.core.logger import logger
+from src.core.pii import is_contact_pii_column
 from src.reporting.structured_report import StructuredReport
 
 matplotlib.use("Agg")  # Non-interactive backend
@@ -46,25 +44,23 @@ class PdfReportExporter:
     Exports a StructuredReport to a polished, publication-grade PDF document.
     """
 
-    PAGE_WIDTH = 8.27   # A4 width in inches
+    PAGE_WIDTH = 8.27  # A4 width in inches
     PAGE_HEIGHT = 11.69  # A4 height in inches
     DPI = 150
 
     # Color Palette
-    COLOR_PRIMARY = "#0F172A"       # Deep Navy / Slate 900
-    COLOR_SECONDARY = "#1E293B"     # Slate 800
-    COLOR_ACCENT = "#2563EB"        # Royal Blue
+    COLOR_PRIMARY = "#0F172A"  # Deep Navy / Slate 900
+    COLOR_SECONDARY = "#1E293B"  # Slate 800
+    COLOR_ACCENT = "#2563EB"  # Royal Blue
     COLOR_ACCENT_LIGHT = "#EFF6FF"  # Blue 50
-    COLOR_TEXT_MAIN = "#0F172A"     # Dark Slate
-    COLOR_TEXT_MUTED = "#64748B"    # Slate 500
-    COLOR_BG_CARD = "#F8FAFC"       # Slate 50
-    COLOR_BORDER = "#E2E8F0"        # Slate 200
-    COLOR_SUCCESS = "#059669"       # Emerald 600
-    COLOR_WARNING = "#D97706"       # Amber 600
-    COLOR_AI_PURPLE = "#7C3AED"     # Violet 600
-    COLOR_AI_BG = "#F5F3FF"         # Violet 50
-
-    _PII_KEYWORDS = {"phone", "email", "ssn", "passport", "credit_card", "mobile", "address", "zip", "id"}
+    COLOR_TEXT_MAIN = "#0F172A"  # Dark Slate
+    COLOR_TEXT_MUTED = "#64748B"  # Slate 500
+    COLOR_BG_CARD = "#F8FAFC"  # Slate 50
+    COLOR_BORDER = "#E2E8F0"  # Slate 200
+    COLOR_SUCCESS = "#059669"  # Emerald 600
+    COLOR_WARNING = "#D97706"  # Amber 600
+    COLOR_AI_PURPLE = "#7C3AED"  # Violet 600
+    COLOR_AI_BG = "#F5F3FF"  # Violet 50
 
     def export(
         self,
@@ -103,9 +99,10 @@ class PdfReportExporter:
         if output_path is not None:
             p = Path(output_path)
             if p.is_dir():
-                return p / DEFAULT_PDF_REPORT_FILENAME
+                return p / config.DEFAULT_PDF_REPORT_FILENAME
             return p
-        return Path(REPORT_OUTPUT_DIRECTORY) / DEFAULT_PDF_REPORT_FILENAME
+        # Read through `config` so a redirected output directory is honoured.
+        return Path(config.REPORT_OUTPUT_DIRECTORY) / config.DEFAULT_PDF_REPORT_FILENAME
 
     # ==========================================================
     # Page Orchestration
@@ -131,18 +128,10 @@ class PdfReportExporter:
         dist_data = analytics.get("distribution_analysis", {})
 
         # Page 1: Executive Cover & Brief
-        pages.append(
-            lambda fig, p_num, p_tot: self._render_page_executive_brief(
-                fig, report, ai_report, lineage
-            )
-        )
+        pages.append(lambda fig, p_num, p_tot: self._render_page_executive_brief(fig, report, ai_report, lineage))
 
         # Page 2: Dataset Profile & Governance Table
-        pages.append(
-            lambda fig, p_num, p_tot: self._render_page_dataset_governance(
-                fig, report, cols_profile, lineage
-            )
-        )
+        pages.append(lambda fig, p_num, p_tot: self._render_page_dataset_governance(fig, report, cols_profile, lineage))
 
         # If columns exceed standard table size, add continuation table pages
         if len(cols_profile) > 14:
@@ -163,17 +152,11 @@ class PdfReportExporter:
 
         # Page 4: AI Insights (if available)
         if ai_report is not None:
-            pages.append(
-                lambda fig, p_num, p_tot: self._render_page_ai_insights(
-                    fig, report, ai_report
-                )
-            )
+            pages.append(lambda fig, p_num, p_tot: self._render_page_ai_insights(fig, report, ai_report))
 
         # Page 5: Recommendations, Governance Limitations & Provenance
         pages.append(
-            lambda fig, p_num, p_tot: self._render_page_recommendations_and_lineage(
-                fig, report, ai_report, lineage
-            )
+            lambda fig, p_num, p_tot: self._render_page_recommendations_and_lineage(fig, report, ai_report, lineage)
         )
 
         return pages
@@ -280,9 +263,19 @@ class PdfReportExporter:
             va="top",
         )
 
-        gen_date = report.generated_at.strftime("%d %b %Y, %H:%M UTC") if isinstance(report.generated_at, datetime) else str(report.generated_at)
-        run_id_str = f"Run: #{lineage.get('pipeline_run_id')}" if lineage and lineage.get("pipeline_run_id") is not None else "Run: Standard"
-        meta_str = f"Dataset: {report.title}   |   {run_id_str}   |   Generated: {gen_date}   |   Classification: Confidential"
+        gen_date = (
+            report.generated_at.strftime("%d %b %Y, %H:%M UTC")
+            if isinstance(report.generated_at, datetime)
+            else str(report.generated_at)
+        )
+        run_id_str = (
+            f"Run: #{lineage.get('pipeline_run_id')}"
+            if lineage and lineage.get("pipeline_run_id") is not None
+            else "Run: Standard"
+        )
+        meta_str = (
+            f"Dataset: {report.title}   |   {run_id_str}   |   Generated: {gen_date}   |   Classification: Confidential"
+        )
         ax.text(
             0.04,
             0.865,
@@ -306,7 +299,11 @@ class PdfReportExporter:
         duplicates = profile.get("duplicate_rows_count", 0) if isinstance(profile, dict) else 0
 
         kpi_defs = [
-            ("TOTAL RECORDS", f"{total_rows:,}" if isinstance(total_rows, int) else str(total_rows), "Verified dataset size"),
+            (
+                "TOTAL RECORDS",
+                f"{total_rows:,}" if isinstance(total_rows, int) else str(total_rows),
+                "Verified dataset size",
+            ),
             ("TOTAL COLUMNS", str(total_cols), "Ingested schema width"),
             ("COMPLETENESS", comp_pct, "Non-null data ratio"),
             ("DUPLICATE ROWS", f"{duplicates:,}", "Identified duplicate records"),
@@ -335,8 +332,24 @@ class PdfReportExporter:
             )
             ax.add_patch(card_patch)
 
-            ax.text(cx + 0.02, cy + card_h - 0.018, k_label, fontsize=7.5, fontweight="bold", color=self.COLOR_TEXT_MUTED, va="top")
-            ax.text(cx + 0.02, cy + card_h - 0.042, k_val, fontsize=14, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+            ax.text(
+                cx + 0.02,
+                cy + card_h - 0.018,
+                k_label,
+                fontsize=7.5,
+                fontweight="bold",
+                color=self.COLOR_TEXT_MUTED,
+                va="top",
+            )
+            ax.text(
+                cx + 0.02,
+                cy + card_h - 0.042,
+                k_val,
+                fontsize=14,
+                fontweight="bold",
+                color=self.COLOR_PRIMARY,
+                va="top",
+            )
             ax.text(cx + 0.02, cy + 0.014, k_sub, fontsize=6.5, color="#94A3B8", va="bottom")
 
         # 3. Executive Summary Section
@@ -345,14 +358,17 @@ class PdfReportExporter:
         ax.plot([0.0, 1.0], [curr_y - 0.012, curr_y - 0.012], color=self.COLOR_ACCENT, linewidth=1.5)
         curr_y -= 0.03
 
-        summary_text = report.executive_summary or "The analytics pipeline completed deterministic data verification and semantic structure analysis."
+        summary_text = (
+            report.executive_summary
+            or "The analytics pipeline completed deterministic data verification and semantic structure analysis."
+        )
         if isinstance(summary_text, list):
             summary_text = " ".join(summary_text)
 
         wrapped_summary = textwrap.fill(summary_text, width=95)
         ax.text(0.0, curr_y, wrapped_summary, fontsize=8.5, color=self.COLOR_TEXT_MAIN, va="top", linespacing=1.4)
         summary_lines_cnt = len(wrapped_summary.split("\n"))
-        curr_y -= (summary_lines_cnt * 0.022 + 0.03)
+        curr_y -= summary_lines_cnt * 0.022 + 0.03
 
         # 4. AI-Assisted Analytical Interpretation (if available)
         if ai_report is not None:
@@ -360,8 +376,12 @@ class PdfReportExporter:
             ai_summary = getattr(ai_report, "executive_summary", None) or (
                 ai_report.get("executive_summary") if isinstance(ai_report, dict) else ""
             )
-            ai_model = getattr(ai_report, "model", None) or (ai_report.get("model") if isinstance(ai_report, dict) else "LLM")
-            ai_conf = getattr(ai_report, "confidence", None) or (ai_report.get("confidence") if isinstance(ai_report, dict) else "Grounded in deterministic analytics")
+            ai_model = getattr(ai_report, "model", None) or (
+                ai_report.get("model") if isinstance(ai_report, dict) else "LLM"
+            )
+            ai_conf = getattr(ai_report, "confidence", None) or (
+                ai_report.get("confidence") if isinstance(ai_report, dict) else "Grounded in deterministic analytics"
+            )
 
             wrapped_ai = textwrap.fill(str(ai_summary), width=90)
             ai_lines_cnt = len(wrapped_ai.split("\n"))
@@ -416,7 +436,7 @@ class PdfReportExporter:
         for t in takeaways[:3]:
             wrapped_t = textwrap.fill(t, width=90)
             ax.text(0.02, curr_y, f"•  {wrapped_t}", fontsize=8, color=self.COLOR_TEXT_MAIN, va="top", linespacing=1.3)
-            curr_y -= (len(wrapped_t.split("\n")) * 0.020 + 0.008)
+            curr_y -= len(wrapped_t.split("\n")) * 0.020 + 0.008
 
         ax.set_xlim(0.0, 1.0)
         ax.set_ylim(0.0, 1.0)
@@ -438,8 +458,23 @@ class PdfReportExporter:
         ax.set_ylim(0.0, 1.0)
 
         # Section Header
-        ax.text(0.0, 0.98, "DATASET PROFILE & DATA GOVERNANCE", fontsize=13, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
-        ax.text(0.0, 0.95, "Comprehensive schema breakdown, semantic classification, and null-governance policy audit.", fontsize=8, color=self.COLOR_TEXT_MUTED, va="top")
+        ax.text(
+            0.0,
+            0.98,
+            "DATASET PROFILE & DATA GOVERNANCE",
+            fontsize=13,
+            fontweight="bold",
+            color=self.COLOR_PRIMARY,
+            va="top",
+        )
+        ax.text(
+            0.0,
+            0.95,
+            "Comprehensive schema breakdown, semantic classification, and null-governance policy audit.",
+            fontsize=8,
+            color=self.COLOR_TEXT_MUTED,
+            va="top",
+        )
         ax.plot([0.0, 1.0], [0.935, 0.935], color=self.COLOR_ACCENT, linewidth=1.5)
 
         # Profile Summary Pills
@@ -500,7 +535,14 @@ class PdfReportExporter:
                     cell.set_facecolor(bg)
                     cell.get_text().set_color(self.COLOR_TEXT_MAIN)
         else:
-            ax.text(0.0, 0.85, "All dataset fields adhere to standard enterprise schema validation.", fontsize=9, color=self.COLOR_TEXT_MUTED, va="top")
+            ax.text(
+                0.0,
+                0.85,
+                "All dataset fields adhere to standard enterprise schema validation.",
+                fontsize=9,
+                color=self.COLOR_TEXT_MUTED,
+                va="top",
+            )
 
     def _render_page_governance_continuation(
         self,
@@ -512,10 +554,18 @@ class PdfReportExporter:
         ax = fig.add_axes((0.08, 0.06, 0.84, 0.88))
         ax.axis("off")
 
-        ax.text(0.0, 0.94, "DATASET PROFILE & DATA GOVERNANCE (CONTINUED)", fontsize=13, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+        ax.text(
+            0.0,
+            0.94,
+            "DATASET PROFILE & DATA GOVERNANCE (CONTINUED)",
+            fontsize=13,
+            fontweight="bold",
+            color=self.COLOR_PRIMARY,
+            va="top",
+        )
         ax.plot([0.0, 1.0], [0.91, 0.91], color=self.COLOR_ACCENT, linewidth=1.5)
 
-        table_cols = list(cols_profile.items())[start_idx:start_idx + 18]
+        table_cols = list(cols_profile.items())[start_idx : start_idx + 18]
         if table_cols:
             headers = ["Field Name", "Semantic Type", "Analytical Role", "Missing", "Unique", "Governance Policy"]
             cell_data = []
@@ -576,8 +626,23 @@ class PdfReportExporter:
         header_ax.set_xlim(0.0, 1.0)
         header_ax.set_ylim(0.0, 1.0)
 
-        header_ax.text(0.0, 0.95, "VISUAL ANALYTICS & EMPIRICAL PATTERNS", fontsize=13, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
-        header_ax.text(0.0, 0.55, "Evidence-based distributions, category concentrations, and statistical summaries.", fontsize=8, color=self.COLOR_TEXT_MUTED, va="top")
+        header_ax.text(
+            0.0,
+            0.95,
+            "VISUAL ANALYTICS & EMPIRICAL PATTERNS",
+            fontsize=13,
+            fontweight="bold",
+            color=self.COLOR_PRIMARY,
+            va="top",
+        )
+        header_ax.text(
+            0.0,
+            0.55,
+            "Evidence-based distributions, category concentrations, and statistical summaries.",
+            fontsize=8,
+            color=self.COLOR_TEXT_MUTED,
+            va="top",
+        )
         header_ax.plot([0.0, 1.0], [0.25, 0.25], color=self.COLOR_ACCENT, linewidth=1.5)
 
         total_rows = report.analytics.get("descriptive_statistics", {}).get("total_rows") if report.analytics else None
@@ -599,15 +664,19 @@ class PdfReportExporter:
         narrative_ax.set_xlim(0.0, 1.0)
         narrative_ax.set_ylim(0.0, 1.0)
 
-        narrative_ax.text(0.0, 0.98, "KEY STATISTICAL FINDINGS", fontsize=10.5, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+        narrative_ax.text(
+            0.0, 0.98, "KEY STATISTICAL FINDINGS", fontsize=10.5, fontweight="bold", color=self.COLOR_PRIMARY, va="top"
+        )
         narrative_ax.plot([0.0, 1.0], [0.94, 0.94], color=self.COLOR_BORDER, linewidth=1.0)
 
         findings_lines = self._generate_analytical_narrative(cat_data, num_data, corr_data, total_rows)
         curr_y = 0.86
         for f in findings_lines:
             wrapped = textwrap.fill(f, width=95)
-            narrative_ax.text(0.01, curr_y, wrapped, fontsize=7.8, color=self.COLOR_TEXT_MAIN, va="top", linespacing=1.35)
-            curr_y -= (len(wrapped.split("\n")) * 0.055 + 0.025)
+            narrative_ax.text(
+                0.01, curr_y, wrapped, fontsize=7.8, color=self.COLOR_TEXT_MAIN, va="top", linespacing=1.35
+            )
+            curr_y -= len(wrapped.split("\n")) * 0.055 + 0.025
 
     def _select_best_categorical_dimension(
         self,
@@ -628,8 +697,7 @@ class PdfReportExporter:
         for col_name, stats in cat_data.items():
             if not isinstance(stats, dict):
                 continue
-            low_col = col_name.lower()
-            if any(k in low_col for k in self._PII_KEYWORDS):
+            if is_contact_pii_column(col_name):
                 continue
 
             c_profile = cols_profile.get(col_name, {})
@@ -638,10 +706,23 @@ class PdfReportExporter:
 
             if role in {"identifier", "contact_identifier", "constant_attribute", "descriptive_attribute"}:
                 continue
-            if sem_type in {"phone", "email", "identifier", "constant", "person_name", "address", "free_text", "postal_code"}:
+            if sem_type in {
+                "phone",
+                "email",
+                "identifier",
+                "constant",
+                "person_name",
+                "address",
+                "free_text",
+                "postal_code",
+            }:
                 continue
 
-            distinct = stats.get("unique_values") or stats.get("distinct_count") or len(stats.get("value_distribution") or stats.get("top_values") or {})
+            distinct = (
+                stats.get("unique_values")
+                or stats.get("distinct_count")
+                or len(stats.get("value_distribution") or stats.get("top_values") or {})
+            )
             if distinct <= 1:
                 continue
 
@@ -724,10 +805,20 @@ class PdfReportExporter:
             ax.set_yticks(y_pos)
             ax.set_yticklabels(labels, fontsize=7.2, color=self.COLOR_TEXT_MAIN)
             ax.tick_params(axis="x", labelsize=7, colors=self.COLOR_TEXT_MUTED)
-            ax.set_title(f"Distribution: {target_col}", fontsize=8.5, fontweight="bold", color=self.COLOR_PRIMARY, pad=6)
+            ax.set_title(
+                f"Distribution: {target_col}", fontsize=8.5, fontweight="bold", color=self.COLOR_PRIMARY, pad=6
+            )
             ax.grid(axis="x", linestyle="--", alpha=0.4, color=self.COLOR_BORDER)
         else:
-            ax.text(0.5, 0.5, f"Category count: {len(cat_data)} dimensions", ha="center", va="center", fontsize=8, color=self.COLOR_TEXT_MUTED)
+            ax.text(
+                0.5,
+                0.5,
+                f"Category count: {len(cat_data)} dimensions",
+                ha="center",
+                va="center",
+                fontsize=8,
+                color=self.COLOR_TEXT_MUTED,
+            )
             ax.set_xticks([])
             ax.set_yticks([])
 
@@ -748,7 +839,15 @@ class PdfReportExporter:
 
         col_name, stats = next(iter(num_data.items()))
         if not isinstance(stats, dict):
-            ax.text(0.5, 0.5, "Measure statistics unavailable", ha="center", va="center", fontsize=8, color=self.COLOR_TEXT_MUTED)
+            ax.text(
+                0.5,
+                0.5,
+                "Measure statistics unavailable",
+                ha="center",
+                va="center",
+                fontsize=8,
+                color=self.COLOR_TEXT_MUTED,
+            )
             ax.set_xticks([])
             ax.set_yticks([])
             return
@@ -768,14 +867,29 @@ class PdfReportExporter:
 
         # Render structured summary card directly onto axis
         ax.axis("off")
-        ax.text(0.05, 0.92, f"EMPIRICAL MEASURE SUMMARY: {col_name.upper()}", fontsize=8.5, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+        ax.text(
+            0.05,
+            0.92,
+            f"EMPIRICAL MEASURE SUMMARY: {col_name.upper()}",
+            fontsize=8.5,
+            fontweight="bold",
+            color=self.COLOR_PRIMARY,
+            va="top",
+        )
         ax.plot([0.05, 0.95], [0.84, 0.84], color=self.COLOR_BORDER, linewidth=0.75)
 
         rows = [
             ("Sample Mean", f"{mean_v:,.2f}" if isinstance(mean_v, (int, float)) else str(mean_v)),
             ("Median", f"{med_v:,.2f}" if isinstance(med_v, (int, float)) else str(med_v)),
             ("Std Deviation", f"{std_v:,.2f}" if isinstance(std_v, (int, float)) else str(std_v)),
-            ("Min / Max Range", f"{min_v:,.2f}  to  {max_v:,.2f}" if isinstance(min_v, (int, float)) and isinstance(max_v, (int, float)) else "N/A"),
+            (
+                "Min / Max Range",
+                (
+                    f"{min_v:,.2f}  to  {max_v:,.2f}"
+                    if isinstance(min_v, (int, float)) and isinstance(max_v, (int, float))
+                    else "N/A"
+                ),
+            ),
         ]
         if q1_v is not None and q3_v is not None:
             rows.append(("Quartiles (Q1 / Q3)", f"{q1_v:,.2f}  /  {q3_v:,.2f}"))
@@ -786,7 +900,9 @@ class PdfReportExporter:
         y_cursor = 0.76
         for label, val in rows:
             ax.text(0.05, y_cursor, label, fontsize=7.2, color=self.COLOR_TEXT_MUTED, va="top")
-            ax.text(0.95, y_cursor, val, fontsize=7.5, fontweight="bold", color=self.COLOR_PRIMARY, ha="right", va="top")
+            ax.text(
+                0.95, y_cursor, val, fontsize=7.5, fontweight="bold", color=self.COLOR_PRIMARY, ha="right", va="top"
+            )
             y_cursor -= 0.12
 
     def _plot_dimension_composition(
@@ -805,7 +921,7 @@ class PdfReportExporter:
 
         valid_dims = []
         for k in list(cat_data.keys()):
-            if not any(p in k.lower() for p in self._PII_KEYWORDS):
+            if not is_contact_pii_column(k):
                 valid_dims.append(k)
 
         display_dims = valid_dims[:5] if valid_dims else list(cat_data.keys())[:5]
@@ -815,7 +931,11 @@ class PdfReportExporter:
         for k in display_dims:
             c_info = cat_data[k]
             if isinstance(c_info, dict):
-                cardinalities.append(c_info.get("unique_values") or c_info.get("distinct_count") or len(c_info.get("value_distribution", {})))
+                cardinalities.append(
+                    c_info.get("unique_values")
+                    or c_info.get("distinct_count")
+                    or len(c_info.get("value_distribution", {}))
+                )
             else:
                 cardinalities.append(0)
 
@@ -825,10 +945,20 @@ class PdfReportExporter:
             ax.set_xticks(x_pos)
             ax.set_xticklabels(dim_names, fontsize=7, rotation=15, ha="right")
             ax.tick_params(axis="y", labelsize=7, colors=self.COLOR_TEXT_MUTED)
-            ax.set_title("Categorical Cardinality Profile", fontsize=8.5, fontweight="bold", color=self.COLOR_PRIMARY, pad=6)
+            ax.set_title(
+                "Categorical Cardinality Profile", fontsize=8.5, fontweight="bold", color=self.COLOR_PRIMARY, pad=6
+            )
             ax.grid(axis="y", linestyle="--", alpha=0.4, color=self.COLOR_BORDER)
         else:
-            ax.text(0.5, 0.5, "Dimension cardinality unavailable", ha="center", va="center", fontsize=8, color=self.COLOR_TEXT_MUTED)
+            ax.text(
+                0.5,
+                0.5,
+                "Dimension cardinality unavailable",
+                ha="center",
+                va="center",
+                fontsize=8,
+                color=self.COLOR_TEXT_MUTED,
+            )
             ax.set_xticks([])
             ax.set_yticks([])
 
@@ -851,7 +981,9 @@ class PdfReportExporter:
                     if top:
                         top_k, top_v = next(iter(top.items()))
                         pct_str = f" ({(top_v / total_rows) * 100.0:.1f}%)" if total_rows and total_rows > 0 else ""
-                        dominant_examples.append(f"'{col}' most frequent category is '{top_k}' with {top_v} records{pct_str}")
+                        dominant_examples.append(
+                            f"'{col}' most frequent category is '{top_k}' with {top_v} records{pct_str}"
+                        )
             example_str = f" Specifically, {'; '.join(dominant_examples)}." if dominant_examples else ""
             narrative.append(
                 f"• Categorical Dimensions: The dataset contains {dim_cnt} analyzed categorical dimensions.{example_str}"
@@ -865,7 +997,9 @@ class PdfReportExporter:
                     mean_val = stats.get("mean", 0.0)
                     med_val = stats.get("median", 0.0)
                     std_val = stats.get("standard_deviation", 0.0)
-                    m_summaries.append(f"'{col}' has mean {mean_val:.2f}, median {med_val:.2f}, and standard deviation {std_val:.2f}")
+                    m_summaries.append(
+                        f"'{col}' has mean {mean_val:.2f}, median {med_val:.2f}, and standard deviation {std_val:.2f}"
+                    )
             narrative.append(
                 f"• Quantitative Measures: Sample statistics for governed measures show {'; '.join(m_summaries)}."
             )
@@ -904,12 +1038,31 @@ class PdfReportExporter:
         ax.set_xlim(0.0, 1.0)
         ax.set_ylim(0.0, 1.0)
 
-        model_name = getattr(ai_report, "model", None) or (ai_report.get("model") if isinstance(ai_report, dict) else "Gemma 3")
-        provider = getattr(ai_report, "provider", None) or (ai_report.get("provider") if isinstance(ai_report, dict) else "Ollama")
+        model_name = getattr(ai_report, "model", None) or (
+            ai_report.get("model") if isinstance(ai_report, dict) else "Gemma 3"
+        )
+        provider = getattr(ai_report, "provider", None) or (
+            ai_report.get("provider") if isinstance(ai_report, dict) else "Ollama"
+        )
 
         # Header
-        ax.text(0.0, 0.94, "AI INSIGHTS & STRATEGIC SYNTHESIS", fontsize=13, fontweight="bold", color=self.COLOR_AI_PURPLE, va="top")
-        ax.text(0.0, 0.91, f"Synthesized via {provider} ({model_name}) — Authoritative grounding in deterministic analytics.", fontsize=8, color=self.COLOR_TEXT_MUTED, va="top")
+        ax.text(
+            0.0,
+            0.94,
+            "AI INSIGHTS & STRATEGIC SYNTHESIS",
+            fontsize=13,
+            fontweight="bold",
+            color=self.COLOR_AI_PURPLE,
+            va="top",
+        )
+        ax.text(
+            0.0,
+            0.91,
+            f"Synthesized via {provider} ({model_name}) — Authoritative grounding in deterministic analytics.",
+            fontsize=8,
+            color=self.COLOR_TEXT_MUTED,
+            va="top",
+        )
         ax.plot([0.0, 1.0], [0.895, 0.895], color=self.COLOR_AI_PURPLE, linewidth=1.5)
 
         curr_y = 0.86
@@ -922,41 +1075,100 @@ class PdfReportExporter:
             or (ai_report.get("explanations") if isinstance(ai_report, dict) else [])
         )
         if findings:
-            ax.text(0.0, curr_y, "Key Analytical Findings", fontsize=10, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+            ax.text(
+                0.0,
+                curr_y,
+                "Key Analytical Findings",
+                fontsize=10,
+                fontweight="bold",
+                color=self.COLOR_PRIMARY,
+                va="top",
+            )
             curr_y -= 0.022
             for f in findings[:2]:
                 wrapped_f = textwrap.fill(str(f), width=92)
-                ax.text(0.02, curr_y, f"•  {wrapped_f}", fontsize=7.8, color=self.COLOR_TEXT_MAIN, va="top", linespacing=1.3)
-                curr_y -= (len(wrapped_f.split("\n")) * 0.019 + 0.008)
+                ax.text(
+                    0.02, curr_y, f"•  {wrapped_f}", fontsize=7.8, color=self.COLOR_TEXT_MAIN, va="top", linespacing=1.3
+                )
+                curr_y -= len(wrapped_f.split("\n")) * 0.019 + 0.008
             curr_y -= 0.012
 
         # 2. Business Implications & Opportunities
-        implications = getattr(ai_report, "business_implications", None) or (ai_report.get("business_implications") if isinstance(ai_report, dict) else [])
+        implications = getattr(ai_report, "business_implications", None) or (
+            ai_report.get("business_implications") if isinstance(ai_report, dict) else []
+        )
         if implications:
-            ax.text(0.0, curr_y, "Business Implications & Opportunities", fontsize=10, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+            ax.text(
+                0.0,
+                curr_y,
+                "Business Implications & Opportunities",
+                fontsize=10,
+                fontweight="bold",
+                color=self.COLOR_PRIMARY,
+                va="top",
+            )
             curr_y -= 0.022
             for imp in implications[:2]:
                 wrapped_imp = textwrap.fill(str(imp), width=92)
-                ax.text(0.02, curr_y, f"•  {wrapped_imp}", fontsize=7.8, color=self.COLOR_TEXT_MAIN, va="top", linespacing=1.3)
-                curr_y -= (len(wrapped_imp.split("\n")) * 0.019 + 0.008)
+                ax.text(
+                    0.02,
+                    curr_y,
+                    f"•  {wrapped_imp}",
+                    fontsize=7.8,
+                    color=self.COLOR_TEXT_MAIN,
+                    va="top",
+                    linespacing=1.3,
+                )
+                curr_y -= len(wrapped_imp.split("\n")) * 0.019 + 0.008
             curr_y -= 0.012
 
         # 3. Prioritized Actions
-        recs = getattr(ai_report, "recommendations", None) or (ai_report.get("recommendations") if isinstance(ai_report, dict) else [])
+        recs = getattr(ai_report, "recommendations", None) or (
+            ai_report.get("recommendations") if isinstance(ai_report, dict) else []
+        )
         if recs:
-            ax.text(0.0, curr_y, "Prioritized Strategic Actions", fontsize=10, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+            ax.text(
+                0.0,
+                curr_y,
+                "Prioritized Strategic Actions",
+                fontsize=10,
+                fontweight="bold",
+                color=self.COLOR_PRIMARY,
+                va="top",
+            )
             curr_y -= 0.022
             for idx, r in enumerate(recs[:2], start=1):
                 wrapped_r = textwrap.fill(str(r), width=92)
-                ax.text(0.02, curr_y, f"{idx}.  {wrapped_r}", fontsize=7.8, color=self.COLOR_TEXT_MAIN, va="top", linespacing=1.3)
-                curr_y -= (len(wrapped_r.split("\n")) * 0.019 + 0.008)
+                ax.text(
+                    0.02,
+                    curr_y,
+                    f"{idx}.  {wrapped_r}",
+                    fontsize=7.8,
+                    color=self.COLOR_TEXT_MAIN,
+                    va="top",
+                    linespacing=1.3,
+                )
+                curr_y -= len(wrapped_r.split("\n")) * 0.019 + 0.008
             curr_y -= 0.012
 
         # 4. Evidence Basis & Confidence
-        conf = getattr(ai_report, "confidence", None) or (ai_report.get("confidence") if isinstance(ai_report, dict) else "Grounded in deterministic analytics")
-        ax.text(0.0, curr_y, "Analytical Confidence & Evidence Basis", fontsize=10, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+        conf = getattr(ai_report, "confidence", None) or (
+            ai_report.get("confidence") if isinstance(ai_report, dict) else "Grounded in deterministic analytics"
+        )
+        ax.text(
+            0.0,
+            curr_y,
+            "Analytical Confidence & Evidence Basis",
+            fontsize=10,
+            fontweight="bold",
+            color=self.COLOR_PRIMARY,
+            va="top",
+        )
         curr_y -= 0.022
-        conf_box = textwrap.fill(f"Confidence Level: {conf}. All AI interpretations are programmatically constrained by deterministic calculations and schema profiles.", width=92)
+        conf_box = textwrap.fill(
+            f"Confidence Level: {conf}. All AI interpretations are programmatically constrained by deterministic calculations and schema profiles.",
+            width=92,
+        )
         ax.text(0.02, curr_y, conf_box, fontsize=7.5, fontstyle="italic", color=self.COLOR_TEXT_MUTED, va="top")
 
         ax.set_xlim(0.0, 1.0)
@@ -979,8 +1191,23 @@ class PdfReportExporter:
         ax.set_ylim(0.0, 1.0)
 
         # 1. Recommendations Section
-        ax.text(0.0, 0.94, "EVIDENCE-LINKED RECOMMENDATIONS", fontsize=13, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
-        ax.text(0.0, 0.91, "Conditional operational recommendations strictly grounded in observed dataset evidence.", fontsize=8, color=self.COLOR_TEXT_MUTED, va="top")
+        ax.text(
+            0.0,
+            0.94,
+            "EVIDENCE-LINKED RECOMMENDATIONS",
+            fontsize=13,
+            fontweight="bold",
+            color=self.COLOR_PRIMARY,
+            va="top",
+        )
+        ax.text(
+            0.0,
+            0.91,
+            "Conditional operational recommendations strictly grounded in observed dataset evidence.",
+            fontsize=8,
+            color=self.COLOR_TEXT_MUTED,
+            va="top",
+        )
         ax.plot([0.0, 1.0], [0.895, 0.895], color=self.COLOR_ACCENT, linewidth=1.5)
 
         recs = self._build_evidence_recommendations(report)
@@ -1008,19 +1235,45 @@ class PdfReportExporter:
             ax.add_patch(card_patch)
 
             text_y = curr_y - 0.014
-            ax.text(0.02, text_y, w_obs, fontsize=7.5, fontweight="bold", color=self.COLOR_PRIMARY, va="top", linespacing=1.25)
-            text_y -= (obs_lines * 0.018 + 0.006)
+            ax.text(
+                0.02,
+                text_y,
+                w_obs,
+                fontsize=7.5,
+                fontweight="bold",
+                color=self.COLOR_PRIMARY,
+                va="top",
+                linespacing=1.25,
+            )
+            text_y -= obs_lines * 0.018 + 0.006
 
             ax.text(0.02, text_y, w_imp, fontsize=7.2, color=self.COLOR_TEXT_MUTED, va="top", linespacing=1.25)
-            text_y -= (imp_lines * 0.018 + 0.006)
+            text_y -= imp_lines * 0.018 + 0.006
 
-            ax.text(0.02, text_y, w_act, fontsize=7.5, fontweight="bold", color=self.COLOR_ACCENT, va="top", linespacing=1.25)
+            ax.text(
+                0.02,
+                text_y,
+                w_act,
+                fontsize=7.5,
+                fontweight="bold",
+                color=self.COLOR_ACCENT,
+                va="top",
+                linespacing=1.25,
+            )
 
-            curr_y -= (card_h + 0.016)
+            curr_y -= card_h + 0.016
 
         # 2. Data Limitations & Caveats
         curr_y -= 0.01
-        ax.text(0.0, curr_y, "GOVERNANCE BOUNDARIES & LIMITATIONS", fontsize=10.5, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+        ax.text(
+            0.0,
+            curr_y,
+            "GOVERNANCE BOUNDARIES & LIMITATIONS",
+            fontsize=10.5,
+            fontweight="bold",
+            color=self.COLOR_PRIMARY,
+            va="top",
+        )
         ax.plot([0.0, 1.0], [curr_y - 0.012, curr_y - 0.012], color=self.COLOR_BORDER, linewidth=1.0)
         curr_y -= 0.028
 
@@ -1035,7 +1288,15 @@ class PdfReportExporter:
 
         # 3. Lineage & Provenance Metadata Box
         curr_y -= 0.015
-        ax.text(0.0, curr_y, "DATA LINEAGE & PROVENANCE", fontsize=10.5, fontweight="bold", color=self.COLOR_PRIMARY, va="top")
+        ax.text(
+            0.0,
+            curr_y,
+            "DATA LINEAGE & PROVENANCE",
+            fontsize=10.5,
+            fontweight="bold",
+            color=self.COLOR_PRIMARY,
+            va="top",
+        )
         ax.plot([0.0, 1.0], [curr_y - 0.012, curr_y - 0.012], color=self.COLOR_BORDER, linewidth=1.0)
         curr_y -= 0.028
 
@@ -1059,7 +1320,11 @@ class PdfReportExporter:
         if len(clean_ver) > 24:
             clean_ver = clean_ver[:22] + "…"
 
-        ai_info = f"{getattr(ai_report, 'provider', 'None')} / {getattr(ai_report, 'model', 'N/A')}" if ai_report else "Deterministic Only"
+        ai_info = (
+            f"{getattr(ai_report, 'provider', 'None')} / {getattr(ai_report, 'model', 'N/A')}"
+            if ai_report
+            else "Deterministic Only"
+        )
 
         col1_text = f"• Pipeline Run ID: {run_id}\n• Source Version: {src_ver}\n• Cleaned Version: {clean_ver}"
         col2_text = f"• Analytics Engine: AnalystGPT Enterprise 2.0\n• AI Synthesis: {ai_info}\n• Report Architecture: Enterprise Brief"
@@ -1083,20 +1348,30 @@ class PdfReportExporter:
 
         if cat_data:
             dim_cnt = len(cat_data)
-            takeaways.append(f"Categorical Segmentation: {dim_cnt} categorical dimensions identified for empirical grouping.")
+            takeaways.append(
+                f"Categorical Segmentation: {dim_cnt} categorical dimensions identified for empirical grouping."
+            )
         if num_data:
             num_cnt = len(num_data)
-            takeaways.append(f"Governed Measures: {num_cnt} continuous numerical measures analyzed with verified summary statistics.")
+            takeaways.append(
+                f"Governed Measures: {num_cnt} continuous numerical measures analyzed with verified summary statistics."
+            )
         else:
-            takeaways.append("Measure Availability: Zero governed continuous measures detected; analysis is focused on categorical distributions.")
+            takeaways.append(
+                "Measure Availability: Zero governed continuous measures detected; analysis is focused on categorical distributions."
+            )
 
         if ai_report is not None:
-            findings = getattr(ai_report, "key_findings", None) or (ai_report.get("key_findings") if isinstance(ai_report, dict) else None)
+            findings = getattr(ai_report, "key_findings", None) or (
+                ai_report.get("key_findings") if isinstance(ai_report, dict) else None
+            )
             if findings and len(findings) > 0:
                 takeaways.append(f"AI Interpretation: {findings[0]}")
 
         if not takeaways:
-            takeaways.append("Data Ingestion: All dataset rows and columns verified against baseline enterprise quality rules.")
+            takeaways.append(
+                "Data Ingestion: All dataset rows and columns verified against baseline enterprise quality rules."
+            )
 
         return takeaways
 
@@ -1117,18 +1392,20 @@ class PdfReportExporter:
 
         if cat_data:
             for col_name, stats in cat_data.items():
-                if any(p in col_name.lower() for p in self._PII_KEYWORDS):
+                if is_contact_pii_column(col_name):
                     continue
                 if isinstance(stats, dict):
                     top_dict = stats.get("value_distribution") or stats.get("top_values") or {}
                     if top_dict:
                         top_k, top_v = next(iter(top_dict.items()))
                         pct_str = f" ({(top_v / total_rows) * 100.0:.1f}%)" if total_rows and total_rows > 0 else ""
-                        recs.append((
-                            f"'{col_name}' concentration: '{top_k}' accounts for {top_v:,} records{pct_str}.",
-                            f"Records are concentrated in the '{top_k}' category relative to other observed categories.",
-                            f"Consider segmented reporting for '{top_k}' if category segmentation aligns with operational requirements.",
-                        ))
+                        recs.append(
+                            (
+                                f"'{col_name}' concentration: '{top_k}' accounts for {top_v:,} records{pct_str}.",
+                                f"Records are concentrated in the '{top_k}' category relative to other observed categories.",
+                                f"Consider segmented reporting for '{top_k}' if category segmentation aligns with operational requirements.",
+                            )
+                        )
                         break
 
         if num_data:
@@ -1137,18 +1414,22 @@ class PdfReportExporter:
                 min_v = stats.get("minimum", 0.0)
                 max_v = stats.get("maximum", 0.0)
                 med_v = stats.get("median", 0.0)
-                recs.append((
-                    f"'{col_name}' spans from {min_v:,.2f} to {max_v:,.2f} with a sample median of {med_v:,.2f}.",
-                    f"Continuous measure variance indicates dispersion across the observed range.",
-                    f"Incorporate '{col_name}' variance thresholds into monitoring reports if tracking this measure is required.",
-                ))
+                recs.append(
+                    (
+                        f"'{col_name}' spans from {min_v:,.2f} to {max_v:,.2f} with a sample median of {med_v:,.2f}.",
+                        f"Continuous measure variance indicates dispersion across the observed range.",
+                        f"Incorporate '{col_name}' variance thresholds into monitoring reports if tracking this measure is required.",
+                    )
+                )
         else:
             if not cat_data:
                 return []
-            recs.append((
-                "The analyzed dataset contains zero governed numerical measures.",
-                "Quantitative relationship analysis is bounded by the current categorical schema structure.",
-                "Consider enriching future data ingestion with numerical value measures if quantitative performance tracking is required.",
-            ))
+            recs.append(
+                (
+                    "The analyzed dataset contains zero governed numerical measures.",
+                    "Quantitative relationship analysis is bounded by the current categorical schema structure.",
+                    "Consider enriching future data ingestion with numerical value measures if quantitative performance tracking is required.",
+                )
+            )
 
         return recs

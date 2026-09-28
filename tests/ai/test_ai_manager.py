@@ -19,10 +19,10 @@ from src.ai.ai_manager import AIManager
 from src.ai.ai_report import AIReport
 from src.ai.unified_report_engine import AISections
 
-
 # ==========================================================
 # Fixtures
 # ==========================================================
+
 
 @pytest.fixture
 def fake_llm():
@@ -46,6 +46,7 @@ def mock_llm_factory(fake_llm):
 # ==========================================================
 # Fake ReportingReport (matches ReportSerializer expectations)
 # ==========================================================
+
 
 class FakeStructuredReport:
     """Stub for StructuredReport with attributes used by the serializer."""
@@ -75,6 +76,7 @@ class FakeReportingReport:
 # Helper: create real AISections objects
 # ==========================================================
 
+
 def create_sections(**overrides) -> AISections:
     """
     Return a real AISections instance with default or overridden values.
@@ -92,6 +94,7 @@ def create_sections(**overrides) -> AISections:
 # ==========================================================
 # Tests
 # ==========================================================
+
 
 @patch("src.ai.ai_manager.UnifiedReportEngine.generate")
 def test_generate_ai_report_success(mock_generate):

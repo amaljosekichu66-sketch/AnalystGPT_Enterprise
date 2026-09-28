@@ -26,9 +26,7 @@ class PipelineRunRepository(BaseRepository):
             query,
             (
                 user_id,
-                datetime.now().isoformat(
-                    timespec="seconds"
-                ),
+                datetime.now().isoformat(timespec="seconds"),
                 status,
             ),
         )

@@ -113,8 +113,8 @@ def test_end_to_end_governance_persistence_and_lineage_query(tmp_path, sample_cs
     -> Cleaned DatasetVersion DB row -> CleaningExecution DB row -> Lineage query.
     """
     from src.application.app import Application
-    from src.database.sqlite_connection import SQLiteConnection
     from src.database.schema_manager import SchemaManager
+    from src.database.sqlite_connection import SQLiteConnection
 
     # Initialize application with live persistence
     app = Application()
@@ -147,9 +147,7 @@ def test_end_to_end_governance_persistence_and_lineage_query(tmp_path, sample_cs
     assert src_v_row is not None
     assert src_v_row["is_source"] == 1
     assert Path(src_v_row["storage_path"]).exists()
-    assert app.artifact_store.verify_checksum(
-        src_v_row["storage_path"], src_v_row["checksum_sha256"]
-    ) is True
+    assert app.artifact_store.verify_checksum(src_v_row["storage_path"], src_v_row["checksum_sha256"]) is True
 
     # Verify Cleaned DatasetVersion row & physical artifact
     clean_v_id = exec_row["cleaned_version_id"]
@@ -159,9 +157,7 @@ def test_end_to_end_governance_persistence_and_lineage_query(tmp_path, sample_cs
     assert clean_v_row["parent_version_id"] == src_v_id
     assert Path(clean_v_row["storage_path"]).exists()
     assert clean_v_row["storage_path"].endswith(".parquet")
-    assert app.artifact_store.verify_checksum(
-        clean_v_row["storage_path"], clean_v_row["checksum_sha256"]
-    ) is True
+    assert app.artifact_store.verify_checksum(clean_v_row["storage_path"], clean_v_row["checksum_sha256"]) is True
 
     # Verify CleaningConfig row
     cfg_id = exec_row["config_id"]

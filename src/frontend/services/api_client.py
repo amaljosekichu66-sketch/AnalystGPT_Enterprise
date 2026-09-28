@@ -37,13 +37,13 @@ class APIClient:
 
     PIPELINE = "/api/pipeline"
 
-    REPORTS = "/reports"
+    REPORTS = "/api/reports"
 
-    DASHBOARD = "/powerbi/dashboard"
+    DASHBOARD = "/api/powerbi/dashboard"
 
-    POWERBI_SUMMARY = "/powerbi/summary"
+    POWERBI_SUMMARY = "/api/powerbi/summary"
 
-    POWERBI_PIPELINE = "/powerbi/pipeline"
+    POWERBI_PIPELINE = "/api/powerbi/pipeline"
 
     AUTH_LOGIN = "/api/auth/login"
 
@@ -123,8 +123,7 @@ class APIClient:
 
         except httpx.TimeoutException as exc:
             raise RuntimeError(
-                "Backend request timed out. "
-                "The analytics pipeline or AI engine may still be processing."
+                "Backend request timed out. " "The analytics pipeline or AI engine may still be processing."
             ) from exc
 
         except httpx.HTTPStatusError as exc:
@@ -133,19 +132,13 @@ class APIClient:
                 detail = error_body.get("error") or error_body.get("message") or exc.response.text
             except Exception:
                 detail = exc.response.text
-            raise RuntimeError(
-                f"Backend returned HTTP {exc.response.status_code}: {detail}"
-            ) from exc
+            raise RuntimeError(f"Backend returned HTTP {exc.response.status_code}: {detail}") from exc
 
         except httpx.RequestError as exc:
-            raise RuntimeError(
-                f"Unable to connect to backend: {exc}"
-            ) from exc
+            raise RuntimeError(f"Unable to connect to backend: {exc}") from exc
 
         except Exception as exc:
-            raise RuntimeError(
-                f"Unexpected API client error: {exc}"
-            ) from exc
+            raise RuntimeError(f"Unexpected API client error: {exc}") from exc
 
     def _get(
         self,
@@ -343,7 +336,9 @@ class APIClient:
         """
         Export text report via REST API.
         """
-        endpoint = f"/reports/{report_id}/export/text" if report_id is not None else "/reports/latest/export/text"
+        endpoint = (
+            f"/api/reports/{report_id}/export/text" if report_id is not None else "/api/reports/latest/export/text"
+        )
         return self.download_report(endpoint, token=token)
 
     def export_pdf_report(
@@ -354,7 +349,7 @@ class APIClient:
         """
         Export PDF report via REST API.
         """
-        endpoint = f"/reports/{report_id}/export/pdf" if report_id is not None else "/reports/latest/export/pdf"
+        endpoint = f"/api/reports/{report_id}/export/pdf" if report_id is not None else "/api/reports/latest/export/pdf"
         return self.download_report(endpoint, token=token)
 
     # ==========================================================

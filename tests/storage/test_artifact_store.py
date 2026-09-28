@@ -71,9 +71,7 @@ def test_path_traversal_filename_sanitized_and_contained(store):
     version_id = str(uuid.uuid4())
     # Attacker tries to write outside the artifact directory using path traversal
     malicious_filename = "../../../etc/passwd"
-    path, checksum, _ = store.save_raw_artifact(
-        b"safe payload", malicious_filename, version_id
-    )
+    path, checksum, _ = store.save_raw_artifact(b"safe payload", malicious_filename, version_id)
 
     resolved_path = Path(path)
     assert resolved_path.exists()

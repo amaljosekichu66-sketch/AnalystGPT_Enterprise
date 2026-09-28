@@ -7,10 +7,8 @@ execution metadata.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from dataclasses import field
-from datetime import UTC
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from src.ai.ai_report import AIReport
@@ -44,9 +42,7 @@ class AIResult:
 
     execution_time: float = 0.0
 
-    generated_at: datetime = field(
-        default_factory=lambda: datetime.now(UTC)
-    )
+    generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     # ==========================================================
     # Error
@@ -65,17 +61,7 @@ class AIResult:
         return {
             "success": self.success,
             "execution_time": self.execution_time,
-            "generated_at": (
-                self.generated_at.isoformat()
-            ),
-            "ai_report": (
-                self.ai_report.to_dict()
-                if self.ai_report
-                else None
-            ),
-            "error": (
-                str(self.error)
-                if self.error
-                else None
-            ),
+            "generated_at": (self.generated_at.isoformat()),
+            "ai_report": (self.ai_report.to_dict() if self.ai_report else None),
+            "error": (str(self.error) if self.error else None),
         }

@@ -33,17 +33,13 @@ def render_dashboard_summary(
     Render dashboard summary information.
     """
 
-    st.subheader(
-        "📋 Dashboard Summary"
-    )
+    st.subheader("📋 Dashboard Summary")
 
     if not data.get(
         "dataset_loaded",
     ):
 
-        st.info(
-            "No dataset available."
-        )
+        st.info("No dataset available.")
 
         return
 
@@ -109,9 +105,7 @@ def render_dashboard_summary(
     # Dataset Information
     # ==========================================================
 
-    st.markdown(
-        "### 📊 Dataset Information"
-    )
+    st.markdown("### 📊 Dataset Information")
 
     left, right = st.columns(
         2,
@@ -179,9 +173,7 @@ def render_dashboard_summary(
 
     st.divider()
 
-    st.markdown(
-        "### ⚙ Backend Pipeline"
-    )
+    st.markdown("### ⚙ Backend Pipeline")
 
     left, right = st.columns(
         2,
@@ -245,9 +237,7 @@ def render_dashboard_summary(
 
         else:
 
-            st.info(
-                "AI report not available."
-            )
+            st.info("AI report not available.")
 
     # ==========================================================
     # Reporting Status
@@ -255,40 +245,31 @@ def render_dashboard_summary(
 
     st.divider()
 
-    st.markdown(
-        "### 📑 Reporting Status"
-    )
+    st.markdown("### 📑 Reporting Status")
 
     if report:
 
-        st.success(
-            "✅ Reporting completed successfully."
-        )
+        st.success("✅ Reporting completed successfully.")
 
     else:
 
-        st.warning(
-            "Reporting output is not available."
-        )
+        st.warning("Reporting output is not available.")
 
     if data.get(
         "api_error",
     ):
 
-        st.error(
-            data["api_error"]
-        )
+        st.error(data["api_error"])
 
-    elif data.get(
-        "source",
-    ) == "api":
-
-        st.success(
-            "Connected to AnalystGPT REST API."
+    elif (
+        data.get(
+            "source",
         )
+        == "api"
+    ):
+
+        st.success("Connected to AnalystGPT REST API.")
 
     else:
 
-        st.info(
-            "Displaying locally available dashboard information."
-        )
+        st.info("Displaying locally available dashboard information.")

@@ -118,18 +118,14 @@ class TestUserServiceAuditIntegration:
         assert reg_events[0].actor_username == "charlie"
 
         # 2. Successful Login
-        _, token, _ = self.user_service.login(
-            UserLogin(username="charlie", password="Password123!")
-        )
+        _, token, _ = self.user_service.login(UserLogin(username="charlie", password="Password123!"))
         login_events = self.audit_service.get_events(event_type=AuditEventType.LOGIN_SUCCESS)
         assert len(login_events) == 1
         assert login_events[0].actor_username == "charlie"
 
         # 3. Failed Login
         try:
-            self.user_service.login(
-                UserLogin(username="charlie", password="WrongPassword!")
-            )
+            self.user_service.login(UserLogin(username="charlie", password="WrongPassword!"))
         except Exception:
             pass
 

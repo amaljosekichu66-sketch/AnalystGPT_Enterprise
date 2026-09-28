@@ -17,9 +17,7 @@ def render_pipeline_status(
     backend/session state.
     """
 
-    st.subheader(
-        "⚙️ Pipeline Status"
-    )
+    st.subheader("⚙️ Pipeline Status")
 
     #
     # Dataset
@@ -29,15 +27,11 @@ def render_pipeline_status(
         "dataset_loaded",
     ):
 
-        st.error(
-            "❌ No dataset loaded."
-        )
+        st.error("❌ No dataset loaded.")
 
         return
 
-    st.success(
-        "✅ Dataset Loaded"
-    )
+    st.success("✅ Dataset Loaded")
 
     #
     # Backend
@@ -50,15 +44,11 @@ def render_pipeline_status(
 
     if source == "api":
 
-        st.success(
-            "✅ Backend Connected"
-        )
+        st.success("✅ Backend Connected")
 
     else:
 
-        st.warning(
-            "⚠ Session Mode"
-        )
+        st.warning("⚠ Session Mode")
 
     #
     # Pipeline
@@ -70,15 +60,11 @@ def render_pipeline_status(
 
     if backend_report:
 
-        st.success(
-            "✅ Analytics Pipeline Completed"
-        )
+        st.success("✅ Analytics Pipeline Completed")
 
     else:
 
-        st.info(
-            "Pipeline has not been executed."
-        )
+        st.info("Pipeline has not been executed.")
 
     #
     # AI
@@ -90,15 +76,11 @@ def render_pipeline_status(
 
     if ai_report:
 
-        st.success(
-            "✅ AI Insights Generated"
-        )
+        st.success("✅ AI Insights Generated")
 
     else:
 
-        st.info(
-            "AI Insight Engine has not generated results."
-        )
+        st.info("AI Insight Engine has not generated results.")
 
     #
     # Metrics
@@ -208,6 +190,4 @@ def render_pipeline_status(
 
         st.divider()
 
-        st.warning(
-            f"REST API unavailable.\n\n{api_error}"
-        )
+        st.warning(f"REST API unavailable.\n\n{api_error}")

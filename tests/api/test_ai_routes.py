@@ -76,15 +76,9 @@ def ai_test_setup(tmp_path, monkeypatch):
         )
     )
 
-    _, token1, _ = user_service.login(
-        UserLogin(username="analyst_alice", password="Password123!")
-    )
-    _, token2, _ = user_service.login(
-        UserLogin(username="analyst_bob", password="Password123!")
-    )
-    _, admin_token, _ = user_service.login(
-        UserLogin(username="admin_carol", password="Password123!")
-    )
+    _, token1, _ = user_service.login(UserLogin(username="analyst_alice", password="Password123!"))
+    _, token2, _ = user_service.login(UserLogin(username="analyst_bob", password="Password123!"))
+    _, admin_token, _ = user_service.login(UserLogin(username="admin_carol", password="Password123!"))
 
     conn_raw = connection.get_connection()
     conn_raw.execute(
@@ -140,9 +134,7 @@ def test_get_ai_job_lifecycle_and_scoping(ai_test_setup) -> None:
     admin_token = ai_test_setup["admin_token"]
 
     # Insert pipeline run and job for user1
-    conn.get_connection().execute(
-        f"INSERT INTO pipeline_runs (user_id, status) VALUES ({user1.id}, 'SUCCESS');"
-    )
+    conn.get_connection().execute(f"INSERT INTO pipeline_runs (user_id, status) VALUES ({user1.id}, 'SUCCESS');")
     conn.commit()
 
     job_repo = AIJobRepository(conn)
@@ -182,10 +174,7 @@ def test_get_ai_job_lifecycle_and_scoping(ai_test_setup) -> None:
     assert data1["job_id"] == "job_alice_001"
     assert data1["status"] == "READY"
     assert data1["ai_report"] is not None
-    assert (
-        data1["ai_report"]["executive_summary"]
-        == "Executive summary for Alice."
-    )
+    assert data1["ai_report"]["executive_summary"] == "Executive summary for Alice."
 
     # 2. Non-owner (Bob) attempts to fetch Alice's job -> 404 (scoped isolation)
     res2 = client.get(
@@ -212,9 +201,7 @@ def test_get_latest_ai_job_status(ai_test_setup) -> None:
     user1 = ai_test_setup["user1"]
     token1 = ai_test_setup["token1"]
 
-    conn.get_connection().execute(
-        f"INSERT INTO pipeline_runs (user_id, status) VALUES ({user1.id}, 'SUCCESS');"
-    )
+    conn.get_connection().execute(f"INSERT INTO pipeline_runs (user_id, status) VALUES ({user1.id}, 'SUCCESS');")
     conn.commit()
 
     job_repo = AIJobRepository(conn)
@@ -243,9 +230,7 @@ def test_retry_ai_job_endpoint(ai_test_setup) -> None:
     user1 = ai_test_setup["user1"]
     token1 = ai_test_setup["token1"]
 
-    conn.get_connection().execute(
-        f"INSERT INTO pipeline_runs (user_id, status) VALUES ({user1.id}, 'SUCCESS');"
-    )
+    conn.get_connection().execute(f"INSERT INTO pipeline_runs (user_id, status) VALUES ({user1.id}, 'SUCCESS');")
     conn.commit()
 
     job_repo = AIJobRepository(conn)

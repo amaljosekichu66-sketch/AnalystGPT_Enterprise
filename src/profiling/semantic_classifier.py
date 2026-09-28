@@ -29,6 +29,80 @@ _CANADIAN_POSTAL_REGEX = re.compile(r"^[A-Z]\d[A-Z]\s*\d[A-Z]\d$", re.IGNORECASE
 _NUMERIC_STRING_REGEX = re.compile(r"^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$")
 _CURRENCY_STRING_REGEX = re.compile(r"^[\$€£¥₹]?\s*[+-]?\d+(,\d{3})*(\.\d+)?$")
 
+# ==========================================================
+# Numeric identifier detection
+# ==========================================================
+#
+# A record key stored as an integer is numeric by dtype and meaningless as a
+# measure. Left undetected, `ticket_#` (27,945 rows, every value distinct,
+# 99.88% of sorted gaps equal to 1) was classified `numeric_measure` /
+# `MEASURE`, which then published a mean ticket number as a business
+# statistic, offered an "impute median" governance policy for a primary key,
+# and handed the model a skewness and kurtosis to narrate.
+#
+# The discriminator is *density*, not uniqueness alone. A genuine measure can
+# happen to be fully distinct; what it does not do is tile a contiguous
+# integer range with no gaps. Requiring both keeps real measures safe.
+
+#: Below this many distinct values the evidence is too thin to be confident.
+_IDENTIFIER_MIN_DISTINCT = 100
+
+#: Practically every row distinct.
+_IDENTIFIER_MIN_UNIQUENESS = 0.99
+
+#: distinct values / (max - min + 1). A perfect auto-increment run scores 1.0.
+_IDENTIFIER_MIN_DENSITY = 0.90
+
+
+def _is_sequential_identifier(
+    numeric_values: pd.Series,
+    unique_count: int,
+    uniqueness_ratio: float,
+) -> bool:
+    """
+    Return True when numeric values behave like a sequential record key.
+
+    Requires all four signals to agree:
+
+    1. enough distinct values to judge (`_IDENTIFIER_MIN_DISTINCT`),
+    2. effectively one value per row (`_IDENTIFIER_MIN_UNIQUENESS`),
+    3. whole numbers only - a fractional value rules out a counter,
+    4. the values densely tile an integer range (`_IDENTIFIER_MIN_DENSITY`).
+
+    Condition 4 is what separates a key from a measure that merely happens to
+    be distinct: revenue figures scattered over a wide range score near zero,
+    while an auto-increment column scores close to 1.
+
+    Deliberately conservative. A sparse unique integer key (a random account
+    number, say) is not caught here and stays a measure unless its *name*
+    matches `ID_KEYWORDS`. Widening this needs evidence that real measures are
+    not caught with it.
+    """
+    if numeric_values.empty:
+        return False
+
+    if unique_count < _IDENTIFIER_MIN_DISTINCT:
+        return False
+
+    if uniqueness_ratio < _IDENTIFIER_MIN_UNIQUENESS:
+        return False
+
+    try:
+        if not bool((numeric_values % 1 == 0).all()):
+            return False
+
+        minimum = float(numeric_values.min())
+        maximum = float(numeric_values.max())
+    except (TypeError, ValueError):
+        return False
+
+    span = maximum - minimum + 1.0
+
+    if span <= 0:
+        return False
+
+    return (unique_count / span) >= _IDENTIFIER_MIN_DENSITY
+
 
 class SemanticClassifier:
     """
@@ -76,6 +150,23 @@ class SemanticClassifier:
     }
     BOOLEAN_VALUES = {"true", "false", "yes", "no", "y", "n", "t", "f", "1", "0", "active", "inactive"}
 
+    #: Above this mean character length a column is prose, not a contact
+    #: detail. The longest realistic email address in practice is well under
+    #: this; the misclassified narrative columns averaged 432 and 627.
+    FREE_TEXT_MEAN_LENGTH = 60
+
+    @staticmethod
+    def _holds_free_text(non_null_series: pd.Series) -> bool:
+        """Return True when the column's values are long enough to be prose."""
+        if non_null_series.empty:
+            return False
+
+        try:
+            sample = non_null_series.iloc[:200].astype(str)
+            return bool(sample.str.len().mean() > SemanticClassifier.FREE_TEXT_MEAN_LENGTH)
+        except (TypeError, ValueError):
+            return False
+
     def classify_column(
         self,
         column_name: str,
@@ -104,6 +195,17 @@ class SemanticClassifier:
 
         # Compute uniqueness ratio
         uniqueness_ratio = unique_count / non_null_count if non_null_count > 0 else 0.0
+
+        # A contact detail is short by construction: an email address, a phone
+        # number and a postal code are all well under 60 characters. Long prose
+        # is therefore decisive counter-evidence, whatever the column is named.
+        #
+        # This is what stops a *_email_* / *_phone_* / *_zip_* keyword from
+        # capturing a narrative column. `ai_-_email_summary` averaged 432
+        # characters and `email_body_(outbound)` 627; both were being reported
+        # as contact identifiers, excluded from analysis and masked from the
+        # prompt.
+        holds_free_text = self._holds_free_text(non_null_series)
 
         # Cardinality Classification
         if unique_count == 2:
@@ -181,7 +283,7 @@ class SemanticClassifier:
                     )
 
         # 4. Phone Numbers (Explicit Heuristic & Pattern Check)
-        if any(k in col_normalized for k in self.PHONE_KEYWORDS):
+        if not holds_free_text and any(k in col_normalized for k in self.PHONE_KEYWORDS):
             return (
                 SemanticType.PHONE,
                 AnalyticalRole.CONTACT_IDENTIFIER,
@@ -205,7 +307,7 @@ class SemanticClassifier:
                 )
 
         # 5. Postal Codes (Leading Zero & Format Heuristic)
-        if any(k in col_normalized for k in self.POSTAL_KEYWORDS):
+        if not holds_free_text and any(k in col_normalized for k in self.POSTAL_KEYWORDS):
             return (
                 SemanticType.POSTAL_CODE,
                 AnalyticalRole.GEOGRAPHIC_IDENTIFIER,
@@ -233,24 +335,35 @@ class SemanticClassifier:
                 )
 
         # 6. Emails
-        if any(k in col_normalized for k in self.EMAIL_KEYWORDS):
-            return (
-                SemanticType.EMAIL,
-                AnalyticalRole.CONTACT_IDENTIFIER,
-                0.98,
-                card_class,
-                "excluded",
-                "preserve_nulls",
-            )
+        #
+        # The name is a hypothesis, never a verdict. Matching "mail" as a bare
+        # substring classified `email_subject`, `email_body_(outbound)` and
+        # `ai_-_email_summary` as email addresses - measured at 0.2%, 0.0% and
+        # 0.0% actual address content, with mean lengths of 48, 627 and 432
+        # characters. All three were then excluded from analysis AND masked out
+        # of the AI prompt, which removed the only columns describing what each
+        # ticket was actually about.
+        #
+        # So the keyword now only decides how much value-level agreement to
+        # demand, and never substitutes for it.
+        is_text_like = non_null_count > 0 and (
+            pd.api.types.is_string_dtype(series) or pd.api.types.is_object_dtype(series)
+        )
 
-        if non_null_count > 0 and (pd.api.types.is_string_dtype(series) or pd.api.types.is_object_dtype(series)):
+        if is_text_like:
+            name_suggests_email = not holds_free_text and any(k in col_normalized for k in self.EMAIL_KEYWORDS)
             sample = [str(x).strip() for x in non_null_series.iloc[:30]]
             email_matches = sum(1 for s in sample if _EMAIL_REGEX.match(s))
-            if sample and (email_matches / len(sample)) >= 0.8:
+            match_ratio = (email_matches / len(sample)) if sample else 0.0
+
+            # A supporting name lowers the bar; it never removes it.
+            required_ratio = 0.5 if name_suggests_email else 0.8
+
+            if sample and match_ratio >= required_ratio:
                 return (
                     SemanticType.EMAIL,
                     AnalyticalRole.CONTACT_IDENTIFIER,
-                    0.95,
+                    0.98 if name_suggests_email else 0.95,
                     card_class,
                     "excluded",
                     "preserve_nulls",
@@ -368,6 +481,26 @@ class SemanticClassifier:
                     non_null_series.astype(str).str.replace(r"[\$,€,£,¥,₹]", "", regex=True).str.replace(",", ""),
                     errors="coerce",
                 ).dropna()
+
+                # A numeric dtype is a storage fact, not a semantic one. A
+                # record key stored as int64 is still a key: aggregating it,
+                # charting its distribution or imputing its median are all
+                # meaningless. Decide on the measured shape of the values -
+                # never on the column name - before accepting it as a measure.
+                if _is_sequential_identifier(
+                    numeric_vals,
+                    unique_count=unique_count,
+                    uniqueness_ratio=uniqueness_ratio,
+                ):
+                    return (
+                        SemanticType.IDENTIFIER,
+                        AnalyticalRole.IDENTIFIER,
+                        0.95,
+                        card_class,
+                        "excluded",
+                        "preserve_nulls",
+                    )
+
                 if not numeric_vals.empty:
                     is_all_int = (numeric_vals % 1 == 0).all()
                     if is_all_int and (
@@ -394,10 +527,26 @@ class SemanticClassifier:
                 "impute_median",
             )
 
+        # 11a. Prose is prose regardless of how often it repeats.
+        #
+        # The uniqueness gate below asks for >= 0.80 before it will consider
+        # free text, which left `email_body_(outbound)` (627 characters per
+        # value, 46.6% distinct) classified as a CATEGORICAL_DIMENSION - a
+        # "dimension" with roughly 13,000 categories, each a paragraph long.
+        # Length alone settles it.
+        if holds_free_text and unique_count > 100:
+            return (
+                SemanticType.FREE_TEXT,
+                AnalyticalRole.DESCRIPTIVE_ATTRIBUTE,
+                0.85,
+                card_class,
+                "excluded",
+                "preserve_nulls",
+            )
+
         # 11. High Cardinality Categorical / Free Text vs Categorical Dimension
         if uniqueness_ratio >= 0.80 and unique_count > 100:
-            avg_len = non_null_series.astype(str).str.len().mean() if non_null_count > 0 else 0
-            if avg_len > 60:
+            if holds_free_text:
                 return (
                     SemanticType.FREE_TEXT,
                     AnalyticalRole.DESCRIPTIVE_ATTRIBUTE,

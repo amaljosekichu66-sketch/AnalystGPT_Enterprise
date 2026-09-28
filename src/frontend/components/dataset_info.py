@@ -31,18 +31,12 @@ def _calculate_dataset_info(
         / 1024
     )
 
-    missing = int(
-        dataframe.isna().sum().sum()
-    )
+    missing = int(dataframe.isna().sum().sum())
 
     return {
         "rows": rows,
         "columns": columns,
-        "file_size": (
-            file_size / 1024
-            if file_size
-            else None
-        ),
+        "file_size": (file_size / 1024 if file_size else None),
         "memory": memory,
         "missing": missing,
         "extension": file_extension.upper(),
@@ -57,14 +51,9 @@ def render_dataset_info(
     Render dataset information.
     """
 
-    st.subheader(
-        "Dataset Information"
-    )
+    st.subheader("Dataset Information")
 
-    extension = (
-        uploaded_file.name
-        .split(".")[-1]
-    )
+    extension = uploaded_file.name.split(".")[-1]
 
     file_size = getattr(
         uploaded_file,

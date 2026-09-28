@@ -4,10 +4,12 @@ from src.quality.completeness_checker import CompletenessChecker
 
 
 def test_completeness_checker_reports_missing_values():
-    df = pd.DataFrame({
-        "name": ["Amal", None],
-        "age": [27, None],
-    })
+    df = pd.DataFrame(
+        {
+            "name": ["Amal", None],
+            "age": [27, None],
+        }
+    )
 
     checker = CompletenessChecker()
     result = checker.check(df)

@@ -3,7 +3,6 @@ Tests for the Application orchestration layer.
 """
 
 from pathlib import Path
-
 from unittest.mock import patch
 
 from src.ai.ai_report import AIReport
@@ -13,9 +12,7 @@ from src.application.pipeline_report import PipelineReport
 from src.application.pipeline_result import PipelineResult
 from src.reporting.reporting_report import ReportingReport
 
-SAMPLE_DATASET = Path(
-    "sample_data/customer_data.csv"
-)
+SAMPLE_DATASET = Path("sample_data/customer_data.csv")
 
 
 def _get_mock_ai_result():
@@ -47,9 +44,7 @@ def test_application_run_success() -> None:
             "generate_ai_report",
             return_value=_get_mock_ai_result(),
         ):
-            result = application.run(
-                str(SAMPLE_DATASET)
-            )
+            result = application.run(str(SAMPLE_DATASET))
 
             assert isinstance(
                 result,
@@ -72,9 +67,7 @@ def test_application_run_success() -> None:
 
             assert result.output_path is not None
 
-            assert Path(
-                result.output_path
-            ).exists()
+            assert Path(result.output_path).exists()
 
             assert result.execution_time is not None
 
@@ -96,9 +89,7 @@ def test_application_run_invalid_path() -> None:
     application = Application()
 
     try:
-        result = application.run(
-            "sample_data/file_does_not_exist.csv"
-        )
+        result = application.run("sample_data/file_does_not_exist.csv")
 
         assert isinstance(
             result,
@@ -134,9 +125,7 @@ def test_pipeline_result_contract() -> None:
             "generate_ai_report",
             return_value=_get_mock_ai_result(),
         ):
-            result = application.run(
-                str(SAMPLE_DATASET)
-            )
+            result = application.run(str(SAMPLE_DATASET))
 
             assert hasattr(
                 result,

@@ -25,15 +25,12 @@ from src.ai.ai_report import AIReport
 from src.ai.ai_result import AIResult
 from src.application.app import Application
 
-
 # ==========================================================
 # Test
 # ==========================================================
 
 
-@patch(
-    "src.ai.ai_manager.AIManager.generate_ai_report"
-)
+@patch("src.ai.ai_manager.AIManager.generate_ai_report")
 def test_application_ai_pipeline(
     mock_generate_ai,
 ):
@@ -41,9 +38,7 @@ def test_application_ai_pipeline(
     mock_generate_ai.return_value = AIResult(
         success=True,
         ai_report=AIReport(
-            executive_summary=(
-                "Executive summary."
-            ),
+            executive_summary=("Executive summary."),
             recommendations=[
                 "Recommendation 1",
                 "Recommendation 2",
@@ -52,9 +47,7 @@ def test_application_ai_pipeline(
                 "Explanation 1",
                 "Explanation 2",
             ],
-            narrative=(
-                "Business narrative."
-            ),
+            narrative=("Business narrative."),
             model="fake-model",
             provider="fake-provider",
             execution_time=0.25,
@@ -67,9 +60,7 @@ def test_application_ai_pipeline(
     app = Application()
 
     try:
-        result = app.run(
-            "performance/datasets/customer_data_stress_test.csv"
-        )
+        result = app.run("performance/datasets/customer_data_stress_test.csv")
 
         assert result.success
         assert result.pipeline_report is not None

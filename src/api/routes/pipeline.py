@@ -12,9 +12,7 @@ This module intentionally contains no business logic.
 
 from __future__ import annotations
 
-from fastapi import APIRouter
-from fastapi import Depends
-from fastapi import status
+from fastapi import APIRouter, Depends, status
 
 from src.api.dependencies.application_dependency import (
     get_application,
@@ -33,7 +31,6 @@ from src.application.app import Application
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
 
-
 router = APIRouter(
     tags=["Pipeline"],
 )
@@ -44,10 +41,7 @@ router = APIRouter(
     response_model=PipelineResponse,
     status_code=status.HTTP_200_OK,
     summary="Execute Pipeline",
-    description=(
-        "Execute the complete AnalystGPT Enterprise "
-        "analytics pipeline."
-    ),
+    description=("Execute the complete AnalystGPT Enterprise " "analytics pipeline."),
 )
 def execute_pipeline(
     request: PipelineRequest,
@@ -69,10 +63,7 @@ def execute_pipeline(
 
     ai_response: AIReportResponse | None = None
 
-    if (
-        result.pipeline_report is not None
-        and result.pipeline_report.ai_report is not None
-    ):
+    if result.pipeline_report is not None and result.pipeline_report.ai_report is not None:
 
         ai = result.pipeline_report.ai_report
 
@@ -93,9 +84,5 @@ def execute_pipeline(
         ai_job_id=result.ai_job_id,
         ai_job_status=result.ai_job_status,
         ai_report=ai_response,
-        error=(
-            str(result.error)
-            if result.error
-            else None
-        ),
+        error=(str(result.error) if result.error else None),
     )

@@ -6,10 +6,10 @@ from typing import Any, Mapping
 
 from src.llm.report_serializer import ReportSerializer
 
-
 # ----------------------------------------------------------------------
 # Minimal stubs for ReportingReport and StructuredReport
 # ----------------------------------------------------------------------
+
 
 class FakeStructuredReport:
     """Pretend version of StructuredReport with the fields the serializer uses."""
@@ -78,6 +78,7 @@ class FakeReportingReport:
 # ----------------------------------------------------------------------
 # Tests
 # ----------------------------------------------------------------------
+
 
 def test_none_report() -> None:
     """Serializing None returns a standard message."""

@@ -23,9 +23,9 @@ Tests all enterprise analytical correctness criteria:
 
 from __future__ import annotations
 
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
-import tempfile
 from typing import Any
 
 import pytest

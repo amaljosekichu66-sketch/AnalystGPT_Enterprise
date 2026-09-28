@@ -45,7 +45,7 @@ class AuthService:
             "username": username.strip(),
             "email": email.strip(),
             "password": password,
-            "role": "ANALYST"  # Default role for self-registration
+            "role": "ANALYST",  # Default role for self-registration
         }
 
         try:

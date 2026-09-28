@@ -55,8 +55,7 @@ def _map_ai_report(rep: dict[str, Any] | None) -> AIReportResponse | None:
     status_code=status.HTTP_200_OK,
     summary="Get AI Job Status & Report",
     description=(
-        "Retrieve the lifecycle status, attempt count, and generated "
-        "AI insight report for a given AI job ID."
+        "Retrieve the lifecycle status, attempt count, and generated " "AI insight report for a given AI job ID."
     ),
 )
 def get_ai_job(

@@ -6,8 +6,7 @@ Builds the structured business report used by the Reporting Module.
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from src.core.logger import logger
@@ -59,9 +58,7 @@ class ReportBuilder:
         StructuredReport
         """
 
-        logger.info(
-            "Building structured report..."
-        )
+        logger.info("Building structured report...")
 
         report = StructuredReport(
             title=title,
@@ -78,9 +75,7 @@ class ReportBuilder:
             },
         )
 
-        logger.info(
-            "Structured report built successfully."
-        )
+        logger.info("Structured report built successfully.")
 
         logger.info(
             "Analytics Sections : %d",

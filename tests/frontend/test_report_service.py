@@ -13,10 +13,10 @@ from src.frontend.services.report_service import (
     get_report_data,
 )
 
-
 # ==========================================================
 # Fixtures
 # ==========================================================
+
 
 @pytest.fixture
 def sample_dataframe():
@@ -38,6 +38,7 @@ def uploaded_file():
 # ==========================================================
 # Local Report Data
 # ==========================================================
+
 
 @patch("src.frontend.services.report_service.get_dataset")
 def test_local_report_without_dataset(mock_get_dataset):
@@ -70,6 +71,7 @@ def test_local_report_with_dataset(mock_get_dataset, uploaded_file, sample_dataf
 # ==========================================================
 # API Success
 # ==========================================================
+
 
 @patch("src.frontend.services.report_service.APIClient")
 @patch("src.frontend.services.report_service._local_report_data")
@@ -110,6 +112,7 @@ def test_report_api_success(mock_get_path, mock_local, mock_client):
 # API Failure
 # ==========================================================
 
+
 @patch("src.frontend.services.report_service.APIClient")
 @patch("src.frontend.services.report_service._local_report_data")
 @patch("src.frontend.services.session_manager.get_dataset_path")
@@ -133,6 +136,7 @@ def test_report_api_failure(mock_get_path, mock_local, mock_client):
 # ==========================================================
 # HTTP Error
 # ==========================================================
+
 
 @patch("src.frontend.services.report_service.APIClient")
 @patch("src.frontend.services.report_service._local_report_data")
@@ -162,6 +166,7 @@ def test_report_http_error(mock_get_path, mock_local, mock_client):
 def test_clear_reports_cache():
     """Test clearing the reports cache."""
     import streamlit as st
+
     from src.frontend.services.report_service import clear_reports_cache
 
     with patch("streamlit.session_state", {"reports_cache": "data", "reports_dataset": "path"}):
@@ -196,15 +201,30 @@ def test_report_uses_cache(mock_cache, mock_get_path):
     assert result["ai_report"] == {"executive_summary": "AI Cached"}
     mock_cache.assert_called_once_with(dataset_path)
 
+
 # ==========================================================
 # Export Service Tests
 # ==========================================================
 
 
 def test_export_text_and_pdf_report_service():
+    """
+    Exercise the local-orchestrator fallback with the REST path explicitly
+    unavailable.
+
+    The REST branch is stubbed rather than left to chance: previously this test
+    made a real connection attempt to the API port, so it exercised a different
+    code path depending on whether a dev server happened to be running.
+    """
     from src.frontend.services.report_service import export_pdf_report, export_text_report
 
-    with patch("streamlit.session_state", {}):
+    with (
+        patch("streamlit.session_state", {}),
+        patch(
+            "src.frontend.services.report_service.APIClient",
+            side_effect=httpx.ConnectError("API server not running (simulated)"),
+        ) as mock_client,
+    ):
         text_res = export_text_report()
         assert "success" in text_res
         assert "message" in text_res
@@ -212,3 +232,6 @@ def test_export_text_and_pdf_report_service():
         pdf_res = export_pdf_report()
         assert "success" in pdf_res
         assert "message" in pdf_res
+
+    # Prove the REST path was attempted and that the fallback is what answered.
+    assert mock_client.call_count == 2

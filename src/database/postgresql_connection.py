@@ -39,7 +39,7 @@ class PostgreSQLConnection(DatabaseConnection):
                 dbname=self._database,
                 user=self._user,
                 password=self._password,
-                row_factory=dict_row,   # ← ensures rows are dict-like
+                row_factory=dict_row,  # ← ensures rows are dict-like
             )
 
     # ---------------------------------------------------------

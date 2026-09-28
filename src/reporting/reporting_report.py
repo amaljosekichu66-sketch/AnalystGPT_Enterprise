@@ -7,8 +7,7 @@ Reporting Module.
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from src.core.logger import logger
@@ -48,9 +47,7 @@ class ReportingReport:
             UTC timestamp when the report was generated.
         """
 
-        logger.info(
-            "Creating ReportingReport."
-        )
+        logger.info("Creating ReportingReport.")
 
         self.report = report
 
@@ -84,9 +81,7 @@ class ReportingReport:
                 self.execution_time,
                 4,
             ),
-            "generated_at": (
-                self.generated_at.isoformat()
-            ),
+            "generated_at": (self.generated_at.isoformat()),
         }
 
     # ==========================================================

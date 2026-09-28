@@ -8,8 +8,7 @@ AnalystGPT Enterprise pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from src.ai.ai_report import AIReport
@@ -54,15 +53,7 @@ class PipelineReport:
     ) -> dict[str, Any]:
 
         return {
-            "generated_at": (
-                self.generated_at.isoformat()
-            ),
-            "reporting_report": (
-                self.reporting_report.to_dict()
-            ),
-            "ai_report": (
-                self.ai_report.to_dict()
-                if self.ai_report
-                else None
-            ),
+            "generated_at": (self.generated_at.isoformat()),
+            "reporting_report": (self.reporting_report.to_dict()),
+            "ai_report": (self.ai_report.to_dict() if self.ai_report else None),
         }

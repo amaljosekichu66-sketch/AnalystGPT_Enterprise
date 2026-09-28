@@ -40,15 +40,11 @@ def test_db(tmp_path, monkeypatch):
     schema.initialize_schema()
 
     raw_conn = conn.get_connection()
-    raw_conn.execute(
-        """
+    raw_conn.execute("""
         INSERT INTO users (id, username, email, hashed_password, role, status)
         VALUES (1, 'concurrency_user', 'user@enterprise.com', 'hashed_pw', 'ANALYST', 'ACTIVE');
-        """
-    )
-    raw_conn.execute(
-        "INSERT INTO pipeline_runs (id, status) VALUES (1, 'SUCCESS');"
-    )
+        """)
+    raw_conn.execute("INSERT INTO pipeline_runs (id, status) VALUES (1, 'SUCCESS');")
     raw_conn.execute(
         "INSERT INTO reports (id, pipeline_run_id, user_id, report_path) VALUES (1, 1, 1, 'reports/report.txt');"
     )
@@ -225,9 +221,7 @@ def test_process_restart_recovery_of_stale_jobs(test_db) -> None:
     repo.claim_next_pending_job()  # transitions to GENERATING, attempt_count=1
 
     # Job 2: create another pipeline run & job with max_attempts=1, left in GENERATING
-    test_db.get_connection().execute(
-        "INSERT INTO pipeline_runs (id, status) VALUES (2, 'SUCCESS');"
-    )
+    test_db.get_connection().execute("INSERT INTO pipeline_runs (id, status) VALUES (2, 'SUCCESS');")
     test_db.commit()
     repo.create_job(
         job_id="stale_exhausted_002",

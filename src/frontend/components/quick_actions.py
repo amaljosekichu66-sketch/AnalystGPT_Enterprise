@@ -26,9 +26,7 @@ def render_quick_actions() -> None:
     Render dashboard quick actions.
     """
 
-    st.subheader(
-        "⚡ Quick Actions"
-    )
+    st.subheader("⚡ Quick Actions")
 
     left, right = st.columns(
         2,
@@ -47,9 +45,7 @@ def render_quick_actions() -> None:
             type="primary",
         ):
 
-            st.session_state[
-                "current_page"
-            ] = "Upload"
+            st.session_state["current_page"] = "Upload"
 
             st.rerun()
 
@@ -58,9 +54,7 @@ def render_quick_actions() -> None:
             width="stretch",
         ):
 
-            st.session_state[
-                "current_page"
-            ] = "Reports"
+            st.session_state["current_page"] = "Reports"
 
             st.rerun()
 
@@ -69,9 +63,7 @@ def render_quick_actions() -> None:
             width="stretch",
         ):
 
-            st.session_state[
-                "current_page"
-            ] = "AI Insights"
+            st.session_state["current_page"] = "AI Insights"
 
             st.rerun()
 
@@ -101,11 +93,9 @@ def render_quick_actions() -> None:
             # Preserve navigation state
             #
 
-            current_page = (
-                st.session_state.get(
-                    "current_page",
-                    "Dashboard",
-                )
+            current_page = st.session_state.get(
+                "current_page",
+                "Dashboard",
             )
 
             #
@@ -124,13 +114,9 @@ def render_quick_actions() -> None:
             # Restore current page
             #
 
-            st.session_state[
-                "current_page"
-            ] = current_page
+            st.session_state["current_page"] = current_page
 
-            st.success(
-                "Session cleared successfully."
-            )
+            st.success("Session cleared successfully.")
 
             st.rerun()
 

@@ -9,10 +9,10 @@ import pytest
 from src.ai.narrative_engine import NarrativeEngine
 from src.llm.base_llm import BaseLLM
 
-
 # ==========================================================
 # Fake LLMs
 # ==========================================================
+
 
 class SuccessfulLLM(BaseLLM):
     """
@@ -66,14 +66,13 @@ class ExceptionLLM(BaseLLM):
         prompt: str,
     ) -> str:
 
-        raise RuntimeError(
-            "LLM unavailable."
-        )
+        raise RuntimeError("LLM unavailable.")
 
 
 # ==========================================================
 # Fake ReportingReport (with required attributes)
 # ==========================================================
+
 
 class FakeStructuredReport:
     def __init__(self):
@@ -91,7 +90,7 @@ class FakeStructuredReport:
 class FakeReportingReport:
     def __init__(self):
         self.report = FakeStructuredReport()
-        self.execution_time = 0.1234   # Required by ReportSerializer
+        self.execution_time = 0.1234  # Required by ReportSerializer
         self.export_path = "reports/test.txt"
 
 
@@ -99,22 +98,17 @@ class FakeReportingReport:
 # Tests
 # ==========================================================
 
+
 def test_generate_narrative_success():
     """
     Verify narrative generation succeeds.
     """
 
-    engine = NarrativeEngine(
-        SuccessfulLLM()
-    )
+    engine = NarrativeEngine(SuccessfulLLM())
 
     report = FakeReportingReport()
 
-    narrative = (
-        engine.generate_narrative(
-            report
-        )
-    )
+    narrative = engine.generate_narrative(report)
 
     assert isinstance(
         narrative,
@@ -129,17 +123,11 @@ def test_narrative_not_empty():
     Narrative should not be empty.
     """
 
-    engine = NarrativeEngine(
-        SuccessfulLLM()
-    )
+    engine = NarrativeEngine(SuccessfulLLM())
 
     report = FakeReportingReport()
 
-    narrative = (
-        engine.generate_narrative(
-            report
-        )
-    )
+    narrative = engine.generate_narrative(report)
 
     assert narrative.strip() != ""
 
@@ -149,19 +137,13 @@ def test_empty_response():
     Empty LLM responses should raise ValueError.
     """
 
-    engine = NarrativeEngine(
-        EmptyLLM()
-    )
+    engine = NarrativeEngine(EmptyLLM())
 
     report = FakeReportingReport()
 
-    with pytest.raises(
-        ValueError
-    ):
+    with pytest.raises(ValueError):
 
-        engine.generate_narrative(
-            report
-        )
+        engine.generate_narrative(report)
 
 
 def test_llm_exception():
@@ -169,16 +151,10 @@ def test_llm_exception():
     LLM exceptions should propagate.
     """
 
-    engine = NarrativeEngine(
-        ExceptionLLM()
-    )
+    engine = NarrativeEngine(ExceptionLLM())
 
     report = FakeReportingReport()
 
-    with pytest.raises(
-        RuntimeError
-    ):
+    with pytest.raises(RuntimeError):
 
-        engine.generate_narrative(
-            report
-        )
+        engine.generate_narrative(report)

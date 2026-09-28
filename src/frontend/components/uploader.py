@@ -6,9 +6,9 @@ Sprint 11
 
 from __future__ import annotations
 
+import tempfile
 from io import BytesIO
 from pathlib import Path
-import tempfile
 
 import pandas as pd
 import streamlit as st
@@ -43,11 +43,7 @@ def load_dataframe(
     Streamlit reruns.
     """
 
-    extension = (
-        Path(filename)
-        .suffix
-        .lower()
-    )
+    extension = Path(filename).suffix.lower()
 
     buffer = BytesIO(
         file_bytes,
@@ -71,9 +67,7 @@ def load_dataframe(
             buffer,
         )
 
-    raise ValueError(
-        f"Unsupported file format: {extension}"
-    )
+    raise ValueError(f"Unsupported file format: {extension}")
 
 
 def save_uploaded_file(
@@ -90,11 +84,7 @@ def save_uploaded_file(
         Absolute filesystem path of the temporary dataset.
     """
 
-    suffix = (
-        Path(uploaded_file.name)
-        .suffix
-        .lower()
-    )
+    suffix = Path(uploaded_file.name).suffix.lower()
 
     with tempfile.NamedTemporaryFile(
         mode="wb",
@@ -102,9 +92,7 @@ def save_uploaded_file(
         suffix=suffix,
     ) as temp_file:
 
-        temp_file.write(
-            uploaded_file.getbuffer()
-        )
+        temp_file.write(uploaded_file.getbuffer())
 
         temp_path = Path(
             temp_file.name,
@@ -141,26 +129,18 @@ def render_uploader():
 
     if uploaded_file is None:
 
-        st.info(
-            "Please select a CSV, Excel, or JSON dataset."
-        )
+        st.info("Please select a CSV, Excel, or JSON dataset.")
 
         return (
             None,
             None,
         )
 
-    file_size_mb = (
-        uploaded_file.size
-        / (1024 * 1024)
-    )
+    file_size_mb = uploaded_file.size / (1024 * 1024)
 
     if file_size_mb > MAX_UPLOAD_SIZE_MB:
 
-        st.error(
-            f"Dataset exceeds the maximum supported size "
-            f"({MAX_UPLOAD_SIZE_MB} MB)."
-        )
+        st.error(f"Dataset exceeds the maximum supported size " f"({MAX_UPLOAD_SIZE_MB} MB).")
 
         return (
             None,
@@ -180,28 +160,20 @@ def render_uploader():
             uploaded_file,
         )
 
-        st.session_state[
-            DATASET_PATH_KEY
-        ] = dataset_path
+        st.session_state[DATASET_PATH_KEY] = dataset_path
 
     except Exception as error:
 
-        st.error(
-            f"Unable to read dataset.\n\n{error}"
-        )
+        st.error(f"Unable to read dataset.\n\n{error}")
 
         return (
             None,
             None,
         )
 
-    st.success(
-        "Dataset loaded successfully."
-    )
+    st.success("Dataset loaded successfully.")
 
-    st.caption(
-        f"Temporary Dataset: {dataset_path}"
-    )
+    st.caption(f"Temporary Dataset: {dataset_path}")
 
     return (
         uploaded_file,

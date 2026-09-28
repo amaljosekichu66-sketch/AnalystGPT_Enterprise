@@ -56,9 +56,7 @@ class InsightEngine:
             Collection of generated business insights.
         """
 
-        prompt = PromptBuilder.recommendations(
-            reporting_report
-        )
+        prompt = PromptBuilder.recommendations(reporting_report)
 
         response = self._llm.generate(prompt)
 

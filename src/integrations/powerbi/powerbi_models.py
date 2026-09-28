@@ -11,10 +11,10 @@ from pydantic import (
     Field,
 )
 
-
 # ==========================================================
 # AI Report
 # ==========================================================
+
 
 class AIReportModel(BaseModel):
     """
@@ -48,6 +48,7 @@ class AIReportModel(BaseModel):
 # Dashboard Response
 # ==========================================================
 
+
 class DashboardResponse(BaseModel):
     """
     Response returned by /powerbi/dashboard.
@@ -71,12 +72,13 @@ class DashboardResponse(BaseModel):
 
     ai_job_id: str | None = None
 
-    generated_at: datetime | None = None   # changed from str | None
+    generated_at: datetime | None = None  # changed from str | None
 
 
 # ==========================================================
 # Pipeline Summary
 # ==========================================================
+
 
 class PipelineSummary(BaseModel):
     """
@@ -97,12 +99,13 @@ class PipelineSummary(BaseModel):
 
     ai_generated: bool = False
 
-    generated_at: datetime | None = None   # changed from str | None
+    generated_at: datetime | None = None  # changed from str | None
 
 
 # ==========================================================
 # Report Response
 # ==========================================================
+
 
 class ReportResponse(BaseModel):
     """
@@ -123,4 +126,4 @@ class ReportResponse(BaseModel):
 
     output_path: str | None = None
 
-    generated_at: datetime | None = None   # changed from str | None
+    generated_at: datetime | None = None  # changed from str | None

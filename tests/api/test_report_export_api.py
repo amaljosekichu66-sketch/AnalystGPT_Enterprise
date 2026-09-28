@@ -5,6 +5,7 @@ Sprint 14 Phase 5 — Reporting & PDF Export Stabilization.
 """
 
 from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -27,6 +28,7 @@ def test_setup(tmp_path):
     user_service = UserService(user_repository=user_repo)
 
     import uuid
+
     suffix = uuid.uuid4().hex[:6]
     u1_name = f"analyst_exp_a_{suffix}"
     u2_name = f"analyst_exp_b_{suffix}"
@@ -39,12 +41,8 @@ def test_setup(tmp_path):
         UserCreate(username=u2_name, email=f"{u2_name}@example.com", password="Password123!", role=UserRole.ANALYST)
     )
 
-    _, token_a, _ = user_service.login(
-        UserLogin(username=u1_name, password="Password123!")
-    )
-    _, token_b, _ = user_service.login(
-        UserLogin(username=u2_name, password="Password123!")
-    )
+    _, token_a, _ = user_service.login(UserLogin(username=u1_name, password="Password123!"))
+    _, token_b, _ = user_service.login(UserLogin(username=u2_name, password="Password123!"))
 
     sample_csv = "sample_data/customer_data.csv"
     client = TestClient(app)

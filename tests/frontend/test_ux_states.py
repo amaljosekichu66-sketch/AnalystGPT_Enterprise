@@ -31,9 +31,11 @@ def test_scroll_to_top_renders_html():
 
 def test_render_empty_state_with_button_navigation():
     """Verify render_empty_state updates current_page and reruns when button clicked."""
-    with patch("streamlit.session_state", {}) as mock_state, \
-         patch("streamlit.button", return_value=True), \
-         patch("streamlit.rerun") as mock_rerun:
+    with (
+        patch("streamlit.session_state", {}) as mock_state,
+        patch("streamlit.button", return_value=True),
+        patch("streamlit.rerun") as mock_rerun,
+    ):
 
         clicked = render_empty_state(
             title="No Data",
@@ -76,8 +78,7 @@ def test_show_loading_message():
 
 def test_show_progress():
     """Verify show_progress clamps values between 0.0 and 1.0."""
-    with patch("streamlit.progress") as mock_prog, \
-         patch("streamlit.caption") as mock_cap:
+    with patch("streamlit.progress") as mock_prog, patch("streamlit.caption") as mock_cap:
         show_progress(0.75, "Step 3 of 4")
         mock_prog.assert_called_once_with(0.75)
         mock_cap.assert_called_once_with("Step 3 of 4")
@@ -85,8 +86,7 @@ def test_show_progress():
 
 def test_quick_actions_renders():
     """Verify render_quick_actions renders navigation buttons and actions."""
-    with patch("streamlit.button") as mock_btn, \
-         patch("streamlit.caption"):
+    with patch("streamlit.button") as mock_btn, patch("streamlit.caption"):
         mock_btn.return_value = False
         render_quick_actions()
         assert mock_btn.call_count >= 4

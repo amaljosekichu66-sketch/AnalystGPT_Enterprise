@@ -30,47 +30,31 @@ class RecommendationEngine:
         reporting_report: ReportingReport,
     ) -> list[str]:
 
-        logger.info(
-            "Generating recommendations..."
-        )
+        logger.info("Generating recommendations...")
 
         start_time = time.perf_counter()
 
         try:
 
-            prompt = PromptBuilder.recommendations(
-                reporting_report
-            )
+            prompt = PromptBuilder.recommendations(reporting_report)
 
-            response = self._llm.generate(
-                prompt
-            )
+            response = self._llm.generate(prompt)
 
-            recommendations = [
-                line.strip("-•* ").strip()
-                for line in response.splitlines()
-                if line.strip()
-            ]
+            recommendations = [line.strip("-•* ").strip() for line in response.splitlines() if line.strip()]
 
             if not recommendations:
-                raise ValueError(
-                    "LLM returned no recommendations."
-                )
+                raise ValueError("LLM returned no recommendations.")
 
             logger.info(
-                "Generated %d recommendations "
-                "(%.3f seconds).",
+                "Generated %d recommendations " "(%.3f seconds).",
                 len(recommendations),
-                time.perf_counter()
-                - start_time,
+                time.perf_counter() - start_time,
             )
 
             return recommendations
 
         except Exception:
 
-            logger.exception(
-                "Recommendation generation failed."
-            )
+            logger.exception("Recommendation generation failed.")
 
             raise

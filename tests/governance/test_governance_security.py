@@ -7,6 +7,7 @@ Sprint 14 Phase 3 — Data Cleaning Governance & Lineage.
 from __future__ import annotations
 
 import uuid
+
 import pytest
 
 from src.database.repositories.cleaning_config_repository import CleaningConfigRepository
@@ -31,13 +32,16 @@ def db_connection():
     sm.initialize_schema()
     # Insert test users for FK validation
     cursor = conn.get_connection().cursor()
-    cursor.execute("INSERT OR IGNORE INTO users (id, username, email, hashed_password) VALUES (1, 'u1', 'u1@test.com', 'pwd');")
-    cursor.execute("INSERT OR IGNORE INTO users (id, username, email, hashed_password) VALUES (2, 'u2', 'u2@test.com', 'pwd');")
+    cursor.execute(
+        "INSERT OR IGNORE INTO users (id, username, email, hashed_password) VALUES (1, 'u1', 'u1@test.com', 'pwd');"
+    )
+    cursor.execute(
+        "INSERT OR IGNORE INTO users (id, username, email, hashed_password) VALUES (2, 'u2', 'u2@test.com', 'pwd');"
+    )
     conn.commit()
     cursor.close()
     yield conn
     conn.disconnect()
-
 
 
 @pytest.fixture

@@ -12,7 +12,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # ==========================================================
 # Requests
 # ==========================================================
@@ -20,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class CleaningConfigRequest(BaseModel):
     """Request model for creating/configuring cleaning policies."""
+
     model_config = ConfigDict(frozen=True, str_strip_whitespace=True)
 
     missing_value_policy: str = Field(
@@ -53,6 +53,7 @@ class CleaningPreviewRequest(BaseModel):
     Request model for non-destructive cleaning preview.
     Requires a registered immutable dataset_version_id reference.
     """
+
     model_config = ConfigDict(frozen=True, str_strip_whitespace=True)
 
     dataset_version_id: str = Field(
@@ -69,7 +70,6 @@ class CleaningPreviewRequest(BaseModel):
         le=100,
         description="Number of sample rows to return in before/after preview comparison",
     )
-
 
 
 # ==========================================================
@@ -92,7 +92,6 @@ class DatasetVersionResponse(BaseModel):
     parent_version_id: str | None = None
     dataset_schema_json: str | None = None
     created_at: str | None = None
-
 
 
 class CleaningConfigResponse(BaseModel):
@@ -149,6 +148,7 @@ class CleaningPreviewResponse(BaseModel):
     """
     Response model returned by non-destructive preview endpoint.
     """
+
     model_config = ConfigDict(frozen=True)
 
     quality_comparison: QualityComparisonResponse

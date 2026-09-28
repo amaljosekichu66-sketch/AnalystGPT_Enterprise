@@ -45,7 +45,9 @@ def test_visualization_planner_budget_and_exclusions(complex_dataframe: pd.DataF
     assert plan.total_charts >= 2
 
     # 2. Excluded columns check (Phone, Street, Campaign, Unique_Data, First Name, Last Name must not be charted)
-    chart_cols = [c.primary_column for c in plan.charts] + [c.secondary_column for c in plan.charts if c.secondary_column]
+    chart_cols = [c.primary_column for c in plan.charts] + [
+        c.secondary_column for c in plan.charts if c.secondary_column
+    ]
     assert "Phone" not in chart_cols
     assert "Campaign" not in chart_cols
     assert "Unique_Data" not in chart_cols

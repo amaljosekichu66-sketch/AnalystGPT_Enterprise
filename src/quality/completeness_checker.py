@@ -33,11 +33,7 @@ class CompletenessChecker:
 
         total_missing = int(missing_per_column.sum())
 
-        missing_percentage = (
-            (total_missing / total_cells) * 100
-            if total_cells > 0
-            else 0
-        )
+        missing_percentage = (total_missing / total_cells) * 100 if total_cells > 0 else 0
 
         complete_percentage = 100 - missing_percentage
 

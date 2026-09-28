@@ -11,9 +11,9 @@ Responsibilities:
 from __future__ import annotations
 
 import logging
+import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-import sys
 
 from src.core import config
 from src.core.constants import LOGGER_NAME
@@ -55,11 +55,7 @@ def configure_logger(
     """
     active_logger = logging.getLogger(name)
 
-    target_level = (
-        level
-        if level is not None
-        else getattr(config, "LOG_LEVEL", logging.INFO)
-    )
+    target_level = level if level is not None else getattr(config, "LOG_LEVEL", logging.INFO)
     active_logger.setLevel(target_level)
     active_logger.propagate = False
 
@@ -82,11 +78,7 @@ def configure_logger(
     active_logger.addHandler(console_handler)
 
     # 2. Rotating File Handler (optional)
-    should_log_to_file = (
-        log_to_file
-        if log_to_file is not None
-        else getattr(config, "LOG_TO_FILE", False)
-    )
+    should_log_to_file = log_to_file if log_to_file is not None else getattr(config, "LOG_TO_FILE", False)
 
     if should_log_to_file:
         target_path = Path(

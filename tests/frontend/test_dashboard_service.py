@@ -15,10 +15,10 @@ from src.frontend.services.dashboard_service import (
     get_dashboard_data,
 )
 
-
 # ==========================================================
 # Fixtures
 # ==========================================================
+
 
 @pytest.fixture
 def sample_dataframe():
@@ -43,6 +43,7 @@ def uploaded_file():
 # ==========================================================
 # Local Dashboard Tests
 # ==========================================================
+
 
 @patch("src.frontend.services.dashboard_service.get_dataset")
 def test_local_dashboard_without_dataset(mock_get_dataset):
@@ -76,6 +77,7 @@ def test_local_dashboard_with_dataset(mock_get_dataset, uploaded_file, sample_da
 # Cache Tests
 # ==========================================================
 
+
 def test_clear_dashboard_cache():
     """Test clearing the dashboard cache."""
     with patch("streamlit.session_state", {"dashboard_cache": "data", "dashboard_dataset": "path"}):
@@ -87,6 +89,7 @@ def test_clear_dashboard_cache():
 # ==========================================================
 # API Integration Tests
 # ==========================================================
+
 
 @patch("src.frontend.services.dashboard_service.get_dataset")
 @patch("src.frontend.services.dashboard_service.get_dataset_path")

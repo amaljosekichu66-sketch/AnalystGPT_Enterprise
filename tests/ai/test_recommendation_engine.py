@@ -11,10 +11,10 @@ from src.ai.recommendation_engine import (
 )
 from src.llm.base_llm import BaseLLM
 
-
 # ==========================================================
 # Fake LLMs
 # ==========================================================
+
 
 class SuccessfulLLM(BaseLLM):
     """
@@ -64,14 +64,13 @@ class ExceptionLLM(BaseLLM):
         prompt: str,
     ) -> str:
 
-        raise RuntimeError(
-            "LLM failure."
-        )
+        raise RuntimeError("LLM failure.")
 
 
 # ==========================================================
 # Fake StructuredReport and ReportingReport
 # ==========================================================
+
 
 class FakeStructuredReport:
     """
@@ -98,7 +97,7 @@ class FakeReportingReport:
 
     def __init__(self):
         self.execution_time = 0.5
-        self.export_path = "reports/report.txt"   # Not used but kept for completeness
+        self.export_path = "reports/report.txt"  # Not used but kept for completeness
         self.report = FakeStructuredReport()
 
 
@@ -106,17 +105,12 @@ class FakeReportingReport:
 # Tests
 # ==========================================================
 
+
 def test_generate_recommendations_success():
 
-    engine = RecommendationEngine(
-        SuccessfulLLM()
-    )
+    engine = RecommendationEngine(SuccessfulLLM())
 
-    recommendations = (
-        engine.generate_recommendations(
-            FakeReportingReport()
-        )
-    )
+    recommendations = engine.generate_recommendations(FakeReportingReport())
 
     assert isinstance(
         recommendations,
@@ -128,47 +122,26 @@ def test_generate_recommendations_success():
 
 def test_recommendations_are_strings():
 
-    engine = RecommendationEngine(
-        SuccessfulLLM()
-    )
+    engine = RecommendationEngine(SuccessfulLLM())
 
-    recommendations = (
-        engine.generate_recommendations(
-            FakeReportingReport()
-        )
-    )
+    recommendations = engine.generate_recommendations(FakeReportingReport())
 
-    assert all(
-        isinstance(item, str)
-        for item in recommendations
-    )
+    assert all(isinstance(item, str) for item in recommendations)
 
 
 def test_empty_response():
 
-    engine = RecommendationEngine(
-        EmptyLLM()
-    )
+    engine = RecommendationEngine(EmptyLLM())
 
-    with pytest.raises(
-        ValueError
-    ):
+    with pytest.raises(ValueError):
 
-        engine.generate_recommendations(
-            FakeReportingReport()
-        )
+        engine.generate_recommendations(FakeReportingReport())
 
 
 def test_llm_exception():
 
-    engine = RecommendationEngine(
-        ExceptionLLM()
-    )
+    engine = RecommendationEngine(ExceptionLLM())
 
-    with pytest.raises(
-        RuntimeError
-    ):
+    with pytest.raises(RuntimeError):
 
-        engine.generate_recommendations(
-            FakeReportingReport()
-        )
+        engine.generate_recommendations(FakeReportingReport())

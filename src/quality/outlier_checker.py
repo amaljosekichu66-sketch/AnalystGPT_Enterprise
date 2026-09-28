@@ -35,10 +35,7 @@ class OutlierChecker:
             lower_bound = q1 - (1.5 * iqr)
             upper_bound = q3 + (1.5 * iqr)
 
-            outliers = dataframe[
-                (dataframe[column] < lower_bound)
-                | (dataframe[column] > upper_bound)
-            ]
+            outliers = dataframe[(dataframe[column] < lower_bound) | (dataframe[column] > upper_bound)]
 
             results[column] = {
                 "outlier_count": len(outliers),

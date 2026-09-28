@@ -30,9 +30,7 @@ class ReportRepository(BaseRepository):
                 pipeline_run_id,
                 user_id,
                 report_path,
-                datetime.now().isoformat(
-                    timespec="seconds"
-                ),
+                datetime.now().isoformat(timespec="seconds"),
             ),
         )
 

@@ -2,13 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.analytics.analytics_report import AnalyticsReport
 from src.core.logger import logger
-
-
-from src.database.database_manager import DatabaseManager
-from src.database.schema_manager import SchemaManager
 from src.database.connection_factory import ConnectionFactory
-
+from src.database.database_manager import DatabaseManager
 from src.database.repositories.ai_job_repository import (
     AIJobRepository,
 )
@@ -33,7 +30,6 @@ from src.database.repositories.dataset_version_repository import (
 from src.database.repositories.pipeline_run_repository import (
     PipelineRunRepository,
 )
-from src.analytics.analytics_report import AnalyticsReport
 from src.database.repositories.quality_repository import (
     QualityRepository,
 )
@@ -43,10 +39,10 @@ from src.database.repositories.report_repository import (
 from src.database.repositories.user_repository import (
     UserRepository,
 )
+from src.database.schema_manager import SchemaManager
 from src.persistence.persistence_result import PersistenceResult
 from src.quality.quality_report import QualityReport
 from src.reporting.reporting_report import ReportingReport
-
 
 
 class PersistenceManager:
@@ -72,7 +68,6 @@ class PersistenceManager:
         self._cleaning_config_repository = None
         self._cleaning_execution_repository = None
 
-
         self._pipeline_run_id = None
         self._user_id = None
         self._dataset_id = None
@@ -86,15 +81,12 @@ class PersistenceManager:
     # ---------------------------------------------------------
 
     def initialize(self):
-
         """
         Initialize database infrastructure.
         """
 
         # Create the configured database connection.
-        self._database_connection = (
-            ConnectionFactory.create_connection()
-        )
+        self._database_connection = ConnectionFactory.create_connection()
 
         # Log the active database engine.
         engine_name = {
@@ -111,100 +103,49 @@ class PersistenceManager:
         )
 
         # Create and initialize the database manager.
-        self._database_manager = DatabaseManager(
-            self._database_connection
-        )
+        self._database_manager = DatabaseManager(self._database_connection)
 
         self._database_manager.initialize()
 
         # Initialize the database schema.
-        schema = SchemaManager(
-            self._database_connection
-        )
+        schema = SchemaManager(self._database_connection)
 
         schema.initialize_schema()
 
         # Initialize repositories.
-        self._pipeline_repository = (
-            PipelineRunRepository(
-                self._database_connection
-            )
-        )
+        self._pipeline_repository = PipelineRunRepository(self._database_connection)
 
-        self._dataset_repository = (
-            DatasetRepository(
-                self._database_connection
-            )
-        )
+        self._dataset_repository = DatasetRepository(self._database_connection)
 
-        self._quality_repository = (
-            QualityRepository(
-                self._database_connection
-            )
-        )
+        self._quality_repository = QualityRepository(self._database_connection)
 
-        self._analytics_repository = (
-            AnalyticsRepository(
-                self._database_connection
-            )
-        )
+        self._analytics_repository = AnalyticsRepository(self._database_connection)
 
-        self._report_repository = (
-            ReportRepository(
-                self._database_connection
-            )
-        )
+        self._report_repository = ReportRepository(self._database_connection)
 
-        self._ai_job_repository = (
-            AIJobRepository(
-                self._database_connection
-            )
-        )
+        self._ai_job_repository = AIJobRepository(self._database_connection)
 
-        self._ai_report_repository = (
-            AIReportRepository(
-                self._database_connection
-            )
-        )
+        self._ai_report_repository = AIReportRepository(self._database_connection)
 
-        self._user_repository = (
-            UserRepository(
-                self._database_connection
-            )
-        )
+        self._user_repository = UserRepository(self._database_connection)
 
         # Phase 3 — Governance repositories
-        self._dataset_version_repository = (
-            DatasetVersionRepository(
-                self._database_connection
-            )
-        )
+        self._dataset_version_repository = DatasetVersionRepository(self._database_connection)
 
-        self._cleaning_config_repository = (
-            CleaningConfigRepository(
-                self._database_connection
-            )
-        )
+        self._cleaning_config_repository = CleaningConfigRepository(self._database_connection)
 
-        self._cleaning_execution_repository = (
-            CleaningExecutionRepository(
-                self._database_connection
-            )
-        )
+        self._cleaning_execution_repository = CleaningExecutionRepository(self._database_connection)
 
     # ---------------------------------------------------------
 
     def start_pipeline(self, user_id: int | None = None):
-
         """
         Start pipeline run with optional user ownership.
         """
         self._user_id = user_id
-        self._pipeline_run_id = (
-            self._pipeline_repository.create(
-                "RUNNING",
-                user_id=user_id,
-            )
+        self._pipeline_run_id = self._pipeline_repository.create(
+            "RUNNING",
+            user_id=user_id,
         )
 
     # ---------------------------------------------------------
@@ -220,14 +161,12 @@ class PersistenceManager:
         Persist dataset metadata with user ownership.
         """
         eff_user_id = user_id if user_id is not None else self._user_id
-        self._dataset_id = (
-            self._dataset_repository.create(
-                self._pipeline_run_id,
-                dataset_name,
-                row_count,
-                column_count,
-                user_id=eff_user_id,
-            )
+        self._dataset_id = self._dataset_repository.create(
+            self._pipeline_run_id,
+            dataset_name,
+            row_count,
+            column_count,
+            user_id=eff_user_id,
         )
 
     # ---------------------------------------------------------
@@ -242,16 +181,12 @@ class PersistenceManager:
 
         quality = quality_report.report
 
-        self._quality_report_id = (
-            self._quality_repository.create(
-                self._pipeline_run_id,
-                quality["completeness"][
-                    "complete_percentage"
-                ],
-                None,
-                None,
-                None,
-            )
+        self._quality_report_id = self._quality_repository.create(
+            self._pipeline_run_id,
+            quality["completeness"]["complete_percentage"],
+            None,
+            None,
+            None,
         )
 
     # ---------------------------------------------------------
@@ -264,25 +199,15 @@ class PersistenceManager:
         Persist analytics results.
         """
 
-        descriptive = analytics_report.report[
-            "descriptive_statistics"
-        ]
+        descriptive = analytics_report.report["descriptive_statistics"]
 
-        correlation = analytics_report.report[
-            "correlation_analysis"
-        ]
+        correlation = analytics_report.report["correlation_analysis"]
 
-        self._analytics_report_id = (
-            self._analytics_repository.create(
-                self._pipeline_run_id,
-                descriptive[
-                    "numeric_column_count"
-                ],
-                descriptive[
-                    "categorical_column_count"
-                ],
-                str(correlation),
-            )
+        self._analytics_report_id = self._analytics_repository.create(
+            self._pipeline_run_id,
+            descriptive["numeric_column_count"],
+            descriptive["categorical_column_count"],
+            str(correlation),
         )
 
     # ---------------------------------------------------------
@@ -296,12 +221,10 @@ class PersistenceManager:
         Persist reporting metadata with user ownership.
         """
         eff_user_id = user_id if user_id is not None else self._user_id
-        self._report_id = (
-            self._report_repository.create(
-                self._pipeline_run_id,
-                reporting_report.export_path,
-                user_id=eff_user_id,
-            )
+        self._report_id = self._report_repository.create(
+            self._pipeline_run_id,
+            reporting_report.export_path,
+            user_id=eff_user_id,
         )
 
     # ---------------------------------------------------------
@@ -375,33 +298,22 @@ class PersistenceManager:
             return
 
         # 1. Persist source version if not present
-        existing_src = self._dataset_version_repository.get_by_version_id(
-            governed_result.source_version.version_id
-        )
+        existing_src = self._dataset_version_repository.get_by_version_id(governed_result.source_version.version_id)
         if existing_src is None:
-            self._dataset_version_repository.create(
-                governed_result.source_version
-            )
+            self._dataset_version_repository.create(governed_result.source_version)
 
         # 2. Persist cleaning config
-        self._cleaning_config_repository.create(
-            governed_result.cleaning_config
-        )
+        self._cleaning_config_repository.create(governed_result.cleaning_config)
 
         # 3. Persist cleaned version (before execution record due to FK constraint)
-        self._dataset_version_repository.create(
-            governed_result.cleaned_version
-        )
+        self._dataset_version_repository.create(governed_result.cleaned_version)
 
         # 4. Persist execution record
-        self._cleaning_execution_repository.create(
-            governed_result.execution
-        )
+        self._cleaning_execution_repository.create(governed_result.execution)
 
         self._source_version_id = governed_result.source_version.version_id
         self._cleaned_version_id = governed_result.cleaned_version.version_id
         self._cleaning_execution_id = governed_result.execution.execution_id
-
 
     def save_failed_governance_execution(
         self,

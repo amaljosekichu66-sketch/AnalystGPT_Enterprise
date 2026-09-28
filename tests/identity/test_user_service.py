@@ -60,9 +60,7 @@ class TestUserService:
         assert user.hashed_password != "SecurePassword123!"
         assert user.hashed_password.startswith("$pbkdf2-sha256$")
 
-    def test_register_duplicate_username_raises_error(
-        self, user_service: UserService
-    ) -> None:
+    def test_register_duplicate_username_raises_error(self, user_service: UserService) -> None:
         user_service.register_user(
             UserCreate(
                 username="duplicate_user",
@@ -80,9 +78,7 @@ class TestUserService:
                 )
             )
 
-    def test_register_duplicate_email_raises_error(
-        self, user_service: UserService
-    ) -> None:
+    def test_register_duplicate_email_raises_error(self, user_service: UserService) -> None:
         user_service.register_user(
             UserCreate(
                 username="user_one",
@@ -100,9 +96,7 @@ class TestUserService:
                 )
             )
 
-    def test_authenticate_user_by_username_success(
-        self, user_service: UserService
-    ) -> None:
+    def test_authenticate_user_by_username_success(self, user_service: UserService) -> None:
         user_service.register_user(
             UserCreate(
                 username="auth_tester",
@@ -117,9 +111,7 @@ class TestUserService:
         )
         assert authenticated.username == "auth_tester"
 
-    def test_authenticate_user_by_email_success(
-        self, user_service: UserService
-    ) -> None:
+    def test_authenticate_user_by_email_success(self, user_service: UserService) -> None:
         user_service.register_user(
             UserCreate(
                 username="email_tester",
@@ -134,9 +126,7 @@ class TestUserService:
         )
         assert authenticated.username == "email_tester"
 
-    def test_authenticate_wrong_password_raises_invalid_credentials(
-        self, user_service: UserService
-    ) -> None:
+    def test_authenticate_wrong_password_raises_invalid_credentials(self, user_service: UserService) -> None:
         user_service.register_user(
             UserCreate(
                 username="wrong_pass_user",
@@ -151,18 +141,14 @@ class TestUserService:
                 password="WrongPassword123!",
             )
 
-    def test_authenticate_nonexistent_user_raises_invalid_credentials(
-        self, user_service: UserService
-    ) -> None:
+    def test_authenticate_nonexistent_user_raises_invalid_credentials(self, user_service: UserService) -> None:
         with pytest.raises(InvalidCredentialsError, match="Invalid username or password"):
             user_service.authenticate_user(
                 username_or_email="nonexistent_user",
                 password="AnyPassword123!",
             )
 
-    def test_authenticate_suspended_or_inactive_user_raises_disabled(
-        self, user_service: UserService
-    ) -> None:
+    def test_authenticate_suspended_or_inactive_user_raises_disabled(self, user_service: UserService) -> None:
         user = user_service.register_user(
             UserCreate(
                 username="suspended_user",
@@ -172,9 +158,7 @@ class TestUserService:
         )
 
         # Update status to suspended
-        user_service._user_repository.update(
-            user.id, UserUpdate(status=UserStatus.SUSPENDED)
-        )
+        user_service._user_repository.update(user.id, UserUpdate(status=UserStatus.SUSPENDED))
 
         with pytest.raises(UserDisabledError, match="suspended"):
             user_service.authenticate_user("suspended_user", "Password123!")
@@ -189,9 +173,7 @@ class TestUserService:
             )
         )
 
-        user, token, expires_in = user_service.login(
-            UserLogin(username="login_analyst", password="LoginPassword123!")
-        )
+        user, token, expires_in = user_service.login(UserLogin(username="login_analyst", password="LoginPassword123!"))
 
         assert user.username == "login_analyst"
         assert isinstance(token, str)
@@ -206,9 +188,7 @@ class TestUserService:
             )
         )
 
-        _, token, _ = user_service.login(
-            UserLogin(username="token_resolver", password="Password123!")
-        )
+        _, token, _ = user_service.login(UserLogin(username="token_resolver", password="Password123!"))
 
         resolved = user_service.get_current_user_from_token(token)
         assert resolved.id == created.id
@@ -223,9 +203,7 @@ class TestUserService:
             )
         )
 
-        _, token, _ = user_service.login(
-            UserLogin(username="logout_user", password="Password123!")
-        )
+        _, token, _ = user_service.login(UserLogin(username="logout_user", password="Password123!"))
 
         # Before logout, token is valid
         resolved = user_service.get_current_user_from_token(token)

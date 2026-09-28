@@ -24,35 +24,19 @@ def _calculate_quality_metrics(
 
     total_cells = rows * columns
 
-    missing = int(
-        dataframe.isna().sum().sum()
-    )
+    missing = int(dataframe.isna().sum().sum())
 
-    duplicates = int(
-        dataframe.duplicated().sum()
-    )
+    duplicates = int(dataframe.duplicated().sum())
 
-    completeness = (
-        (
-            total_cells - missing
-        )
-        / total_cells
-        * 100
-        if total_cells
-        else 100
-    )
+    completeness = (total_cells - missing) / total_cells * 100 if total_cells else 100
 
-    numeric_columns = (
-        dataframe.select_dtypes(
-            include="number",
-        ).shape[1]
-    )
+    numeric_columns = dataframe.select_dtypes(
+        include="number",
+    ).shape[1]
 
-    categorical_columns = (
-        dataframe.select_dtypes(
-            exclude="number",
-        ).shape[1]
-    )
+    categorical_columns = dataframe.select_dtypes(
+        exclude="number",
+    ).shape[1]
 
     return {
         "completeness": completeness,
@@ -71,9 +55,7 @@ def render_dataset_quality(
     Render dataset quality summary.
     """
 
-    st.subheader(
-        "Dataset Quality"
-    )
+    st.subheader("Dataset Quality")
 
     metrics = _calculate_quality_metrics(
         dataframe,
@@ -113,18 +95,10 @@ def render_dataset_quality(
         f"{metrics['total_cells']:,}",
     )
 
-    if (
-        metrics["missing"] > 0
-        or metrics["duplicates"] > 0
-    ):
+    if metrics["missing"] > 0 or metrics["duplicates"] > 0:
 
-        st.warning(
-            "Dataset contains quality issues that "
-            "should be cleaned before analysis."
-        )
+        st.warning("Dataset contains quality issues that " "should be cleaned before analysis.")
 
     else:
 
-        st.success(
-            "Dataset quality looks excellent."
-        )
+        st.success("Dataset quality looks excellent.")

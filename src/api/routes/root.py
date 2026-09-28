@@ -13,14 +13,12 @@ This module intentionally contains no business logic.
 from fastapi import APIRouter, status
 
 from src.api.models.response_models import RootResponse
-
 from src.core.constants import (
-    APP_NAME,
-    APP_VERSION,
     API_DOCS_URL,
+    APP_NAME,
     APP_STATUS,
+    APP_VERSION,
 )
-
 
 # ==========================================================
 # Router Configuration
@@ -34,6 +32,7 @@ router = APIRouter(
 # ==========================================================
 # Root Endpoint
 # ==========================================================
+
 
 @router.get(
     "/",

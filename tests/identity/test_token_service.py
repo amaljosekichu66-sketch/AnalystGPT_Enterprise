@@ -37,9 +37,7 @@ def token_service() -> TokenService:
 class TestTokenService:
     """Test suite for signed access token issuance and verification."""
 
-    def test_create_and_verify_valid_token(
-        self, token_service: TokenService, sample_user: User
-    ) -> None:
+    def test_create_and_verify_valid_token(self, token_service: TokenService, sample_user: User) -> None:
         token = token_service.create_access_token(sample_user)
         assert isinstance(token, str)
         assert len(token.split(".")) == 3
@@ -54,24 +52,18 @@ class TestTokenService:
         assert "iat" in claims
         assert claims["exp"] > claims["iat"]
 
-    def test_custom_expiration_lifetime(
-        self, token_service: TokenService, sample_user: User
-    ) -> None:
+    def test_custom_expiration_lifetime(self, token_service: TokenService, sample_user: User) -> None:
         token = token_service.create_access_token(sample_user, expires_delta_seconds=300)
         claims = token_service.verify_access_token(token)
         assert claims["exp"] - claims["iat"] == 300
 
-    def test_expired_token_rejected(
-        self, token_service: TokenService, sample_user: User
-    ) -> None:
+    def test_expired_token_rejected(self, token_service: TokenService, sample_user: User) -> None:
         # Create token that expired 10 seconds ago
         token = token_service.create_access_token(sample_user, expires_delta_seconds=-10)
         with pytest.raises(InvalidTokenError, match="expired"):
             token_service.verify_access_token(token)
 
-    def test_tampered_signature_rejected(
-        self, token_service: TokenService, sample_user: User
-    ) -> None:
+    def test_tampered_signature_rejected(self, token_service: TokenService, sample_user: User) -> None:
         token = token_service.create_access_token(sample_user)
         header, payload, signature = token.split(".")
         tampered_token = f"{header}.{payload}.invalidsignature123"
@@ -79,9 +71,7 @@ class TestTokenService:
         with pytest.raises(InvalidTokenError, match="signature verification failed"):
             token_service.verify_access_token(tampered_token)
 
-    def test_tampered_payload_rejected(
-        self, token_service: TokenService, sample_user: User
-    ) -> None:
+    def test_tampered_payload_rejected(self, token_service: TokenService, sample_user: User) -> None:
         token = token_service.create_access_token(sample_user)
         header, payload, signature = token.split(".")
         # Tamper payload by modifying one char
@@ -91,9 +81,7 @@ class TestTokenService:
         with pytest.raises(InvalidTokenError):
             token_service.verify_access_token(tampered_token)
 
-    def test_different_secret_key_fails_verification(
-        self, sample_user: User
-    ) -> None:
+    def test_different_secret_key_fails_verification(self, sample_user: User) -> None:
         service_a = TokenService(secret_key="secret-key-alpha", algorithm="HS256")
         service_b = TokenService(secret_key="secret-key-beta", algorithm="HS256")
 
@@ -101,9 +89,7 @@ class TestTokenService:
         with pytest.raises(InvalidTokenError, match="signature verification failed"):
             service_b.verify_access_token(token_a)
 
-    def test_malformed_token_formats_rejected(
-        self, token_service: TokenService
-    ) -> None:
+    def test_malformed_token_formats_rejected(self, token_service: TokenService) -> None:
         for malformed in ["", "not.enough.parts.extra", "singlepart", "two.parts"]:
             with pytest.raises(InvalidTokenError):
                 token_service.verify_access_token(malformed)

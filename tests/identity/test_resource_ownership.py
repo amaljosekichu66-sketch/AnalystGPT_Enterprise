@@ -4,8 +4,8 @@ Resource ownership, cross-user isolation, and IDOR prevention test suite for Ana
 
 from __future__ import annotations
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -79,9 +79,7 @@ def test_users(sqlite_test_db: SQLiteConnection):
 @pytest.fixture
 def sample_csv():
     """Create a temporary sample CSV file for pipeline execution."""
-    temp_file = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".csv", delete=False
-    )
+    temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False)
     df = pd.DataFrame(
         {
             "id": [1, 2, 3, 4],
@@ -100,9 +98,7 @@ def sample_csv():
 class TestDatabaseResourceOwnership:
     """Test server-side database repository ownership filtering and IDOR prevention."""
 
-    def test_pipeline_run_ownership_isolation(
-        self, sqlite_test_db: SQLiteConnection, test_users
-    ) -> None:
+    def test_pipeline_run_ownership_isolation(self, sqlite_test_db: SQLiteConnection, test_users) -> None:
         u1, u2 = test_users
         pipeline_repo = PipelineRunRepository(sqlite_test_db)
 
@@ -157,9 +153,7 @@ class TestDatabaseResourceOwnership:
         pipeline_repo.delete(run_1_id, user_id=u1.id)
         assert pipeline_repo.get_by_id(run_1_id, user_id=u1.id) is None
 
-    def test_dataset_ownership_isolation(
-        self, sqlite_test_db: SQLiteConnection, test_users
-    ) -> None:
+    def test_dataset_ownership_isolation(self, sqlite_test_db: SQLiteConnection, test_users) -> None:
         u1, u2 = test_users
         pipeline_repo = PipelineRunRepository(sqlite_test_db)
         dataset_repo = DatasetRepository(sqlite_test_db)
@@ -192,18 +186,14 @@ class TestDatabaseResourceOwnership:
         assert dataset_repo.get_by_id(ds_b_id, user_id=u1.id) is None
 
         # Pipeline run association
-        assert (
-            dataset_repo.get_by_pipeline_run(run_a, user_id=u1.id) is not None
-        )
+        assert dataset_repo.get_by_pipeline_run(run_a, user_id=u1.id) is not None
         assert dataset_repo.get_by_pipeline_run(run_a, user_id=u2.id) is None
 
         # List isolation
         assert len(dataset_repo.get_all(user_id=u1.id)) == 1
         assert len(dataset_repo.get_all(user_id=u2.id)) == 1
 
-    def test_report_ownership_isolation(
-        self, sqlite_test_db: SQLiteConnection, test_users
-    ) -> None:
+    def test_report_ownership_isolation(self, sqlite_test_db: SQLiteConnection, test_users) -> None:
         u1, u2 = test_users
         pipeline_repo = PipelineRunRepository(sqlite_test_db)
         report_repo = ReportRepository(sqlite_test_db)
@@ -211,12 +201,8 @@ class TestDatabaseResourceOwnership:
         run_a = pipeline_repo.create(status="SUCCESS", user_id=u1.id)
         run_b = pipeline_repo.create(status="SUCCESS", user_id=u2.id)
 
-        rep_a = report_repo.create(
-            run_a, "/reports/report_a.txt", user_id=u1.id
-        )
-        rep_b = report_repo.create(
-            run_b, "/reports/report_b.txt", user_id=u2.id
-        )
+        rep_a = report_repo.create(run_a, "/reports/report_a.txt", user_id=u1.id)
+        rep_b = report_repo.create(run_b, "/reports/report_b.txt", user_id=u2.id)
 
         # Owner lookup
         assert report_repo.get_by_id(rep_a, user_id=u1.id) is not None
@@ -247,9 +233,7 @@ class TestDatabaseResourceOwnership:
 class TestApplicationCacheIsolation:
     """Test in-memory multi-user cache isolation in Application."""
 
-    def test_multi_user_pipeline_result_isolation(
-        self, sample_csv: str
-    ) -> None:
+    def test_multi_user_pipeline_result_isolation(self, sample_csv: str) -> None:
         app_instance = Application()
         app_instance.persistence.initialize()
         user_repo = app_instance.persistence.user_repository
@@ -281,8 +265,6 @@ class TestApplicationCacheIsolation:
 
         context_user_1 = UserContext.from_user(user_1_entity)
         context_user_2 = UserContext.from_user(user_2_entity)
-
-
 
         # Execute for User 1
         result_1 = app_instance.run(
@@ -324,9 +306,7 @@ class TestApplicationCacheIsolation:
 class TestAPIDataIsolation:
     """Test API endpoint data isolation and token-driven UserContext."""
 
-    def test_api_reports_user_scoped(
-        self, sample_csv: str
-    ) -> None:
+    def test_api_reports_user_scoped(self, sample_csv: str) -> None:
         user_repo = InMemoryUserRepository()
         hasher = PBKDF2PasswordHasher(iterations=10_000)
         token_service = TokenService(secret_key="test-secret-key-32-bytes-long!!")
@@ -356,12 +336,8 @@ class TestAPIDataIsolation:
         )
         assert user_b.id is not None
 
-        _, token_a, _ = user_service.login(
-            UserLogin(username="analyst_a", password="Password123!")
-        )
-        _, token_b, _ = user_service.login(
-            UserLogin(username="analyst_b", password="Password123!")
-        )
+        _, token_a, _ = user_service.login(UserLogin(username="analyst_a", password="Password123!"))
+        _, token_b, _ = user_service.login(UserLogin(username="analyst_b", password="Password123!"))
 
         client = TestClient(app)
 
@@ -375,7 +351,7 @@ class TestAPIDataIsolation:
 
         # User A calls /reports -> gets reports
         rep_res_a = client.get(
-            "/reports",
+            "/api/reports",
             headers={"Authorization": f"Bearer {token_a}"},
         )
         assert rep_res_a.status_code == 200
@@ -383,7 +359,7 @@ class TestAPIDataIsolation:
 
         # User B calls /reports -> gets None (User B has not executed pipeline)
         rep_res_b = client.get(
-            "/reports",
+            "/api/reports",
             headers={"Authorization": f"Bearer {token_b}"},
         )
         assert rep_res_b.status_code == 200

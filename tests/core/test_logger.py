@@ -19,9 +19,11 @@ from __future__ import annotations
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
 import pytest
 
-from src.core import config, logger as logger_module
+from src.core import config
+from src.core import logger as logger_module
 from src.core.constants import LOGGER_NAME
 from src.core.logger import configure_logger, logger
 
@@ -35,10 +37,7 @@ def _restore_default_logger():
 
 def _get_app_handlers(log: logging.Logger) -> list[logging.Handler]:
     """Filter out pytest internal log capture handlers."""
-    return [
-        h for h in log.handlers
-        if not type(h).__name__.startswith(("_LiveLogging", "LogCapture", "_FileHandler"))
-    ]
+    return [h for h in log.handlers if not type(h).__name__.startswith(("_LiveLogging", "LogCapture", "_FileHandler"))]
 
 
 # ==========================================================

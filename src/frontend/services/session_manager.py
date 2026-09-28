@@ -147,9 +147,7 @@ def store_pipeline_result(
         st.session_state[AI_JOB_ID_KEY] = pipeline_result.ai_job_id
     if pipeline_result.pipeline_report and pipeline_result.pipeline_report.ai_report is not None:
         report_val = pipeline_result.pipeline_report.ai_report
-        st.session_state[AI_REPORT_KEY] = (
-            report_val.to_dict() if hasattr(report_val, "to_dict") else report_val
-        )
+        st.session_state[AI_REPORT_KEY] = report_val.to_dict() if hasattr(report_val, "to_dict") else report_val
 
 
 def set_ai_job_id(job_id: str | None) -> None:

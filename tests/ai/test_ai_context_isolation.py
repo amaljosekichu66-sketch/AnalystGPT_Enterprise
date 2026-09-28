@@ -6,8 +6,9 @@ Sprint 14 Phase 4 — AI Data Context & Analytical Integrity.
 
 from __future__ import annotations
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 import pytest
 
 from src.ai.context_builder import AIDataContextBuilder

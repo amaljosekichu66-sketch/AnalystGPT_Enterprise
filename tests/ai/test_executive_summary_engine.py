@@ -11,10 +11,10 @@ from src.ai.executive_summary_engine import (
 )
 from src.llm.base_llm import BaseLLM
 
-
 # ==========================================================
 # Fake LLMs
 # ==========================================================
+
 
 class SuccessfulLLM(BaseLLM):
     """
@@ -30,10 +30,7 @@ class SuccessfulLLM(BaseLLM):
         prompt: str,
     ) -> str:
 
-        return (
-            "The dataset demonstrates strong overall "
-            "quality with positive business performance."
-        )
+        return "The dataset demonstrates strong overall " "quality with positive business performance."
 
 
 class EmptyLLM(BaseLLM):
@@ -67,14 +64,13 @@ class ExceptionLLM(BaseLLM):
         prompt: str,
     ) -> str:
 
-        raise RuntimeError(
-            "LLM unavailable."
-        )
+        raise RuntimeError("LLM unavailable.")
 
 
 # ==========================================================
 # Fake StructuredReport and ReportingReport
 # ==========================================================
+
 
 class FakeStructuredReport:
     """
@@ -101,7 +97,7 @@ class FakeReportingReport:
 
     def __init__(self):
         self.execution_time = 0.42
-        self.export_path = "reports/report.txt"   # Not used but kept for completeness
+        self.export_path = "reports/report.txt"  # Not used but kept for completeness
         self.report = FakeStructuredReport()
 
 
@@ -109,15 +105,12 @@ class FakeReportingReport:
 # Tests
 # ==========================================================
 
+
 def test_generate_summary_success():
 
-    engine = ExecutiveSummaryEngine(
-        SuccessfulLLM()
-    )
+    engine = ExecutiveSummaryEngine(SuccessfulLLM())
 
-    summary = engine.generate_summary(
-        FakeReportingReport()
-    )
+    summary = engine.generate_summary(FakeReportingReport())
 
     assert isinstance(
         summary,
@@ -126,50 +119,31 @@ def test_generate_summary_success():
 
     assert len(summary) > 20
 
-    assert (
-        "business"
-        in summary.lower()
-    )
+    assert "business" in summary.lower()
 
 
 def test_generate_summary_not_empty():
 
-    engine = ExecutiveSummaryEngine(
-        SuccessfulLLM()
-    )
+    engine = ExecutiveSummaryEngine(SuccessfulLLM())
 
-    summary = engine.generate_summary(
-        FakeReportingReport()
-    )
+    summary = engine.generate_summary(FakeReportingReport())
 
     assert summary.strip() != ""
 
 
 def test_empty_response():
 
-    engine = ExecutiveSummaryEngine(
-        EmptyLLM()
-    )
+    engine = ExecutiveSummaryEngine(EmptyLLM())
 
-    with pytest.raises(
-        ValueError
-    ):
+    with pytest.raises(ValueError):
 
-        engine.generate_summary(
-            FakeReportingReport()
-        )
+        engine.generate_summary(FakeReportingReport())
 
 
 def test_llm_exception():
 
-    engine = ExecutiveSummaryEngine(
-        ExceptionLLM()
-    )
+    engine = ExecutiveSummaryEngine(ExceptionLLM())
 
-    with pytest.raises(
-        RuntimeError
-    ):
+    with pytest.raises(RuntimeError):
 
-        engine.generate_summary(
-            FakeReportingReport()
-        )
+        engine.generate_summary(FakeReportingReport())

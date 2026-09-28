@@ -17,6 +17,7 @@ from typing import Any
 from src.ai.ai_report import AIReport
 from src.ai.ai_result import AIResult
 from src.ai.confidence_evaluator import compute_evidence_confidence
+from src.ai.insight_validator import validate_insight_text
 from src.ai.unified_report_engine import AISections, UnifiedReportEngine
 from src.core import config
 from src.core.logger import logger
@@ -151,7 +152,11 @@ class AIManager:
 
         # Extract analytics dictionary if present
         analytics_data: dict[str, Any] = {}
-        if reporting_report is not None and hasattr(reporting_report, "report") and hasattr(reporting_report.report, "analytics"):
+        if (
+            reporting_report is not None
+            and hasattr(reporting_report, "report")
+            and hasattr(reporting_report.report, "analytics")
+        ):
             raw_analytics = reporting_report.report.analytics
             if isinstance(raw_analytics, dict):
                 analytics_data = raw_analytics
@@ -168,7 +173,9 @@ class AIManager:
         # Dataset-grounded risks & limitations
         risks: list[str] = []
         if data_context and hasattr(data_context, "source") and data_context.source.total_missing > 0:
-            risks.append(f"Source dataset contained {data_context.source.total_missing} missing cells requiring pre-processing governance.")
+            risks.append(
+                f"Source dataset contained {data_context.source.total_missing} missing cells requiring pre-processing governance."
+            )
         else:
             risks.append("Dataset dimension distribution should be monitored for operational concentrations.")
 
@@ -177,7 +184,34 @@ class AIManager:
         ]
         desc = analytics_data.get("descriptive_statistics", {})
         if desc.get("numeric_column_count", 0) == 0:
-            limitations.append("The available dataset does not contain governed numerical measure columns; revenue/financial forecasting is unavailable.")
+            limitations.append(
+                "The available dataset does not contain governed numerical measure columns; revenue/financial forecasting is unavailable."
+            )
+
+        # Validate generated prose against the deterministic analytics. Findings
+        # are surfaced rather than raised: on local CPU inference a regeneration
+        # costs minutes, so a flagged report is more useful than no report.
+        validation_findings = validate_insight_text(
+            "\n".join(
+                [
+                    sections.executive_summary or "",
+                    sections.narrative or "",
+                    *(recs or []),
+                    *(expls or []),
+                ]
+            ),
+            analytics_data,
+        )
+
+        for finding in validation_findings:
+            logger.warning("AI insight validation: %s", finding)
+
+        if validation_findings:
+            limitations.append(
+                f"Automated validation flagged {len(validation_findings)} "
+                "statement(s) as unsupported by the deterministic analytics:"
+            )
+            limitations.extend(validation_findings)
 
         report = AIReport(
             executive_summary=sections.executive_summary,

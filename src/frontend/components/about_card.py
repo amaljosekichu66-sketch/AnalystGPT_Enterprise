@@ -19,8 +19,7 @@ def render_about_card() -> None:
 
     st.subheader("📘 Project Overview")
 
-    st.markdown(
-        f"""
+    st.markdown(f"""
 **{APP_NAME}** is an enterprise-grade analytics platform
 designed using a modular, production-oriented architecture.
 
@@ -35,8 +34,7 @@ The platform provides a complete analytics workflow including:
 - REST API
 - Power BI Integration
 - AI Insight Engine
-"""
-    )
+""")
 
     st.divider()
 
@@ -97,8 +95,7 @@ SQLite / PostgreSQL
 
     st.subheader("🛠 Technology Stack")
 
-    st.markdown(
-        """
+    st.markdown("""
 - Python
 - Pandas
 - Streamlit
@@ -109,8 +106,7 @@ SQLite / PostgreSQL
 - Power BI
 - Ollama
 - REST APIs
-"""
-    )
+""")
 
     st.divider()
 

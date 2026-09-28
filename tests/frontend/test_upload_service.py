@@ -5,6 +5,7 @@ Sprint 14 Phase 6 — OpenAPI / React Migration Readiness.
 """
 
 from unittest.mock import MagicMock
+
 from src.frontend.services.upload_service import UploadService
 
 

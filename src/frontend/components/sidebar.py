@@ -38,13 +38,9 @@ def render_sidebar() -> str:
         Selected page.
     """
 
-    st.sidebar.title(
-        "📊 AnalystGPT"
-    )
+    st.sidebar.title("📊 AnalystGPT")
 
-    st.sidebar.caption(
-        "Enterprise Analytics Platform"
-    )
+    st.sidebar.caption("Enterprise Analytics Platform")
 
     st.sidebar.divider()
 
@@ -89,16 +85,10 @@ def render_sidebar() -> str:
     st.sidebar.divider()
 
     if has_dataset():
-        st.sidebar.success(
-            "Dataset Loaded"
-        )
+        st.sidebar.success("Dataset Loaded")
     else:
-        st.sidebar.info(
-            "No Dataset Loaded"
-        )
+        st.sidebar.info("No Dataset Loaded")
 
-    st.sidebar.caption(
-        f"Version {APP_VERSION}"
-    )
+    st.sidebar.caption(f"Version {APP_VERSION}")
 
     return selected_page

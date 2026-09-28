@@ -27,27 +27,13 @@ class ConsistencyChecker:
 
         results = {}
 
-        text_columns = dataframe.select_dtypes(
-            include=["object", "string"]
-        ).columns
+        text_columns = dataframe.select_dtypes(include=["object", "string"]).columns
 
         for column in text_columns:
 
-            leading_spaces = (
-                dataframe[column]
-                .dropna()
-                .astype(str)
-                .str.startswith(" ")
-                .sum()
-            )
+            leading_spaces = dataframe[column].dropna().astype(str).str.startswith(" ").sum()
 
-            trailing_spaces = (
-                dataframe[column]
-                .dropna()
-                .astype(str)
-                .str.endswith(" ")
-                .sum()
-            )
+            trailing_spaces = dataframe[column].dropna().astype(str).str.endswith(" ").sum()
 
             results[column] = {
                 "leading_spaces": int(leading_spaces),

@@ -30,40 +30,28 @@ class NarrativeEngine:
         reporting_report: ReportingReport,
     ) -> str:
 
-        logger.info(
-            "Generating narrative..."
-        )
+        logger.info("Generating narrative...")
 
         start_time = time.perf_counter()
 
         try:
 
-            prompt = PromptBuilder.narrative(
-                reporting_report
-            )
+            prompt = PromptBuilder.narrative(reporting_report)
 
-            narrative = self._llm.generate(
-                prompt
-            ).strip()
+            narrative = self._llm.generate(prompt).strip()
 
             if not narrative:
-                raise ValueError(
-                    "LLM returned an empty narrative."
-                )
+                raise ValueError("LLM returned an empty narrative.")
 
             logger.info(
-                "Narrative generated successfully "
-                "(%.3f seconds).",
-                time.perf_counter()
-                - start_time,
+                "Narrative generated successfully " "(%.3f seconds).",
+                time.perf_counter() - start_time,
             )
 
             return narrative
 
         except Exception:
 
-            logger.exception(
-                "Narrative generation failed."
-            )
+            logger.exception("Narrative generation failed.")
 
             raise

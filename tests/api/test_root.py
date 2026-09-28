@@ -6,10 +6,10 @@ from fastapi.testclient import TestClient
 
 from src.api.server import app
 from src.core.constants import (
-    APP_NAME,
-    APP_VERSION,
-    APP_STATUS,
     API_DOCS_URL,
+    APP_NAME,
+    APP_STATUS,
+    APP_VERSION,
 )
 
 client = TestClient(app)
@@ -18,6 +18,7 @@ client = TestClient(app)
 # ==========================================================
 # Root Endpoint Tests
 # ==========================================================
+
 
 def test_root_endpoint_returns_success() -> None:
     """

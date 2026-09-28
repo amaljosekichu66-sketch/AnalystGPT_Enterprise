@@ -56,21 +56,13 @@ class AIDataContextBuilder:
             if cleaning_execution.source_missing_count is not None
             else (quality_comparison.source.total_missing if quality_comparison else 0)
         )
-        source_pct_missing = (
-            quality_comparison.source.missing_percentage
-            if quality_comparison
-            else 0.0
-        )
+        source_pct_missing = quality_comparison.source.missing_percentage if quality_comparison else 0.0
         source_completeness = (
             cleaning_execution.source_completeness_pct
             if cleaning_execution.source_completeness_pct is not None
             else (quality_comparison.source.completeness_percentage if quality_comparison else 100.0)
         )
-        per_col_missing = (
-            quality_comparison.source.per_column_missing
-            if quality_comparison
-            else {}
-        )
+        per_col_missing = quality_comparison.source.per_column_missing if quality_comparison else {}
 
         source_ctx = SourceDataContext(
             version_id=source_version.version_id,
@@ -92,11 +84,7 @@ class AIDataContextBuilder:
         pct_rows_removed = (
             cleaning_execution.pct_rows_removed
             if cleaning_execution.pct_rows_removed is not None
-            else (
-                round((rows_removed / source_version.row_count) * 100, 4)
-                if source_version.row_count > 0
-                else 0.0
-            )
+            else (round((rows_removed / source_version.row_count) * 100, 4) if source_version.row_count > 0 else 0.0)
         )
         columns_removed = cleaning_execution.columns_removed or []
         affected_cols = (
@@ -107,9 +95,7 @@ class AIDataContextBuilder:
 
         cleaning_ctx = CleaningContext(
             config_id=cleaning_execution.config_id,
-            missing_value_policy=getattr(
-                cleaning_execution, "missing_value_policy", "DROP_ROWS"
-            ),
+            missing_value_policy=getattr(cleaning_execution, "missing_value_policy", "DROP_ROWS"),
             rows_removed=rows_removed,
             pct_rows_removed=pct_rows_removed,
             columns_removed=columns_removed,
@@ -210,9 +196,7 @@ class AIDataContextBuilder:
 
         # Query Dataset Versions
         version_repo = DatasetVersionRepository(connection)
-        source_version = version_repo.get_by_version_id(
-            cleaning_exec_row["source_version_id"], user_id=user_id
-        )
+        source_version = version_repo.get_by_version_id(cleaning_exec_row["source_version_id"], user_id=user_id)
         if source_version is None:
             logger.warning(
                 "Source DatasetVersion %s not found for pipeline run %d.",
@@ -223,18 +207,14 @@ class AIDataContextBuilder:
 
         cleaned_version = None
         if cleaning_exec_row.get("cleaned_version_id"):
-            cleaned_version = version_repo.get_by_version_id(
-                cleaning_exec_row["cleaned_version_id"], user_id=user_id
-            )
+            cleaned_version = version_repo.get_by_version_id(cleaning_exec_row["cleaned_version_id"], user_id=user_id)
 
         # Query Cleaning Config for authoritative policy
         from src.database.repositories.cleaning_config_repository import CleaningConfigRepository
 
         cfg_repo = CleaningConfigRepository(connection)
         cfg_row = cfg_repo.get_by_config_id(cleaning_exec_row["config_id"], user_id=user_id)
-        authoritative_policy = (
-            cfg_row.get("missing_value_policy") if cfg_row else None
-        )
+        authoritative_policy = cfg_row.get("missing_value_policy") if cfg_row else None
 
         # Query Report for analytical findings
         report_repo = ReportRepository(connection)
@@ -260,11 +240,7 @@ class AIDataContextBuilder:
         # 1. Reconstruct Source Context
         source_missing_count = cleaning_exec_row.get("source_missing_count")
         source_completeness_pct = cleaning_exec_row.get("source_completeness_pct")
-        source_missing_pct = (
-            round(100.0 - source_completeness_pct, 4)
-            if source_completeness_pct is not None
-            else None
-        )
+        source_missing_pct = round(100.0 - source_completeness_pct, 4) if source_completeness_pct is not None else None
 
         source_ctx = SourceDataContext(
             version_id=source_version["version_id"],
@@ -282,11 +258,7 @@ class AIDataContextBuilder:
         rows_removed = (
             cleaning_exec_row["rows_removed"]
             if cleaning_exec_row.get("rows_removed") is not None
-            else (
-                max(0, source_version["row_count"] - cleaned_version["row_count"])
-                if cleaned_version
-                else None
-            )
+            else (max(0, source_version["row_count"] - cleaned_version["row_count"]) if cleaned_version else None)
         )
         pct_rows_removed = (
             cleaning_exec_row["pct_rows_removed"]
@@ -319,11 +291,7 @@ class AIDataContextBuilder:
             pct_rows_removed=pct_rows_removed,
             columns_removed=cols_removed or [],
             values_imputed=None,
-            affected_columns=(
-                list(affected_detail.keys())
-                if isinstance(affected_detail, dict)
-                else []
-            ),
+            affected_columns=(list(affected_detail.keys()) if isinstance(affected_detail, dict) else []),
         )
 
         # 3. Reconstruct Analytical Context
@@ -340,11 +308,7 @@ class AIDataContextBuilder:
                 )
             )
         )
-        cleaned_cols = (
-            cleaned_version["column_count"]
-            if cleaned_version
-            else source_version["column_count"]
-        )
+        cleaned_cols = cleaned_version["column_count"] if cleaned_version else source_version["column_count"]
 
         analytical_ctx = AnalyticalDataContext(
             cleaned_version_id=cleaned_version["version_id"] if cleaned_version else None,

@@ -6,18 +6,17 @@ from typing import Any
 
 from src.llm.prompt_builder import PromptBuilder
 
-
 # ----------------------------------------------------------------------
 # Stub for StructuredReport
 # ----------------------------------------------------------------------
+
 
 class FakeStructuredReport:
     """StructuredReport stub used by PromptBuilder tests."""
 
     def __init__(self) -> None:
         self.executive_summary = (
-            "Fortune 500 Enterprise Analytics Report. "
-            "Revenue increased by 18% with strong growth."
+            "Fortune 500 Enterprise Analytics Report. " "Revenue increased by 18% with strong growth."
         )
 
         self.kpis = {
@@ -53,6 +52,7 @@ class FakeStructuredReport:
 # Stub for ReportingReport
 # ----------------------------------------------------------------------
 
+
 class FakeReportingReport:
     """Minimal ReportingReport stub."""
 
@@ -73,6 +73,7 @@ class FakeReportingReport:
 # ----------------------------------------------------------------------
 # Tests
 # ----------------------------------------------------------------------
+
 
 def test_executive_summary_prompt() -> None:
     prompt = PromptBuilder.executive_summary(

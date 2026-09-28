@@ -82,17 +82,13 @@ class DescriptiveStatistics:
                 and col in dataframe.columns
             ]
         else:
-            numeric_columns = dataframe.select_dtypes(
-                include=["number"]
-            ).columns.tolist()
+            numeric_columns = dataframe.select_dtypes(include=["number"]).columns.tolist()
 
             categorical_columns = dataframe.select_dtypes(
                 include=["object", "string", "category", "bool"]
             ).columns.tolist()
 
-            datetime_columns = dataframe.select_dtypes(
-                include=["datetime", "datetimetz"]
-            ).columns.tolist()
+            datetime_columns = dataframe.select_dtypes(include=["datetime", "datetimetz"]).columns.tolist()
 
         memory_usage_mb = round(
             dataframe.memory_usage(deep=True).sum() / (1024 * 1024),

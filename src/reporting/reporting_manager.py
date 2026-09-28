@@ -7,11 +7,12 @@ format-specific report exporters.
 
 from __future__ import annotations
 
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import Any
 
 from src.analytics.analytics_report import AnalyticsReport
+from src.core import config
 from src.core.constants import REPORT_TITLE
 from src.core.logger import logger
 from src.reporting.executive_summary import ExecutiveSummary
@@ -43,13 +44,9 @@ class ReportingManager:
 
         self.report_builder = ReportBuilder()
 
-        self.text_report_exporter = (
-            TextReportExporter()
-        )
+        self.text_report_exporter = TextReportExporter()
 
-        self.pdf_report_exporter = (
-            PdfReportExporter()
-        )
+        self.pdf_report_exporter = PdfReportExporter()
 
     # ==========================================================
     # Public API
@@ -79,31 +76,23 @@ class ReportingManager:
 
         start_time = time.perf_counter()
 
-        logger.info(
-            "Starting reporting pipeline."
-        )
+        logger.info("Starting reporting pipeline.")
 
-        executive_summary = (
-            self._generate_summary(
-                analytics_report,
-            )
+        executive_summary = self._generate_summary(
+            analytics_report,
         )
 
         kpis = self._format_kpis(
             analytics_report,
         )
 
-        recommendations = (
-            self._default_recommendations()
-        )
+        recommendations = self._default_recommendations()
 
-        structured_report = (
-            self._build_report(
-                analytics_report=analytics_report,
-                executive_summary=executive_summary,
-                kpis=kpis,
-                recommendations=recommendations,
-            )
+        structured_report = self._build_report(
+            analytics_report=analytics_report,
+            executive_summary=executive_summary,
+            kpis=kpis,
+            recommendations=recommendations,
         )
 
         export_path = self._export_report(
@@ -111,16 +100,10 @@ class ReportingManager:
             output_path=output_path,
         )
 
-        elapsed_time = (
-            time.perf_counter()
-            - start_time
-        )
+        elapsed_time = time.perf_counter() - start_time
 
         logger.info(
-            (
-                "Reporting pipeline completed "
-                "successfully in %.4f seconds."
-            ),
+            ("Reporting pipeline completed " "successfully in %.4f seconds."),
             elapsed_time,
         )
 
@@ -176,14 +159,10 @@ class ReportingManager:
         Generate the executive summary.
         """
 
-        logger.info(
-            "Generating executive summary..."
-        )
+        logger.info("Generating executive summary...")
 
-        return (
-            self.executive_summary.generate_summary(
-                analytics_report.report,
-            )
+        return self.executive_summary.generate_summary(
+            analytics_report.report,
         )
 
     def _format_kpis(
@@ -194,14 +173,10 @@ class ReportingManager:
         Generate formatted KPI section.
         """
 
-        logger.info(
-            "Formatting KPI section..."
-        )
+        logger.info("Formatting KPI section...")
 
-        return (
-            self.kpi_formatter.format_kpis(
-                analytics_report.report,
-            )
+        return self.kpi_formatter.format_kpis(
+            analytics_report.report,
         )
 
     def _default_recommendations(
@@ -212,14 +187,8 @@ class ReportingManager:
         """
 
         return [
-            (
-                "Review the analytics findings "
-                "before making business decisions."
-            ),
-            (
-                "Validate business insights with "
-                "domain experts when appropriate."
-            ),
+            ("Review the analytics findings " "before making business decisions."),
+            ("Validate business insights with " "domain experts when appropriate."),
         ]
 
     def _build_report(
@@ -233,18 +202,14 @@ class ReportingManager:
         Build the structured report.
         """
 
-        logger.info(
-            "Building structured report..."
-        )
+        logger.info("Building structured report...")
 
-        return (
-            self.report_builder.build_report(
-                title=REPORT_TITLE,
-                executive_summary=executive_summary,
-                kpis=kpis,
-                analytics=analytics_report.report,
-                recommendations=recommendations,
-            )
+        return self.report_builder.build_report(
+            title=REPORT_TITLE,
+            executive_summary=executive_summary,
+            kpis=kpis,
+            analytics=analytics_report.report,
+            recommendations=recommendations,
         )
 
     def _export_report(
@@ -256,9 +221,7 @@ class ReportingManager:
         Export the default text report.
         """
 
-        logger.info(
-            "Exporting text report..."
-        )
+        logger.info("Exporting text report...")
 
         path = self.text_report_exporter.export(
             structured_report,
@@ -266,11 +229,39 @@ class ReportingManager:
         )
 
         if output_path is not None:
-            try:
-                latest_p = Path("reports/analystgpt_report.txt")
-                latest_p.parent.mkdir(parents=True, exist_ok=True)
-                latest_p.write_text(Path(path).read_text(encoding="utf-8"), encoding="utf-8")
-            except Exception:
-                pass
+            self._mirror_as_latest(path)
 
         return path
+
+    @staticmethod
+    def _mirror_as_latest(exported_path: str | Path) -> None:
+        """
+        Copy the just-written report to the conventional "latest" filename.
+
+        Two things were wrong here. The destination was the relative literal
+        `reports/analystgpt_report.txt`, which resolves against the process
+        working directory - the repository root under pytest - so a test run
+        overwrote the developer's real report. And the copy was wrapped in a
+        bare `except Exception: pass`, so a genuine failure to write it was
+        indistinguishable from success.
+
+        The destination now comes from `config.REPORT_OUTPUT_DIRECTORY`, and a
+        failure is logged. It is still non-fatal: the authoritative artifact is
+        the one already written to `exported_path`, and losing a convenience
+        copy must not fail an otherwise successful pipeline run.
+        """
+        destination = Path(config.REPORT_OUTPUT_DIRECTORY) / config.DEFAULT_REPORT_FILENAME
+
+        try:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(
+                Path(exported_path).read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+        except OSError:
+            logger.warning(
+                "Could not update the latest-report copy at '%s'. The exported " "report at '%s' is unaffected.",
+                destination,
+                exported_path,
+                exc_info=True,
+            )

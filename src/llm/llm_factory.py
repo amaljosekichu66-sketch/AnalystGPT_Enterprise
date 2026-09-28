@@ -32,11 +32,7 @@ class LLMFactory:
         BaseLLM
             Configured provider.
         """
-        provider = (
-            config.LLM_PROVIDER
-            .strip()
-            .lower()
-        )
+        provider = config.LLM_PROVIDER.strip().lower()
 
         logger.info(
             "Initialising LLM Provider: %s",
@@ -60,9 +56,7 @@ class LLMFactory:
             "Unsupported LLM Provider: %s",
             provider,
         )
-        raise ValueError(
-            f"Unsupported LLM Provider: {provider}"
-        )
+        raise ValueError(f"Unsupported LLM Provider: {provider}")
 
     @classmethod
     def create_llm(cls) -> BaseLLM:

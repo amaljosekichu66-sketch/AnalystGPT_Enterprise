@@ -44,17 +44,13 @@ def test_application_run_asynchronous_decoupling() -> None:
         return AIResult(success=True, ai_report=mock_report)
 
     try:
-        with patch.object(
-            AIManager, "generate_ai_report", side_effect=slow_ai_generate
-        ):
+        with patch.object(AIManager, "generate_ai_report", side_effect=slow_ai_generate):
             start_time = time.perf_counter()
             result = app.run(str(SAMPLE_DATASET))
             elapsed = time.perf_counter() - start_time
 
             # Core pipeline must finish in < 1.5s regardless of 2.0s slow AI
-            assert (
-                elapsed < 1.5
-            ), f"Pipeline execution took {elapsed:.4f}s, expected < 1.5s"
+            assert elapsed < 1.5, f"Pipeline execution took {elapsed:.4f}s, expected < 1.5s"
 
             assert isinstance(result, PipelineResult)
             assert result.success is True
@@ -76,11 +72,14 @@ def test_ai_failure_does_not_fail_pipeline() -> None:
 
     try:
         # Mock total AI provider outage
-        with patch.object(
-            AIManager,
-            "generate_ai_report",
-            side_effect=ConnectionError("Ollama service down"),
-        ), patch("threading.Timer"):
+        with (
+            patch.object(
+                AIManager,
+                "generate_ai_report",
+                side_effect=ConnectionError("Ollama service down"),
+            ),
+            patch("threading.Timer"),
+        ):
             result = app.run(str(SAMPLE_DATASET))
 
             assert result.success is True

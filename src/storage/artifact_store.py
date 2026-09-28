@@ -20,7 +20,7 @@ from typing import BinaryIO
 import pandas as pd
 from pandas import DataFrame
 
-from src.core.config import PROJECT_ROOT
+from src.core import config
 from src.core.logger import logger
 from src.storage.exceptions import ArtifactStoreError, ChecksumMismatchError
 
@@ -79,7 +79,10 @@ class LocalArtifactStore(ArtifactStore):
     """
 
     def __init__(self, base_dir: Path | None = None) -> None:
-        self.base_dir = base_dir or (PROJECT_ROOT / "data" / "artifacts")
+        # Read through `config` rather than binding the module-level constant
+        # at import time, so a redirected store is honoured by every instance
+        # constructed afterwards.
+        self.base_dir = Path(base_dir or config.ARTIFACT_STORE_DIRECTORY)
         self.raw_dir = self.base_dir / "raw"
         self.cleaned_dir = self.base_dir / "cleaned"
         self._ensure_directories()

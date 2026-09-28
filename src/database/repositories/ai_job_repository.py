@@ -44,9 +44,7 @@ class AIJobRepository(BaseRepository):
         If a job already exists for the given pipeline_run_id, returns the existing job.
         """
         # Idempotency check: check if job already exists for pipeline_run_id
-        existing = self.get_by_pipeline_run_id(
-            pipeline_run_id, user_id=user_id
-        )
+        existing = self.get_by_pipeline_run_id(pipeline_run_id, user_id=user_id)
         if existing is not None:
             return existing
 
@@ -107,9 +105,7 @@ class AIJobRepository(BaseRepository):
             )
         except Exception:
             # In case of concurrent insert race condition, return the existing record
-            existing_after_race = self.get_by_pipeline_run_id(
-                pipeline_run_id, user_id=user_id
-            )
+            existing_after_race = self.get_by_pipeline_run_id(pipeline_run_id, user_id=user_id)
             if existing_after_race is not None:
                 return existing_after_race
             raise

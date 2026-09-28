@@ -25,15 +25,15 @@ from src.api.dependencies.application_dependency import (
 from src.api.dependencies.auth_dependencies import (
     require_permission,
 )
+from src.api.models.response_models import (
+    DashboardStatusResponse,
+)
 from src.application.app import Application
 from src.application.dashboard_orchestrator import (
     DashboardOrchestrator,
 )
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
-from src.api.models.response_models import (
-    DashboardStatusResponse,
-)
 from src.integrations.powerbi.powerbi_models import (
     DashboardResponse,
 )
@@ -47,6 +47,7 @@ router = APIRouter(
 # ==========================================================
 # Dependencies
 # ==========================================================
+
 
 def get_dashboard_orchestrator(
     application: Application = Depends(
@@ -67,15 +68,13 @@ def get_dashboard_orchestrator(
 # Dashboard
 # ==========================================================
 
+
 @router.get(
     "/dashboard",
     response_model=DashboardResponse,
     status_code=status.HTTP_200_OK,
     summary="Get Dashboard",
-    description=(
-        "Return the complete enterprise dashboard, "
-        "including analytics, reporting and AI insights."
-    ),
+    description=("Return the complete enterprise dashboard, " "including analytics, reporting and AI insights."),
 )
 async def get_dashboard(
     dataset: str = Query(
@@ -104,18 +103,10 @@ async def get_dashboard(
 
         return DashboardResponse(
             success=True,
-            execution_time=pipeline[
-                "execution_time"
-            ],
-            report=dashboard[
-                "report"
-            ],
-            output_path=pipeline[
-                "output_path"
-            ],
-            ai_report=dashboard[
-                "ai_report"
-            ],
+            execution_time=pipeline["execution_time"],
+            report=dashboard["report"],
+            output_path=pipeline["output_path"],
+            ai_report=dashboard["ai_report"],
         )
 
     except Exception as exc:
@@ -129,6 +120,7 @@ async def get_dashboard(
 # ==========================================================
 # Status
 # ==========================================================
+
 
 @router.get(
     "/status",

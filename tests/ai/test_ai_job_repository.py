@@ -50,9 +50,7 @@ def test_create_and_get_ai_job(db_connection) -> None:
     job_repo = AIJobRepository(db_connection)
 
     # First insert a mock pipeline run
-    db_connection.get_connection().execute(
-        "INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');"
-    )
+    db_connection.get_connection().execute("INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');")
     db_connection.commit()
 
     job = job_repo.create_job(
@@ -82,9 +80,7 @@ def test_create_and_get_ai_job(db_connection) -> None:
     scoped_match = job_repo.get_by_job_id("ai_job_test_101", user_id=1)
     assert scoped_match is not None
 
-    scoped_mismatch = job_repo.get_by_job_id(
-        "ai_job_test_101", user_id=999
-    )
+    scoped_mismatch = job_repo.get_by_job_id("ai_job_test_101", user_id=999)
     assert scoped_mismatch is None
 
     # Fetch by pipeline_run_id
@@ -99,9 +95,7 @@ def test_ai_job_idempotent_creation(db_connection) -> None:
     """
     job_repo = AIJobRepository(db_connection)
 
-    db_connection.get_connection().execute(
-        "INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');"
-    )
+    db_connection.get_connection().execute("INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');")
     db_connection.commit()
 
     job1 = job_repo.create_job(
@@ -126,9 +120,7 @@ def test_atomic_claim_next_pending_job(db_connection) -> None:
     """
     job_repo = AIJobRepository(db_connection)
 
-    db_connection.get_connection().execute(
-        "INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');"
-    )
+    db_connection.get_connection().execute("INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');")
     db_connection.commit()
 
     job_repo.create_job(
@@ -156,9 +148,7 @@ def test_mark_ready_and_report_persistence(db_connection) -> None:
     job_repo = AIJobRepository(db_connection)
     report_repo = AIReportRepository(db_connection)
 
-    db_connection.get_connection().execute(
-        "INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');"
-    )
+    db_connection.get_connection().execute("INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');")
     db_connection.commit()
 
     job_repo.create_job(
@@ -210,9 +200,7 @@ def test_mark_failed_and_schedule_retry(db_connection) -> None:
     """
     job_repo = AIJobRepository(db_connection)
 
-    db_connection.get_connection().execute(
-        "INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');"
-    )
+    db_connection.get_connection().execute("INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');")
     db_connection.commit()
 
     job_repo.create_job(

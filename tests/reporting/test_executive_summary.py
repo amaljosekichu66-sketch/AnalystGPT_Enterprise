@@ -11,9 +11,7 @@ def test_executive_summary_generates_summary():
         "distribution_analysis": {},
     }
 
-    summary = ExecutiveSummary().generate_summary(
-        analytics_report
-    )
+    summary = ExecutiveSummary().generate_summary(analytics_report)
 
     assert isinstance(summary, list)
     assert len(summary) > 0
@@ -29,9 +27,7 @@ def test_executive_summary_reports_completed_sections():
         "distribution_analysis": {},
     }
 
-    summary = ExecutiveSummary().generate_summary(
-        analytics_report
-    )
+    summary = ExecutiveSummary().generate_summary(analytics_report)
 
     combined = " ".join(summary)
 
@@ -46,9 +42,7 @@ def test_executive_summary_handles_empty_report():
 
     analytics_report = {}
 
-    summary = ExecutiveSummary().generate_summary(
-        analytics_report
-    )
+    summary = ExecutiveSummary().generate_summary(analytics_report)
 
     assert isinstance(summary, list)
     assert len(summary) > 0

@@ -20,10 +20,10 @@ from pathlib import Path
 from typing import Any
 
 from src.application.app import Application
+from src.core import config
 from src.core.config import (
     DEFAULT_PDF_REPORT_FILENAME,
     DEFAULT_REPORT_FILENAME,
-    REPORT_OUTPUT_DIRECTORY,
 )
 from src.core.logger import logger
 from src.reporting.structured_report import StructuredReport
@@ -217,11 +217,7 @@ class ReportingOrchestrator:
         )
         logger.info("=" * 80)
 
-        if (
-            result is None
-            or not result.success
-            or result.pipeline_report is None
-        ):
+        if result is None or not result.success or result.pipeline_report is None:
             return {
                 "reports": [],
                 "report": None,
@@ -230,13 +226,9 @@ class ReportingOrchestrator:
                 "output_path": None,
             }
 
-        reporting_report = (
-            result.pipeline_report.reporting_report
-        )
+        reporting_report = result.pipeline_report.reporting_report
 
-        ai_report = (
-            result.pipeline_report.ai_report
-        )
+        ai_report = result.pipeline_report.ai_report
 
         ai_report_dict = None
         if ai_report is not None:
@@ -277,7 +269,9 @@ class ReportingOrchestrator:
         """
         Generate and export a text report.
         """
-        logger.info("ReportingOrchestrator: export_text_report requested (user_id=%s, report_id=%s)", user_id, report_id)
+        logger.info(
+            "ReportingOrchestrator: export_text_report requested (user_id=%s, report_id=%s)", user_id, report_id
+        )
 
         # Database-level ownership verification if report_id provided
         if report_id is not None:
@@ -314,7 +308,7 @@ class ReportingOrchestrator:
 
         target_path = output_path
         if target_path is None and filename is not None:
-            target_path = REPORT_OUTPUT_DIRECTORY / filename
+            target_path = config.REPORT_OUTPUT_DIRECTORY / filename
 
         export_path = self._application.reporting_manager.export_text(
             report=structured_report,
@@ -370,7 +364,7 @@ class ReportingOrchestrator:
 
         target_path = output_path
         if target_path is None and filename is not None:
-            target_path = REPORT_OUTPUT_DIRECTORY / filename
+            target_path = config.REPORT_OUTPUT_DIRECTORY / filename
 
         export_path = self._application.reporting_manager.export_pdf(
             report=structured_report,

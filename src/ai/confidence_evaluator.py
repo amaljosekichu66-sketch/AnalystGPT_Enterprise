@@ -52,14 +52,24 @@ def compute_evidence_confidence(
 
     # 3. Completeness check
     completeness = None
-    if data_context and hasattr(data_context, "source") and getattr(data_context.source, "completeness_percentage", None) is not None:
+    if (
+        data_context
+        and hasattr(data_context, "source")
+        and getattr(data_context.source, "completeness_percentage", None) is not None
+    ):
         completeness = data_context.source.completeness_percentage
-    elif data_context and hasattr(data_context, "analytics") and getattr(data_context.analytics, "completeness_percentage", None) is not None:
+    elif (
+        data_context
+        and hasattr(data_context, "analytics")
+        and getattr(data_context.analytics, "completeness_percentage", None) is not None
+    ):
         completeness = data_context.analytics.completeness_percentage
 
     if completeness is not None and completeness < 70.0:
         missing_pct = 100.0 - completeness
-        return f"Low — High missingness ({missing_pct:.1f}% missing) impairs analytical reliability across active fields."
+        return (
+            f"Low — High missingness ({missing_pct:.1f}% missing) impairs analytical reliability across active fields."
+        )
 
     # 4. Zero numeric measures (Categorical-only dataset)
     if numeric_count == 0:

@@ -91,25 +91,19 @@ class ResponseParser:
         # Normalise line endings
         # ======================================================
 
-        cleaned = (
-            cleaned.replace(
-                "\r\n",
-                "\n",
-            )
-            .replace(
-                "\r",
-                "\n",
-            )
+        cleaned = cleaned.replace(
+            "\r\n",
+            "\n",
+        ).replace(
+            "\r",
+            "\n",
         )
 
         # ======================================================
         # Remove trailing whitespace
         # ======================================================
 
-        cleaned = "\n".join(
-            line.rstrip()
-            for line in cleaned.splitlines()
-        )
+        cleaned = "\n".join(line.rstrip() for line in cleaned.splitlines())
 
         # ======================================================
         # Collapse spaces

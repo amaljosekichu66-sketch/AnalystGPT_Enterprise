@@ -4,10 +4,12 @@ from src.quality.validity_checker import ValidityChecker
 
 
 def test_validity_checker_reports_column_information():
-    df = pd.DataFrame({
-        "name": ["Amal", "John"],
-        "age": [27, 30],
-    })
+    df = pd.DataFrame(
+        {
+            "name": ["Amal", "John"],
+            "age": [27, 30],
+        }
+    )
 
     checker = ValidityChecker()
     result = checker.check(df)

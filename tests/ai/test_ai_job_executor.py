@@ -49,9 +49,7 @@ def test_executor_successful_run(clean_db) -> None:
     """
     Verify AIJobExecutor executes successfully and transitions job to READY.
     """
-    clean_db.get_connection().execute(
-        "INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');"
-    )
+    clean_db.get_connection().execute("INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');")
     clean_db.commit()
 
     job_repo = AIJobRepository(clean_db)
@@ -115,9 +113,7 @@ def test_executor_retryable_error_handling(clean_db) -> None:
     """
     Verify retryable error triggers retry scheduling and preserves PENDING state.
     """
-    clean_db.get_connection().execute(
-        "INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');"
-    )
+    clean_db.get_connection().execute("INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');")
     clean_db.commit()
 
     job_repo = AIJobRepository(clean_db)
@@ -170,9 +166,7 @@ def test_executor_max_attempts_exhaustion_marks_failed(clean_db) -> None:
     """
     Verify that when attempts reach max_attempts, the job is permanently marked FAILED.
     """
-    clean_db.get_connection().execute(
-        "INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');"
-    )
+    clean_db.get_connection().execute("INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');")
     clean_db.commit()
 
     job_repo = AIJobRepository(clean_db)
@@ -217,9 +211,7 @@ def test_executor_exception_isolation(clean_db) -> None:
     """
     Verify that unhandled exceptions during execution are isolated and do not crash the caller.
     """
-    clean_db.get_connection().execute(
-        "INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');"
-    )
+    clean_db.get_connection().execute("INSERT INTO pipeline_runs (status) VALUES ('SUCCESS');")
     clean_db.commit()
 
     job_repo = AIJobRepository(clean_db)
@@ -231,9 +223,7 @@ def test_executor_exception_isolation(clean_db) -> None:
     )
 
     mock_ai_manager = MagicMock(spec=AIManager)
-    mock_ai_manager.generate_ai_report.side_effect = RuntimeError(
-        "Simulated unexpected AI runtime crash"
-    )
+    mock_ai_manager.generate_ai_report.side_effect = RuntimeError("Simulated unexpected AI runtime crash")
 
     executor = AIJobExecutor(
         max_workers=1,
@@ -255,3 +245,133 @@ def test_executor_exception_isolation(clean_db) -> None:
     assert "Simulated unexpected AI runtime crash" in (updated_job.error or "")
 
     executor.shutdown(wait=False)
+
+
+# ==========================================================
+# Failure Classification
+# ==========================================================
+#
+# Regression coverage for a defect that made the retry policy inert: domain
+# code wraps provider errors as `RuntimeError("LLM generation failed.")`, and
+# the classifier only inspected the outermost exception. Real Ollama timeouts
+# were therefore classified SYSTEM_ERROR (permanent) instead of TIMEOUT
+# (retryable). A full suite run showed 18 permanent SYSTEM_ERROR failures
+# against a single retryable TIMEOUT.
+
+
+def _classifier() -> AIJobExecutor:
+    """Build an executor without touching the LLM or thread pool."""
+    return AIJobExecutor.__new__(AIJobExecutor)
+
+
+def test_classify_error_unwraps_chained_timeout() -> None:
+    """A wrapped provider timeout must still classify as retryable TIMEOUT."""
+    try:
+        try:
+            raise TimeoutError("timed out")
+        except TimeoutError as cause:
+            raise RuntimeError("LLM generation failed.") from cause
+    except RuntimeError as wrapped:
+        assert _classifier()._classify_error(wrapped) == AIFailureCategory.TIMEOUT
+
+
+def test_classify_error_unwraps_chained_connection_failure() -> None:
+    """A wrapped connection failure must classify as PROVIDER_UNAVAILABLE."""
+    try:
+        try:
+            raise ConnectionRefusedError("connection refused")
+        except ConnectionRefusedError as cause:
+            raise RuntimeError("LLM generation failed.") from cause
+    except RuntimeError as wrapped:
+        assert _classifier()._classify_error(wrapped) == AIFailureCategory.PROVIDER_UNAVAILABLE
+
+
+def test_classify_error_maps_value_error_to_model_error() -> None:
+    """ValueError maps to MODEL_ERROR (previously missed via a 'valuerror' typo)."""
+    assert _classifier()._classify_error(ValueError("bad payload")) == AIFailureCategory.MODEL_ERROR
+
+
+def test_classify_error_maps_type_error_to_model_error() -> None:
+    """TypeError maps to MODEL_ERROR."""
+    assert _classifier()._classify_error(TypeError("bad type")) == AIFailureCategory.MODEL_ERROR
+
+
+def test_classify_error_defaults_to_system_error() -> None:
+    """An unrecognised failure with no informative cause stays SYSTEM_ERROR."""
+    assert _classifier()._classify_error(RuntimeError("LLM generation failed.")) == AIFailureCategory.SYSTEM_ERROR
+
+
+def test_classify_error_accepts_plain_string() -> None:
+    """String errors are still supported."""
+    assert _classifier()._classify_error("Request timed out") == AIFailureCategory.TIMEOUT
+
+
+def test_classify_error_survives_self_referential_chain() -> None:
+    """Chain walking must terminate on a cyclic __context__."""
+    first = RuntimeError("first")
+    second = RuntimeError("second")
+    first.__context__ = second
+    second.__context__ = first
+
+    assert _classifier()._classify_error(first) == AIFailureCategory.SYSTEM_ERROR
+
+
+# ==========================================================
+# Shutdown Lifecycle
+# ==========================================================
+#
+# Regression coverage for a lifecycle race: ThreadPoolExecutor.submit() raises
+# RuntimeError once the pool is shut down. AIJobService.create_and_dispatch_job
+# calls submit_job() directly, so a request arriving during shutdown propagated
+# that RuntimeError out of the request handler, leaving the job row PENDING with
+# no explanation. After shutdown the executor must accept no new work, quietly.
+
+
+def test_submit_job_after_shutdown_is_refused_not_raised() -> None:
+    """Submitting after shutdown must not raise; no new work is accepted."""
+    executor = AIJobExecutor(max_workers=1, ai_manager=MagicMock())
+    executor.shutdown(wait=True, cancel_pending=True)
+
+    # Must not raise RuntimeError("cannot schedule new futures after shutdown").
+    executor.submit_job(
+        job_id="job_submitted_after_shutdown",
+        reporting_report=MagicMock(spec=ReportingReport),
+    )
+
+
+def test_shutdown_is_idempotent() -> None:
+    """Repeated shutdown calls must be safe."""
+    executor = AIJobExecutor(max_workers=1, ai_manager=MagicMock())
+
+    executor.shutdown(wait=False)
+    executor.shutdown(wait=False)
+    executor.shutdown(wait=True, cancel_pending=True)
+
+
+def test_retry_timer_is_not_scheduled_after_shutdown() -> None:
+    """A retry must never resubmit work into a drained pool."""
+    executor = AIJobExecutor(max_workers=1, ai_manager=MagicMock())
+    executor.shutdown(wait=True, cancel_pending=True)
+
+    executor._schedule_retry_timer(
+        delay=0.01,
+        job_id="job_retry_after_shutdown",
+        reporting_report=MagicMock(spec=ReportingReport),
+    )
+
+    assert executor._retry_timers == set()
+
+
+def test_shutdown_cancels_outstanding_retry_timers() -> None:
+    """Pending retry timers must be cancelled by shutdown."""
+    executor = AIJobExecutor(max_workers=1, ai_manager=MagicMock())
+
+    executor._schedule_retry_timer(
+        delay=30.0,
+        job_id="job_pending_retry",
+        reporting_report=MagicMock(spec=ReportingReport),
+    )
+    assert len(executor._retry_timers) == 1
+
+    executor.shutdown(wait=True, cancel_pending=True)
+    assert executor._retry_timers == set()

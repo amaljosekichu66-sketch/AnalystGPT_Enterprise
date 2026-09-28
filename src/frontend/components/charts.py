@@ -109,7 +109,9 @@ def _render_single_chart(chart: PlannedChart, dataframe: pd.DataFrame) -> None:
                 ax.plot(range(len(dates)), values, color="#48BB78", linewidth=1.8, marker="o", markersize=3)
                 step = max(1, len(dates) // 5)
                 ax.set_xticks(range(0, len(dates), step))
-                ax.set_xticklabels([dates[i] for i in range(0, len(dates), step)], rotation=25, fontsize=7, color="#CBD5E0")
+                ax.set_xticklabels(
+                    [dates[i] for i in range(0, len(dates), step)], rotation=25, fontsize=7, color="#CBD5E0"
+                )
                 ax.set_ylabel("Value", color="#A0AEC0", fontsize=8)
 
         elif chart.chart_type == "correlation_heatmap":

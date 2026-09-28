@@ -9,7 +9,7 @@
     "license": {
       "name": "MIT"
     },
-    "version": "12.0.0"
+    "version": "14.0.0"
   },
   "paths": {
     "/": {
@@ -978,7 +978,7 @@
         }
       }
     },
-    "/powerbi/dashboard": {
+    "/api/powerbi/dashboard": {
       "get": {
         "tags": [
           "Power BI",
@@ -986,7 +986,7 @@
         ],
         "summary": "Dashboard",
         "description": "Return the complete dashboard response including analytics, reporting, and AI insights.",
-        "operationId": "dashboard_powerbi_dashboard_get",
+        "operationId": "dashboard_api_powerbi_dashboard_get",
         "parameters": [
           {
             "name": "dataset",
@@ -1124,7 +1124,7 @@
         }
       }
     },
-    "/powerbi/status": {
+    "/api/powerbi/status": {
       "get": {
         "tags": [
           "Dashboard",
@@ -1132,7 +1132,7 @@
         ],
         "summary": "Dashboard Status",
         "description": "Return lightweight application and dashboard status.",
-        "operationId": "dashboard_status_powerbi_status_get",
+        "operationId": "dashboard_status_api_powerbi_status_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1140,1023 +1140,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DashboardStatusResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/reports": {
-      "get": {
-        "tags": [
-          "Reports",
-          "Reports"
-        ],
-        "summary": "Latest Reports",
-        "description": "Return metadata for the most recently generated reporting and AI results.",
-        "operationId": "get_reports_reports_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Id"
-            }
-          },
-          {
-            "name": "X-User-Name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Name"
-            }
-          },
-          {
-            "name": "X-User-Email",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Email"
-            }
-          },
-          {
-            "name": "X-User-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Role"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReportsListResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/reports/{report_id}/export/text": {
-      "get": {
-        "tags": [
-          "Reports",
-          "Reports"
-        ],
-        "summary": "Export Text Report by ID",
-        "description": "Stream the plain-text report artifact for a specific report ID.",
-        "operationId": "export_text_report_by_id_reports__report_id__export_text_get",
-        "parameters": [
-          {
-            "name": "report_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Report Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Id"
-            }
-          },
-          {
-            "name": "X-User-Name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Name"
-            }
-          },
-          {
-            "name": "X-User-Email",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Email"
-            }
-          },
-          {
-            "name": "X-User-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Role"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plain-text report file stream",
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "text/plain": {}
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Report not found or access denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/reports/latest/export/text": {
-      "get": {
-        "tags": [
-          "Reports",
-          "Reports"
-        ],
-        "summary": "Export Latest Text Report (Alias)",
-        "description": "Stream the plain-text report artifact for the latest pipeline execution.",
-        "operationId": "export_latest_text_report_reports_latest_export_text_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Id"
-            }
-          },
-          {
-            "name": "X-User-Name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Name"
-            }
-          },
-          {
-            "name": "X-User-Email",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Email"
-            }
-          },
-          {
-            "name": "X-User-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Role"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plain-text report file stream",
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "text/plain": {}
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No generated report found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/reports/export/text": {
-      "get": {
-        "tags": [
-          "Reports",
-          "Reports"
-        ],
-        "summary": "Export Latest Text Report",
-        "description": "Stream the plain-text report artifact for the latest pipeline execution.",
-        "operationId": "export_latest_text_report_reports_export_text_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Id"
-            }
-          },
-          {
-            "name": "X-User-Name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Name"
-            }
-          },
-          {
-            "name": "X-User-Email",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Email"
-            }
-          },
-          {
-            "name": "X-User-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Role"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plain-text report file stream",
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "text/plain": {}
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No generated report found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/reports/{report_id}/export/pdf": {
-      "get": {
-        "tags": [
-          "Reports",
-          "Reports"
-        ],
-        "summary": "Export PDF Report by ID",
-        "description": "Stream the formatted PDF report artifact for a specific report ID.",
-        "operationId": "export_pdf_report_by_id_reports__report_id__export_pdf_get",
-        "parameters": [
-          {
-            "name": "report_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Report Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Id"
-            }
-          },
-          {
-            "name": "X-User-Name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Name"
-            }
-          },
-          {
-            "name": "X-User-Email",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Email"
-            }
-          },
-          {
-            "name": "X-User-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Role"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Formatted PDF report file stream",
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "application/pdf": {}
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Report not found or access denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/reports/latest/export/pdf": {
-      "get": {
-        "tags": [
-          "Reports",
-          "Reports"
-        ],
-        "summary": "Export Latest PDF Report (Alias)",
-        "description": "Stream the formatted PDF report artifact for the latest pipeline execution.",
-        "operationId": "export_latest_pdf_report_reports_latest_export_pdf_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Id"
-            }
-          },
-          {
-            "name": "X-User-Name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Name"
-            }
-          },
-          {
-            "name": "X-User-Email",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Email"
-            }
-          },
-          {
-            "name": "X-User-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Role"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Formatted PDF report file stream",
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "application/pdf": {}
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No generated report found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/reports/export/pdf": {
-      "get": {
-        "tags": [
-          "Reports",
-          "Reports"
-        ],
-        "summary": "Export Latest PDF Report",
-        "description": "Stream the formatted PDF report artifact for the latest pipeline execution.",
-        "operationId": "export_latest_pdf_report_reports_export_pdf_get",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Id"
-            }
-          },
-          {
-            "name": "X-User-Name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Name"
-            }
-          },
-          {
-            "name": "X-User-Email",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Email"
-            }
-          },
-          {
-            "name": "X-User-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Role"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Formatted PDF report file stream",
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "application/pdf": {}
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No generated report found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -2278,159 +1261,6 @@
           },
           "403": {
             "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/reports/{report_id}/export/text": {
-      "get": {
-        "tags": [
-          "Reports",
-          "Reports"
-        ],
-        "summary": "Export Text Report by ID",
-        "description": "Stream the plain-text report artifact for a specific report ID.",
-        "operationId": "export_text_report_by_id_api_reports__report_id__export_text_get",
-        "parameters": [
-          {
-            "name": "report_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Report Id"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-User-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Id"
-            }
-          },
-          {
-            "name": "X-User-Name",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Name"
-            }
-          },
-          {
-            "name": "X-User-Email",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Email"
-            }
-          },
-          {
-            "name": "X-User-Role",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-User-Role"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Plain-text report file stream",
-            "content": {
-              "application/json": {
-                "schema": {}
-              },
-              "text/plain": {}
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Report not found or access denied",
             "content": {
               "application/json": {
                 "schema": {
@@ -2740,15 +1570,15 @@
         }
       }
     },
-    "/api/reports/{report_id}/export/pdf": {
+    "/api/reports/{report_id}/export/text": {
       "get": {
         "tags": [
           "Reports",
           "Reports"
         ],
-        "summary": "Export PDF Report by ID",
-        "description": "Stream the formatted PDF report artifact for a specific report ID.",
-        "operationId": "export_pdf_report_by_id_api_reports__report_id__export_pdf_get",
+        "summary": "Export Text Report by ID",
+        "description": "Stream the plain-text report artifact for a specific report ID.",
+        "operationId": "export_text_report_by_id_api_reports__report_id__export_text_get",
         "parameters": [
           {
             "name": "report_id",
@@ -2842,12 +1672,12 @@
         ],
         "responses": {
           "200": {
-            "description": "Formatted PDF report file stream",
+            "description": "Plain-text report file stream",
             "content": {
               "application/json": {
                 "schema": {}
               },
-              "application/pdf": {}
+              "text/plain": {}
             }
           },
           "401": {
@@ -3181,7 +2011,160 @@
         }
       }
     },
-    "/powerbi/summary": {
+    "/api/reports/{report_id}/export/pdf": {
+      "get": {
+        "tags": [
+          "Reports",
+          "Reports"
+        ],
+        "summary": "Export PDF Report by ID",
+        "description": "Stream the formatted PDF report artifact for a specific report ID.",
+        "operationId": "export_pdf_report_by_id_api_reports__report_id__export_pdf_get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          },
+          {
+            "name": "X-User-Name",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Name"
+            }
+          },
+          {
+            "name": "X-User-Email",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          },
+          {
+            "name": "X-User-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Role"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Formatted PDF report file stream",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/pdf": {}
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permission denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Report not found or access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/powerbi/summary": {
       "get": {
         "tags": [
           "Power BI",
@@ -3189,7 +2172,7 @@
         ],
         "summary": "Dashboard Summary",
         "description": "Return high-level dashboard metrics (rows, columns, memory usage).",
-        "operationId": "summary_powerbi_summary_get",
+        "operationId": "summary_api_powerbi_summary_get",
         "parameters": [
           {
             "name": "dataset",
@@ -3327,7 +2310,7 @@
         }
       }
     },
-    "/powerbi/statistics": {
+    "/api/powerbi/statistics": {
       "get": {
         "tags": [
           "Power BI",
@@ -3335,7 +2318,7 @@
         ],
         "summary": "Statistics",
         "description": "Return descriptive statistics for numerical columns.",
-        "operationId": "statistics_powerbi_statistics_get",
+        "operationId": "statistics_api_powerbi_statistics_get",
         "parameters": [
           {
             "name": "dataset",
@@ -3473,7 +2456,7 @@
         }
       }
     },
-    "/powerbi/correlation": {
+    "/api/powerbi/correlation": {
       "get": {
         "tags": [
           "Power BI",
@@ -3481,7 +2464,7 @@
         ],
         "summary": "Correlation Analysis",
         "description": "Return correlation matrix and strong correlations across numerical columns.",
-        "operationId": "correlation_powerbi_correlation_get",
+        "operationId": "correlation_api_powerbi_correlation_get",
         "parameters": [
           {
             "name": "dataset",
@@ -3619,7 +2602,7 @@
         }
       }
     },
-    "/powerbi/distribution": {
+    "/api/powerbi/distribution": {
       "get": {
         "tags": [
           "Power BI",
@@ -3627,7 +2610,7 @@
         ],
         "summary": "Distribution Analysis",
         "description": "Return distribution analysis including skewness and kurtosis.",
-        "operationId": "distribution_powerbi_distribution_get",
+        "operationId": "distribution_api_powerbi_distribution_get",
         "parameters": [
           {
             "name": "dataset",
@@ -3765,7 +2748,7 @@
         }
       }
     },
-    "/powerbi/categorical": {
+    "/api/powerbi/categorical": {
       "get": {
         "tags": [
           "Power BI",
@@ -3773,7 +2756,7 @@
         ],
         "summary": "Categorical Analysis",
         "description": "Return unique value counts, top categories, and frequency profiles.",
-        "operationId": "categorical_powerbi_categorical_get",
+        "operationId": "categorical_api_powerbi_categorical_get",
         "parameters": [
           {
             "name": "dataset",
@@ -3911,7 +2894,7 @@
         }
       }
     },
-    "/powerbi/report": {
+    "/api/powerbi/report": {
       "get": {
         "tags": [
           "Power BI",
@@ -3919,7 +2902,7 @@
         ],
         "summary": "Reporting Output",
         "description": "Return full reporting outputs including KPIs, analytical summaries, and AI insights.",
-        "operationId": "report_powerbi_report_get",
+        "operationId": "report_api_powerbi_report_get",
         "parameters": [
           {
             "name": "dataset",
@@ -4057,7 +3040,7 @@
         }
       }
     },
-    "/powerbi/pipeline": {
+    "/api/powerbi/pipeline": {
       "get": {
         "tags": [
           "Power BI",
@@ -4065,7 +3048,7 @@
         ],
         "summary": "Pipeline Summary",
         "description": "Return pipeline execution status and metadata.",
-        "operationId": "pipeline_powerbi_pipeline_get",
+        "operationId": "pipeline_api_powerbi_pipeline_get",
         "parameters": [
           {
             "name": "dataset",
@@ -4449,7 +3432,7 @@
           "AI Insights"
         ],
         "summary": "Retry Failed AI Job",
-        "description": "Manually trigger a retry for an AI job in FAILED state.",
+        "description": "Re-queue a FAILED AI insight generation job for background processing.",
         "operationId": "retry_ai_job_api_ai_jobs__job_id__retry_post",
         "parameters": [
           {
@@ -5312,6 +4295,53 @@
           "execution_time": {
             "type": "number",
             "title": "Execution Time"
+          },
+          "key_findings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Key Findings"
+          },
+          "business_implications": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Business Implications"
+          },
+          "risks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Risks"
+          },
+          "opportunities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Opportunities"
+          },
+          "actions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Actions"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "confidence": {
+            "type": "string",
+            "title": "Confidence",
+            "default": "High (Grounded in Deterministic Analytics)"
           }
         },
         "type": "object",
@@ -5879,6 +4909,17 @@
             ],
             "title": "Output Path"
           },
+          "ai_job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Job Id"
+          },
           "generated_at": {
             "anyOf": [
               {
@@ -6382,6 +5423,17 @@
               }
             ],
             "title": "Output Path"
+          },
+          "ai_job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Job Id"
           },
           "ai_generated": {
             "type": "boolean",

@@ -23,6 +23,4 @@ class JSONReader:
 
         except Exception as error:
             logger.error(f"Failed to read JSON file: {error}")
-            raise FileReadError(
-                f"Unable to read JSON file: {file_path}"
-            ) from error
+            raise FileReadError(f"Unable to read JSON file: {file_path}") from error

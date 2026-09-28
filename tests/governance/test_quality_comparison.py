@@ -38,6 +38,7 @@ def test_quality_snapshot_from_quality_report():
 
 def test_quality_snapshot_to_dict_is_json_serializable():
     import json
+
     snap = _snapshot(10, 3, 2, 6.67, 93.33)
     d = snap.to_dict()
     json.dumps(d)  # Must not raise
@@ -87,6 +88,7 @@ def test_quality_comparison_completeness_gain():
 
 def test_quality_comparison_to_dict():
     import json
+
     source = _snapshot(100, 5, 20, 4.0, 96.0)
     cleaned = _snapshot(80, 5, 0, 0.0, 100.0)
     cmp = QualityComparison(source=source, cleaned=cleaned)

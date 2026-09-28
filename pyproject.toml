@@ -1,3 +1,21 @@
+# ==========================================================
+# Formatting scope
+# ==========================================================
+#
+# All of `src/` and `tests/` is formatted and enforced. Only non-source trees
+# are excluded.
+#
+# This previously excluded 15 of the 17 packages under `src/` plus all of
+# `tests/`, so black and isort ran, reported success, and checked almost
+# nothing. Retiring that took two passes: 131 files on 2026-09-17 and the
+# remaining nine packages immediately after.
+#
+# NOTE for Windows: run the formatters in UTF-8 mode. 35 files legitimately
+# contain characters outside cp1252 - the currency symbols in the classifier's
+# regex, emoji in the Streamlit components, box-drawing in a docstring diagram.
+# Without `PYTHONUTF8=1`, isort cannot read them and SKIPS them silently, which
+# means a file can drift while the check still reports clean. `scripts/lint.ps1`
+# sets this; see also `scripts/run_tests.ps1`.
 [tool.black]
 line-length = 120
 target-version = ["py311"]
@@ -9,8 +27,7 @@ force-exclude = '''
   | docs
   | reports
   | logs
-  | src/(database|reporting|llm|frontend|integrations|ai|persistence|api|application|cleaning|upload|quality|analytics|core)
-  | tests
+  | data
 )/
 '''
 
@@ -24,21 +41,7 @@ skip_glob = [
     "docs/*",
     "logs/*",
     "reports/*",
-    "src/database/*",
-    "src/reporting/*",
-    "src/llm/*",
-    "src/frontend/*",
-    "src/integrations/*",
-    "src/ai/*",
-    "src/persistence/*",
-    "src/api/*",
-    "src/application/*",
-    "src/cleaning/*",
-    "src/upload/*",
-    "src/quality/*",
-    "src/analytics/*",
-    "src/core/*",
-    "tests/*",
+    "data/*",
 ]
 
 [tool.mypy]
@@ -58,4 +61,7 @@ norecursedirs = [
     "scratch",
     "docs",
 ]
-addopts = "-ra"
+addopts = "-ra -m \"not integration\""
+markers = [
+    "integration: requires live external infrastructure (Ollama, REST API). Deselected by default; run with `pytest -m integration`.",
+]

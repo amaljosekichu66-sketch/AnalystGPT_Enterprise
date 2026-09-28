@@ -81,9 +81,7 @@ def test_preview_api_requires_dataset_version_id_and_rejects_arbitrary_paths(tmp
             role=UserRole.ANALYST,
         )
     )
-    _, token, _ = user_service.login(
-        UserLogin(username="auditor_jane", password="Password123!")
-    )
+    _, token, _ = user_service.login(UserLogin(username="auditor_jane", password="Password123!"))
 
     client = TestClient(app)
     headers = {"Authorization": f"Bearer {token}"}

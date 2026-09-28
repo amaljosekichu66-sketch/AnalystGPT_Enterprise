@@ -5,8 +5,8 @@ Integration tests for the pipeline endpoint.
 from pathlib import Path
 
 import pandas as pd
-from pandas import DataFrame
 import pytest
+from pandas import DataFrame
 
 from src.analytics.analytics_manager import AnalyticsManager
 from src.analytics.analytics_report import AnalyticsReport
@@ -33,9 +33,7 @@ def test_complete_pipeline():
     # Upload
     # ---------------------------------------------------------
 
-    dataframe = upload_manager.upload(
-        "sample_data/customer_data.csv"
-    )
+    dataframe = upload_manager.upload("sample_data/customer_data.csv")
 
     assert isinstance(dataframe, DataFrame)
 
@@ -43,9 +41,7 @@ def test_complete_pipeline():
     # Cleaning
     # ---------------------------------------------------------
 
-    cleaned_dataframe = cleaning_manager.clean(
-        dataframe
-    )
+    cleaned_dataframe = cleaning_manager.clean(dataframe)
 
     assert isinstance(cleaned_dataframe, DataFrame)
 
@@ -53,9 +49,7 @@ def test_complete_pipeline():
     # Quality
     # ---------------------------------------------------------
 
-    quality_report = quality_manager.assess(
-        cleaned_dataframe
-    )
+    quality_report = quality_manager.assess(cleaned_dataframe)
 
     assert isinstance(
         quality_report,
@@ -66,9 +60,7 @@ def test_complete_pipeline():
     # Analytics
     # ---------------------------------------------------------
 
-    analytics_report = analytics_manager.analyze(
-        cleaned_dataframe
-    )
+    analytics_report = analytics_manager.analyze(cleaned_dataframe)
 
     assert isinstance(
         analytics_report,
@@ -90,9 +82,7 @@ def test_complete_pipeline():
     # Reporting
     # ---------------------------------------------------------
 
-    reporting_report = reporting_manager.generate_report(
-        analytics_report
-    )
+    reporting_report = reporting_manager.generate_report(analytics_report)
 
     assert isinstance(
         reporting_report,
@@ -105,9 +95,7 @@ def test_complete_pipeline():
 
     assert reporting_report.execution_time >= 0
 
-    report_path = Path(
-        reporting_report.export_path
-    )
+    report_path = Path(reporting_report.export_path)
 
     assert report_path.exists()
 

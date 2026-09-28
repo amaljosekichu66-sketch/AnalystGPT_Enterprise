@@ -115,7 +115,11 @@ def render() -> None:
                 with pcol1:
                     st.metric("Rows", f"{cmp.source.row_count:,} → {cmp.cleaned.row_count:,}", f"-{cmp.rows_removed:,}")
                 with pcol2:
-                    st.metric("Missing Cells", f"{cmp.source.total_missing:,} → {cmp.cleaned.total_missing:,}", f"-{cmp.source.total_missing - cmp.cleaned.total_missing:,}")
+                    st.metric(
+                        "Missing Cells",
+                        f"{cmp.source.total_missing:,} → {cmp.cleaned.total_missing:,}",
+                        f"-{cmp.source.total_missing - cmp.cleaned.total_missing:,}",
+                    )
                 with pcol3:
                     delta_comp = cmp.cleaned.completeness_percentage - cmp.source.completeness_percentage
                     st.metric(
@@ -153,4 +157,6 @@ def render() -> None:
 
     # 7. Session Confirmation
     st.divider()
-    st.success(f"✅ Dataset `{uploaded_file.name if hasattr(uploaded_file, 'name') else 'dataset'}` loaded ({len(dataframe):,} rows, {len(dataframe.columns)} columns). Ready for enterprise pipeline.")
+    st.success(
+        f"✅ Dataset `{uploaded_file.name if hasattr(uploaded_file, 'name') else 'dataset'}` loaded ({len(dataframe):,} rows, {len(dataframe.columns)} columns). Ready for enterprise pipeline."
+    )

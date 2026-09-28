@@ -56,29 +56,19 @@ class QualityManager:
         results: dict = {}
 
         logger.info("Running CompletenessChecker...")
-        results["completeness"] = (
-            self.completeness_checker.check(dataframe)
-        )
+        results["completeness"] = self.completeness_checker.check(dataframe)
 
         logger.info("Running ValidityChecker...")
-        results["validity"] = (
-            self.validity_checker.check(dataframe)
-        )
+        results["validity"] = self.validity_checker.check(dataframe)
 
         logger.info("Running ConsistencyChecker...")
-        results["consistency"] = (
-            self.consistency_checker.check(dataframe)
-        )
+        results["consistency"] = self.consistency_checker.check(dataframe)
 
         logger.info("Running UniquenessChecker...")
-        results["uniqueness"] = (
-            self.uniqueness_checker.check(dataframe)
-        )
+        results["uniqueness"] = self.uniqueness_checker.check(dataframe)
 
         logger.info("Running OutlierChecker...")
-        results["outliers"] = (
-            self.outlier_checker.check(dataframe)
-        )
+        results["outliers"] = self.outlier_checker.check(dataframe)
 
         elapsed_time = time.perf_counter() - start_time
 

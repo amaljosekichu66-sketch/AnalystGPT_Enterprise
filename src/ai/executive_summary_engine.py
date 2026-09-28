@@ -46,34 +46,22 @@ class ExecutiveSummaryEngine:
 
         try:
 
-            logger.info(
-                "Building executive summary prompt..."
-            )
+            logger.info("Building executive summary prompt...")
 
-            prompt = PromptBuilder.executive_summary(
-                reporting_report
-            )
+            prompt = PromptBuilder.executive_summary(reporting_report)
 
-            logger.info(
-                "Prompt built successfully."
-            )
+            logger.info("Prompt built successfully.")
 
             logger.info(
                 "Prompt Length : %d characters",
                 len(prompt),
             )
 
-            logger.info(
-                "Calling LLM.generate()..."
-            )
+            logger.info("Calling LLM.generate()...")
 
-            summary = self._llm.generate(
-                prompt
-            )
+            summary = self._llm.generate(prompt)
 
-            logger.info(
-                "LLM.generate() returned."
-            )
+            logger.info("LLM.generate() returned.")
 
             summary = summary.strip()
 
@@ -84,18 +72,12 @@ class ExecutiveSummaryEngine:
 
             if not summary:
 
-                raise ValueError(
-                    "LLM returned an empty summary."
-                )
+                raise ValueError("LLM returned an empty summary.")
 
-            elapsed = (
-                time.perf_counter()
-                - start_time
-            )
+            elapsed = time.perf_counter() - start_time
 
             logger.info(
-                "Executive summary generated successfully "
-                "(%.3f seconds).",
+                "Executive summary generated successfully " "(%.3f seconds).",
                 elapsed,
             )
 
@@ -105,9 +87,7 @@ class ExecutiveSummaryEngine:
 
         except Exception as exc:
 
-            logger.exception(
-                "Executive summary generation failed."
-            )
+            logger.exception("Executive summary generation failed.")
 
             logger.error(
                 "Exception Type : %s",

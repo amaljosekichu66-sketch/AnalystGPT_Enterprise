@@ -42,9 +42,7 @@ class UploadManager:
 
         if not file_path.exists():
             logger.error(f"File not found: {file_path}")
-            raise SourceFileNotFoundError(
-                f"File not found: {file_path}"
-            )
+            raise SourceFileNotFoundError(f"File not found: {file_path}")
 
         extension = file_path.suffix.lower()
 
@@ -59,6 +57,4 @@ class UploadManager:
 
         logger.error(f"Unsupported file type: {extension}")
 
-        raise UnsupportedFileTypeError(
-            f"Unsupported file type: {extension}"
-        )
+        raise UnsupportedFileTypeError(f"Unsupported file type: {extension}")

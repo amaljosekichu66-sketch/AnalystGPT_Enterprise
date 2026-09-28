@@ -2,13 +2,11 @@
 Unit tests for the Session Manager.
 """
 
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
 from src.frontend.services import session_manager
-
 
 # ==========================================================
 # Fixtures
@@ -54,19 +52,9 @@ def test_store_dataset(mock_session_state):
         dataframe,
     )
 
-    assert (
-        mock_session_state[
-            session_manager.UPLOADED_FILE_KEY
-        ]
-        == uploaded_file
-    )
+    assert mock_session_state[session_manager.UPLOADED_FILE_KEY] == uploaded_file
 
-    assert (
-        mock_session_state[
-            session_manager.DATAFRAME_KEY
-        ]
-        is dataframe
-    )
+    assert mock_session_state[session_manager.DATAFRAME_KEY] is dataframe
 
 
 # ==========================================================
@@ -82,9 +70,7 @@ def test_get_dataframe(mock_session_state):
 
     dataframe = create_dataframe()
 
-    mock_session_state[
-        session_manager.DATAFRAME_KEY
-    ] = dataframe
+    mock_session_state[session_manager.DATAFRAME_KEY] = dataframe
 
     result = session_manager.get_dataframe()
 
@@ -106,9 +92,7 @@ def test_get_uploaded_file(mock_session_state):
 
     uploaded_file.name = "employees.csv"
 
-    mock_session_state[
-        session_manager.UPLOADED_FILE_KEY
-    ] = uploaded_file
+    mock_session_state[session_manager.UPLOADED_FILE_KEY] = uploaded_file
 
     result = session_manager.get_uploaded_file()
 
@@ -128,9 +112,7 @@ def test_has_dataset_true(mock_session_state):
 
     dataframe = create_dataframe()
 
-    mock_session_state[
-        session_manager.DATAFRAME_KEY
-    ] = dataframe
+    mock_session_state[session_manager.DATAFRAME_KEY] = dataframe
 
     assert session_manager.has_dataset() is True
 
@@ -159,25 +141,15 @@ def test_clear_dataset(mock_session_state):
 
     uploaded_file = MagicMock()
 
-    mock_session_state[
-        session_manager.DATAFRAME_KEY
-    ] = dataframe
+    mock_session_state[session_manager.DATAFRAME_KEY] = dataframe
 
-    mock_session_state[
-        session_manager.UPLOADED_FILE_KEY
-    ] = uploaded_file
+    mock_session_state[session_manager.UPLOADED_FILE_KEY] = uploaded_file
 
     session_manager.clear_dataset()
 
-    assert (
-        session_manager.DATAFRAME_KEY
-        not in mock_session_state
-    )
+    assert session_manager.DATAFRAME_KEY not in mock_session_state
 
-    assert (
-        session_manager.UPLOADED_FILE_KEY
-        not in mock_session_state
-    )
+    assert session_manager.UPLOADED_FILE_KEY not in mock_session_state
 
 
 # ==========================================================

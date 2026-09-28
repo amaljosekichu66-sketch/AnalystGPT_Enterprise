@@ -122,6 +122,7 @@ def test_text_report_exporter_handles_empty_sections(tmp_path):
 
     assert "No recommendations available." in content
 
+
 def test_text_report_exporter_with_ai_and_lineage(tmp_path):
     report = StructuredReport(
         title="Audited Sales Report",

@@ -26,12 +26,7 @@ class ColumnCleaner:
 
         logger.info("Standardizing column names.")
 
-        dataframe.columns = (
-            dataframe.columns
-            .str.strip()
-            .str.lower()
-            .str.replace(" ", "_", regex=False)
-        )
+        dataframe.columns = dataframe.columns.str.strip().str.lower().str.replace(" ", "_", regex=False)
 
         logger.info("Column name standardization completed.")
 

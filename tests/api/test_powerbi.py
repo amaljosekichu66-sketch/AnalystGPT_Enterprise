@@ -2,12 +2,13 @@
 Tests for Power BI API endpoints.
 """
 
+import os
 from unittest.mock import patch
 
-import os
 import pytest
 from fastapi.testclient import TestClient
 
+from src.ai.ai_report import AIReport
 from src.api.dependencies.application_dependency import (
     get_application,
 )
@@ -16,14 +17,13 @@ from src.api.dependencies.auth_dependencies import (
 )
 from src.api.server import app
 from src.application.pipeline_report import PipelineReport
-from src.ai.ai_report import AIReport
 from src.identity.context import UserContext
 from src.identity.models import UserRole, UserStatus
-
 
 # ==========================================================
 # Fake Objects (minimal but sufficient)
 # ==========================================================
+
 
 class FakeAnalytics:
     def __init__(self):
@@ -120,6 +120,7 @@ class FakeApplication:
 # Pytest Fixture
 # ==========================================================
 
+
 @pytest.fixture(autouse=True)
 def override_application():
     app.dependency_overrides[get_application] = lambda: FakeApplication()
@@ -147,10 +148,11 @@ DATASET = "sample_data/customer_data.csv"
 # Pipeline and Report tests
 # ==========================================================
 
+
 @patch("os.path.exists", return_value=True)
 @patch("src.api.routes.powerbi._execute_pipeline", return_value=FakePipelineResult())
 def test_pipeline_endpoint(mock_execute, mock_exists):
-    response = client.get("/powerbi/pipeline", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/pipeline", params={"dataset": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
@@ -160,7 +162,7 @@ def test_pipeline_endpoint(mock_execute, mock_exists):
 @patch("os.path.exists", return_value=True)
 @patch("src.api.routes.powerbi._execute_pipeline", return_value=FakePipelineResult())
 def test_report_endpoint(mock_execute, mock_exists):
-    response = client.get("/powerbi/report", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/report", params={"dataset": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "report" in body
@@ -173,8 +175,9 @@ def test_report_endpoint(mock_execute, mock_exists):
 # Other endpoints (no patches needed)
 # ==========================================================
 
+
 def test_dashboard_endpoint():
-    response = client.get("/powerbi/dashboard", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/dashboard", params={"dataset": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
@@ -184,7 +187,7 @@ def test_dashboard_endpoint():
 
 
 def test_summary_endpoint():
-    response = client.get("/powerbi/summary", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/summary", params={"dataset": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
@@ -194,28 +197,28 @@ def test_summary_endpoint():
 
 
 def test_statistics_endpoint():
-    response = client.get("/powerbi/statistics", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/statistics", params={"dataset": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "descriptive_statistics" in body
 
 
 def test_correlation_endpoint():
-    response = client.get("/powerbi/correlation", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/correlation", params={"dataset": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "correlation_analysis" in body
 
 
 def test_distribution_endpoint():
-    response = client.get("/powerbi/distribution", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/distribution", params={"dataset": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "distribution_analysis" in body
 
 
 def test_categorical_endpoint():
-    response = client.get("/powerbi/categorical", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/categorical", params={"dataset": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "categorical_analysis" in body

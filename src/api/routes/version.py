@@ -12,9 +12,7 @@ This module intentionally contains no business logic.
 from fastapi import APIRouter, status
 
 from src.api.models.response_models import VersionResponse
-
 from src.core.constants import APP_VERSION
-
 
 # ==========================================================
 # Router Configuration
@@ -28,6 +26,7 @@ router = APIRouter(
 # ==========================================================
 # Version Endpoint
 # ==========================================================
+
 
 @router.get(
     "/version",

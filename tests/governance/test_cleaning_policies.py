@@ -94,9 +94,7 @@ def test_drop_columns_above_threshold_drops_high_null_columns(executor):
             "mostly_null": [None, None, None, None, 1],
         }
     )
-    config = _config(
-        MissingValuePolicy.DROP_COLUMNS_ABOVE_THRESHOLD, null_threshold=50.0
-    )
+    config = _config(MissingValuePolicy.DROP_COLUMNS_ABOVE_THRESHOLD, null_threshold=50.0)
     result = executor.execute(df, config)
     assert "mostly_null" in result.columns_removed
     assert "mostly_null" not in result.cleaned_df.columns
@@ -105,9 +103,7 @@ def test_drop_columns_above_threshold_drops_high_null_columns(executor):
 
 def test_drop_columns_retains_columns_below_threshold(executor):
     df = pd.DataFrame({"mostly_good": [1, None, 3, 4, 5]})
-    config = _config(
-        MissingValuePolicy.DROP_COLUMNS_ABOVE_THRESHOLD, null_threshold=50.0
-    )
+    config = _config(MissingValuePolicy.DROP_COLUMNS_ABOVE_THRESHOLD, null_threshold=50.0)
     result = executor.execute(df, config)
     assert result.columns_removed == []
     assert "mostly_good" in result.cleaned_df.columns
@@ -115,9 +111,7 @@ def test_drop_columns_retains_columns_below_threshold(executor):
 
 def test_drop_columns_empty_dataframe(executor):
     df = pd.DataFrame({"a": []})
-    config = _config(
-        MissingValuePolicy.DROP_COLUMNS_ABOVE_THRESHOLD, null_threshold=50.0
-    )
+    config = _config(MissingValuePolicy.DROP_COLUMNS_ABOVE_THRESHOLD, null_threshold=50.0)
     result = executor.execute(df, config)
     assert result.columns_removed == []
 
@@ -182,9 +176,7 @@ def test_fill_categorical_mode_does_not_touch_numeric_cols(executor, sample_df):
 
 def test_fill_categorical_constant_fills_with_value(executor):
     df = pd.DataFrame({"status": ["active", None, "active", None]})
-    config = _config(
-        MissingValuePolicy.FILL_CATEGORICAL_CONSTANT, fill_value="UNKNOWN"
-    )
+    config = _config(MissingValuePolicy.FILL_CATEGORICAL_CONSTANT, fill_value="UNKNOWN")
     result = executor.execute(df, config)
     assert result.cleaned_df["status"].isnull().sum() == 0
     assert (result.cleaned_df["status"] == "UNKNOWN").sum() == 2

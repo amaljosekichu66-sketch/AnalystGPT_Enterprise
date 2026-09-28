@@ -16,10 +16,10 @@ from pydantic import (
     Field,
 )
 
-
 # ==========================================================
 # Pipeline Request Model
 # ==========================================================
+
 
 class PipelineRequest(BaseModel):
     """
@@ -34,10 +34,7 @@ class PipelineRequest(BaseModel):
     input_path: str = Field(
         ...,
         min_length=1,
-        description=(
-            "Absolute or relative path to the "
-            "input dataset."
-        ),
+        description=("Absolute or relative path to the " "input dataset."),
         examples=[
             "sample_data/sales.csv",
         ],

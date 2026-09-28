@@ -3,9 +3,8 @@ Factory responsible for creating database connections.
 """
 
 from src.core import config
-
-from src.database.sqlite_connection import SQLiteConnection
 from src.database.postgresql_connection import PostgreSQLConnection
+from src.database.sqlite_connection import SQLiteConnection
 
 
 class ConnectionFactory:
@@ -22,9 +21,7 @@ class ConnectionFactory:
 
         if config.DATABASE_ENGINE.lower() == "sqlite":
 
-            return SQLiteConnection(
-                config.SQLITE_DATABASE_PATH
-            )
+            return SQLiteConnection(config.SQLITE_DATABASE_PATH)
 
         if config.DATABASE_ENGINE.lower() == "postgresql":
 
@@ -36,6 +33,4 @@ class ConnectionFactory:
                 password=config.POSTGRES_PASSWORD,
             )
 
-        raise ValueError(
-            f"Unsupported database engine: {config.DATABASE_ENGINE}"
-        )
+        raise ValueError(f"Unsupported database engine: {config.DATABASE_ENGINE}")

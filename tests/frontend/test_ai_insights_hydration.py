@@ -40,6 +40,7 @@ def clean_session_state():
 # 1 & 2. PENDING and GENERATING Jobs
 # ==============================================================================
 
+
 def test_pending_and_generating_job_lifecycle():
     for status_name in ["PENDING", "GENERATING"]:
         st.session_state.clear()
@@ -68,7 +69,9 @@ def test_pending_and_generating_job_lifecycle():
             "ai_report": None,
         }
         with patch("src.frontend.views.ai_insights_page.get_dashboard_data", return_value=dashboard_data):
-            with patch("src.frontend.views.ai_insights_page.get_ai_job_id", return_value=f"ai_job_{status_name.lower()}_111"):
+            with patch(
+                "src.frontend.views.ai_insights_page.get_ai_job_id", return_value=f"ai_job_{status_name.lower()}_111"
+            ):
                 with patch("src.frontend.views.ai_insights_page.get_ai_job_status", return_value=res):
                     with patch("time.sleep"):
                         with patch("streamlit.rerun") as mock_rerun:
@@ -80,6 +83,7 @@ def test_pending_and_generating_job_lifecycle():
 # ==============================================================================
 # 3 & 4. READY Job with AIReport & Session State Hydration
 # ==============================================================================
+
 
 def test_ready_job_with_report_hydrates_session_state():
     mock_data = {
@@ -120,6 +124,7 @@ def test_ready_job_with_report_hydrates_session_state():
 # 5. READY Hydration when Dashboard Data has ai_report=None
 # ==============================================================================
 
+
 def test_ready_hydration_when_dashboard_data_has_no_report():
     dashboard_data = {
         "dataset_loaded": True,
@@ -154,6 +159,7 @@ def test_ready_hydration_when_dashboard_data_has_no_report():
 # 6. FAILED Job Handling
 # ==============================================================================
 
+
 def test_failed_job_stops_polling_and_renders_diagnostics():
     dashboard_data = {
         "dataset_loaded": True,
@@ -186,10 +192,13 @@ def test_failed_job_stops_polling_and_renders_diagnostics():
 # 7. HTTP 401 Authentication-Expired Response
 # ==============================================================================
 
+
 def test_http_401_auth_expired_shows_session_expired():
     with patch("src.frontend.services.ai_service.APIClient") as mock_client_cls:
         mock_client = MagicMock()
-        mock_client.get_ai_job.side_effect = RuntimeError("Backend returned HTTP 401: Authentication token has expired.")
+        mock_client.get_ai_job.side_effect = RuntimeError(
+            "Backend returned HTTP 401: Authentication token has expired."
+        )
         mock_client_cls.return_value = mock_client
 
         res = get_ai_job_status("ai_job_expired_001")
@@ -217,6 +226,7 @@ def test_http_401_auth_expired_shows_session_expired():
 # 8. Stale Dashboard Cache Must NOT Overwrite READY AI Report
 # ==============================================================================
 
+
 def test_stale_dashboard_cache_does_not_overwrite_ready_report():
     dataset_path = "/tmp/test_dataset.csv"
     ready_report = {
@@ -241,6 +251,7 @@ def test_stale_dashboard_cache_does_not_overwrite_ready_report():
 # ==============================================================================
 # 9 & 10. Navigation Away/Back & Streamlit Rerun Preserves READY Report
 # ==============================================================================
+
 
 def test_navigation_and_rerun_preserves_ready_report():
     ready_report = {

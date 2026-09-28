@@ -51,28 +51,36 @@ def test_ai_report_contains_all_structured_enterprise_fields():
 def test_evidence_based_confidence_computation():
     """Confidence dynamically adjusts based on governed numerical measures, completeness, and volume."""
     # 1. 0 Numerical measures, categorical dataset -> Medium with exact rationale
-    conf_cat = compute_evidence_confidence({
-        "descriptive_statistics": {"total_rows": 1480, "numeric_column_count": 0, "categorical_column_count": 10},
-    })
+    conf_cat = compute_evidence_confidence(
+        {
+            "descriptive_statistics": {"total_rows": 1480, "numeric_column_count": 0, "categorical_column_count": 10},
+        }
+    )
     assert "Medium — Findings are grounded in observed categorical distributions" in conf_cat
 
     # 2. Empty dataset / 0 rows -> Not Assessable
-    conf_empty = compute_evidence_confidence({
-        "descriptive_statistics": {"total_rows": 0, "numeric_column_count": 0},
-    })
+    conf_empty = compute_evidence_confidence(
+        {
+            "descriptive_statistics": {"total_rows": 0, "numeric_column_count": 0},
+        }
+    )
     assert "Not Assessable" in conf_empty
 
     # 3. Small volume (<10 rows) -> Low
-    conf_small = compute_evidence_confidence({
-        "descriptive_statistics": {"total_rows": 5, "numeric_column_count": 2},
-    })
+    conf_small = compute_evidence_confidence(
+        {
+            "descriptive_statistics": {"total_rows": 5, "numeric_column_count": 2},
+        }
+    )
     assert "Low — Sample size is too small" in conf_small
 
     # 4. Governed numerical measures with correlation analysis & sufficient rows -> High
-    conf_high = compute_evidence_confidence({
-        "descriptive_statistics": {"total_rows": 200, "numeric_column_count": 3},
-        "correlation_analysis": {"correlation_matrix": {"sales": {"price": -0.8}, "price": {"sales": -0.8}}},
-    })
+    conf_high = compute_evidence_confidence(
+        {
+            "descriptive_statistics": {"total_rows": 200, "numeric_column_count": 3},
+            "correlation_analysis": {"correlation_matrix": {"sales": {"price": -0.8}, "price": {"sales": -0.8}}},
+        }
+    )
     assert "High — Grounded in governed numerical measures" in conf_high
 
 

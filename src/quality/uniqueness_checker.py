@@ -23,11 +23,7 @@ class UniquenessChecker:
 
         duplicate_rows = int(dataframe.duplicated().sum())
 
-        duplicate_percentage = (
-            (duplicate_rows / len(dataframe) * 100)
-            if len(dataframe) > 0
-            else 0
-        )
+        duplicate_percentage = (duplicate_rows / len(dataframe) * 100) if len(dataframe) > 0 else 0
 
         logger.info("Uniqueness assessment completed.")
 

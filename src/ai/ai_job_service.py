@@ -68,11 +68,7 @@ class AIJobService:
 
         eff_provider = provider or config.LLM_PROVIDER
         eff_model = model or config.OLLAMA_MODEL
-        eff_max_attempts = (
-            max_attempts
-            if max_attempts is not None
-            else getattr(config, "AI_MAX_RETRIES", 3)
-        )
+        eff_max_attempts = max_attempts if max_attempts is not None else getattr(config, "AI_MAX_RETRIES", 3)
 
         job_id = f"ai_job_{uuid.uuid4().hex[:12]}"
 
@@ -162,9 +158,7 @@ class AIJobService:
         job_dict = job.to_dict()
 
         if job.status == AIJobStatus.READY:
-            ai_report_data = report_repo.get_by_job_id(
-                job.job_id, user_id=user_id
-            )
+            ai_report_data = report_repo.get_by_job_id(job.job_id, user_id=user_id)
             job_dict["ai_report"] = ai_report_data
         else:
             job_dict["ai_report"] = None
@@ -193,8 +187,7 @@ class AIJobService:
 
         if job.status != AIJobStatus.FAILED:
             raise AIStateTransitionError(
-                f"Cannot retry job in '{job.status.value}' state. "
-                "Only FAILED jobs can be retried."
+                f"Cannot retry job in '{job.status.value}' state. " "Only FAILED jobs can be retried."
             )
 
         job_repo.schedule_retry(

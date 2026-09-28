@@ -13,60 +13,22 @@ processing pipeline.
 from __future__ import annotations
 
 import time
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
-from datetime import datetime, UTC
-
-from pathlib import Path
-
-
-
 from pandas import DataFrame
-
-
-
-from src.analytics.analytics_manager import AnalyticsManager
-
-from src.analytics.analytics_report import AnalyticsReport
-
-from src.cleaning.cleaning_manager import CleaningManager
-
-from src.core.config import REPORT_OUTPUT_DIRECTORY
-from src.core.logger import logger
-
-from src.persistence.persistence_manager import PersistenceManager
-
-from src.quality.quality_manager import QualityManager
-
-from src.quality.quality_report import QualityReport
-
-from src.reporting.reporting_manager import ReportingManager
-
-from src.reporting.reporting_report import ReportingReport
-
-from src.upload.upload_manager import UploadManager
-
-
-
-# Application layer contracts
-
-from .pipeline_result import PipelineResult
-
-from .pipeline_report import PipelineReport
-
-
 
 # AI Layer (Sprint 11 & Sprint 14 Phase 2)
 from src.ai.ai_job_service import AIJobService
 from src.ai.ai_manager import AIManager
 from src.ai.ai_result import AIResult
 from src.ai.job_executor import AIJobExecutor
-
-# Identity Layer (Sprint 13)
-from src.identity.context import (
-    UserContext,
-    get_current_user_context,
-)
+from src.analytics.analytics_manager import AnalyticsManager
+from src.analytics.analytics_report import AnalyticsReport
+from src.cleaning.cleaning_manager import CleaningManager
+from src.core import config as _core_config
+from src.core.logger import logger
 
 # Governance Layer (Sprint 14 Phase 3)
 from src.governance.governance_service import (
@@ -76,11 +38,27 @@ from src.governance.governance_service import (
 )
 from src.governance.models import CleaningConfig, DatasetVersion, MissingValuePolicy
 from src.governance.preview_service import CleaningPreviewResult, CleaningPreviewService
+
+# Identity Layer (Sprint 13)
+from src.identity.context import (
+    UserContext,
+    get_current_user_context,
+)
+from src.persistence.persistence_manager import PersistenceManager
+from src.quality.quality_manager import QualityManager
+from src.quality.quality_report import QualityReport
+from src.reporting.reporting_manager import ReportingManager
+from src.reporting.reporting_report import ReportingReport
 from src.storage.artifact_store import LocalArtifactStore
+from src.upload.upload_manager import UploadManager
+
+from .pipeline_report import PipelineReport
+from .pipeline_result import PipelineResult
+
+# Application layer contracts
 
 
 class Application:
-
     """
 
     Main application orchestrator.
@@ -93,17 +71,12 @@ class Application:
 
     """
 
-
-
     def __init__(self) -> None:
-
         """
 
         Initialize all pipeline managers.
 
         """
-
-
 
         self.upload_manager = UploadManager()
 
@@ -135,12 +108,8 @@ class Application:
         # -------------------------------------------------
 
         self.ai_manager = AIManager()
-        self.ai_job_executor = AIJobExecutor(
-            ai_manager=self.ai_manager
-        )
-        self.ai_job_service = AIJobService(
-            job_executor=self.ai_job_executor
-        )
+        self.ai_job_executor = AIJobExecutor(ai_manager=self.ai_manager)
+        self.ai_job_service = AIJobService(job_executor=self.ai_job_executor)
         try:
             self.ai_job_service.recover_stale_jobs()
         except Exception as exc:
@@ -150,11 +119,7 @@ class Application:
         # Persistence Layer
         # --------------------------------------------
 
-
-
         self.persistence = PersistenceManager()
-
-
 
         # --------------------------------------------
 
@@ -162,20 +127,12 @@ class Application:
 
         # --------------------------------------------
 
-
-
-        self._last_pipeline_result: (
-
-            PipelineResult | None
-
-        ) = None
+        self._last_pipeline_result: PipelineResult | None = None
 
         self._cached_dataset_path: str | None = None
         self._user_pipeline_results: dict[int | None, PipelineResult] = {}
         self._user_cached_paths: dict[int | None, str] = {}
         self._report_pipeline_results: dict[int, PipelineResult] = {}
-
-
 
     def run(
         self,
@@ -201,36 +158,21 @@ class Application:
         active_context = user_context or get_current_user_context()
         user_id = active_context.user_id if active_context.is_authenticated else None
 
-
-
-
         logger.info("=" * 80)
 
         logger.info("APPLICATION.RUN() ENTERED")
 
         logger.info("=" * 80)
 
-
-
         logger.info(
-
             "Application Instance : %s",
-
             id(self),
-
         )
-
-
 
         logger.info(
-
             "Dataset : %s",
-
             input_path,
-
         )
-
-
 
         logger.info(
             "Identity Context    : User=%s | Role=%s | Authenticated=%s",
@@ -245,15 +187,9 @@ class Application:
 
         logger.info("=" * 80)
 
-
-
         start_time = time.perf_counter()
 
-
-
         try:
-
-
 
             self.persistence.initialize()
 
@@ -265,15 +201,11 @@ class Application:
 
             self.persistence.start_pipeline(user_id=eff_user_id)
 
-
-
             # -------------------------------------------------
 
             # Upload
 
             # -------------------------------------------------
-
-
 
             # -------------------------------------------------
             # Upload & Immutable Artifact Preservation (Sprint 14 Phase 3)
@@ -318,23 +250,11 @@ class Application:
 
             # -------------------------------------------------
 
-
-
-            quality_report = self._assess_quality(
-
-                cleaned_dataframe
-
-            )
-
-
+            quality_report = self._assess_quality(cleaned_dataframe)
 
             self.persistence.save_quality(
-
                 quality_report,
-
             )
-
-
 
             # -------------------------------------------------
 
@@ -342,27 +262,11 @@ class Application:
 
             # -------------------------------------------------
 
-
-
-            analytics_report = (
-
-                self._generate_analytics(
-
-                    cleaned_dataframe
-
-                )
-
-            )
-
-
+            analytics_report = self._generate_analytics(cleaned_dataframe)
 
             self.persistence.save_analytics(
-
                 analytics_report,
-
             )
-
-
 
             # -------------------------------------------------
 
@@ -370,28 +274,14 @@ class Application:
 
             # -------------------------------------------------
 
-
-
-            reporting_report = (
-
-                self._generate_report(
-
-                    analytics_report,
-                    pipeline_run_id=self.persistence._pipeline_run_id,
-
-                )
-
+            reporting_report = self._generate_report(
+                analytics_report,
+                pipeline_run_id=self.persistence._pipeline_run_id,
             )
-
-
 
             self.persistence.save_report(
-
                 reporting_report,
-
             )
-
-
 
             # -------------------------------------------------
             # Finalise Pipeline – deterministic processing complete
@@ -421,9 +311,7 @@ class Application:
                 ai_job=ai_job,
             )
 
-            execution_time = (
-                time.perf_counter() - start_time
-            )
+            execution_time = time.perf_counter() - start_time
 
             result = self._build_pipeline_result(
                 reporting_report=reporting_report,
@@ -433,69 +321,38 @@ class Application:
                 ai_job_status=ai_job.status.value,
             )
 
-
-
             logger.info("=" * 60)
 
             logger.info("PIPELINE RESULT CREATED")
 
             logger.info("=" * 60)
 
-
-
             logger.info(
-
                 "Pipeline Success : %s",
-
                 result.success,
-
             )
 
-
-
             logger.info(
-
                 "Pipeline Report  : %s",
-
                 result.pipeline_report,
-
             )
 
-
-
             logger.info(
-
                 "Reporting Report : %s",
-
                 result.pipeline_report.reporting_report,
-
             )
 
-
-
             logger.info(
-
                 "AI Report        : %s",
-
                 result.pipeline_report.ai_report,
-
             )
-
-
 
             logger.info(
-
                 "Output Path      : %s",
-
                 result.output_path,
-
             )
-
-
 
             logger.info("=" * 60)
-
-
 
             # --------------------------------------------
 
@@ -503,15 +360,9 @@ class Application:
 
             # --------------------------------------------
 
-
-
             self._cache_pipeline_result(result, input_path, user_context=active_context)
 
-
-
             return result
-
-
 
         except Exception as error:
 
@@ -526,20 +377,14 @@ class Application:
             print(f"Exception Type : {type(error).__name__}")
             print(f"Exception      : {error}")
 
-            logger.exception(
-                "Pipeline execution failed."
-            )
+            logger.exception("Pipeline execution failed.")
 
             try:
                 self.persistence.fail_pipeline()
             except Exception:
-                logger.exception(
-                    "Unable to mark pipeline as FAILED."
-                )
+                logger.exception("Unable to mark pipeline as FAILED.")
 
-            execution_time = (
-                time.perf_counter() - start_time
-            )
+            execution_time = time.perf_counter() - start_time
 
             return PipelineResult(
                 success=False,
@@ -547,24 +392,14 @@ class Application:
                 error=error,
             )
 
-
-
         finally:
-
-
 
             self.persistence.shutdown()
 
-
-
     def _upload_dataset(
-
         self,
-
         input_path: str,
-
     ) -> DataFrame:
-
         """
 
         Upload the input dataset.
@@ -591,54 +426,27 @@ class Application:
 
         """
 
-
-
         logger.info("-" * 60)
 
         logger.info("UPLOAD STAGE")
 
         logger.info("-" * 60)
 
+        dataframe = self.upload_manager.upload(input_path)
 
-
-        dataframe = self.upload_manager.upload(
-
-            input_path
-
-        )
-
-
+        logger.info("Data Preview Before Cleaning:")
 
         logger.info(
-
-            "Data Preview Before Cleaning:"
-
-        )
-
-
-
-        logger.info(
-
             "\n%s",
-
             dataframe.head(),
-
         )
-
-
 
         return dataframe
 
-
-
     def _clean_dataset(
-
         self,
-
         dataframe: DataFrame,
-
     ) -> DataFrame:
-
         """
 
         Execute the cleaning stage.
@@ -665,49 +473,22 @@ class Application:
 
         """
 
-
-
         logger.info("-" * 60)
 
         logger.info("CLEANING STAGE")
 
         logger.info("-" * 60)
 
+        cleaned_dataframe = self.cleaning_manager.clean(dataframe)
 
-
-        cleaned_dataframe = (
-
-            self.cleaning_manager.clean(
-
-                dataframe
-
-            )
-
-        )
-
-
+        logger.info("Data Preview After Cleaning:")
 
         logger.info(
-
-            "Data Preview After Cleaning:"
-
-        )
-
-
-
-        logger.info(
-
             "\n%s",
-
             cleaned_dataframe.head(),
-
         )
-
-
 
         return cleaned_dataframe
-
-
 
     def _clean_dataset_governed(
         self,
@@ -755,9 +536,7 @@ class Application:
             user_id=user_id,
         )
 
-        logger.info(
-            "Data Preview After Cleaning:"
-        )
+        logger.info("Data Preview After Cleaning:")
         logger.info(
             "\n%s",
             governed_result.cleaned_df.head(),
@@ -765,15 +544,10 @@ class Application:
 
         return governed_result
 
-
     def _assess_quality(
-
         self,
-
         dataframe: DataFrame,
-
     ) -> QualityReport:
-
         """
 
         Execute the quality assessment stage.
@@ -798,32 +572,18 @@ class Application:
 
         """
 
-
-
         logger.info("-" * 60)
 
         logger.info("QUALITY STAGE")
 
         logger.info("-" * 60)
 
-
-
-        return self.quality_manager.assess(
-
-            dataframe
-
-        )
-
-
+        return self.quality_manager.assess(dataframe)
 
     def _generate_analytics(
-
         self,
-
         dataframe: DataFrame,
-
     ) -> AnalyticsReport:
-
         """
 
         Execute the analytics stage.
@@ -848,23 +608,13 @@ class Application:
 
         """
 
-
-
         logger.info("-" * 60)
 
         logger.info("ANALYTICS STAGE")
 
         logger.info("-" * 60)
 
-
-
-        return self.analytics_manager.analyze(
-
-            dataframe
-
-        )
-
-
+        return self.analytics_manager.analyze(dataframe)
 
     def _generate_report(
         self,
@@ -891,50 +641,29 @@ class Application:
         logger.info("-" * 60)
 
         output_path = (
-            REPORT_OUTPUT_DIRECTORY / f"report_run_{pipeline_run_id}.txt"
+            _core_config.REPORT_OUTPUT_DIRECTORY / f"report_run_{pipeline_run_id}.txt"
             if pipeline_run_id is not None
             else None
         )
 
-        reporting_report = (
-            self.reporting_manager.generate_report(
-                analytics_report,
-                output_path=output_path,
-            )
+        reporting_report = self.reporting_manager.generate_report(
+            analytics_report,
+            output_path=output_path,
         )
 
-
-
-        logger.info(
-
-            "Report successfully generated."
-
-        )
-
-
+        logger.info("Report successfully generated.")
 
         logger.info(
-
             "Export Location: %s",
-
             reporting_report.export_path,
-
         )
-
-
 
         return reporting_report
 
-
-
     def _generate_ai(
-
         self,
-
         reporting_report: ReportingReport,
-
     ) -> AIResult:
-
         """
 
         Execute the AI Insight Engine stage.
@@ -961,57 +690,30 @@ class Application:
 
         """
 
-
-
         logger.info("-" * 60)
 
         logger.info("AI STAGE")
 
         logger.info("-" * 60)
 
-
-
-        ai_result = self.ai_manager.generate_ai_report(
-
-            reporting_report
-
-        )
-
-
+        ai_result = self.ai_manager.generate_ai_report(reporting_report)
 
         if ai_result.success:
 
-            logger.info(
-
-                "AI report generated successfully."
-
-            )
+            logger.info("AI report generated successfully.")
 
         else:
 
-            logger.warning(
-
-                "AI Insight Engine unavailable. "
-
-                "Pipeline completed without AI enrichment."
-
-            )
+            logger.warning("AI Insight Engine unavailable. " "Pipeline completed without AI enrichment.")
 
             if ai_result.error is not None:
 
                 logger.warning(
-
                     "AI Error: %s",
-
                     ai_result.error,
-
                 )
 
-
-
         return ai_result
-
-
 
     def _log_pipeline_summary(
         self,
@@ -1021,7 +723,6 @@ class Application:
         ai_result: AIResult | None = None,
         ai_job: Any | None = None,
     ) -> None:
-
         """
 
         Log the final pipeline execution summary.
@@ -1056,19 +757,9 @@ class Application:
 
         """
 
-
-
-        descriptive = analytics_report.report[
-
-            "descriptive_statistics"
-
-        ]
-
-
+        descriptive = analytics_report.report["descriptive_statistics"]
 
         quality = quality_report.report
-
-
 
         logger.info("=" * 60)
 
@@ -1076,111 +767,64 @@ class Application:
 
         logger.info("=" * 60)
 
-
-
         # Core ETL stages
 
         logger.info(
-
             "Rows Processed          : %s",
-
             descriptive["total_rows"],
-
         )
 
         logger.info(
-
             "Columns Processed       : %s",
-
             descriptive["total_columns"],
-
         )
 
         logger.info(
-
             "Numeric Columns         : %s",
-
             descriptive["numeric_column_count"],
-
         )
 
         logger.info(
-
             "Categorical Columns     : %s",
-
             descriptive["categorical_column_count"],
-
         )
 
         logger.info(
-
             "Datetime Columns        : %s",
-
             descriptive["datetime_column_count"],
-
         )
 
         logger.info(
-
             "Memory Usage (MB)       : %.2f",
-
             descriptive["memory_usage_mb"],
-
         )
 
         logger.info(
-
             "Dataset Completeness    : %.2f%%",
-
-            quality["completeness"][
-
-                "complete_percentage"
-
-            ],
-
+            quality["completeness"]["complete_percentage"],
         )
 
         logger.info(
-
             "Duplicate Rows          : %s",
-
-            quality["uniqueness"][
-
-                "duplicate_rows"
-
-            ],
-
+            quality["uniqueness"]["duplicate_rows"],
         )
-
-
 
         # Stage timings
 
         logger.info(
-
             "Quality Time (s)        : %.4f",
-
             quality_report.execution_time,
-
         )
 
         logger.info(
-
             "Analytics Time (s)      : %.4f",
-
             analytics_report.execution_time,
-
         )
 
         logger.info(
-
             "Reporting Time (s)      : %.4f",
-
             reporting_report.execution_time,
-
         )
-
-
 
         # AI Stage
         if ai_job is not None:
@@ -1237,16 +881,11 @@ class Application:
         )
 
     def _cache_pipeline_result(
-
         self,
-
         result: PipelineResult,
-
         dataset_path: str,
         user_context: UserContext | None = None,
-
     ) -> None:
-
         """
 
         Cache the latest successful pipeline result together with the dataset path.
@@ -1261,69 +900,38 @@ class Application:
 
         """
 
-
-
         logger.info("=" * 80)
 
         logger.info("PIPELINE RESULT CACHED")
 
         logger.info("=" * 80)
 
-
-
         logger.info(
-
             "Application Instance : %s",
-
             id(self),
-
         )
 
-
-
         logger.info(
-
             "Dataset : %s",
-
             dataset_path,
-
         )
 
-
-
         logger.info(
-
             "Cached Result : %s",
-
             result,
-
         )
 
-
-
         logger.info(
-
             "Pipeline Report : %s",
-
             result.pipeline_report,
-
         )
-
-
 
         logger.info(
-
             "AI Report : %s",
-
             result.pipeline_report.ai_report,
-
         )
-
-
 
         logger.info("=" * 80)
-
-
 
         if result.success:
             context = user_context or get_current_user_context()
@@ -1338,31 +946,19 @@ class Application:
             self._cached_dataset_path = dataset_path
 
             logger.info(
-
                 "PipelineResult cached successfully for dataset: %s (user_id=%s)",
-
                 dataset_path,
                 user_id,
-
             )
 
         else:
 
-            logger.warning(
-
-                "Pipeline failed. Cache not updated."
-
-            )
-
-
+            logger.warning("Pipeline failed. Cache not updated.")
 
     def clear_cache(
-
         self,
         user_id: int | None = None,
-
     ) -> None:
-
         """
 
         Clear the cached PipelineResult.
@@ -1375,15 +971,11 @@ class Application:
 
         """
 
-
-
         logger.info("=" * 80)
 
         logger.info("CLEARING PIPELINE CACHE")
 
         logger.info("=" * 80)
-
-
 
         if user_id is not None and user_id in self._user_pipeline_results:
             del self._user_pipeline_results[user_id]
@@ -1392,34 +984,23 @@ class Application:
         if self._cached_dataset_path is not None:
 
             logger.info(
-
                 "Clearing cached data for dataset: %s",
-
                 self._cached_dataset_path,
-
             )
 
         else:
 
             logger.info("No cached dataset to clear.")
 
-
-
         self._last_pipeline_result = None
 
         self._cached_dataset_path = None
 
-
-
     def get_or_run(
-
         self,
-
         input_path: str,
         user_context: UserContext | None = None,
-
     ) -> PipelineResult:
-
         """
 
         Return the cached PipelineResult if it exists and matches the requested dataset.
@@ -1430,20 +1011,13 @@ class Application:
         active_context = user_context or get_current_user_context()
         user_id = active_context.user_id if active_context.is_authenticated else None
 
-        if (
-            user_id in self._user_pipeline_results
-            and self._user_cached_paths.get(user_id) == input_path
-        ):
+        if user_id in self._user_pipeline_results and self._user_cached_paths.get(user_id) == input_path:
             logger.info("=" * 80)
             logger.info("USING CACHED PIPELINE RESULT FOR USER: %s", active_context.username)
             logger.info("=" * 80)
             return self._user_pipeline_results[user_id]
 
-        if (
-            user_id is None
-            and self._last_pipeline_result is not None
-            and self._cached_dataset_path == input_path
-        ):
+        if user_id is None and self._last_pipeline_result is not None and self._cached_dataset_path == input_path:
 
             logger.info("=" * 80)
 
@@ -1453,8 +1027,6 @@ class Application:
 
             return self._last_pipeline_result
 
-
-
         logger.info("=" * 80)
 
         logger.info("NO CACHED PIPELINE RESULT FOR THIS DATASET")
@@ -1463,16 +1035,10 @@ class Application:
 
         logger.info("=" * 80)
 
-
-
         return self.run(
-
             input_path=input_path,
             user_context=active_context,
-
         )
-
-
 
     def get_result_for_user(self, user_id: int | None = None) -> PipelineResult | None:
         """
@@ -1507,50 +1073,33 @@ class Application:
         return self._report_pipeline_results.get(report_id)
 
     @property
-
     def last_result(self) -> PipelineResult | None:
-
         """
 
         Return the latest successful pipeline result.
 
         """
 
-
-
         return self._last_pipeline_result
 
-
-
     @property
-
     def cached_dataset_path(self) -> str | None:
-
         """
 
         Return the dataset path associated with the cached result.
 
         """
 
-
-
         return self._cached_dataset_path
 
-
-
     def get_last_result(
-
         self,
-
     ) -> PipelineResult | None:
-
         """
 
         Return the most recent successful pipeline result.
 
         """
-
-
 
         logger.info("=" * 80)
 
@@ -1558,65 +1107,34 @@ class Application:
 
         logger.info("=" * 80)
 
-
-
         logger.info(
-
             "Application Instance : %s",
-
             id(self),
-
         )
-
-
 
         logger.info(
-
             "Cached Result : %s",
-
             self._last_pipeline_result,
-
         )
-
-
 
         if self._last_pipeline_result is not None:
 
-
-
             logger.info(
-
                 "Pipeline Report : %s",
-
                 self._last_pipeline_result.pipeline_report,
-
             )
 
-
-
             logger.info(
-
                 "Reporting Report : %s",
-
                 self._last_pipeline_result.pipeline_report.reporting_report,
-
             )
-
-
 
             logger.info(
-
                 "AI Report : %s",
-
                 self._last_pipeline_result.pipeline_report.ai_report,
-
             )
-
-
 
         logger.info("=" * 80)
-
-
 
         return self._last_pipeline_result
 

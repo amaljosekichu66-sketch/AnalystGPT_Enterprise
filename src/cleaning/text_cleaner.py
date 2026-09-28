@@ -42,9 +42,7 @@ class TextCleaner:
 
         logger.info("Cleaning text columns.")
 
-        text_columns = dataframe.select_dtypes(
-            include=["object", "string"]
-        ).columns
+        text_columns = dataframe.select_dtypes(include=["object", "string"]).columns
 
         for column in text_columns:
 
@@ -53,10 +51,7 @@ class TextCleaner:
             # Preserve missing values (NaN/None)
             series = dataframe[column].str.strip()
 
-            if any(
-                keyword in column_name
-                for keyword in self.EXCLUDED_KEYWORDS
-            ):
+            if any(keyword in column_name for keyword in self.EXCLUDED_KEYWORDS):
                 dataframe[column] = series
             else:
                 dataframe[column] = series.str.title()

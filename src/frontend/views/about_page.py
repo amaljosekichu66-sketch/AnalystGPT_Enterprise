@@ -13,7 +13,6 @@ import streamlit as st
 from src.frontend.components.about_card import (
     render_about_card,
 )
-
 from src.frontend.components.loading_state import (
     loading,
 )
@@ -30,14 +29,9 @@ def render() -> None:
 
     st.title("ℹ️ About AnalystGPT Enterprise")
 
-    st.caption(
-        "Enterprise Analytics Platform built using "
-        "a modular, production-oriented architecture."
-    )
+    st.caption("Enterprise Analytics Platform built using " "a modular, production-oriented architecture.")
 
-    with loading(
-        "Loading application information..."
-    ):
+    with loading("Loading application information..."):
         render_about_card()
 
     st.divider()

@@ -41,18 +41,14 @@ def render() -> None:
     """
     scroll_to_top()
 
-    st.title(
-        "📄 Reports Centre"
-    )
+    st.title("📄 Reports Centre")
 
     st.caption(
         "View generated reports, inspect preview artifacts, and "
         "submit export requests through the Application Layer."
     )
 
-    with loading(
-        "Loading reports and previews..."
-    ):
+    with loading("Loading reports and previews..."):
 
         report_data = get_report_data()
 
@@ -64,10 +60,7 @@ def render() -> None:
 
         render_empty_state(
             title="No Dataset Available",
-            message=(
-                "Upload and process a dataset before "
-                "viewing reports."
-            ),
+            message=("Upload and process a dataset before " "viewing reports."),
             icon="📄",
             button_label="Go to Upload",
             target_page="Upload",
@@ -79,52 +72,27 @@ def render() -> None:
     # Dataset Banner
     # ==========================================================
 
-    st.success(
-        f"Current Dataset: {report_data['filename']}"
-    )
+    st.success(f"Current Dataset: {report_data['filename']}")
 
-    if report_data.get(
-        "source"
-    ) == "api":
+    if report_data.get("source") == "api":
 
-        st.success(
-            "Connected to AnalystGPT REST API."
-        )
+        st.success("Connected to AnalystGPT REST API.")
 
     else:
 
-        st.warning(
-            "REST API unavailable. "
-            "Displaying locally available reports."
-        )
+        st.warning("REST API unavailable. " "Displaying locally available reports.")
 
-    if report_data.get(
-        "api_error"
-    ):
+    if report_data.get("api_error"):
 
-        st.info(
-            report_data[
-                "api_error"
-            ]
-        )
+        st.info(report_data["api_error"])
 
-    if report_data.get(
-        "execution_time"
-    ):
+    if report_data.get("execution_time"):
 
-        st.caption(
-            f"Pipeline Execution Time: "
-            f"{report_data['execution_time']:.2f} s"
-        )
+        st.caption(f"Pipeline Execution Time: " f"{report_data['execution_time']:.2f} s")
 
-    if report_data.get(
-        "output_path"
-    ):
+    if report_data.get("output_path"):
 
-        st.caption(
-            f"Report Output: "
-            f"{report_data['output_path']}"
-        )
+        st.caption(f"Report Output: " f"{report_data['output_path']}")
 
     st.divider()
 
@@ -155,13 +123,10 @@ def render() -> None:
     # AI Insights Navigation Callout
     # ==========================================================
 
-    st.subheader(
-        "🧠 AI Business Insights"
-    )
+    st.subheader("🧠 AI Business Insights")
 
     st.caption(
-        "AI executive summaries, recommendations, and narratives "
-        "are now hosted in the dedicated AI Insights page."
+        "AI executive summaries, recommendations, and narratives " "are now hosted in the dedicated AI Insights page."
     )
 
     if st.button("🚀 Open AI Insights Page", width="stretch"):
@@ -174,14 +139,10 @@ def render() -> None:
     # Export Centre
     # ==========================================================
 
-    st.subheader(
-        "📤 Export Centre"
-    )
+    st.subheader("📤 Export Centre")
 
     st.caption(
-        "Export requests are routed through the "
-        "Application Layer to preserve the "
-        "enterprise architecture."
+        "Export requests are routed through the " "Application Layer to preserve the " "enterprise architecture."
     )
 
     report_info = report_data.get("report")
@@ -198,9 +159,7 @@ def render() -> None:
             width="stretch",
             key="btn_export_text",
         ):
-            with loading(
-                "Submitting text export..."
-            ):
+            with loading("Submitting text export..."):
                 result = export_text_report(report_id=report_id)
             st.session_state["exported_text_result"] = result
             if result.get("success"):
@@ -218,9 +177,7 @@ def render() -> None:
             width="stretch",
             key="btn_export_pdf",
         ):
-            with loading(
-                "Submitting PDF export..."
-            ):
+            with loading("Submitting PDF export..."):
                 result = export_pdf_report(report_id=report_id)
             st.session_state["exported_pdf_result"] = result
             if result.get("success"):

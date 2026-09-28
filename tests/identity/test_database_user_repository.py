@@ -71,9 +71,7 @@ class TestDatabaseUserRepository:
         assert fetched_email is not None
         assert fetched_email.id == user.id
 
-    def test_duplicate_username_raises_error(
-        self, sqlite_user_repo: UserRepository
-    ) -> None:
+    def test_duplicate_username_raises_error(self, sqlite_user_repo: UserRepository) -> None:
         create_data = UserCreate(
             username="duplicate_test",
             email="user1@test.com",
@@ -89,9 +87,7 @@ class TestDatabaseUserRepository:
         with pytest.raises(UserAlreadyExistsError):
             sqlite_user_repo.create(dup, "$hash")
 
-    def test_duplicate_email_raises_error(
-        self, sqlite_user_repo: UserRepository
-    ) -> None:
+    def test_duplicate_email_raises_error(self, sqlite_user_repo: UserRepository) -> None:
         create_data = UserCreate(
             username="user_alpha",
             email="same_email@test.com",

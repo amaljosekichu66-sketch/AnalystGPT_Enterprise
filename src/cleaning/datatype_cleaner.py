@@ -43,13 +43,9 @@ class DataTypeCleaner:
             try:
 
                 if datatype == "datetime":
-                    dataframe[column] = dataframe[column].astype(
-                        "datetime64[ns]"
-                    )
+                    dataframe[column] = dataframe[column].astype("datetime64[ns]")
                 else:
-                    dataframe[column] = dataframe[column].astype(
-                        datatype
-                    )
+                    dataframe[column] = dataframe[column].astype(datatype)
 
             except Exception:
 

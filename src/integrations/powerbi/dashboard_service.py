@@ -8,12 +8,8 @@ from AnalystGPT Enterprise PipelineResult objects.
 from __future__ import annotations
 
 from src.application.pipeline_result import PipelineResult
-
-from src.integrations.powerbi.dashboard_summary import (
-    DashboardSummary,
-)
-from src.integrations.powerbi.dashboard_statistics import (
-    DashboardStatistics,
+from src.integrations.powerbi.dashboard_categorical import (
+    DashboardCategorical,
 )
 from src.integrations.powerbi.dashboard_correlation import (
     DashboardCorrelation,
@@ -21,10 +17,12 @@ from src.integrations.powerbi.dashboard_correlation import (
 from src.integrations.powerbi.dashboard_distribution import (
     DashboardDistribution,
 )
-from src.integrations.powerbi.dashboard_categorical import (
-    DashboardCategorical,
+from src.integrations.powerbi.dashboard_statistics import (
+    DashboardStatistics,
 )
-
+from src.integrations.powerbi.dashboard_summary import (
+    DashboardSummary,
+)
 from src.integrations.powerbi.powerbi_models import (
     AIReportModel,
     DashboardResponse,

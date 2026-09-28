@@ -6,6 +6,7 @@ Sprint 14 Phase 5 — Reporting & PDF Export Stabilization.
 
 from pathlib import Path
 from unittest.mock import patch
+
 import pytest
 
 from src.ai.ai_report import AIReport

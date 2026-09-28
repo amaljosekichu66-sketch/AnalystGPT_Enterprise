@@ -23,6 +23,4 @@ class ExcelReader:
 
         except Exception as error:
             logger.error(f"Failed to read Excel file: {error}")
-            raise FileReadError(
-                f"Unable to read Excel file: {file_path}"
-            ) from error
+            raise FileReadError(f"Unable to read Excel file: {file_path}") from error

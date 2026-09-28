@@ -67,18 +67,9 @@ class DistributionAnalysis:
             lower_bound = q1 - (1.5 * iqr)
             upper_bound = q3 + (1.5 * iqr)
 
-            outlier_count = int(
-                (
-                    (series < lower_bound)
-                    | (series > upper_bound)
-                ).sum()
-            )
+            outlier_count = int(((series < lower_bound) | (series > upper_bound)).sum())
 
-            outlier_percentage = (
-                (outlier_count / len(series)) * 100
-                if len(series) > 0
-                else 0
-            )
+            outlier_percentage = (outlier_count / len(series)) * 100 if len(series) > 0 else 0
 
             if abs(skewness) < 0.5:
                 distribution_shape = "Approximately Symmetric"

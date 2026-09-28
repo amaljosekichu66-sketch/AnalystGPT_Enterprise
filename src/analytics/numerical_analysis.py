@@ -63,11 +63,7 @@ class NumericalAnalysis:
                 "count": int(series.count()),
                 "mean": round(float(series.mean()), 4),
                 "median": round(float(series.median()), 4),
-                "mode": (
-                    round(float(mode.iloc[0]), 4)
-                    if not mode.empty
-                    else None
-                ),
+                "mode": (round(float(mode.iloc[0]), 4) if not mode.empty else None),
                 "minimum": round(float(series.min()), 4),
                 "maximum": round(float(series.max()), 4),
                 "range": round(

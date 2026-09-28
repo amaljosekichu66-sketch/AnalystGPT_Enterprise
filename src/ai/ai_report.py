@@ -54,9 +54,7 @@ class AIReport:
 
     prompt_count: int = 1
 
-    generated_at: datetime = field(
-        default_factory=lambda: datetime.now(UTC)
-    )
+    generated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     # ==========================================================
     # Structured Enterprise Sections
@@ -109,9 +107,7 @@ class AIReport:
             "execution_time": self.execution_time,
             "prompt_count": self.prompt_count,
             "generated_at": (
-                self.generated_at.isoformat()
-                if isinstance(self.generated_at, datetime)
-                else str(self.generated_at)
+                self.generated_at.isoformat() if isinstance(self.generated_at, datetime) else str(self.generated_at)
             ),
             "metadata": self.metadata,
         }

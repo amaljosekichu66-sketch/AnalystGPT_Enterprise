@@ -98,13 +98,9 @@ class UserRepository(BaseRepository):
     def create(self, user_create: UserCreate, hashed_password: str) -> User:
         """Create and persist a new user entity."""
         if self.get_by_username(user_create.username) is not None:
-            raise UserAlreadyExistsError(
-                f"User with username '{user_create.username}' already exists."
-            )
+            raise UserAlreadyExistsError(f"User with username '{user_create.username}' already exists.")
         if self.get_by_email(user_create.email) is not None:
-            raise UserAlreadyExistsError(
-                f"User with email '{user_create.email}' already exists."
-            )
+            raise UserAlreadyExistsError(f"User with email '{user_create.email}' already exists.")
 
         now = datetime.now(UTC).isoformat()
 
@@ -153,30 +149,12 @@ class UserRepository(BaseRepository):
         if user_update.email is not None:
             email_user = self.get_by_email(user_update.email)
             if email_user is not None and email_user.id != user_id:
-                raise UserAlreadyExistsError(
-                    f"Email '{user_update.email}' is already in use by another user."
-                )
+                raise UserAlreadyExistsError(f"Email '{user_update.email}' is already in use by another user.")
 
-        new_email = (
-            user_update.email.strip().lower()
-            if user_update.email is not None
-            else existing.email
-        )
-        new_role = (
-            user_update.role.value
-            if user_update.role is not None
-            else existing.role.value
-        )
-        new_status = (
-            user_update.status.value
-            if user_update.status is not None
-            else existing.status.value
-        )
-        new_hash = (
-            hashed_password
-            if hashed_password is not None
-            else existing.hashed_password
-        )
+        new_email = user_update.email.strip().lower() if user_update.email is not None else existing.email
+        new_role = user_update.role.value if user_update.role is not None else existing.role.value
+        new_status = user_update.status.value if user_update.status is not None else existing.status.value
+        new_hash = hashed_password if hashed_password is not None else existing.hashed_password
         now = datetime.now(UTC).isoformat()
 
         query = f"""

@@ -90,11 +90,17 @@ class VisualizationPlanner:
         excluded_columns: list[str] = []
 
         # Collect columns by analytical roles
-        measures = profile.get_columns_by_role(AnalyticalRole.MEASURE) + profile.get_columns_by_role(AnalyticalRole.DEMOGRAPHIC_MEASURE)
-        dimensions = profile.get_columns_by_role(AnalyticalRole.CATEGORICAL_DIMENSION) + profile.get_columns_by_role(AnalyticalRole.GEOGRAPHIC_DIMENSION)
+        measures = profile.get_columns_by_role(AnalyticalRole.MEASURE) + profile.get_columns_by_role(
+            AnalyticalRole.DEMOGRAPHIC_MEASURE
+        )
+        dimensions = profile.get_columns_by_role(AnalyticalRole.CATEGORICAL_DIMENSION) + profile.get_columns_by_role(
+            AnalyticalRole.GEOGRAPHIC_DIMENSION
+        )
         temporals = profile.get_columns_by_role(AnalyticalRole.TEMPORAL_DIMENSION)
         constants = profile.get_columns_by_role(AnalyticalRole.CONSTANT_ATTRIBUTE)
-        identifiers = profile.get_columns_by_role(AnalyticalRole.IDENTIFIER) + profile.get_columns_by_role(AnalyticalRole.CONTACT_IDENTIFIER)
+        identifiers = profile.get_columns_by_role(AnalyticalRole.IDENTIFIER) + profile.get_columns_by_role(
+            AnalyticalRole.CONTACT_IDENTIFIER
+        )
         descriptives = profile.get_columns_by_role(AnalyticalRole.DESCRIPTIVE_ATTRIBUTE)
 
         # Record exclusions
@@ -184,8 +190,14 @@ class VisualizationPlanner:
         # 4. Correlation / Scatter Plot (If >= 2 numeric measures exist)
         if len(measures) >= 2 and len(planned_charts) < max_charts:
             m1_name, m2_name = measures[0].column_name, measures[1].column_name
-            s1 = pd.to_numeric(dataframe[m1_name].astype(str).str.replace(r"[\$,€,£,¥,₹]", "", regex=True).str.replace(",", ""), errors="coerce")
-            s2 = pd.to_numeric(dataframe[m2_name].astype(str).str.replace(r"[\$,€,£,¥,₹]", "", regex=True).str.replace(",", ""), errors="coerce")
+            s1 = pd.to_numeric(
+                dataframe[m1_name].astype(str).str.replace(r"[\$,€,£,¥,₹]", "", regex=True).str.replace(",", ""),
+                errors="coerce",
+            )
+            s2 = pd.to_numeric(
+                dataframe[m2_name].astype(str).str.replace(r"[\$,€,£,¥,₹]", "", regex=True).str.replace(",", ""),
+                errors="coerce",
+            )
             paired = pd.DataFrame({m1_name: s1, m2_name: s2}).dropna()
 
             if len(paired) > 5:
@@ -245,8 +257,15 @@ class VisualizationPlanner:
                 )
                 temp_df = pd.DataFrame({"time": t_series, "measure": m_series}).dropna().sort_values("time")
                 if len(temp_df) > 2:
-                    # Aggregate by day or month if dense
-                    grouped = temp_df.set_index("time").resample("M").mean().dropna()
+                    # Aggregate by day or month if dense.
+                    #
+                    # "ME", not "M": pandas 3 removed the bare "M" alias and
+                    # raises ValueError for it. The call sits inside a broad
+                    # `except Exception` that logs a warning, so on pandas 3
+                    # this silently produced no temporal trend chart on any
+                    # dataset, and the "D" fallback below was never reached
+                    # because the exception fired on this line.
+                    grouped = temp_df.set_index("time").resample("ME").mean().dropna()
                     if len(grouped) < 3:
                         grouped = temp_df.set_index("time").resample("D").mean().dropna()
 

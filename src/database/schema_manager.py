@@ -24,9 +24,7 @@ class SchemaManager:
         }
 
         if self._database_type not in supported:
-            raise ValueError(
-                f"Unsupported database type: {self._database_type}"
-            )
+            raise ValueError(f"Unsupported database type: {self._database_type}")
 
         self._create_schema()
 
@@ -72,16 +70,13 @@ class SchemaManager:
             float_type = self._float_sql()
 
             if self._database_type == "sqlite":
-                cursor.execute(
-                    "PRAGMA foreign_keys = ON;"
-                )
+                cursor.execute("PRAGMA foreign_keys = ON;")
 
             # -------------------------------------------------
             # Users (Sprint 13 Identity Foundation)
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS users(
                     id {pk},
                     username TEXT UNIQUE NOT NULL,
@@ -92,15 +87,13 @@ class SchemaManager:
                     created_at {ts} NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at {ts} NOT NULL DEFAULT CURRENT_TIMESTAMP
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # Pipeline Runs
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS pipeline_runs(
                     id {pk},
                     user_id INTEGER,
@@ -110,15 +103,13 @@ class SchemaManager:
                         REFERENCES users(id)
                         ON DELETE SET NULL
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # Datasets
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS datasets(
                     id {pk},
                     pipeline_run_id INTEGER NOT NULL,
@@ -133,15 +124,13 @@ class SchemaManager:
                         REFERENCES users(id)
                         ON DELETE SET NULL
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # Quality Reports
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS quality_reports(
                     id {pk},
                     pipeline_run_id INTEGER NOT NULL,
@@ -153,15 +142,13 @@ class SchemaManager:
                         REFERENCES pipeline_runs(id)
                         ON DELETE CASCADE
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # Analytics Reports
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS analytics_reports(
                     id {pk},
                     pipeline_run_id INTEGER NOT NULL,
@@ -172,15 +159,13 @@ class SchemaManager:
                         REFERENCES pipeline_runs(id)
                         ON DELETE CASCADE
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # Reports
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS reports(
                     id {pk},
                     pipeline_run_id INTEGER NOT NULL,
@@ -194,15 +179,13 @@ class SchemaManager:
                         REFERENCES users(id)
                         ON DELETE SET NULL
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # AI Jobs (Sprint 14 Phase 2 Asynchronous Engine)
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS ai_jobs(
                     id {pk},
                     job_id TEXT UNIQUE NOT NULL,
@@ -231,15 +214,13 @@ class SchemaManager:
                         ON DELETE SET NULL,
                     CONSTRAINT uq_ai_jobs_pipeline_run UNIQUE (pipeline_run_id)
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # AI Reports (Sprint 14 Phase 2 Persistent Reports)
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS ai_reports(
                     id {pk},
                     job_id TEXT UNIQUE NOT NULL,
@@ -276,8 +257,7 @@ class SchemaManager:
                         ON DELETE SET NULL,
                     CONSTRAINT uq_ai_reports_pipeline_run UNIQUE (pipeline_run_id)
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # Column Migrations (Sprint 13 Multi-User Upgrade)
@@ -294,8 +274,7 @@ class SchemaManager:
             # Dataset Versions (Sprint 14 Phase 3 Governance)
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS dataset_versions(
                     id {pk},
                     version_id TEXT UNIQUE NOT NULL,
@@ -318,15 +297,13 @@ class SchemaManager:
                         REFERENCES dataset_versions(version_id)
                         ON DELETE RESTRICT
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # Cleaning Configurations (Sprint 14 Phase 3 Governance)
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS cleaning_configs(
                     id {pk},
                     config_id TEXT UNIQUE NOT NULL,
@@ -343,15 +320,13 @@ class SchemaManager:
                         REFERENCES users(id)
                         ON DELETE SET NULL
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # Cleaning Executions (Sprint 14 Phase 3 Governance)
             # -------------------------------------------------
 
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS cleaning_executions(
                     id {pk},
                     execution_id TEXT UNIQUE NOT NULL,
@@ -390,8 +365,7 @@ class SchemaManager:
                         REFERENCES cleaning_configs(config_id)
                         ON DELETE RESTRICT
                 );
-                """
-            )
+                """)
 
             # -------------------------------------------------
             # Performance Indexes (Sprint 13 & Sprint 14 Phase 2)
@@ -402,8 +376,12 @@ class SchemaManager:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_datasets_pipeline_run_id ON datasets(pipeline_run_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_pipeline_run_id ON reports(pipeline_run_id);")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_quality_reports_pipeline_run_id ON quality_reports(pipeline_run_id);")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_analytics_reports_pipeline_run_id ON analytics_reports(pipeline_run_id);")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_quality_reports_pipeline_run_id ON quality_reports(pipeline_run_id);"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_analytics_reports_pipeline_run_id ON analytics_reports(pipeline_run_id);"
+            )
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_jobs_job_id ON ai_jobs(job_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_jobs_pipeline_run_id ON ai_jobs(pipeline_run_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_jobs_user_id ON ai_jobs(user_id);")
@@ -433,24 +411,37 @@ class SchemaManager:
                     pass
 
             # Sprint 14 Phase 3 — Governance indexes
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_dataset_versions_version_id ON dataset_versions(version_id);")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_dataset_versions_version_id ON dataset_versions(version_id);"
+            )
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_dataset_versions_user_id ON dataset_versions(user_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_dataset_versions_is_source ON dataset_versions(is_source);")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_dataset_versions_parent ON dataset_versions(parent_version_id);")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_dataset_versions_parent ON dataset_versions(parent_version_id);"
+            )
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_cleaning_configs_config_id ON cleaning_configs(config_id);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_cleaning_configs_user_id ON cleaning_configs(user_id);")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_cleaning_executions_id ON cleaning_executions(execution_id);")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_cleaning_executions_run ON cleaning_executions(pipeline_run_id);")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_cleaning_executions_id ON cleaning_executions(execution_id);"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_cleaning_executions_run ON cleaning_executions(pipeline_run_id);"
+            )
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_cleaning_executions_user ON cleaning_executions(user_id);")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_cleaning_executions_source ON cleaning_executions(source_version_id);")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_cleaning_executions_source ON cleaning_executions(source_version_id);"
+            )
 
             # Sprint 14 Phase 4 — Provenance indexes
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_reports_source_version ON ai_reports(source_version_id);")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_reports_cleaned_version ON ai_reports(cleaned_version_id);")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_ai_reports_cleaning_exec ON ai_reports(cleaning_execution_id);")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_reports_cleaned_version ON ai_reports(cleaned_version_id);"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_reports_cleaning_exec ON ai_reports(cleaning_execution_id);"
+            )
 
             self._database_connection.commit()
-
 
         except Exception:
 

@@ -13,7 +13,6 @@ from src.cleaning.datatype_cleaner import DataTypeCleaner
 from src.cleaning.duplicate_cleaner import DuplicateCleaner
 from src.cleaning.missing_value_cleaner import MissingValueCleaner
 from src.cleaning.text_cleaner import TextCleaner
-
 from src.core.config import (
     DEFAULT_DATATYPE_MAP,
     RESET_INDEX_AFTER_CLEANING,
@@ -35,9 +34,7 @@ class CleaningManager:
         self.text_cleaner = TextCleaner()
         self.missing_value_cleaner = MissingValueCleaner()
         self.duplicate_cleaner = DuplicateCleaner()
-        self.datatype_cleaner = DataTypeCleaner(
-            DEFAULT_DATATYPE_MAP
-        )
+        self.datatype_cleaner = DataTypeCleaner(DEFAULT_DATATYPE_MAP)
 
     def clean(
         self,
@@ -80,9 +77,6 @@ class CleaningManager:
 
         elapsed_time = time.perf_counter() - start_time
 
-        logger.info(
-            f"Cleaning pipeline completed successfully in "
-            f"{elapsed_time:.4f} seconds."
-        )
+        logger.info(f"Cleaning pipeline completed successfully in " f"{elapsed_time:.4f} seconds.")
 
         return dataframe

@@ -5,6 +5,7 @@ Sprint 14 Phase 6 — OpenAPI / React Migration Readiness.
 """
 
 import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -63,7 +64,7 @@ def test_get_reports_success_and_contract(reports_api_setup):
     assert exec_res.status_code == 200
 
     # 2. Fetch reports via /api/reports and /reports
-    for endpoint in ("/api/reports", "/reports"):
+    for endpoint in ("/api/reports",):
         res = client.get(
             endpoint,
             headers={"Authorization": f"Bearer {token_a}"},

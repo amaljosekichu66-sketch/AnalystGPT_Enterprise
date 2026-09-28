@@ -79,13 +79,9 @@ class AIJob:
             self.created_at = now_str
         if self.updated_at is None:
             self.updated_at = now_str
-        if isinstance(self.status, str) and not isinstance(
-            self.status, AIJobStatus
-        ):
+        if isinstance(self.status, str) and not isinstance(self.status, AIJobStatus):
             self.status = AIJobStatus(self.status)
-        if isinstance(self.failure_category, str) and not isinstance(
-            self.failure_category, AIFailureCategory
-        ):
+        if isinstance(self.failure_category, str) and not isinstance(self.failure_category, AIFailureCategory):
             self.failure_category = AIFailureCategory(self.failure_category)
 
     @property
@@ -120,8 +116,7 @@ class AIJob:
         """
         if not self.can_transition_to(target_status):
             raise AIStateTransitionError(
-                f"Invalid transition from {self.status.value} to {target_status.value} "
-                f"for AI job '{self.job_id}'."
+                f"Invalid transition from {self.status.value} to {target_status.value} " f"for AI job '{self.job_id}'."
             )
 
         self.status = target_status
@@ -144,9 +139,7 @@ class AIJob:
         """
         data = asdict(self)
         data["status"] = self.status.value
-        data["failure_category"] = (
-            self.failure_category.value if self.failure_category else None
-        )
+        data["failure_category"] = self.failure_category.value if self.failure_category else None
         return data
 
     @classmethod

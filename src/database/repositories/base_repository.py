@@ -16,9 +16,7 @@ class BaseRepository:
         self._database_type = connection.database_type()
 
         if self.TABLE_NAME is None:
-            raise ValueError(
-                f"{self.__class__.__name__} must define TABLE_NAME."
-            )
+            raise ValueError(f"{self.__class__.__name__} must define TABLE_NAME.")
 
     # ---------------------------------------------------------
 
@@ -175,10 +173,7 @@ class BaseRepository:
                 parameters,
             )
 
-            return [
-                dict(row)
-                for row in cursor.fetchall()
-            ]
+            return [dict(row) for row in cursor.fetchall()]
 
         finally:
 
@@ -199,9 +194,7 @@ class BaseRepository:
 
         return self.fetch_one(
             query,
-            (
-                record_id,
-            ),
+            (record_id,),
         )
 
     def get_by_id_scoped(
@@ -279,9 +272,7 @@ class BaseRepository:
 
         self.execute(
             query,
-            (
-                record_id,
-            ),
+            (record_id,),
         )
 
     def delete_scoped(

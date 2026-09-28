@@ -61,19 +61,14 @@ class CategoricalAnalysis:
             ]
             categorical_dataframe = dataframe[eligible_columns]
         else:
-            raw_cat = dataframe.select_dtypes(
-                include=["object", "string", "category", "bool"]
-            )
+            raw_cat = dataframe.select_dtypes(include=["object", "string", "category", "bool"])
             # Exclude unique identifier columns and constant columns
             valid_cols = [
                 col
                 for col in raw_cat.columns
                 if (
                     len(dataframe) <= 5
-                    or (
-                        raw_cat[col].nunique(dropna=True) < len(dataframe)
-                        and raw_cat[col].nunique(dropna=True) > 1
-                    )
+                    or (raw_cat[col].nunique(dropna=True) < len(dataframe) and raw_cat[col].nunique(dropna=True) > 1)
                 )
             ]
             categorical_dataframe = dataframe[valid_cols] if valid_cols else DataFrame()
@@ -90,32 +85,17 @@ class CategoricalAnalysis:
 
             value_counts = series.value_counts(dropna=False)
 
-            top_value = (
-                value_counts.index[0]
-                if not value_counts.empty
-                else None
-            )
+            top_value = value_counts.index[0] if not value_counts.empty else None
 
-            top_frequency = (
-                int(value_counts.iloc[0])
-                if not value_counts.empty
-                else 0
-            )
+            top_frequency = int(value_counts.iloc[0]) if not value_counts.empty else 0
 
             results[column] = {
                 "count": int(series.count()),
                 "missing_values": int(series.isna().sum()),
                 "unique_values": int(series.nunique(dropna=True)),
-                "top_value": (
-                    str(top_value)
-                    if top_value is not None
-                    else None
-                ),
+                "top_value": (str(top_value) if top_value is not None else None),
                 "top_frequency": top_frequency,
-                "value_distribution": {
-                    str(key): int(value)
-                    for key, value in value_counts.items()
-                },
+                "value_distribution": {str(key): int(value) for key, value in value_counts.items()},
             }
 
         logger.info("Categorical analysis completed.")

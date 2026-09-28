@@ -6,6 +6,8 @@ Sprint 14 — Forensic Bug Isolation: Report/PDF Lineage.
 
 from pathlib import Path
 from unittest.mock import patch
+
+import httpx
 import pandas as pd
 import pytest
 
@@ -67,16 +69,25 @@ def test_report_service_does_not_return_stale_disk_file_in_empty_session(clean_r
     When Streamlit session is empty, export_pdf_report() and export_text_report()
     MUST NOT return success=True pointing to historical files on disk.
     """
-    with patch("streamlit.session_state", {}):
+    # The REST export path is stubbed out explicitly so this regression test
+    # asserts on the local fallback deterministically, instead of depending on
+    # whether an API server happens to be listening on the developer's machine.
+    with (
+        patch("streamlit.session_state", {}),
+        patch(
+            "src.frontend.services.report_service.APIClient",
+            side_effect=httpx.ConnectError("API server not running (simulated)"),
+        ),
+    ):
         pdf_res = export_pdf_report()
-        assert pdf_res["success"] is False, (
-            f"CRITICAL BUG: Frontend export_pdf_report returned stale file {pdf_res.get('path')} in empty session!"
-        )
+        assert (
+            pdf_res["success"] is False
+        ), f"CRITICAL BUG: Frontend export_pdf_report returned stale file {pdf_res.get('path')} in empty session!"
 
         text_res = export_text_report()
-        assert text_res["success"] is False, (
-            f"CRITICAL BUG: Frontend export_text_report returned stale file {text_res.get('path')} in empty session!"
-        )
+        assert (
+            text_res["success"] is False
+        ), f"CRITICAL BUG: Frontend export_text_report returned stale file {text_res.get('path')} in empty session!"
 
 
 def test_export_pdf_and_text_lineage_matches_active_dataset(tmp_path):
@@ -131,6 +142,7 @@ def test_api_export_by_report_id_isolation_between_multiple_runs(tmp_path):
     MUST NOT leak Report B (Miami) or stale files.
     """
     import uuid
+
     from starlette.testclient import TestClient
 
     from src.api.dependencies.auth_dependencies import (
@@ -152,9 +164,7 @@ def test_api_export_by_report_id_isolation_between_multiple_runs(tmp_path):
             role=UserRole.ANALYST,
         )
     )
-    _, token, _ = user_service.login(
-        UserLogin(username=unique_username, password="Password123!")
-    )
+    _, token, _ = user_service.login(UserLogin(username=unique_username, password="Password123!"))
     user_id = user.id
 
     # Dataset A (Dallas)

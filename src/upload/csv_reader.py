@@ -23,6 +23,4 @@ class CSVReader:
 
         except Exception as error:
             logger.error(f"Failed to read CSV file: {error}")
-            raise FileReadError(
-                f"Unable to read CSV file: {file_path}"
-            ) from error
+            raise FileReadError(f"Unable to read CSV file: {file_path}") from error

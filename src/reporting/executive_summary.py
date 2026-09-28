@@ -57,14 +57,10 @@ class ExecutiveSummary:
                     "Numerical variables were reviewed: no governed numerical measure columns were identified for statistical calculations."
                 )
             else:
-                summary.append(
-                    "Numerical variables were analysed."
-                )
+                summary.append("Numerical variables were analysed.")
 
         if "categorical_analysis" in analytics_report:
-            summary.append(
-                "Categorical variables were analysed."
-            )
+            summary.append("Categorical variables were analysed.")
 
         if "correlation_analysis" in analytics_report:
             if numeric_columns < 2 and descriptive:
@@ -72,14 +68,10 @@ class ExecutiveSummary:
                     "Correlation analysis was evaluated: skipped as fewer than two numerical measure columns were present."
                 )
             else:
-                summary.append(
-                    "Correlation analysis was completed."
-                )
+                summary.append("Correlation analysis was completed.")
 
         if "distribution_analysis" in analytics_report:
-            summary.append(
-                "Distribution analysis was completed."
-            )
+            summary.append("Distribution analysis was completed.")
 
         if len(summary) == 1 and not analytics_report:
             summary.append("Additional analytical sections were not available.")

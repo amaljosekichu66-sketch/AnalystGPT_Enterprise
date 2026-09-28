@@ -43,8 +43,15 @@ def verify_live_ollama_e2e() -> dict[str, Any]:
     client = Client(host=config.OLLAMA_HOST, timeout=10.0)
     try:
         models_resp = client.list()
-        models_list = getattr(models_resp, "models", []) or (models_resp.get("models", []) if isinstance(models_resp, dict) else [])
-        model_names = [getattr(m, "model", None) or getattr(m, "name", None) or (m.get("model") or m.get("name") if isinstance(m, dict) else str(m)) for m in models_list]
+        models_list = getattr(models_resp, "models", []) or (
+            models_resp.get("models", []) if isinstance(models_resp, dict) else []
+        )
+        model_names = [
+            getattr(m, "model", None)
+            or getattr(m, "name", None)
+            or (m.get("model") or m.get("name") if isinstance(m, dict) else str(m))
+            for m in models_list
+        ]
         print(f"✓ Ollama Host Reachable: {config.OLLAMA_HOST}")
         print(f"✓ Available Models: {model_names}")
     except Exception as exc:
@@ -60,13 +67,15 @@ def verify_live_ollama_e2e() -> dict[str, Any]:
     print("\n============================================================")
     print("2. PREPARING DETERMINISTIC ENTERPRISE TEST DATASET")
     print("============================================================")
-    df = pd.DataFrame({
-        "customer_id": [f"CUST_{i:04d}" for i in range(1, 61)],
-        "region": ["North", "South", "East", "West"] * 15,
-        "segment": ["Enterprise", "Mid-Market", "SMB"] * 20,
-        "contract_value": [10000 + i * 250 for i in range(60)],
-        "churn_risk_score": [0.05 + (i % 10) * 0.08 for i in range(60)],
-    })
+    df = pd.DataFrame(
+        {
+            "customer_id": [f"CUST_{i:04d}" for i in range(1, 61)],
+            "region": ["North", "South", "East", "West"] * 15,
+            "segment": ["Enterprise", "Mid-Market", "SMB"] * 20,
+            "contract_value": [10000 + i * 250 for i in range(60)],
+            "churn_risk_score": [0.05 + (i % 10) * 0.08 for i in range(60)],
+        }
+    )
     print(f"✓ Dataset Created: {len(df)} rows, {len(df.columns)} columns")
     print(f"  Columns: {list(df.columns)}")
 
@@ -79,7 +88,9 @@ def verify_live_ollama_e2e() -> dict[str, Any]:
     print("✓ Analytics Report Generated:")
     print(f"  Total Rows: {analytics_report.get('descriptive_statistics', {}).get('total_rows')}")
     print(f"  Numeric Measures: {analytics_report.get('descriptive_statistics', {}).get('numeric_column_count')}")
-    print(f"  Categorical Dimensions: {analytics_report.get('descriptive_statistics', {}).get('categorical_column_count')}")
+    print(
+        f"  Categorical Dimensions: {analytics_report.get('descriptive_statistics', {}).get('categorical_column_count')}"
+    )
 
     print("\n============================================================")
     print("4. INITIALIZING DATABASE & AI JOB INFRASTRUCTURE")

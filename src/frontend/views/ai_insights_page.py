@@ -119,7 +119,9 @@ def render() -> None:
                 time.sleep(3)
                 st.rerun()
             else:
-                st.warning("Automatic polling paused to preserve resources. Click 'Refresh Status Now' to check completion.")
+                st.warning(
+                    "Automatic polling paused to preserve resources. Click 'Refresh Status Now' to check completion."
+                )
             return
 
         # Reset poll counter on exit from in-progress

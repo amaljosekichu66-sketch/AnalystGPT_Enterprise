@@ -13,9 +13,7 @@ def test_kpi_formatter_returns_dictionary():
 
     formatter = KPIFormatter()
 
-    result = formatter.format_kpis(
-        analytics_report
-    )
+    result = formatter.format_kpis(analytics_report)
 
     assert isinstance(result, dict)
 
@@ -32,9 +30,7 @@ def test_kpi_formatter_reports_available_sections():
 
     formatter = KPIFormatter()
 
-    result = formatter.format_kpis(
-        analytics_report
-    )
+    result = formatter.format_kpis(analytics_report)
 
     assert result["Analytics Sections"] == 5
     assert result["Descriptive Statistics"] == "Available"

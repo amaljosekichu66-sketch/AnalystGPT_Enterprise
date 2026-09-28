@@ -41,10 +41,16 @@ def render_column_profile(
         measures_cnt = profile.role_counts.get("measure", 0) + profile.role_counts.get("demographic_measure", 0)
         st.metric("Measures", measures_cnt)
     with col3:
-        dims_cnt = profile.role_counts.get("categorical_dimension", 0) + profile.role_counts.get("geographic_dimension", 0)
+        dims_cnt = profile.role_counts.get("categorical_dimension", 0) + profile.role_counts.get(
+            "geographic_dimension", 0
+        )
         st.metric("Dimensions", dims_cnt)
     with col4:
-        id_cnt = profile.role_counts.get("identifier", 0) + profile.role_counts.get("contact_identifier", 0) + profile.role_counts.get("constant_attribute", 0)
+        id_cnt = (
+            profile.role_counts.get("identifier", 0)
+            + profile.role_counts.get("contact_identifier", 0)
+            + profile.role_counts.get("constant_attribute", 0)
+        )
         st.metric("Identifiers / Constants", id_cnt)
 
     # 3. Comprehensive Column Table

@@ -17,6 +17,7 @@ import httpx
 import pandas as pd
 import streamlit as st
 
+from src.core.logger import logger
 from src.frontend.services.api_client import APIClient
 from src.frontend.services.session_manager import (
     get_ai_job_id,
@@ -26,8 +27,6 @@ from src.frontend.services.session_manager import (
     set_ai_job_id,
     set_ai_report,
 )
-from src.core.logger import logger
-
 
 # ==========================================================
 # Constants
@@ -118,6 +117,7 @@ def clear_dashboard_cache() -> None:
 # Local Dashboard Metrics
 # ==========================================================
 
+
 @st.cache_data(show_spinner=False)
 def _calculate_dashboard_metrics(
     dataframe: pd.DataFrame,
@@ -140,12 +140,8 @@ def _calculate_dashboard_metrics(
             ).sum()
             / (1024 * 1024)
         ),
-        "missing": int(
-            dataframe.isna().sum().sum()
-        ),
-        "duplicates": int(
-            dataframe.duplicated().sum()
-        ),
+        "missing": int(dataframe.isna().sum().sum()),
+        "duplicates": int(dataframe.duplicated().sum()),
         "numeric_columns": numeric_columns,
         "categorical_columns": categorical_columns,
     }
@@ -154,6 +150,7 @@ def _calculate_dashboard_metrics(
 # ==========================================================
 # Local Session
 # ==========================================================
+
 
 def _local_dashboard_data() -> dict[str, Any]:
 
@@ -183,6 +180,7 @@ def _local_dashboard_data() -> dict[str, Any]:
 # AI Extraction
 # ==========================================================
 
+
 def _extract_ai_report(
     payload: dict[str, Any],
 ) -> dict[str, Any] | None:
@@ -196,6 +194,7 @@ def _extract_ai_report(
 # ==========================================================
 # Dashboard Service
 # ==========================================================
+
 
 def get_dashboard_data() -> dict[str, Any]:
 
@@ -290,17 +289,13 @@ def get_dashboard_data() -> dict[str, Any]:
             _cache_dashboard(dataset_path, dashboard)
             logger.info("Dashboard data cached for future requests.")
         else:
-            logger.warning(
-                "Backend returned unsuccessful response. Not caching."
-            )
+            logger.warning("Backend returned unsuccessful response. Not caching.")
 
         return dashboard
 
     except httpx.ReadTimeout:
         dashboard["api_error"] = "Backend request timed out."
-        logger.warning(
-            "Backend request timed out. Falling back to local session (not cached)."
-        )
+        logger.warning("Backend request timed out. Falling back to local session (not cached).")
         return dashboard
 
     except httpx.HTTPError as exc:

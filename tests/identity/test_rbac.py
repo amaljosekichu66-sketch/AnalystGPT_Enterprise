@@ -102,9 +102,7 @@ class TestAPIAuthorizationSemantics:
         self.hasher = PBKDF2PasswordHasher(iterations=10_000)
         self.token_service = TokenService(secret_key="test-secret-key-32-bytes-long!!")
         self.revocation = TokenRevocationService()
-        self.user_service = UserService(
-            self.user_repo, self.hasher, self.token_service, self.revocation
-        )
+        self.user_service = UserService(self.user_repo, self.hasher, self.token_service, self.revocation)
         set_user_service_instance(self.user_service)
 
         # Create Admin, Analyst, and Viewer accounts
@@ -133,9 +131,7 @@ class TestAPIAuthorizationSemantics:
             )
         )
 
-        _, self.admin_token, _ = self.user_service.login(
-            UserLogin(username="admin_user", password="AdminPassword123!")
-        )
+        _, self.admin_token, _ = self.user_service.login(UserLogin(username="admin_user", password="AdminPassword123!"))
         _, self.analyst_token, _ = self.user_service.login(
             UserLogin(username="analyst_user", password="AnalystPassword123!")
         )
@@ -152,7 +148,7 @@ class TestAPIAuthorizationSemantics:
         assert res.status_code == 401
 
         # Reports endpoint
-        res = self.client.get("/reports")
+        res = self.client.get("/api/reports")
         assert res.status_code == 401
 
         # Admin users endpoint
@@ -207,9 +203,7 @@ class TestAPIAuthorizationSemantics:
                 role=UserRole.ANALYST,
             )
         )
-        _, token, _ = self.user_service.login(
-            UserLogin(username="bad_actor", password="Password123!")
-        )
+        _, token, _ = self.user_service.login(UserLogin(username="bad_actor", password="Password123!"))
 
         # Suspend account
         self.user_repo.update(
@@ -217,13 +211,14 @@ class TestAPIAuthorizationSemantics:
             user_update=self.user_repo.get_by_id(suspended_user.id),  # type: ignore
         )
         from src.identity.models import UserUpdate
+
         self.user_repo.update(
             suspended_user.id,
             user_update=UserUpdate(status=UserStatus.SUSPENDED),
         )
 
         res = self.client.get(
-            "/reports",
+            "/api/reports",
             headers={"Authorization": f"Bearer {token}"},
         )
         assert res.status_code == 403

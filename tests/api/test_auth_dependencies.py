@@ -102,18 +102,14 @@ class TestAuthDependencies:
         assert data["username"] == "test_analyst"
         assert data["role"] == "ANALYST"
 
-    def test_protected_endpoint_without_auth_fails_401(
-        self, client: TestClient
-    ) -> None:
+    def test_protected_endpoint_without_auth_fails_401(self, client: TestClient) -> None:
         response = client.get("/protected")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         data = response.json()
         assert data["success"] is False
         assert "Authentication required" in data["error"]
 
-    def test_protected_endpoint_authenticated_success(
-        self, client: TestClient
-    ) -> None:
+    def test_protected_endpoint_authenticated_success(self, client: TestClient) -> None:
         headers = {
             "X-User-Id": "42",
             "X-User-Name": "valid_user",
@@ -148,9 +144,7 @@ class TestAuthDependencies:
         data = response.json()
         assert data["admin"] is True
 
-    def test_permission_endpoint_as_viewer_fails_403(
-        self, client: TestClient
-    ) -> None:
+    def test_permission_endpoint_as_viewer_fails_403(self, client: TestClient) -> None:
         headers = {
             "X-User-Id": "20",
             "X-User-Name": "viewer_user",
@@ -161,9 +155,7 @@ class TestAuthDependencies:
         data = response.json()
         assert "dataset:upload" in data["error"]
 
-    def test_permission_endpoint_as_analyst_succeeds(
-        self, client: TestClient
-    ) -> None:
+    def test_permission_endpoint_as_analyst_succeeds(self, client: TestClient) -> None:
         headers = {
             "X-User-Id": "30",
             "X-User-Name": "analyst_user",

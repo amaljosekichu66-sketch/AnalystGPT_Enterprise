@@ -104,6 +104,7 @@ async def get_current_user_profile(
     user = user_service.get_user_by_id(context.user_id)
     if user is None:
         from src.identity.exceptions import UserNotFoundError
+
         raise UserNotFoundError(f"User with ID {context.user_id} not found.")
 
     return UserResponse(

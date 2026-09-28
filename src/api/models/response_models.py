@@ -18,10 +18,10 @@ from pydantic import (
     Field,
 )
 
-
 # ==========================================================
 # Base Response Model
 # ==========================================================
+
 
 class APIResponse(BaseModel):
     """
@@ -34,10 +34,7 @@ class APIResponse(BaseModel):
 
     success: bool = Field(
         default=True,
-        description=(
-            "Indicates whether the request "
-            "completed successfully."
-        ),
+        description=("Indicates whether the request " "completed successfully."),
     )
 
     message: str = Field(
@@ -54,6 +51,7 @@ class APIResponse(BaseModel):
 # ==========================================================
 # Standard Error Model
 # ==========================================================
+
 
 class ErrorResponse(BaseModel):
     """
@@ -83,6 +81,7 @@ class ErrorResponse(BaseModel):
 # ==========================================================
 # Root Endpoint Response
 # ==========================================================
+
 
 class RootResponse(APIResponse):
     """
@@ -114,6 +113,7 @@ class RootResponse(APIResponse):
 # Health Endpoint Response
 # ==========================================================
 
+
 class HealthResponse(APIResponse):
     """
     Response model for the health endpoint.
@@ -129,6 +129,7 @@ class HealthResponse(APIResponse):
 # Version Endpoint Response
 # ==========================================================
 
+
 class VersionResponse(APIResponse):
     """
     Response model for the version endpoint.
@@ -143,6 +144,7 @@ class VersionResponse(APIResponse):
 # ==========================================================
 # AI Report Response
 # ==========================================================
+
 
 class AIReportResponse(BaseModel):
     """
@@ -204,6 +206,7 @@ class AIReportResponse(BaseModel):
 # Pipeline Response
 # ==========================================================
 
+
 class PipelineResponse(APIResponse):
     """
     Response returned after pipeline execution.
@@ -225,6 +228,7 @@ class PipelineResponse(APIResponse):
 # ==========================================================
 # Report Metadata & Response
 # ==========================================================
+
 
 class ReportSectionItem(BaseModel):
     """
@@ -295,6 +299,7 @@ class ReportsListResponse(APIResponse):
 # ==========================================================
 # Dashboard Status Response
 # ==========================================================
+
 
 class DashboardStatusResponse(BaseModel):
     """

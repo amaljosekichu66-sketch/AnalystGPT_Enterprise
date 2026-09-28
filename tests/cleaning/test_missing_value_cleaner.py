@@ -4,18 +4,7 @@ from src.cleaning.missing_value_cleaner import MissingValueCleaner
 
 
 def test_missing_value_cleaner_removes_rows_with_missing_values():
-    df = pd.DataFrame({
-        "name": [
-            "Amal",
-            None,
-            "John"
-        ],
-        "age": [
-            27,
-            30,
-            None
-        ]
-    })
+    df = pd.DataFrame({"name": ["Amal", None, "John"], "age": [27, 30, None]})
 
     cleaner = MissingValueCleaner()
 

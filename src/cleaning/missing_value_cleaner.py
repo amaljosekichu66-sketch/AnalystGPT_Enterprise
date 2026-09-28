@@ -66,16 +66,12 @@ class MissingValueCleaner:
             )
 
         else:
-            raise ValueError(
-                f"Unknown missing value strategy: {self.strategy}"
-            )
+            raise ValueError(f"Unknown missing value strategy: {self.strategy}")
 
         rows_after = len(dataframe)
 
         logger.info(
-            f"MissingValueCleaner removed "
-            f"{rows_before - rows_after} rows "
-            f"({rows_before} -> {rows_after})."
+            f"MissingValueCleaner removed " f"{rows_before - rows_after} rows " f"({rows_before} -> {rows_after})."
         )
 
         return dataframe

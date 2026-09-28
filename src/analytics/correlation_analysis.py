@@ -45,9 +45,7 @@ class CorrelationAnalysis:
 
         if numerical_dataframe.shape[1] < 2:
 
-            logger.info(
-                "Correlation analysis skipped. Less than two numerical columns."
-            )
+            logger.info("Correlation analysis skipped. Less than two numerical columns.")
 
             return {
                 "correlation_matrix": {},
@@ -55,9 +53,7 @@ class CorrelationAnalysis:
                 "strongest_negative": None,
             }
 
-        correlation_matrix = numerical_dataframe.corr(
-            method="pearson"
-        )
+        correlation_matrix = numerical_dataframe.corr(method="pearson")
 
         strongest_positive = None
         strongest_negative = None

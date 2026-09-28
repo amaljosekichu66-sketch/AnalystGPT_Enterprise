@@ -39,9 +39,7 @@ class AIOrchestrator:
 
         start = time.perf_counter()
 
-        result = self._manager.generate_ai_report(
-            reporting_report
-        )
+        result = self._manager.generate_ai_report(reporting_report)
 
         logger.info(
             "AI execution completed in %.3f seconds.",

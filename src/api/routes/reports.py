@@ -49,10 +49,7 @@ router = APIRouter(
         403: {"model": ErrorResponse, "description": "Permission denied"},
     },
     summary="Latest Reports",
-    description=(
-        "Return metadata for the most recently "
-        "generated reporting and AI results."
-    ),
+    description=("Return metadata for the most recently " "generated reporting and AI results."),
 )
 def get_reports(
     context: UserContext = Depends(
@@ -77,9 +74,7 @@ def get_reports(
 
     return ReportsListResponse(
         success=True,
-        message=(
-            "Reports retrieved successfully."
-        ),
+        message=("Reports retrieved successfully."),
         data=ReportDataResponse(
             reports=report_data.get("reports", []),
             report=report_data.get("report"),

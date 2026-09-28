@@ -41,9 +41,7 @@ class TestAdminUserRoutes:
         self.hasher = PBKDF2PasswordHasher(iterations=10_000)
         self.token_service = TokenService(secret_key="test-secret-key-32-bytes-long!!")
         self.revocation = TokenRevocationService()
-        self.user_service = UserService(
-            self.user_repo, self.hasher, self.token_service, self.revocation
-        )
+        self.user_service = UserService(self.user_repo, self.hasher, self.token_service, self.revocation)
         set_user_service_instance(self.user_service)
 
         # Register Primary Admin
@@ -66,9 +64,7 @@ class TestAdminUserRoutes:
             )
         )
 
-        _, self.admin_token, _ = self.user_service.login(
-            UserLogin(username="admin_lead", password="AdminPassword123!")
-        )
+        _, self.admin_token, _ = self.user_service.login(UserLogin(username="admin_lead", password="AdminPassword123!"))
         _, self.analyst_token, _ = self.user_service.login(
             UserLogin(username="analyst_jane", password="AnalystPassword123!")
         )

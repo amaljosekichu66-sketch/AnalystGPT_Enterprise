@@ -14,6 +14,7 @@ import httpx
 import pandas as pd
 import streamlit as st
 
+from src.core import config
 from src.core.logger import logger
 from src.frontend.services.api_client import APIClient
 from src.frontend.services.session_manager import (
@@ -101,9 +102,7 @@ def _generate_reports(
         include="number",
     ).empty:
 
-        reports.append(
-            "Correlation Analysis"
-        )
+        reports.append("Correlation Analysis")
 
     return reports
 
@@ -139,11 +138,7 @@ def _local_report_data() -> dict[str, Any]:
 
     return {
         "dataset_loaded": True,
-        "filename": (
-            uploaded_file.name
-            if uploaded_file
-            else None
-        ),
+        "filename": (uploaded_file.name if uploaded_file else None),
         "reports": _generate_reports(
             dataframe,
         ),
@@ -176,27 +171,19 @@ def get_report_data() -> dict[str, Any]:
     if cached is not None:
         return cached
 
-    report_data = (
-        _local_report_data()
-    )
+    report_data = _local_report_data()
 
     try:
 
         with APIClient() as client:
 
-            api_response = (
-                client.get_reports()
-            )
+            api_response = client.get_reports()
 
-        report_data[
-            "api_status"
-        ] = api_response
+        report_data["api_status"] = api_response
 
-        if (
-            not isinstance(
-                api_response,
-                dict,
-            )
+        if not isinstance(
+            api_response,
+            dict,
         ):
 
             return report_data
@@ -206,9 +193,7 @@ def get_report_data() -> dict[str, Any]:
             True,
         ):
 
-            report_data[
-                "api_error"
-            ] = api_response.get(
+            report_data["api_error"] = api_response.get(
                 "message",
                 "Backend returned an error.",
             )
@@ -231,9 +216,7 @@ def get_report_data() -> dict[str, Any]:
                 ),
                 "reports": payload.get(
                     "reports",
-                    report_data[
-                        "reports"
-                    ],
+                    report_data["reports"],
                 ),
                 "ai_report": payload.get(
                     "ai_report",
@@ -263,9 +246,7 @@ def get_report_data() -> dict[str, Any]:
         OSError,
     ) as exc:
 
-        report_data[
-            "api_error"
-        ] = str(exc)
+        report_data["api_error"] = str(exc)
 
         return report_data
 
@@ -273,6 +254,55 @@ def get_report_data() -> dict[str, Any]:
 # ==========================================================
 # Export API
 # ==========================================================
+
+# Exceptions that mean "the REST API simply isn't there" - expected whenever the
+# frontend runs standalone without the API server. Anything else reaching the
+# fallback is a genuine defect in the REST export path and must not be reduced
+# to a one-line warning.
+_API_UNREACHABLE_ERRORS = (
+    httpx.ConnectError,
+    httpx.ConnectTimeout,
+    httpx.ReadTimeout,
+    ConnectionError,
+    OSError,
+)
+
+
+def _export_destination(filename: str) -> Path:
+    """
+    Resolve where a downloaded export is written.
+
+    Previously this was the relative literal `Path(f"reports/{filename}")`,
+    which resolves against the process working directory. Under pytest that is
+    the repository root, so exports landed in the real `reports/` directory and
+    a test run overwrote the developer's `analystgpt_report.txt` and `.pdf`.
+    Routing through `config.REPORT_OUTPUT_DIRECTORY` keeps the production
+    location identical while letting a test session redirect it.
+    """
+    return Path(config.REPORT_OUTPUT_DIRECTORY) / filename
+
+
+def _log_export_fallback(kind: str, exc: Exception) -> None:
+    """
+    Report why a REST export fell back to the local orchestrator.
+
+    An unreachable API is logged at INFO (normal standalone operation); every
+    other failure is logged with a full traceback so real bugs in the REST
+    export path surface instead of being silently masked by the fallback.
+    """
+    if isinstance(exc, _API_UNREACHABLE_ERRORS):
+        logger.info(
+            "REST API unavailable for %s report export; using local orchestrator: %s",
+            kind,
+            exc,
+        )
+        return
+
+    logger.exception(
+        "REST API %s report export failed unexpectedly, falling back to local orchestrator. "
+        "This is a defect in the REST export path, not an unavailable API.",
+        kind,
+    )
 
 
 def export_text_report(
@@ -291,7 +321,7 @@ def export_text_report(
             content = client.export_text_report(report_id=report_id, token=token)
             if content:
                 filename = f"report_{report_id}.txt" if report_id is not None else "analystgpt_report.txt"
-                out_path = Path(f"reports/{filename}")
+                out_path = _export_destination(filename)
                 out_path.parent.mkdir(parents=True, exist_ok=True)
                 out_path.write_bytes(content)
                 return {
@@ -304,7 +334,7 @@ def export_text_report(
                     "data": content,
                 }
     except Exception as exc:
-        logger.warning("REST API text report export failed, falling back to local orchestrator: %s", exc)
+        _log_export_fallback("text", exc)
 
     # 2. Local session / in-process fallback
     pipeline_result = get_pipeline_result()
@@ -353,7 +383,7 @@ def export_pdf_report(
             content = client.export_pdf_report(report_id=report_id, token=token)
             if content and content.startswith(b"%PDF-"):
                 filename = f"report_{report_id}.pdf" if report_id is not None else "analystgpt_report.pdf"
-                out_path = Path(f"reports/{filename}")
+                out_path = _export_destination(filename)
                 out_path.parent.mkdir(parents=True, exist_ok=True)
                 out_path.write_bytes(content)
                 return {
@@ -366,7 +396,7 @@ def export_pdf_report(
                     "data": content,
                 }
     except Exception as exc:
-        logger.warning("REST API PDF report export failed, falling back to local orchestrator: %s", exc)
+        _log_export_fallback("PDF", exc)
 
     # 2. Local session / in-process fallback
     pipeline_result = get_pipeline_result()

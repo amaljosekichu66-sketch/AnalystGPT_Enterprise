@@ -23,21 +23,23 @@ from src.profiling.models import AnalyticalRole, SemanticType
 @pytest.fixture
 def enterprise_13_col_df():
     """Create a 13-column enterprise dataset with mixed semantic types."""
-    return pd.DataFrame({
-        "customer_id": [f"CUST_{i:04d}" for i in range(1, 61)],
-        "first_name": ["Alice", "Bob", "Charlie", "Diana"] * 15,
-        "last_name": ["Smith", "Jones", "Taylor", "Brown"] * 15,
-        "email": [f"user_{i}@enterprise.com" for i in range(1, 61)],
-        "phone_number": [f"+1-555-01{i:02d}" for i in range(1, 61)],
-        "street_address": [f"{100 + i} Main St" for i in range(1, 61)],
-        "city": ["New York", "London", "Tokyo", "Paris"] * 15,
-        "state_region": ["NY", "Greater London", "Kanto", "IDF"] * 15,
-        "postal_code": [f"{10001 + i}" for i in range(60)],
-        "system_status": ["ACTIVE"] * 60,  # Constant attribute
-        "subscription_tier": ["Enterprise", "Mid-Market", "SMB"] * 20,
-        "contract_value": [f"${10000 + i * 250:,.2f}" for i in range(60)],  # String-encoded numeric
-        "churn_risk_score": [0.05 + (i % 10) * 0.08 for i in range(60)],  # Float numeric measure
-    })
+    return pd.DataFrame(
+        {
+            "customer_id": [f"CUST_{i:04d}" for i in range(1, 61)],
+            "first_name": ["Alice", "Bob", "Charlie", "Diana"] * 15,
+            "last_name": ["Smith", "Jones", "Taylor", "Brown"] * 15,
+            "email": [f"user_{i}@enterprise.com" for i in range(1, 61)],
+            "phone_number": [f"+1-555-01{i:02d}" for i in range(1, 61)],
+            "street_address": [f"{100 + i} Main St" for i in range(1, 61)],
+            "city": ["New York", "London", "Tokyo", "Paris"] * 15,
+            "state_region": ["NY", "Greater London", "Kanto", "IDF"] * 15,
+            "postal_code": [f"{10001 + i}" for i in range(60)],
+            "system_status": ["ACTIVE"] * 60,  # Constant attribute
+            "subscription_tier": ["Enterprise", "Mid-Market", "SMB"] * 20,
+            "contract_value": [f"${10000 + i * 250:,.2f}" for i in range(60)],  # String-encoded numeric
+            "churn_risk_score": [0.05 + (i % 10) * 0.08 for i in range(60)],  # Float numeric measure
+        }
+    )
 
 
 def test_semantic_profiling_13_columns(enterprise_13_col_df):

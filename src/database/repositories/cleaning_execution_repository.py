@@ -80,7 +80,9 @@ class CleaningExecutionRepository(BaseRepository):
 
     def get_by_pipeline_run(self, pipeline_run_id: int, user_id: int | None = None) -> dict | None:
         if user_id is not None:
-            query = "SELECT * FROM cleaning_executions WHERE pipeline_run_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1;"
+            query = (
+                "SELECT * FROM cleaning_executions WHERE pipeline_run_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1;"
+            )
             return self.fetch_one(query, (pipeline_run_id, user_id))
         query = "SELECT * FROM cleaning_executions WHERE pipeline_run_id = ? ORDER BY id DESC LIMIT 1;"
         return self.fetch_one(query, (pipeline_run_id,))

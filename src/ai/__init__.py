@@ -13,10 +13,10 @@ from src.ai.exceptions import (
     AIStateTransitionError,
 )
 from src.ai.models import (
+    VALID_TRANSITIONS,
     AIFailureCategory,
     AIJob,
     AIJobStatus,
-    VALID_TRANSITIONS,
 )
 
 __all__ = [

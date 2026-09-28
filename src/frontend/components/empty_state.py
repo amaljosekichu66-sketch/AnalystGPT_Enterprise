@@ -61,12 +61,7 @@ def render_empty_state(
         )
 
         st.markdown(
-            (
-                "<p style='text-align:center;"
-                "color:grey;'>"
-                f"{message}"
-                "</p>"
-            ),
+            ("<p style='text-align:center;" "color:grey;'>" f"{message}" "</p>"),
             unsafe_allow_html=True,
         )
 
@@ -83,9 +78,7 @@ def render_empty_state(
 
             if clicked:
 
-                st.session_state[
-                    "current_page"
-                ] = target_page
+                st.session_state["current_page"] = target_page
 
                 st.rerun()
 

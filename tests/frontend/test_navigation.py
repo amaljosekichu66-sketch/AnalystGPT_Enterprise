@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import streamlit as st
 
+from src.frontend.components.sidebar import render_sidebar
 from src.frontend.config.settings import (
     ABOUT_PAGE,
     ADMIN_PAGE,
@@ -21,7 +22,6 @@ from src.frontend.config.settings import (
     SIGN_IN_PAGE,
     UPLOAD_PAGE,
 )
-from src.frontend.components.sidebar import render_sidebar
 from src.frontend.streamlit_app import PAGES
 
 
@@ -69,8 +69,7 @@ def test_sidebar_authenticated_analyst_options(
     mock_get_role.return_value = "ANALYST"
     mock_has_dataset.return_value = True
 
-    with patch("streamlit.sidebar.radio") as mock_radio, \
-         patch("streamlit.sidebar.button") as mock_btn:
+    with patch("streamlit.sidebar.radio") as mock_radio, patch("streamlit.sidebar.button") as mock_btn:
         mock_radio.return_value = "Dashboard"
         mock_btn.return_value = False
 
@@ -107,8 +106,7 @@ def test_sidebar_authenticated_admin_options(
     mock_get_role.return_value = "ADMIN"
     mock_has_dataset.return_value = False
 
-    with patch("streamlit.sidebar.radio") as mock_radio, \
-         patch("streamlit.sidebar.button") as mock_btn:
+    with patch("streamlit.sidebar.radio") as mock_radio, patch("streamlit.sidebar.button") as mock_btn:
         mock_radio.return_value = "Admin"
         mock_btn.return_value = False
 

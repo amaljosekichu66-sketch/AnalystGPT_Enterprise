@@ -5,6 +5,7 @@ Sprint 14 Phase 5 — Reporting & PDF Export Stabilization.
 """
 
 from pathlib import Path
+
 import pytest
 
 from src.reporting.exporters.pdf_report_exporter import PdfReportExporter

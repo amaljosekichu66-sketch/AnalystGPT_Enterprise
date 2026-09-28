@@ -127,7 +127,7 @@ class TestAPIClientAuth:
 
         mock_request.assert_called_once_with(
             method="GET",
-            url="/reports",
+            url="/api/reports",
             params=None,
             json=None,
             headers={"Authorization": "Bearer mock.session.token"},

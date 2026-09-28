@@ -13,11 +13,7 @@ from src.core.constants import (
     APP_VERSION,
 )
 
-
-TECH_STACK = (
-    "Python • Streamlit • FastAPI • PostgreSQL • "
-    "SQLite • Pandas • Plotly • Power BI • Ollama"
-)
+TECH_STACK = "Python • Streamlit • FastAPI • PostgreSQL • " "SQLite • Pandas • Plotly • Power BI • Ollama"
 
 
 def render_footer() -> None:
@@ -35,22 +31,14 @@ def render_footer() -> None:
 
         st.caption(APP_NAME)
 
-        st.caption(
-            f"Version {APP_VERSION}"
-        )
+        st.caption(f"Version {APP_VERSION}")
 
     with centre:
 
-        st.caption(
-            TECH_STACK
-        )
+        st.caption(TECH_STACK)
 
     with right:
 
-        st.caption(
-            "MIT License"
-        )
+        st.caption("MIT License")
 
-        st.caption(
-            "© 2026 Amal Jose"
-        )
+        st.caption("© 2026 Amal Jose")

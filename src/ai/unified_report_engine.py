@@ -18,12 +18,12 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from src.core import config
 from src.core.logger import logger
 from src.llm.base_llm import BaseLLM
 from src.llm.prompt_builder import PromptBuilder
 from src.llm.response_parser import ResponseParser
 from src.reporting.reporting_report import ReportingReport
-
 
 # ==========================================================
 # Constants
@@ -84,9 +84,21 @@ _SECTION_ALIASES = {
 # Minimum acceptable response length (characters)
 _MIN_RESPONSE_LENGTH = 10
 
-# Estimated maximum token limit (based on current Ollama config)
-# 512 tokens ≈ 2000 characters (approx. 4 chars/token).
-_ESTIMATED_MAX_CHARS = 2000
+# Estimated response ceiling, derived from the configured token budget rather
+# than hard-coded. The previous constant assumed a 512-token limit and said so
+# in three diagnostics, while `config.AI_MAX_TOKENS` had defaulted to 1024 for
+# some time - so every truncation message pointed developers at a number the
+# system had not used in a while.
+
+
+#: Rough English average; used only for truncation heuristics.
+_CHARS_PER_TOKEN = 4
+
+
+def _estimated_max_chars() -> int:
+    """Approximate characters the model can emit under AI_MAX_TOKENS."""
+    return int(config.AI_MAX_TOKENS * _CHARS_PER_TOKEN)
+
 
 # Compiled regex for bullet list parsing (reused)
 _BULLET_PATTERN = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s*")
@@ -100,6 +112,7 @@ class AISections:
     This dataclass defines the exact contract between the UnifiedReportEngine
     and the AIManager. Every field must be present and non‑empty.
     """
+
     executive_summary: str
     recommendations: list[str]
     explanations: list[str]
@@ -131,9 +144,9 @@ class UnifiedReportEngine:
         # Pre-compile heading patterns with line anchors for robustness
         self._heading_patterns = {
             name: re.compile(
-                r"^\s*(?:=+\s*)?(?:" + "|".join(
-                    re.escape(alias) for alias in _SECTION_ALIASES[name]
-                ) + r")\s*:?(?:\s*=+)?\s*$",
+                r"^\s*(?:=+\s*)?(?:"
+                + "|".join(re.escape(alias) for alias in _SECTION_ALIASES[name])
+                + r")\s*:?(?:\s*=+)?\s*$",
                 re.IGNORECASE | re.MULTILINE,
             )
             for name in _SECTION_NAMES
@@ -305,9 +318,7 @@ class UnifiedReportEngine:
         if not response:
             raise ValueError("LLM response is empty.")
         if len(response.strip()) < _MIN_RESPONSE_LENGTH:
-            raise ValueError(
-                f"LLM response is too short ({len(response)} chars)."
-            )
+            raise ValueError(f"LLM response is too short ({len(response)} chars).")
 
         logger.info("LLM returned %d characters.", len(response))
         return response
@@ -437,10 +448,7 @@ class UnifiedReportEngine:
             if not matches:
                 continue
             if len(matches) > 1:
-                raise ValueError(
-                    f"Duplicate heading detected: {heading}. "
-                    f"Expected exactly one occurrence."
-                )
+                raise ValueError(f"Duplicate heading detected: {heading}. " f"Expected exactly one occurrence.")
             match = matches[0]
             headings[heading] = (match.start(), match.end())
 
@@ -466,15 +474,17 @@ class UnifiedReportEngine:
             return (
                 f"The response appears to be truncated mid-structure (ends with an incomplete character). "
                 f"Response length: {len(response)} characters. "
-                f"Consider increasing the LLM output token limit (currently likely 512 tokens) or reducing the prompt size."
+                f"Consider increasing AI_MAX_TOKENS (currently {config.AI_MAX_TOKENS}) or reducing the prompt size."
             )
 
         # Check if response is near the estimated max length
-        if len(response) >= _ESTIMATED_MAX_CHARS * 0.85:
+        estimated_max_chars = _estimated_max_chars()
+        if len(response) >= estimated_max_chars * 0.85:
             return (
                 f"Response length ({len(response)} chars) is close to the estimated maximum "
-                f"({_ESTIMATED_MAX_CHARS} chars for 512 tokens). This suggests the response may have been truncated.\n"
-                f"Consider increasing the LLM output token limit or reducing the prompt size."
+                f"({estimated_max_chars} chars for AI_MAX_TOKENS={config.AI_MAX_TOKENS}). "
+                "This suggests the response may have been truncated.\n"
+                f"Consider increasing AI_MAX_TOKENS (currently {config.AI_MAX_TOKENS}) or reducing the prompt size."
             )
 
         # Check if response ends with a heading alias (or partial heading)
@@ -485,14 +495,14 @@ class UnifiedReportEngine:
                 return (
                     f"Response ends with a heading-like line: '{last_line}'. "
                     "This likely indicates truncation immediately after that heading, before content was generated.\n"
-                    f"Consider increasing the LLM output token limit or reducing the prompt size."
+                    f"Consider increasing AI_MAX_TOKENS (currently {config.AI_MAX_TOKENS}) or reducing the prompt size."
                 )
             # If last line ends with a colon or is very short, could be truncation
             if last_line.endswith(":") or len(last_line) < 20:
                 return (
                     f"Response ends with a partial line: '{last_line}'. "
                     "This may indicate truncation in the middle of content.\n"
-                    f"Consider increasing the LLM output token limit or reducing the prompt size."
+                    f"Consider increasing AI_MAX_TOKENS (currently {config.AI_MAX_TOKENS}) or reducing the prompt size."
                 )
 
         # If the last found heading is one of the later ones (e.g., RECOMMENDATIONS) and missing later ones
@@ -505,7 +515,7 @@ class UnifiedReportEngine:
                 return (
                     f"The last found heading is '{heading_name}', but no content follows it. "
                     "The response was likely cut off just after this heading.\n"
-                    f"Consider increasing the LLM output token limit or reducing the prompt size."
+                    f"Consider increasing AI_MAX_TOKENS (currently {config.AI_MAX_TOKENS}) or reducing the prompt size."
                 )
 
         return None
@@ -524,7 +534,7 @@ class UnifiedReportEngine:
             or text.endswith(",")
             or text.endswith("'")
             or text.endswith('"')
-            or text.endswith("...")   # sometimes models emit ellipsis before cutoff
+            or text.endswith("...")  # sometimes models emit ellipsis before cutoff
         )
 
     def _extract_section_text(

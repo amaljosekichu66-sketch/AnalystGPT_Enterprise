@@ -215,3 +215,15 @@ pnpm-debug.log*
 **/__pycache__/
 *.py[cod]
 *$py.class
+# ==========================================================
+# Captured Test / Pytest Output
+# ==========================================================
+# Multi-MB run logs produced by `scripts/run_tests.ps1`. They contain absolute
+# developer paths and are regenerated on every run - never commit them.
+
+full_pytest_output.md
+FULL_TEST_OUTPUT.md
+*_TEST_OUTPUT.md
+pytest_output*.md
+test_output*.md
+test-results/

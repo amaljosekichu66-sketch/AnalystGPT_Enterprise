@@ -76,7 +76,11 @@ def render() -> None:
                 new_status = st.selectbox(
                     "Status",
                     options=["ACTIVE", "INACTIVE", "SUSPENDED"],
-                    index=["ACTIVE", "INACTIVE", "SUSPENDED"].index(status) if status in ["ACTIVE", "INACTIVE", "SUSPENDED"] else 0,
+                    index=(
+                        ["ACTIVE", "INACTIVE", "SUSPENDED"].index(status)
+                        if status in ["ACTIVE", "INACTIVE", "SUSPENDED"]
+                        else 0
+                    ),
                     key=f"status_select_{user_id}",
                 )
 

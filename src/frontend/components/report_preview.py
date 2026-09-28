@@ -7,12 +7,10 @@ with AI Insight Engine results.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
-import json
-
 import streamlit as st
-
 
 # ==========================================================
 # Dataset Summary
@@ -34,9 +32,7 @@ def _render_dataset_summary(
 
         return
 
-    st.subheader(
-        "📊 Dataset Summary"
-    )
+    st.subheader("📊 Dataset Summary")
 
     col1, col2 = st.columns(2)
 
@@ -56,16 +52,12 @@ def _render_dataset_summary(
 
         st.metric(
             "Missing Values",
-            int(
-                dataframe.isna().sum().sum()
-            ),
+            int(dataframe.isna().sum().sum()),
         )
 
         st.metric(
             "Duplicate Rows",
-            int(
-                dataframe.duplicated().sum()
-            ),
+            int(dataframe.duplicated().sum()),
         )
 
 
@@ -81,15 +73,11 @@ def _render_reporting(
     Render Reporting Layer output.
     """
 
-    st.subheader(
-        "📑 Reporting Layer"
-    )
+    st.subheader("📑 Reporting Layer")
 
     if not report:
 
-        st.info(
-            "No reporting output available."
-        )
+        st.info("No reporting output available.")
 
         return
 
@@ -98,38 +86,22 @@ def _render_reporting(
         dict,
     ):
 
-        if report.get(
-            "executive_summary"
-        ):
+        if report.get("executive_summary"):
 
-            st.markdown(
-                "### Executive Summary"
-            )
+            st.markdown("### Executive Summary")
 
-            st.write(
-                report[
-                    "executive_summary"
-                ]
-            )
+            st.write(report["executive_summary"])
 
-        if report.get(
-            "kpis"
-        ):
+        if report.get("kpis"):
 
-            st.markdown(
-                "### KPI Summary"
-            )
+            st.markdown("### KPI Summary")
 
             st.json(
-                report[
-                    "kpis"
-                ],
+                report["kpis"],
                 expanded=False,
             )
 
-        st.markdown(
-            "### Raw Report"
-        )
+        st.markdown("### Raw Report")
 
         st.json(
             report,
@@ -155,15 +127,11 @@ def _render_ai(
     Render AI Insight Engine output.
     """
 
-    st.subheader(
-        "🧠 AI Insight Engine"
-    )
+    st.subheader("🧠 AI Insight Engine")
 
     if not ai_report:
 
-        st.info(
-            "AI report not available."
-        )
+        st.info("AI report not available.")
 
         return
 
@@ -203,15 +171,11 @@ def _render_ai(
 
     if recommendations:
 
-        st.markdown(
-            "### Recommendations"
-        )
+        st.markdown("### Recommendations")
 
         for item in recommendations:
 
-            st.markdown(
-                f"- {item}"
-            )
+            st.markdown(f"- {item}")
 
     explanations = ai_report.get(
         "explanations",
@@ -220,9 +184,7 @@ def _render_ai(
 
     if explanations:
 
-        st.markdown(
-            "### Explanations"
-        )
+        st.markdown("### Explanations")
 
         for item in explanations:
 
@@ -236,9 +198,7 @@ def _render_ai(
 
     if narrative:
 
-        st.markdown(
-            "### Narrative"
-        )
+        st.markdown("### Narrative")
 
         st.write(
             narrative,
@@ -301,17 +261,13 @@ def render_report_preview(
     Render report preview.
     """
 
-    st.subheader(
-        "📄 Report Preview"
-    )
+    st.subheader("📄 Report Preview")
 
     if not data.get(
         "dataset_loaded",
     ):
 
-        st.info(
-            "No report available."
-        )
+        st.info("No report available.")
 
         return
 

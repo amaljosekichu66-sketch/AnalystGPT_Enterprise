@@ -7,6 +7,7 @@ Sprint 14 Remediation & Phase 2 Quality Gate.
 from __future__ import annotations
 
 from pathlib import Path
+
 from src.reporting.executive_summary import ExecutiveSummary
 from src.reporting.exporters.pdf_report_exporter import PdfReportExporter
 from src.reporting.exporters.text_report_exporter import TextReportExporter
@@ -167,7 +168,10 @@ def test_exported_report_does_not_contain_causal_explanations_as_section_title(t
 
     # Should contain analytical interpretation and appropriate observational caveat
     assert "AI Key Analytical Findings" in content or "AI Analytical Interpretation" in content
-    assert "Observational records describe correlation and distribution; causal conclusions require experimental validation." in content
+    assert (
+        "Observational records describe correlation and distribution; causal conclusions require experimental validation."
+        in content
+    )
 
 
 def test_pdf_report_exporter_generates_valid_pdf_without_raw_debug_dumps(tmp_path):

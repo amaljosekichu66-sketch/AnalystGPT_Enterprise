@@ -16,6 +16,8 @@ from typing import Callable
 
 from fastapi import Depends, Header, Request
 
+from src.core import config
+from src.core.logger import logger
 from src.identity.context import (
     UserContext,
     get_current_user_context,
@@ -71,6 +73,7 @@ def set_user_service_instance(service: UserService | None) -> None:
 # User Context Dependency
 # ==========================================================
 
+
 async def get_user_context(
     request: Request,
     authorization: str | None = Header(None, alias="Authorization"),
@@ -84,9 +87,22 @@ async def get_user_context(
     Resolve the UserContext for the current HTTP request.
 
     Evaluates credentials in order:
-    1. 'Authorization: Bearer <token>' header.
-    2. Legacy / test identity headers (X-User-Id, X-User-Name, etc.).
+    1. 'Authorization: Bearer <token>' header - the only mechanism that
+       actually proves identity.
+    2. Development identity headers (X-User-Id, X-User-Name, ...), but ONLY
+       when `config.AUTH_ALLOW_HEADER_IDENTITY` is enabled.
     3. Anonymous fallback.
+
+    Why the headers are gated
+    -------------------------
+    `X-User-Id` / `X-User-Role` are unauthenticated request headers: the caller
+    chooses what they say. Honouring them unconditionally let anyone assert
+    ADMIN and read or modify every user account, because the role check
+    downstream is only ever as trustworthy as the identity feeding it.
+
+    They remain available for local development and for the API test-suite,
+    which uses them deliberately, but the flag defaults to False and
+    `src/core/config.py` refuses to enable it outside development.
     """
     if authorization is not None:
         auth_header = authorization.strip()
@@ -100,7 +116,24 @@ async def get_user_context(
             set_current_user_context(context)
             return context
 
-    if x_user_id is not None or x_user_name is not None:
+    header_identity_supplied = x_user_id is not None or x_user_name is not None
+
+    if header_identity_supplied and not config.AUTH_ALLOW_HEADER_IDENTITY:
+        # Do not silently downgrade to anonymous: a caller presenting an
+        # identity is making a claim, and refusing it explicitly is what makes
+        # the bypass visible in logs instead of looking like a stray 401.
+        logger.warning(
+            "Rejected unauthenticated identity headers (X-User-Id=%s, "
+            "X-User-Role=%s). Header identity is disabled; authenticate with "
+            "'Authorization: Bearer <token>'.",
+            x_user_id,
+            x_user_role,
+        )
+        raise AuthenticationError(
+            "Unauthenticated identity headers are not accepted. " "Authenticate with 'Authorization: Bearer <token>'."
+        )
+
+    if header_identity_supplied:
         username = x_user_name or f"user_{x_user_id}"
         email = x_user_email or f"{username}@analystgpt.local"
 
@@ -128,6 +161,7 @@ async def get_user_context(
 # Authentication Enforcement
 # ==========================================================
 
+
 async def get_current_active_user(
     context: UserContext = Depends(get_user_context),
 ) -> UserContext:
@@ -153,6 +187,7 @@ async def get_current_active_user(
 # ==========================================================
 # RBAC Role Requirement Factory
 # ==========================================================
+
 
 def require_role(*allowed_roles: UserRole) -> Callable:
     """
@@ -191,6 +226,7 @@ def require_role(*allowed_roles: UserRole) -> Callable:
 # ==========================================================
 # Granular Permission Requirement Factory
 # ==========================================================
+
 
 def require_permission(permission: Permission) -> Callable:
     """

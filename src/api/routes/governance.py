@@ -85,6 +85,7 @@ def preview_cleaning(
         )
     storage_path = version_row["storage_path"]
     from src.upload.upload_manager import UploadManager
+
     raw_df = UploadManager().upload(storage_path)
 
     # 2. Build transient CleaningConfig
@@ -270,7 +271,6 @@ def _dataset_version_row_to_response(row: dict) -> DatasetVersionResponse:
         dataset_schema_json=row.get("schema_json"),
         created_at=str(row.get("created_at", "")),
     )
-
 
 
 def _config_row_to_response(row: dict) -> CleaningConfigResponse:

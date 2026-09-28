@@ -14,6 +14,7 @@ client = TestClient(app)
 # Health Endpoint Tests
 # ==========================================================
 
+
 def test_health_endpoint_returns_success() -> None:
     """
     Verify that the health endpoint returns HTTP 200.

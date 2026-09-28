@@ -14,6 +14,7 @@ client = TestClient(app)
 # Version Endpoint Tests
 # ==========================================================
 
+
 def test_version_endpoint_returns_success() -> None:
     """
     Verify that the version endpoint returns HTTP 200.

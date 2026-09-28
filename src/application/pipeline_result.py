@@ -8,8 +8,7 @@ pipeline has finished.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from .pipeline_report import PipelineReport
@@ -69,11 +68,7 @@ class PipelineResult:
         self,
     ) -> bool:
 
-        return (
-            self.pipeline_report is not None
-            and self.pipeline_report.ai_report
-            is not None
-        )
+        return self.pipeline_report is not None and self.pipeline_report.ai_report is not None
 
     @property
     def has_reporting_report(
@@ -96,17 +91,7 @@ class PipelineResult:
             "execution_time": self.execution_time,
             "ai_job_id": self.ai_job_id,
             "ai_job_status": self.ai_job_status,
-            "generated_at": (
-                self.generated_at.isoformat()
-            ),
-            "pipeline_report": (
-                self.pipeline_report.to_dict()
-                if self.pipeline_report
-                else None
-            ),
-            "error": (
-                str(self.error)
-                if self.error
-                else None
-            ),
+            "generated_at": (self.generated_at.isoformat()),
+            "pipeline_report": (self.pipeline_report.to_dict() if self.pipeline_report else None),
+            "error": (str(self.error) if self.error else None),
         }

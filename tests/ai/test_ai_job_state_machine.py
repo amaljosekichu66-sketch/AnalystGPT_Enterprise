@@ -10,10 +10,10 @@ import pytest
 
 from src.ai.exceptions import AIStateTransitionError
 from src.ai.models import (
+    VALID_TRANSITIONS,
     AIFailureCategory,
     AIJob,
     AIJobStatus,
-    VALID_TRANSITIONS,
 )
 
 
@@ -32,10 +32,7 @@ def test_ai_failure_categories() -> None:
     Verify AIFailureCategory enum values match specification.
     """
     assert AIFailureCategory.TIMEOUT.value == "TIMEOUT"
-    assert (
-        AIFailureCategory.PROVIDER_UNAVAILABLE.value
-        == "PROVIDER_UNAVAILABLE"
-    )
+    assert AIFailureCategory.PROVIDER_UNAVAILABLE.value == "PROVIDER_UNAVAILABLE"
     assert AIFailureCategory.MODEL_ERROR.value == "MODEL_ERROR"
     assert AIFailureCategory.INVALID_OUTPUT.value == "INVALID_OUTPUT"
     assert AIFailureCategory.SYSTEM_ERROR.value == "SYSTEM_ERROR"
