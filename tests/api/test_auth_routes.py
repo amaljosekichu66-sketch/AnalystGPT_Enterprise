@@ -52,7 +52,6 @@ class TestAuthRoutes:
             "username": "new_analyst",
             "email": "new_analyst@enterprise.com",
             "password": "SecurePassword123!",
-            "role": "ANALYST",
         }
 
         response = client.post("/api/auth/register", json=payload)

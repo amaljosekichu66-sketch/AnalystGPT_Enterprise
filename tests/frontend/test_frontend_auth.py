@@ -188,6 +188,16 @@ class TestAuthService:
     Test AuthService login, logout, profile resolution, and error translation.
     """
 
+    def test_register_never_sends_a_role(self) -> None:
+        """The public registration contract rejects `role`; the client must not send one."""
+        mock_client = MagicMock()
+
+        success, err = AuthService(api_client=mock_client).register("dana", "dana@enterprise.com", "SecretPass123!")
+
+        assert (success, err) == (True, None)
+        payload = mock_client.register.call_args.kwargs["payload"]
+        assert payload == {"username": "dana", "email": "dana@enterprise.com", "password": "SecretPass123!"}
+
     @patch("streamlit.session_state", new_callable=dict)
     def test_login_success(self, mock_state) -> None:
         """Successful login initializes session state and returns (True, None)."""

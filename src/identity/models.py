@@ -120,8 +120,31 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    """Schema for user account registration/creation."""
+    """
+    Trusted, internal schema for creating a user with an explicit role.
 
+    Never bind this to a public endpoint: it carries a writable `role`. The
+    unauthenticated registration route uses `UserRegistration` instead.
+    """
+
+    password: str = Field(..., min_length=8, max_length=128)
+
+
+class UserRegistration(BaseModel):
+    """
+    Public self-registration schema.
+
+    There is deliberately no `role` field, and unknown fields are rejected
+    rather than ignored: accepting a caller-supplied role let an anonymous
+    request register an ADMIN account. The role of a self-registered account
+    is decided server-side (`UserService.SELF_REGISTRATION_ROLE`); privileged
+    roles are granted only through the admin user-management API.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_-]+$")
+    email: str = Field(..., pattern=_EMAIL_PATTERN)
     password: str = Field(..., min_length=8, max_length=128)
 
 

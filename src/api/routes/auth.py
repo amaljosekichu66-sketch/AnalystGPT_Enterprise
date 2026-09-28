@@ -21,8 +21,8 @@ from src.identity.context import UserContext
 from src.identity.models import (
     LogoutResponse,
     TokenResponse,
-    UserCreate,
     UserLogin,
+    UserRegistration,
     UserResponse,
 )
 from src.identity.user_service import UserService
@@ -40,13 +40,16 @@ auth_router = APIRouter(
     summary="Register a new user account",
 )
 async def register(
-    user_create: UserCreate,
+    registration: UserRegistration,
     user_service: UserService = Depends(get_user_service),
 ) -> UserResponse:
     """
-    Register a new user with secure password hashing and role assignment.
+    Register a new user with secure password hashing.
+
+    The role is assigned server-side and cannot be chosen by the caller; a
+    payload carrying `role` (or any other unknown field) is rejected with 422.
     """
-    user = user_service.register_user(user_create)
+    user = user_service.register_self(registration)
     return UserResponse(
         id=user.id,
         username=user.username,

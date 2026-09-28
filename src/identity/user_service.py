@@ -36,6 +36,7 @@ from src.identity.models import (
     User,
     UserCreate,
     UserLogin,
+    UserRegistration,
     UserRole,
     UserStatus,
     UserUpdate,
@@ -52,6 +53,9 @@ class UserService:
     """
     Core application service coordinating user authentication and identity workflows.
     """
+
+    #: Role assigned to every self-registered account. Not caller-selectable.
+    SELF_REGISTRATION_ROLE = UserRole.ANALYST
 
     def __init__(
         self,
@@ -71,9 +75,28 @@ class UserService:
     # User Registration
     # ==========================================================
 
+    def register_self(self, registration: UserRegistration) -> User:
+        """
+        Register an account through the public, unauthenticated flow.
+
+        The role is always `SELF_REGISTRATION_ROLE`; the registration payload
+        has no way to express another one.
+        """
+        return self.register_user(
+            UserCreate(
+                username=registration.username,
+                email=registration.email,
+                password=registration.password,
+                role=self.SELF_REGISTRATION_ROLE,
+            )
+        )
+
     def register_user(self, user_create: UserCreate) -> User:
         """
         Register a new user account with securely hashed credentials.
+
+        Trusted entry point: honours `user_create.role` as given. Public
+        registration must go through `register_self`.
 
         Parameters
         ----------
