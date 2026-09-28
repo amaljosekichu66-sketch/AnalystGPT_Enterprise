@@ -225,8 +225,8 @@ executes automatically on pushes and pull requests targeting `main`:
 # 1. Copy environment template
 cp .env.example .env
 
-# 2. Configure the production password AND AUTH_SECRET_KEY in .env
-#    (compose refuses to start without AUTH_SECRET_KEY)
+# 2. Configure POSTGRES_PASSWORD AND AUTH_SECRET_KEY in .env
+#    (compose refuses to start without either)
 # nano .env
 
 # 3. Build and launch services in detached mode
@@ -277,3 +277,22 @@ cat backup_20260814_120000.sql | docker compose exec -T postgres psql -U postgre
 * [x] **PBKDF2 Password Hashing:** 600,000 iterations for secure password derivation.
 * [x] **Server-Side Data Isolation:** Scoped queries prevent IDOR across tenants.
 * [x] **JWT Token Security:** Signed tokens with server-side revocation tracking.
+
+## 10. Pre-Sprint-15 hardening notes
+
+- **Required secrets.** `docker compose` refuses to start without `AUTH_SECRET_KEY` (≥ 32 bytes)
+  and `POSTGRES_PASSWORD`. Neither has a fallback.
+- **Exposure.** The API and frontend are published on `127.0.0.1` by default
+  (`API_BIND_ADDRESS`, `FRONTEND_BIND_ADDRESS`). Expose them through a TLS-terminating reverse
+  proxy rather than binding `0.0.0.0`. `/docs`, `/redoc` and `/openapi.json` are disabled outside
+  development unless `API_DOCS_ENABLED=true`.
+- **Single API process.** Login lockout, rate limits, the per-user job cap and the last-admin
+  guard keep their state in the API process. The image runs one uvicorn worker; running several
+  would require moving that state to a shared store.
+- **Dependencies.** The image installs `requirements.lock` with `pip --require-hashes`, from a
+  digest-pinned base. After changing `requirements.txt`, regenerate the lock with the command in
+  its header (it resolves inside the same base image). Development and CI install
+  `requirements-dev.txt`.
+- **Audit trail.** Security events are stored in `audit_events` (`GET /api/admin/audit-events`)
+  and logged at WARNING with the prefix `SECURITY_ALERT` — alert on that prefix in your log
+  pipeline.

@@ -25,7 +25,7 @@
 | API Version | **v14.0.0** (`src/core/constants.py` → `APP_VERSION`) |
 | Framework | FastAPI |
 | Specification | OpenAPI 3.1 |
-| Exported contract | `docs/api/openapi.json` — **34 paths, 43 schemas** |
+| Exported contract | `docs/api/openapi.json` — **35 paths, 44 schemas** |
 | Documentation | Swagger UI & ReDoc |
 | Route convention | **Every functional router is mounted under `/api`.** The only unprefixed path is the service root, `/`. |
 | Authentication | Bearer Token (`Authorization: Bearer <token>`) |
@@ -51,7 +51,9 @@
 
 > **Source of truth.** The tables below were generated from the live FastAPI schema
 > (`app.openapi()`) and reconciled against the route declarations under `src/api/routes/`
-> and the exported contract `docs/api/openapi.json`. All three agree: **34 paths** (33 at v14.0.0; `POST /api/datasets` added by the pre-Sprint-15 hardening).
+> and the exported contract `docs/api/openapi.json`. All three agree: **35 paths** (33 at v14.0.0; `POST /api/datasets` and `GET /api/admin/audit-events` added by the pre-Sprint-15 hardening).
+>
+> **Outside development `/docs`, `/redoc` and `/openapi.json` are disabled** unless `API_DOCS_ENABLED=true`; use the exported `docs/api/openapi.json`.
 >
 > **Breaking change in v14.0.0.** The unprefixed `/reports/*` and `/powerbi/*` paths were
 > removed. `/reports/*` had been mounted twice (prefixed and unprefixed) and `/powerbi/*`
@@ -82,6 +84,12 @@
 | `PATCH` | `/api/admin/users/{user_id}` | Update user role or status | `USER_MANAGE` |
 | `DELETE` | `/api/admin/users/{user_id}` | Delete a user account | `USER_MANAGE` |
 
+> **Pre-Sprint-15 hardening (second pass).** `POST /api/auth/logout` requires a valid token.
+> Login and registration can answer **429** with `Retry-After` (account lockout / per-client
+> rate limit); a weak password is **400**. Every error body carries `request_id`, echoed as the
+> `X-Request-ID` header; unexpected failures return a generic message plus that id.
+> `GET /api/admin/audit-events` (requires `AUDIT_READ`) returns the durable audit trail.
+
 ### Datasets (`/api/datasets`)
 | Method | Endpoint | Description | Auth Required |
 |---|---|---|---|
@@ -90,8 +98,11 @@
 > **Breaking change (pre-Sprint-15 hardening).** Clients never send server paths. Upload the
 > bytes here, then reference the dataset by `dataset_version_id` everywhere else. Allowed
 > types: `.csv .xlsx .xls .json` (else 415); size limit `MAX_FILE_SIZE_MB` (default 500; else
-> 413); unparseable content → 422. All three are checked before anything is persisted. The
-> response contains no storage path.
+> 413); unparseable content → 422. All three are checked before anything is persisted. `.xlsx`
+> archives are also checked before decompression (compression ratio, expanded size, entries →
+> 413), parsed datasets are capped at `MAX_UPLOAD_ROWS` / `MAX_UPLOAD_COLUMNS` (413), and a user
+> may have at most `MAX_CONCURRENT_JOBS_PER_USER` uploads/runs in progress (429). The response
+> contains no storage path.
 
 ### Analytics Pipeline
 | Method | Endpoint | Description | Auth Required |
@@ -234,7 +245,7 @@ Defined in `src/identity/permissions.py`.
 | Data Cleaning Governance & Lineage | 🟡 Implemented & tested (Sprint 14); end-to-end workflow needs remediation — Sprint 15 |
 | Text & PDF Report Export Streaming | ✅ Implemented & tested (Sprint 14) |
 | Swagger UI & ReDoc | ✅ Operational |
-| OpenAPI 3.1 Spec | ✅ Exported and in sync (34 paths, 43 schemas) |
+| OpenAPI 3.1 Spec | ✅ Exported and in sync (35 paths, 44 schemas) |
 | Automated API Tests | ✅ Passing — part of the 714-test suite (see PROJECT_STATE.md § *Executed Validation*) |
 
 ---

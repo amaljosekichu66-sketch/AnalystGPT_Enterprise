@@ -84,7 +84,7 @@ git clone https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise.git
 cd AnalystGPT_Enterprise
 python -m venv venv
 source venv/bin/activate        # Windows: .\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 cp .env.example .env            # defaults to SQLite + development mode
 
 uvicorn src.api.server:app --reload            # API  → http://127.0.0.1:8000/docs

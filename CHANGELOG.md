@@ -1748,3 +1748,28 @@ Sprint 14 delivers comprehensive enterprise stabilization, asynchronous AI execu
 - 870 passed, 1 skipped, 15 deselected, 0 failed (baseline: 714 passed, 15 deselected);
   PostgreSQL integration 4 passed against a throwaway PostgreSQL 16.15; flake8 / black / isort /
   mypy clean. Coverage 81% of `src/`.
+
+### Security — second pass (security finding register SEC-07 … SEC-25)
+
+- **Regression fixed:** report export by id had silently lost its owner check after the B-03
+  change (any user could download any report by id); it now fails closed.
+- **SEC-07** model output escaped in the Streamlit insights view.
+- **SEC-08** progressive login lockout, per-client rate limits on login/registration,
+  password policy. **SEC-15** generic duplicate-account message. **SEC-16** `jti`/`iss`/`aud`
+  token claims. **SEC-18** non-ASCII tokens → 401.
+- **SEC-09** logout requires a valid token; revocation by `jti`, persisted (`revoked_tokens`).
+- **SEC-10** `.xlsx` archive checks before decompression, row/column caps, per-user job cap.
+- **SEC-11** generic error bodies with `request_id` / `X-Request-ID`; details logged only.
+- **SEC-12** per-request export files, deleted after sending.
+- **SEC-13** compose requires `POSTGRES_PASSWORD`. **SEC-17** no API docs in production,
+  loopback defaults for bind/publish.
+- **SEC-14** runtime/dev requirement split, hash-pinned `requirements.lock`, digest-pinned base
+  image. **SEC-23** setuptools ≥ 83. **SEC-22** CI security job (gitleaks, pip-audit, bandit),
+  SHA-pinned actions, `permissions: contents: read`.
+- **SEC-20** deleting a user purges their data and files. **SEC-21** race-free last-admin
+  guard. **SEC-25** durable audit trail (`audit_events`), `SECURITY_ALERT` log lines,
+  `GET /api/admin/audit-events`.
+- **SEC-24** test data uses reserved `example.*` email domains.
+- Verification (second pass): 959 passed, 1 skipped, 15 deselected, 0 failed; coverage 82%;
+  PostgreSQL 16 integration 4 passed; API image built and smoke-tested; gitleaks, pip-audit and
+  bandit (HIGH) clean.

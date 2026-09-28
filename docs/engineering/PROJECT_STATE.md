@@ -127,6 +127,43 @@ Every row below was first **reproduced** on `b841b52`, then fixed, then re-probe
   dependency). Trivy 0.74.0 secret scan (offline) — 0 findings (scanner confirmed to detect a
   planted token). gitleaks — not available.
 
+## Second pass — security finding register (SEC-07 … SEC-25)
+
+Each item below was reproduced on the branch first, then fixed and re-probed. Final state:
+**959 passed, 1 skipped, 15 deselected, 0 failed**; coverage 82% of `src/`; flake8 / black /
+isort / mypy clean; PostgreSQL 16 integration 4 passed and the second-pass features (revocation,
+audit, purge, exports) exercised end to end on PostgreSQL; `docker build --target api`
+succeeded; gitleaks (history) clean with one reviewed false positive allowlisted; pip-audit of
+the lock and of the venv: no known vulnerabilities; bandit: 0 HIGH.
+
+| ID | Reproduced | Status | Regression tests |
+|----|------------|--------|------------------|
+| *(regression)* | Report export by id skipped its owner check after `8ffc77e` removed `application.persistence` (user B → 200 on user A's report; `b841b52` returned 404) | **VERIFIED** fixed (`2594bdc`) | `tests/api/test_report_export_ownership.py` |
+| SEC-07 | LLM output rendered into `unsafe_allow_html` / markdown unescaped (`<img onerror>`, image beacons, `javascript:` links) | **VERIFIED** at render level | `tests/frontend/test_ai_insights_escaping.py` |
+| SEC-08 | 15 wrong logins then right → 200; 30 registrations → 30×201; `aaaaaaaa` accepted | **VERIFIED** — progressive lockout (429), per-client rate limits, password policy | `tests/api/test_auth_hardening.py` |
+| SEC-09 | Anonymous logout stored arbitrary strings forever; revocation lost on restart | **VERIFIED** — authenticated logout, `jti` revocation persisted in `revoked_tokens` | `tests/api/test_auth_hardening.py` |
+| SEC-10 | 94 KB `.xlsx` → 37 MB (406:1) parsed for 57 s; 1,000,001 rows accepted; 6 concurrent runs per user | **VERIFIED** — archive check before decompression, row/column caps, 2 jobs/user | `tests/api/test_upload_limits.py` |
+| SEC-11 | Raw exception text (incl. a simulated credential) in 500 / pipeline / preview errors; no request id | **VERIFIED** — generic errors + `X-Request-ID`, details logged | `tests/api/test_error_disclosure.py` |
+| SEC-12 | Exports without a report id shared one file; a concurrent export overwrote the one being served | **VERIFIED** — per-request file, deleted after send | `tests/api/test_export_isolation.py` |
+| SEC-13 | Compose fell back to `POSTGRES_PASSWORD=postgres` | **VERIFIED** — required, no fallback | `tests/core/test_deployment_hardening.py` |
+| SEC-14 | No lock/hashes; dev tools in the runtime image; mutable base tag | **VERIFIED** — `requirements.lock` (60 packages, sha256; resolved in the pinned Linux base against the tested versions in `requirements-constraints.txt`), runtime/dev split, digest-pinned `FROM`. `docker build --target api` succeeded with `--require-hashes`; the container runs as `appuser` with 0 dev tools; pip-audit of the lock: no known vulnerabilities | `tests/core/test_deployment_hardening.py` |
+| SEC-15 | 409 named the existing username/email | **VERIFIED** — one generic message | `tests/api/test_auth_hardening.py` |
+| SEC-16 | Identical token for two logins in the same second; no `jti`/`iss`/`aud` | **VERIFIED** | `tests/api/test_auth_hardening.py` |
+| SEC-17 | `/docs`, `/redoc`, `/openapi.json` 200 in production; default bind `0.0.0.0`; compose published on all interfaces | **VERIFIED** — off in production unless `API_DOCS_ENABLED`; loopback defaults | `tests/core/test_deployment_hardening.py` |
+| SEC-18 | Non-ASCII token → 400 with raw codec error | **VERIFIED** — 401 | `tests/api/test_auth_hardening.py` |
+| SEC-20 | Deleted user's rows stayed (owner NULL) and files stayed on disk | **VERIFIED** — purged in one transaction + files | `tests/api/test_admin_data_governance.py` |
+| SEC-21 | Concurrent mutual demotion left 0 admins; count scanned 10,000 users | **VERIFIED** (single API process) — SQL count + lock | `tests/api/test_admin_data_governance.py` |
+| SEC-22 | No security scanning; tag-pinned actions; no `permissions:` | **IMPLEMENTED, TESTED** — gitleaks/pip-audit/bandit job, SHA-pinned actions, `contents: read`; CI run itself **UNKNOWN** (not pushed) | `tests/core/test_deployment_hardening.py` |
+| SEC-23 | `setuptools 65.5.0` (4 advisories) | **VERIFIED** — venv 84.0.0, pip-audit clean; image pinned ≥ 83 via the lock | `tests/core/test_deployment_hardening.py` |
+| SEC-24 | 75,836 test-data emails on gmail/yahoo/outlook/mail.com | **VERIFIED** — reserved `example.*` domains, distribution preserved | `tests/core/test_deployment_hardening.py` |
+| SEC-25 | Audit events in memory only | **VERIFIED** — `audit_events` table, `SECURITY_ALERT` log lines, `GET /api/admin/audit-events` | `tests/api/test_admin_data_governance.py` |
+
+Further contract changes from this pass: `POST /api/auth/logout` requires a valid token;
+login/registration can return **429** (`Retry-After`); weak passwords → 400; uploads can return
+413 (rows/columns/archive) and 429 (job cap); every error body has `request_id`; production
+serves no `/docs` or `/openapi.json`; new `GET /api/admin/audit-events` (35 paths); install dev
+tools from `requirements-dev.txt`.
+
 ## Remaining work / not verified
 
 - **Sprint 15 scope (unchanged):** governance policy selection end-to-end (selection → API →
@@ -137,9 +174,15 @@ Every row below was first **reproduced** on `b841b52`, then fixed, then re-probe
   exercised only against a deliberately closed port); behaviour of results after an API
   restart (the read-only view cache is in-memory, so views return 404 until the dataset is run
   again).
-- **Not changed, observed:** compose still defaults `POSTGRES_PASSWORD` to `postgres` (the
-  database is not port-exposed); the venv's `setuptools 65.5.0` has known advisories; test
-  coverage is not tracked in CI; `AIJobService` opens a connection per call without closing it;
+- **Residual limits of the second pass:** lockout counters, rate limits, the job cap and the
+  last-admin lock are per process (the image runs one API worker; more workers would need a
+  shared store such as the database or Redis); SEC-07 is verified at render level, not in a
+  live browser; only the `api` image target was built (frontend/cli share the same install
+  stage); the new CI `security` job has not run on GitHub (its three commands were run locally).
+  Lockout counts per identifier, so an account's username and email are counted separately.
+- **Not changed, observed:** test coverage is not tracked in CI; `AIJobService` opens a
+  connection per call without closing it; the pipeline's convenience copy
+  `reports/analystgpt_report.txt` is still written on every run (never served by the API);
   both `dashboard.py` and `powerbi.py` declare `/powerbi/dashboard` (first mount wins; both are
   read-only now).
 

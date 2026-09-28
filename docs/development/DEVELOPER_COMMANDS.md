@@ -83,7 +83,7 @@ Executes the comprehensive automated test suite across unit, integration, and se
 > `starlette.testclient`.
 >
 > If you see a `matplotlib` import error, your virtualenv predates it being declared — run
-> `pip install -r requirements.txt`.
+> `pip install -r requirements-dev.txt`.
 
 ```bash
 cd "$PROJECT_ROOT"
