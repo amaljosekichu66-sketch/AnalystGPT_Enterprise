@@ -13,7 +13,9 @@ checks that run BEFORE anything is persisted or parsed:
 
 from __future__ import annotations
 
+import io
 import re
+import zipfile
 from pathlib import PurePosixPath, PureWindowsPath
 from typing import BinaryIO
 
@@ -114,3 +116,42 @@ def read_bounded(stream: BinaryIO) -> bytes:
         raise UploadRejectedError("Uploaded file is empty.")
 
     return b"".join(chunks)
+
+
+def check_archive_safety(content: bytes, filename: str) -> None:
+    """
+    Refuse zip-bomb workbooks by inspecting the archive directory only.
+
+    Nothing is decompressed: the central directory already records every
+    entry's compressed and uncompressed size.
+    """
+    if PurePosixPath(filename).suffix.lower() != ".xlsx":
+        return
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            entries = archive.infolist()
+    except zipfile.BadZipFile as exc:
+        raise UnparseableUploadError("Uploaded .xlsx file is not a valid workbook.") from exc
+
+    if len(entries) > config.MAX_XLSX_ENTRIES:
+        raise UploadTooLargeError("Workbook contains too many archive entries.")
+
+    uncompressed = sum(entry.file_size for entry in entries)
+    compressed = max(1, sum(entry.compress_size for entry in entries))
+    if uncompressed > config.MAX_XLSX_UNCOMPRESSED_MB * 1024 * 1024:
+        raise UploadTooLargeError(f"Workbook expands beyond {config.MAX_XLSX_UNCOMPRESSED_MB} MB.")
+
+    worst_entry_ratio = max((e.file_size / max(1, e.compress_size) for e in entries), default=0)
+    if uncompressed / compressed > config.MAX_XLSX_COMPRESSION_RATIO or (
+        worst_entry_ratio > config.MAX_XLSX_COMPRESSION_RATIO
+    ):
+        raise UploadTooLargeError("Workbook compression ratio is too high to be processed safely.")
+
+
+def check_dataset_shape(rows: int, columns: int) -> None:
+    """Refuse parsed datasets beyond the configured row / column limits."""
+    if rows > config.MAX_UPLOAD_ROWS:
+        raise UploadTooLargeError(f"Dataset has {rows:,} rows; the limit is {config.MAX_UPLOAD_ROWS:,}.")
+    if columns > config.MAX_UPLOAD_COLUMNS:
+        raise UploadTooLargeError(f"Dataset has {columns:,} columns; the limit is {config.MAX_UPLOAD_COLUMNS:,}.")

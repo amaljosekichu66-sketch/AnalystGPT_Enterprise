@@ -49,6 +49,9 @@ def throwaway_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(config, "SQLITE_DATABASE_PATH", db_path)
     monkeypatch.setattr(config, "ARTIFACT_STORE_DIRECTORY", tmp_path / "artifacts")
     monkeypatch.setattr(config, "REPORT_OUTPUT_DIRECTORY", tmp_path / "reports")
+    # These tests exercise isolation under overlap, not the per-user job cap
+    # (SEC-10, covered in tests/api/test_upload_limits.py), so allow every run.
+    monkeypatch.setattr(config, "MAX_CONCURRENT_JOBS_PER_USER", RUNS_PER_USER)
     (tmp_path / "reports").mkdir()
     return db_path
 

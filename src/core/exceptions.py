@@ -55,6 +55,15 @@ class FileTooLargeError(AnalystGPTError):
     pass
 
 
+class TooManyConcurrentJobsError(AnalystGPTError):
+    """
+    Raised when a user already has the maximum number of heavy jobs (uploads
+    being parsed, pipeline runs) in progress (SEC-10).
+    """
+
+    pass
+
+
 class PipelineResultNotFoundError(AnalystGPTError):
     """
     Raised when a read-only view is requested for a dataset that has not been

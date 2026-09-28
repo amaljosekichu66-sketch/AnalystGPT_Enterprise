@@ -26,6 +26,7 @@ from src.identity.context import UserContext
 from src.identity.permissions import Permission
 from src.upload.upload_policy import (
     UploadRejectedError,
+    check_archive_safety,
     check_declared_size,
     read_bounded,
     validate_upload_filename,
@@ -101,6 +102,9 @@ async def upload_dataset(
         content = await run_in_threadpool(read_bounded, upload.file)
     finally:
         await form.close()
+
+    # Zip-bomb check on the archive directory, before persisting or parsing.
+    check_archive_safety(content, filename)
 
     source_version = await run_in_threadpool(
         application.register_upload,

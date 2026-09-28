@@ -178,6 +178,23 @@ MAX_FILE_SIZE_MB = int(
     )
 )
 
+# Parsed-shape limits (SEC-10), checked after parsing and before the dataset is
+# registered. 1,000,000 rows admits the repository's stress-test dataset.
+MAX_UPLOAD_ROWS = int(os.getenv("MAX_UPLOAD_ROWS", "1000000"))
+MAX_UPLOAD_COLUMNS = int(os.getenv("MAX_UPLOAD_COLUMNS", "1000"))
+
+# .xlsx is a zip archive; these are checked on the archive directory BEFORE any
+# decompression (SEC-10). A 94 KB workbook expanding 406:1 to 37 MB of sheet
+# XML used to cost ~57 s of parsing per request. Normal workbooks compress
+# roughly 3-10:1.
+MAX_XLSX_UNCOMPRESSED_MB = int(os.getenv("MAX_XLSX_UNCOMPRESSED_MB", "1024"))
+MAX_XLSX_COMPRESSION_RATIO = int(os.getenv("MAX_XLSX_COMPRESSION_RATIO", "100"))
+MAX_XLSX_ENTRIES = int(os.getenv("MAX_XLSX_ENTRIES", "1000"))
+
+# Concurrent heavy jobs (uploads being parsed + pipeline runs) per user
+# (SEC-10). Further requests get 429 until one finishes.
+MAX_CONCURRENT_JOBS_PER_USER = int(os.getenv("MAX_CONCURRENT_JOBS_PER_USER", "2"))
+
 # ==========================================================
 # Artifact Storage
 # ==========================================================

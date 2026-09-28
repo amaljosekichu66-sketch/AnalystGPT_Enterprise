@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from src.api.rate_limit import RateLimitExceededError
 from src.api.request_context import REQUEST_ID_HEADER, current_request_id
-from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError
+from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError, TooManyConcurrentJobsError
 from src.core.logger import logger
 from src.core.redaction import redact_server_paths
 from src.identity.exceptions import (
@@ -193,6 +193,19 @@ def register_exception_handlers(app: FastAPI) -> None:
             "Pipeline result not found.",
             str(exc),
         )
+
+    @app.exception_handler(TooManyConcurrentJobsError)
+    async def too_many_jobs_handler(
+        _request: Request,
+        exc: TooManyConcurrentJobsError,
+    ) -> JSONResponse:
+        response = _error_response(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "Too many jobs in progress.",
+            str(exc),
+        )
+        response.headers["Retry-After"] = "5"
+        return response
 
     @app.exception_handler(UploadRejectedError)
     async def upload_rejected_handler(

@@ -31,7 +31,11 @@ from src.analytics.analytics_manager import AnalyticsManager
 from src.analytics.analytics_report import AnalyticsReport
 from src.cleaning.cleaning_manager import CleaningManager
 from src.core import config as _core_config
-from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError
+from src.core.exceptions import (
+    DatasetNotFoundError,
+    PipelineResultNotFoundError,
+    TooManyConcurrentJobsError,
+)
 from src.core.logger import logger
 
 # Governance Layer (Sprint 14 Phase 3)
@@ -58,7 +62,7 @@ from src.reporting.reporting_report import ReportingReport
 from src.storage.artifact_store import LocalArtifactStore
 from src.storage.exceptions import ArtifactStoreError
 from src.upload.upload_manager import UploadManager
-from src.upload.upload_policy import UnparseableUploadError
+from src.upload.upload_policy import UnparseableUploadError, UploadRejectedError, check_dataset_shape
 
 from .pipeline_report import PipelineReport
 from .pipeline_result import PipelineResult
@@ -148,6 +152,9 @@ class Application:
 
         self._cache_lock = threading.RLock()
 
+        #: user_id -> heavy jobs in progress (SEC-10).
+        self._active_jobs: dict[int | None, int] = {}
+
         self._cached_dataset_path: str | None = None
         self._user_pipeline_results: dict[int | None, PipelineResult] = {}
         self._user_cached_paths: dict[int | None, str] = {}
@@ -173,6 +180,32 @@ class Application:
         finally:
             persistence.shutdown()
 
+    @contextmanager
+    def _job_slot(self, context: UserContext) -> Iterator[None]:
+        """
+        Hold one of the caller's `MAX_CONCURRENT_JOBS_PER_USER` slots (SEC-10).
+
+        Parsing an upload and running the pipeline are the expensive
+        operations; without a cap one account could occupy every worker.
+        """
+        user_id = context.user_id if context.is_authenticated else None
+        limit = max(1, int(_core_config.MAX_CONCURRENT_JOBS_PER_USER))
+        with self._cache_lock:
+            if self._active_jobs.get(user_id, 0) >= limit:
+                raise TooManyConcurrentJobsError(
+                    f"You already have {limit} jobs in progress. Wait for one to finish and retry."
+                )
+            self._active_jobs[user_id] = self._active_jobs.get(user_id, 0) + 1
+        try:
+            yield
+        finally:
+            with self._cache_lock:
+                remaining = self._active_jobs.get(user_id, 1) - 1
+                if remaining > 0:
+                    self._active_jobs[user_id] = remaining
+                else:
+                    self._active_jobs.pop(user_id, None)
+
     # ==========================================================
     # Managed datasets (server-issued identifiers)
     # ==========================================================
@@ -193,13 +226,13 @@ class Application:
         """
         context = user_context or get_current_user_context()
 
-        with self.persistence_session() as persistence:
+        with self._job_slot(context), self.persistence_session() as persistence:
             owner_id = self._persisted_user_id(persistence, context)
             if owner_id is None:
                 raise PermissionDeniedError("Dataset uploads require a registered, authenticated account.")
 
             try:
-                source_version, _ = self.governance_service.register_source_dataset(
+                source_version, parsed = self.governance_service.register_source_dataset(
                     file_path_or_bytes=content,
                     filename=filename,
                     user_id=owner_id,
@@ -211,6 +244,12 @@ class Application:
                 # parser's message can quote server paths, so it stays in logs.
                 logger.warning("Uploaded dataset '%s' could not be parsed: %s", filename, exc)
                 raise UnparseableUploadError("Uploaded file could not be parsed as a dataset.") from exc
+
+            try:
+                check_dataset_shape(len(parsed), len(parsed.columns))
+            except UploadRejectedError:
+                self.artifact_store.discard_raw_artifact(source_version.storage_path)
+                raise
 
             persistence.dataset_version_repository.create(source_version)
 
@@ -288,13 +327,15 @@ class Application:
         `DatasetNotFoundError` BEFORE a pipeline run record is created.
         """
         source_version = self.resolve_source_version(dataset_version_id, user_context)
+        context = user_context or get_current_user_context()
 
-        return self._execute(
-            user_context=user_context,
-            cache_key=self.dataset_cache_key(dataset_version_id),
-            input_label=f"dataset_version_id={dataset_version_id}",
-            load_source=lambda _owner_id: (source_version, self.load_source_dataframe(source_version)),
-        )
+        with self._job_slot(context):
+            return self._execute(
+                user_context=user_context,
+                cache_key=self.dataset_cache_key(dataset_version_id),
+                input_label=f"dataset_version_id={dataset_version_id}",
+                load_source=lambda _owner_id: (source_version, self.load_source_dataframe(source_version)),
+            )
 
     def get_result_for_dataset(
         self,
