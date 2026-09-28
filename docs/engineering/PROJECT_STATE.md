@@ -30,6 +30,7 @@
 | **Current sprint** | **Sprint 14 — Stabilization / Production Hardening** |
 | **Sprint 14 status** | ✅ **Released as v14.0.0** |
 | **Next sprint** | **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (planned, not started) |
+| **Current work** | **Pre-Sprint-15 security & stability hardening** on branch `pre-sprint-15-hardening` (not merged, not released) — status **READY FOR RE-AUDIT**; see the section below |
 | **Sequence** | Sprint 15 (Stabilization) → Sprint 16 (AI Provider Abstraction & React Readiness) → Sprint 17 (React Migration) — see ROADMAP.md |
 
 AnalystGPT Enterprise is an enterprise-grade analytics pipeline (Upload →
@@ -46,11 +47,101 @@ Sprint 14 delivered the **Enterprise Stabilization & Governance Platform**:
 - Publication-grade reporting (`PdfReportExporter`, `TextReportExporter`) with empirical distribution charts, executive KPI summaries, and data lineage cards
 - Evidence-grounded AI serialization in `ReportSerializer` and `PromptBuilder`, strictly distinguishing distinct category cardinality from percentage frequencies
 - A single `/api` route convention — the unprefixed `/reports/*` and `/powerbi/*` aliases were removed (**breaking**; see CHANGELOG.md)
-- Frozen OpenAPI 3.1 contract (`docs/api/openapi.json`, 33 paths) and a technology-neutral frontend service layer preparing for the React migration (`docs/api/REACT_MIGRATION_MAPPING.md`)
+- Frozen OpenAPI 3.1 contract (`docs/api/openapi.json`, 33 paths at v14.0.0; **34** after the pre-Sprint-15 hardening) and a technology-neutral frontend service layer preparing for the React migration (`docs/api/REACT_MIGRATION_MAPPING.md`)
 - Full formatter coverage: `black` and `isort` now check all of `src/` and `tests/`
 
 All backend and frontend contracts other than the removed unprefixed aliases remain
-backward compatible.
+backward compatible *at v14.0.0*. The pre-Sprint-15 hardening changes several of them
+deliberately (see below).
+
+---
+
+# Pre-Sprint-15 Hardening — Status (branch `pre-sprint-15-hardening`)
+
+> Branched from `sprint-15-stabilization` @ `b841b52` (the v14.0.0 baseline). **Not merged,
+> not released, not pushed.** Outcome: **READY FOR RE-AUDIT** — this is not a declaration
+> that Sprint 15 may start; a fresh security/readiness audit decides that.
+>
+> **Evidence vocabulary (used below and for all new claims):**
+> **IMPLEMENTED** (code exists) · **TESTED** (automated tests exercise it) · **VERIFIED**
+> (original failure reproduced, then shown not to reproduce through the real path) ·
+> **RELEASED** (tagged and merged) · **PLANNED** · **PARTIALLY IMPLEMENTED** · **BROKEN** ·
+> **UNKNOWN** (not verified; no claim is made).
+
+## Blockers
+
+Every row below was first **reproduced** on `b841b52`, then fixed, then re-probed.
+
+| ID | Defect (as reproduced on `b841b52`) | Status | Regression tests |
+|----|-----------------------------------|--------|------------------|
+| B-01 / SEC-01 | `POST /api/auth/register {"role":"ADMIN"}` (unauthenticated) created an ADMIN that could call `/api/admin/*` | **VERIFIED** — 422, no account created | `tests/api/test_registration_privilege.py` |
+| B-02 / SEC-02 / SEC-19 | `input_path` / `?dataset=` accepted any server path (absolute, `../`, UNC); a canary file outside the repo was ingested and read back through `/api/governance/preview`; `storage_path`/`output_path` disclosed absolute server paths | **VERIFIED** — all variants 422, no artifact created, no absolute path in any response | `tests/api/test_dataset_path_security.py` |
+| B-04 / SEC-05 | VIEWER `GET /api/powerbi/summary` → 200 **and a new pipeline run** (views fell through to `get_or_run`) | **VERIFIED** — views are read-only (404 if not yet run); execution only via `POST /api/pipeline` | `tests/api/test_viewer_execution.py` |
+| B-05 / SEC-03 | Compose set no `APP_ENVIRONMENT` → development → published signing key; forged ADMIN token → 200 | **VERIFIED** — API refuses to start; compose refuses to render without a key | `tests/core/test_auth_secret_config.py` |
+| SEC-04 | `AUTH_SECRET_KEY=` (empty) accepted in production; empty-key forged token → 200 | **VERIFIED** — missing / empty / < 32 bytes / published key all refuse API startup | `tests/core/test_auth_secret_config.py` |
+| B-03 / SEC-06 | Concurrent pipeline requests shared one `PersistenceManager` + SQLite connection: FK/UNIQUE violations, cross-run ids, API process crashed with `0xC0000005` | **VERIFIED (SQLite)** — 4 fresh server processes × 3 rounds (8–16 concurrent, 2 users): all PASS, integrity/FK/ownership clean | `tests/application/test_concurrent_pipeline_isolation.py` |
+| B-06 | PostgreSQL schema init: fresh DB → `relation "users" does not exist`, 0 of 11 tables, never recovers | **VERIFIED** against real PostgreSQL 16.15 (throwaway container): fresh init, idempotent re-run, injected mid-way failure → zero tables → clean retry, legacy migration; full API flow (upload → pipeline → dashboard) succeeded | `tests/database/test_schema_manager_migrations.py`, `tests/integration/test_postgresql_schema.py` (`-m integration`, needs `TEST_POSTGRES_*`) |
+
+## Contract changes (breaking for API clients)
+
+- **New** `POST /api/datasets` (multipart, field `file`) → `dataset_version_id`. Type allow-list
+  (`.csv .xlsx .xls .json`) and size limit (`MAX_FILE_SIZE_MB`, default 500) are enforced
+  server-side before anything is persisted or parsed. Requires `DATASET_UPLOAD`.
+- `POST /api/pipeline` takes `{"dataset_version_id": "<uuid>"}`; `input_path` is **removed**
+  (unknown fields → 422).
+- `/api/powerbi/*` take `?dataset_version_id=`; `?dataset=` is **removed**. They are
+  **read-only**: 404 until the dataset has been run with `POST /api/pipeline`.
+- `DatasetVersionResponse.storage_path` **removed**; `output_path` / `export_path` are bare
+  file names.
+- `POST /api/auth/register` rejects `role` (and any unknown field) with 422; self-registered
+  accounts are ANALYST. The first ADMIN is created with `scripts/create_admin.py`.
+- Unset `APP_ENVIRONMENT` now means **production**. Local development must set
+  `APP_ENVIRONMENT=development` explicitly (`.env.example` does).
+- OpenAPI contract: **34 paths, 43 schemas** (`docs/api/openapi.json`).
+
+## Corrections to earlier claims in this repository
+
+| Earlier claim | Evidence | Corrected status |
+|---------------|----------|------------------|
+| "Selected [cleaning] policy is persisted with the pipeline run" | The Streamlit policy selector writes `st.session_state.selected_cleaning_policy` only; `Application` always uses `create_default_config()` (DROP_ROWS). The selection never reaches the backend. | **BROKEN** (selection) / **PARTIALLY IMPLEMENTED** (config *is* persisted, but it is always the default) — Sprint 15 |
+| "Streamlit views are presentation-only" | `views/upload_page.py` runs `DataProfiler`, `CleaningGovernanceService.recommend_dataset_policy` and `CleaningPreviewService.preview` in the frontend process | **Not true** — backend logic remains in the frontend; Sprint 15 |
+| "Cross-user data isolation / IDOR prevention verified" (Sprint 13) | B-02 (arbitrary file read) and B-03 (cross-run/user ids under concurrency) contradicted it | Fixed here for the paths above; **UNKNOWN** beyond them until re-audit |
+| Maturity table "Production Ready" (Backend, Database, REST API, Deployment, Identity, AI, Async AI) | Each was contradicted by at least one blocker above | Replaced with evidence-based ratings (below) |
+| "Deployment … Production Ready (Docker & CI)" | CI's compose job checked health endpoints only; PostgreSQL schema init could never succeed (B-06) | Schema init **VERIFIED** on PostgreSQL; full `docker compose up` stack **UNKNOWN** (not executed in this phase) |
+| "Performance Validation ✅ Completed" | Benchmarks in `performance/` are single-request; concurrent execution crashed the process until B-03 | **PARTIALLY IMPLEMENTED** — no concurrency/load validation exists |
+| "100% test coverage" (one CHANGELOG entry) | CI does not measure coverage. One measurement during the hardening (`coverage run --source=src -m pytest`): **81%** of `src/` statements (9,321 / 1,815 missed); several frontend components and `src/ai/insight_engine.py` are at 0% | **Not true** — 81% measured once; not tracked in CI |
+| "Sprint 14 … release (tag + merge) is pending" (Current Focus) | Tag `v14.0.0` exists and `main` = `39681c4` | **RELEASED** (v14.0.0); the "pending" line was stale |
+
+## Verification record (final code on `pre-sprint-15-hardening`)
+
+- Full suite: **870 passed, 1 skipped, 15 deselected, 0 failed** (baseline `b841b52`: 714
+  passed, 15 deselected). The skip is the PostgreSQL integration module without
+  `TEST_POSTGRES_*`; with a throwaway PostgreSQL 16.15 it runs: 4 passed. A higher count is
+  not evidence on its own — each blocker was reproduced first and re-probed after the fix.
+- Static gates: flake8 (fatal + full) 0, black and isort clean (352 files), mypy clean (213
+  source files). `docker compose config` refuses to render without `AUTH_SECRET_KEY`.
+- Security tooling: bandit 1.9.4 — 0 HIGH; 44 MEDIUM B608 reviewed as false positives (only
+  table-name constants / enum values are interpolated, values are bound parameters); B104
+  (`API_HOST` default `0.0.0.0`, intended for containers). pip-audit 2.10.1 — only the venv's
+  bundled `setuptools 65.5.0` (4 advisories, fixed ≥ 83.0.0; not a `requirements.txt`
+  dependency). Trivy 0.74.0 secret scan (offline) — 0 findings (scanner confirmed to detect a
+  planted token). gitleaks — not available.
+
+## Remaining work / not verified
+
+- **Sprint 15 scope (unchanged):** governance policy selection end-to-end (selection → API →
+  execution → provenance), moving profiling/preview out of Streamlit, dashboard IA, admin UI
+  reconciliation.
+- **UNKNOWN:** concurrency on PostgreSQL (B-03 was verified on SQLite only); full
+  `docker compose up` stack with the new required key; live-Ollama AI generation (AI jobs were
+  exercised only against a deliberately closed port); behaviour of results after an API
+  restart (the read-only view cache is in-memory, so views return 404 until the dataset is run
+  again).
+- **Not changed, observed:** compose still defaults `POSTGRES_PASSWORD` to `postgres` (the
+  database is not port-exposed); the venv's `setuptools 65.5.0` has known advisories; test
+  coverage is not tracked in CI; `AIJobService` opens a connection per call without closing it;
+  both `dashboard.py` and `powerbi.py` declare `/powerbi/dashboard` (first mount wins; both are
+  read-only now).
 
 ---
 
@@ -570,7 +661,8 @@ src/
     ├── streamlit_app.py
     ├── views/                   # dashboard, upload, report, ai_insights,
     │                            # admin, about, login
-    ├── components/              # 22 presentation-only components
+    ├── components/              # 22 components (views are NOT all presentation-only:
+    │                            #   upload_page runs profiling/governance in-process)
     ├── services/                # api_client, auth, dashboard, report, ai,
     │                            # upload, admin, session_manager
     ├── config/settings.py
@@ -796,26 +888,32 @@ The following documents define repository standards and engineering policies:
 
 # Current Engineering Maturity
 
-> **Scope of these ratings.** These are a self-assessment of the **v14.0.0** baseline: the
-> code in this repository, with the suite and all four static gates passing. They are an
-> engineering judgement, not an external audit or a production-traffic record.
+> **Scope of these ratings.** Re-baselined during the pre-Sprint-15 hardening. The earlier
+> table rated most areas "Production Ready"; two independent audits then reproduced a public
+> ADMIN self-registration, an arbitrary server file read, VIEWER-triggered execution, a
+> forgeable signing key, a process crash under concurrent requests and a PostgreSQL schema
+> that could never be created. Ratings now use the evidence vocabulary and claim only what
+> was demonstrated. None is an external audit or a production-traffic record.
 
-| Area | Maturity Level |
-|------|----------------|
-| Architecture | Production Ready |
-| Backend | Production Ready |
-| Frontend | MVP (Streamlit) — remediation pending Sprint 15 |
-| Database | Production Ready |
-| REST API | Production Ready |
-| Power BI Integration | Production Ready |
-| **AI Layer** | **Production Ready (Local LLM Integration)** |
-| **Deployment** | **Production Ready (Docker & CI)** |
-| **Enterprise Identity & Multi-User** | **Production Ready (PBKDF2 + JWT + RBAC)** |
-| **Data Governance & Lineage** | **Implemented & tested (`src/governance/`, `src/storage/`); end-to-end verification pending Sprint 15** |
-| **Asynchronous AI Job Lifecycle** | **Production Ready (`ai_jobs` / `ai_reports` state machine, background worker)** |
-| **Semantic Profiling & Visual Analytics** | **Production Ready (`src/profiling/`, `VisualizationPlanner`)** |
-| AI Provider Abstraction | Planned (Sprint 16 — Ollama + Gemini; not started) |
-| React Presentation Layer | Planned (Sprint 17; not started) |
+| Area | Status |
+|------|--------|
+| Architecture | IMPLEMENTED — layered; per-request persistence introduced in hardening (B-03) |
+| Backend pipeline | IMPLEMENTED, TESTED; concurrent execution VERIFIED on SQLite only |
+| Frontend | PARTIALLY IMPLEMENTED (Streamlit MVP) — not presentation-only; remediation Sprint 15 |
+| Database — SQLite | IMPLEMENTED, TESTED, VERIFIED under concurrency |
+| Database — PostgreSQL | Was BROKEN (schema init); fix VERIFIED against PostgreSQL 16; concurrency UNKNOWN |
+| REST API | IMPLEMENTED, TESTED; security boundary re-probed for B-01/B-02/B-04 |
+| Power BI Integration | IMPLEMENTED, TESTED; read-only views VERIFIED |
+| AI Layer (Local LLM) | IMPLEMENTED, TESTED; live-Ollama generation UNKNOWN in this phase |
+| Deployment (Docker & CI) | PARTIALLY IMPLEMENTED — compose config VERIFIED to require a key and set production; full stack run UNKNOWN |
+| Enterprise Identity & Multi-User | IMPLEMENTED, TESTED; B-01, B-05, SEC-04 VERIFIED fixed |
+| Data Governance & Lineage | PARTIALLY IMPLEMENTED — policy selection is not persisted (BROKEN); managed dataset ids VERIFIED |
+| Asynchronous AI Job Lifecycle | IMPLEMENTED, TESTED; not load-verified |
+| Semantic Profiling & Visual Analytics | IMPLEMENTED, TESTED |
+| Performance validation | PARTIALLY IMPLEMENTED — single-request benchmarks only |
+| Test coverage | 81% of `src/` statements, measured once during hardening; not measured in CI |
+| AI Provider Abstraction | PLANNED (Sprint 16 — Ollama + Gemini; not started) |
+| React Presentation Layer | PLANNED (Sprint 17; not started) |
 
 ---
 
@@ -823,8 +921,12 @@ The following documents define repository standards and engineering policies:
 
 Sprint 13 was completed and released as **v13.0.0**.
 
-**Sprint 14 — Stabilization / Production Hardening — is implemented and validated locally.
-Its release as v14.0.0 (tag + merge to `main`) is pending.**
+**Sprint 14 — Stabilization / Production Hardening — is RELEASED as v14.0.0** (tag
+`v14.0.0`, `main` = `39681c4`). An earlier revision of this line still said the release was
+pending.
+
+**Pre-Sprint-15 hardening** (branch `pre-sprint-15-hardening`) closed the audit blockers
+B-01…B-06 and SEC-04 and is **READY FOR RE-AUDIT**. Sprint 15 has not started.
 
 ## Sprint 14 — delivered phases
 

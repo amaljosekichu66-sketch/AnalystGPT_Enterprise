@@ -1493,6 +1493,8 @@ so the disagreement was over naming rather than scope. The combined authoritativ
 - **Phase 5 (Reporting & PDF Export):** Standards-compliant PDF and text exporters with IDOR protection.
 - **Phase 6 (OpenAPI / React Readiness):** Frozen OpenAPI 3.1 contracts and migration blueprint.
 - **Phase 7 (Regression & Final Validation):** 100% test coverage and static quality gates.
+  *(Correction, pre-Sprint-15 hardening: the "100% test coverage" figure was never measured.
+  A measurement on `pre-sprint-15-hardening` gives 81% of `src/` statements.)*
 
 ---
 
@@ -1689,3 +1691,60 @@ Sprint 14 delivers comprehensive enterprise stabilization, asynchronous AI execu
 - Release Version: **v14.0.0**
 
 ---
+
+---
+
+## [Unreleased] — Pre-Sprint-15 Security & Stability Hardening
+
+> Branch `pre-sprint-15-hardening` from `b841b52` (v14.0.0 baseline). Not released. Status:
+> **READY FOR RE-AUDIT**. Every item below was reproduced on `b841b52` before it was fixed and
+> re-probed afterwards; details and evidence in PROJECT_STATE.md § *Pre-Sprint-15 Hardening*.
+
+### Security
+
+- **B-01 / SEC-01 — public ADMIN self-registration.** `POST /api/auth/register` accepted a
+  caller-supplied `role`. Registration now binds `UserRegistration` (no role, unknown fields →
+  422); self-registered accounts are ANALYST. `scripts/create_admin.py` bootstraps the first
+  ADMIN from a shell on the deployment.
+- **B-02 / SEC-02 / SEC-19 — arbitrary server file read.** Client-supplied paths
+  (`input_path`, `?dataset=`) are gone. New `POST /api/datasets` (multipart) validates type and
+  size before persisting or parsing and returns a server-issued `dataset_version_id`, resolved
+  server-side with ownership and managed-store containment checks. Absolute server paths are
+  no longer returned (`storage_path` removed; `output_path`/`export_path` are file names; error
+  bodies are scrubbed).
+- **B-04 / SEC-05 — VIEWER-triggered execution.** Dashboard and Power BI routes are read-only;
+  execution requires `POST /api/pipeline` (`PIPELINE_EXECUTE`).
+- **B-05 / SEC-03 and SEC-04 — forgeable signing key.** Unset `APP_ENVIRONMENT` now means
+  production. Outside development the API refuses to start with a missing, empty, < 32-byte or
+  published `AUTH_SECRET_KEY`. Compose sets production and requires the key (no fallback).
+
+### Fixed
+
+- **B-03 / SEC-06 — crash under concurrent requests.** Per-run / per-request persistence
+  sessions replace the shared `PersistenceManager`; results carry their own lineage; caches are
+  locked; SQLite waits for a concurrent writer's lock.
+- **B-06 — PostgreSQL schema initialization** could never succeed on a fresh database (verified
+  on PostgreSQL 16). Column migrations no longer depend on failing statements; the schema is one
+  atomic transaction.
+
+### Changed (breaking for API clients)
+
+- `POST /api/pipeline` body: `{"dataset_version_id": "<uuid>"}` (was `input_path`).
+- `/api/powerbi/*`: `?dataset_version_id=` (was `?dataset=`); 404 until the dataset has been run.
+- `DatasetVersionResponse.storage_path` removed. `POST /api/auth/register` rejects `role`.
+- Local development must set `APP_ENVIRONMENT=development` explicitly.
+- OpenAPI: 34 paths, 43 schemas.
+
+### Documentation
+
+- ROADMAP.md, PROJECT_STATE.md, API_REFERENCE.md, DEPLOYMENT_GUIDE.md, REACT_MIGRATION_MAPPING.md,
+  ADR-028 and ARCHITECTURE.md corrected where they contradicted the code: governance policy
+  selection is **not** persisted (BROKEN), Streamlit views are **not** presentation-only,
+  "Production Ready" ratings replaced with evidence-based status, performance validation is
+  partial, coverage is 81% (not 100%), and the stale "v14.0.0 release pending" line.
+
+### Verification
+
+- 870 passed, 1 skipped, 15 deselected, 0 failed (baseline: 714 passed, 15 deselected);
+  PostgreSQL integration 4 passed against a throwaway PostgreSQL 16.15; flake8 / black / isort /
+  mypy clean. Coverage 81% of `src/`.

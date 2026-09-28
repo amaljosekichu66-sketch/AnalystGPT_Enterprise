@@ -147,8 +147,11 @@ export class AuthService {
 
 // src/services/dashboard.service.ts
 export class DashboardService {
-  static async getDashboard(datasetPath: string): Promise<DashboardResponse> {
-    return apiClient.get<DashboardResponse>(`/api/powerbi/dashboard?dataset=${encodeURIComponent(datasetPath)}`);
+  // Upload first (POST /api/datasets), run (POST /api/pipeline), then read. Views are read-only.
+  static async getDashboard(datasetVersionId: string): Promise<DashboardResponse> {
+    return apiClient.get<DashboardResponse>(
+      `/api/powerbi/dashboard?dataset_version_id=${encodeURIComponent(datasetVersionId)}`
+    );
   }
 }
 
@@ -239,8 +242,11 @@ npx openapi-generator-cli generate -i docs/api/openapi.json -g typescript-axios 
       registrations of `reports_router`, removed later in Sprint 14.
 - [x] Every functional route is mounted under `/api`. The unprefixed `/reports/*` and
       `/powerbi/*` aliases were removed in v14.0.0 — prepend `/api`.
-- [x] Streamlit views verified to be presentation-only (no backend logic to extract) — Sprint 14
-      assessment; re-verified by the Sprint 16 final readiness audit.
+- [ ] Streamlit views presentation-only — **not true** (was ticked). `views/upload_page.py`
+      runs `DataProfiler`, `CleaningGovernanceService.recommend_dataset_policy` and
+      `CleaningPreviewService.preview` in the frontend process; this logic must move behind
+      the API before a React client can reproduce the page. Corrected during the
+      pre-Sprint-15 hardening.
 - [ ] Sprint 15 remediation complete (governance workflow, Dashboard information architecture,
       Admin user lifecycle) — the React migration must not reproduce known Sprint 15 defects.
 - [ ] Sprint 16 final React-readiness audit passed and React architecture ADR accepted.

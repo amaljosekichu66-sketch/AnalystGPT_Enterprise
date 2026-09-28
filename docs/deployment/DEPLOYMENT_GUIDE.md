@@ -118,12 +118,14 @@ LOG_BACKUP_COUNT=5
 
 # Deployment Environment & Security
 # Any value other than 'development' is treated as deployed, and the guards below
-# become mandatory at startup.
+# become mandatory at startup. UNSET also means production: development must be
+# chosen explicitly. docker-compose.yml sets APP_ENVIRONMENT=production itself.
 APP_ENVIRONMENT=production
 
-# Signing key for access tokens. The built-in default is published in this repository,
-# so anyone can forge a token for any user and role with it. Startup FAILS if this is
-# left unset while APP_ENVIRONMENT is not 'development'. Generate one with:
+# Signing key for access tokens (HS256). REQUIRED: the API refuses to start if it is
+# missing, empty, shorter than 32 bytes, or the built-in development key (which is
+# published in this repository). docker-compose.yml has no fallback and refuses to
+# start without it. Generate one with:
 #   python -c "import secrets; print(secrets.token_urlsafe(48))"
 AUTH_SECRET_KEY=
 
@@ -161,8 +163,17 @@ AI_TIMEOUT=600
 > development default while appearing to have secured the deployment.
 >
 > The PBKDF2 iteration count is **not** configurable by environment: it is fixed at 600,000
-> in `src/identity/password_hasher.py`. There is no default-admin *password* variable; the
-> bootstrap administrator is created through the normal registration path.
+> in `src/identity/password_hasher.py`. There is no default-admin *password* variable.
+>
+> **Bootstrap administrator.** Public registration can no longer choose a role (it could
+> previously create an ADMIN — B-01). Create the first administrator from a shell on the
+> deployment; the password is read from `ADMIN_BOOTSTRAP_PASSWORD` or prompted, never printed:
+>
+> ```bash
+> docker compose exec api python scripts/create_admin.py --username admin --email admin@example.com
+> ```
+>
+> Further role changes go through `PATCH /api/admin/users/{id}`.
 >
 > ⚠️ **Known configuration drift.** `docker-compose.yml` still pins
 > `AI_CONTEXT_WINDOW: 4096` and `AI_TIMEOUT: 120`, which `src/core/config.py` and
@@ -214,7 +225,8 @@ executes automatically on pushes and pull requests targeting `main`:
 # 1. Copy environment template
 cp .env.example .env
 
-# 2. Configure production password in .env
+# 2. Configure the production password AND AUTH_SECRET_KEY in .env
+#    (compose refuses to start without AUTH_SECRET_KEY)
 # nano .env
 
 # 3. Build and launch services in detached mode

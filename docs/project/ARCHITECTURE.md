@@ -458,7 +458,8 @@ the layer beneath it; nothing calls upward.
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ PRESENTATION                                              src/frontend/  │
 │   streamlit_app.py → views/ → components/ → services/                    │
-│   Views hold no business logic; components are presentation-only.        │
+│   Target: views hold no business logic. NOT yet true for upload_page     │
+│   (profiling / governance preview run in-process) — Sprint 15.           │
 │   Frontend services speak HTTP only — never to src/application/ direct.  │
 └────────────────────────────────┬─────────────────────────────────────────┘
                                  │  HTTP / JSON  (the only channel)

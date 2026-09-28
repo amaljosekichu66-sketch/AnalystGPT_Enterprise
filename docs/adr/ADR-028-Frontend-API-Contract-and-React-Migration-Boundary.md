@@ -63,6 +63,11 @@ If the frontend components communicate directly with application layer internals
 3. **Zero Business Logic in Presentation Components**:
    Streamlit views and components are restricted to presentation-only logic. All data transformation, aggregation, and business rules remain strictly in the Application and Business layers.
 
+   > **Status note (pre-Sprint-15 hardening):** this rule is the *decision*, not the current
+   > state. `views/upload_page.py` still runs profiling, policy recommendation and cleaning
+   > preview in-process. The API contract also changed: datasets are uploaded to
+   > `POST /api/datasets` and referenced by `dataset_version_id` (no client-supplied paths).
+
 4. **Coexistence and Drop-In Replacement**:
    During Sprint 15, the React application will consume the identical REST API endpoints. Both Streamlit and React frontends will be capable of running concurrently against the same backend services without conflicts.
 

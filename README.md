@@ -63,8 +63,10 @@ insights, Docker for the full stack.
 ```bash
 git clone https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise.git
 cd AnalystGPT_Enterprise
-cp .env.example .env            # set AUTH_SECRET_KEY outside development
+cp .env.example .env            # REQUIRED: set AUTH_SECRET_KEY (compose runs in production
+                                # and refuses to start without a >= 32-byte key)
 docker compose up -d --build
+docker compose exec api python scripts/create_admin.py --username admin --email admin@example.com
 ```
 
 | Service | URL |
@@ -177,10 +179,15 @@ TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "<USERNAME>", "password": "<PASSWORD>"}' | jq -r '.access_token')
 
+# Upload the dataset (bytes, never a server path) and keep the server-issued id
+DATASET_ID=$(curl -s -X POST http://127.0.0.1:8000/api/datasets \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@sample_data/customer_data.csv" | jq -r '.dataset_version_id')
+
 # Run the pipeline — returns results immediately, plus the AI job to poll
 curl -s -X POST http://127.0.0.1:8000/api/pipeline \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"input_path": "sample_data/customer_data.csv"}' | jq '{success, execution_time, ai_job_id, ai_job_status}'
+  -d "{\"dataset_version_id\": \"$DATASET_ID\"}" | jq '{success, execution_time, ai_job_id, ai_job_status}'
 
 # Poll the AI job, then download the PDF report
 curl -s http://127.0.0.1:8000/api/ai/jobs/<AI_JOB_ID> -H "Authorization: Bearer $TOKEN" | jq .

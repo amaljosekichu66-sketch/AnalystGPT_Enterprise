@@ -25,7 +25,7 @@
 | API Version | **v14.0.0** (`src/core/constants.py` → `APP_VERSION`) |
 | Framework | FastAPI |
 | Specification | OpenAPI 3.1 |
-| Exported contract | `docs/api/openapi.json` — **33 paths, 42 schemas** |
+| Exported contract | `docs/api/openapi.json` — **34 paths, 43 schemas** |
 | Documentation | Swagger UI & ReDoc |
 | Route convention | **Every functional router is mounted under `/api`.** The only unprefixed path is the service root, `/`. |
 | Authentication | Bearer Token (`Authorization: Bearer <token>`) |
@@ -51,7 +51,7 @@
 
 > **Source of truth.** The tables below were generated from the live FastAPI schema
 > (`app.openapi()`) and reconciled against the route declarations under `src/api/routes/`
-> and the exported contract `docs/api/openapi.json`. All three agree: **33 paths**.
+> and the exported contract `docs/api/openapi.json`. All three agree: **34 paths** (33 at v14.0.0; `POST /api/datasets` added by the pre-Sprint-15 hardening).
 >
 > **Breaking change in v14.0.0.** The unprefixed `/reports/*` and `/powerbi/*` paths were
 > removed. `/reports/*` had been mounted twice (prefixed and unprefixed) and `/powerbi/*`
@@ -82,10 +82,25 @@
 | `PATCH` | `/api/admin/users/{user_id}` | Update user role or status | `USER_MANAGE` |
 | `DELETE` | `/api/admin/users/{user_id}` | Delete a user account | `USER_MANAGE` |
 
+### Datasets (`/api/datasets`)
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| `POST` | `/api/datasets` | Upload a dataset (`multipart/form-data`, field `file`); returns `dataset_version_id` | Yes (`DATASET_UPLOAD`) |
+
+> **Breaking change (pre-Sprint-15 hardening).** Clients never send server paths. Upload the
+> bytes here, then reference the dataset by `dataset_version_id` everywhere else. Allowed
+> types: `.csv .xlsx .xls .json` (else 415); size limit `MAX_FILE_SIZE_MB` (default 500; else
+> 413); unparseable content → 422. All three are checked before anything is persisted. The
+> response contains no storage path.
+
 ### Analytics Pipeline
 | Method | Endpoint | Description | Auth Required |
 |---|---|---|---|
-| `POST` | `/api/pipeline` | Execute the full analytics pipeline | Yes / scoped |
+| `POST` | `/api/pipeline` | Execute the full analytics pipeline on `{"dataset_version_id": "<uuid>"}` | Yes (`PIPELINE_EXECUTE`) / owner or admin |
+
+> **Breaking change (pre-Sprint-15 hardening).** `input_path` was removed: it let any ANALYST
+> make the server read an arbitrary file. Unknown fields are rejected with 422; an unknown or
+> foreign `dataset_version_id` is 404. `output_path` in the response is a bare file name.
 
 > `src/api/routes/pipeline.py` declares a single route, `"/pipeline"`. There is no
 > `/api/pipeline/run` endpoint; earlier documentation and the row label in
@@ -105,6 +120,12 @@
 | `GET` | `/api/powerbi/pipeline` | Pipeline execution metadata | Yes / scoped |
 | `GET` | `/api/powerbi/report` | Report payload for BI consumption | Yes / scoped |
 
+> **Read-only (pre-Sprint-15 hardening).** Every `/api/powerbi/*` data route takes
+> `?dataset_version_id=` (the old `?dataset=<path>` is gone) and only *returns* the stored
+> result of a previous `POST /api/pipeline`; it never executes. A dataset that has not been run
+> yet, or that belongs to another user, is 404. These routes previously ran the pipeline on a
+> cache miss, which let a VIEWER execute it without `PIPELINE_EXECUTE`.
+>
 > Both `src/api/routes/dashboard.py` and `src/api/routes/powerbi.py` use `prefix="/powerbi"`.
 > `/api/powerbi/status` is served by the dashboard router; the rest by the Power BI router.
 > There has never been an `/api/dashboard/*` prefix.
@@ -213,7 +234,7 @@ Defined in `src/identity/permissions.py`.
 | Data Cleaning Governance & Lineage | 🟡 Implemented & tested (Sprint 14); end-to-end workflow needs remediation — Sprint 15 |
 | Text & PDF Report Export Streaming | ✅ Implemented & tested (Sprint 14) |
 | Swagger UI & ReDoc | ✅ Operational |
-| OpenAPI 3.1 Spec | ✅ Exported and in sync (33 paths, 42 schemas) |
+| OpenAPI 3.1 Spec | ✅ Exported and in sync (34 paths, 43 schemas) |
 | Automated API Tests | ✅ Passing — part of the 714-test suite (see PROJECT_STATE.md § *Executed Validation*) |
 
 ---

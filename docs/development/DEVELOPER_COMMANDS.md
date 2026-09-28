@@ -106,6 +106,9 @@ source venv/bin/activate
 export PYTHONPATH="$(pwd)"
 export DATABASE_ENGINE=sqlite
 export LOG_TO_FILE=false
+# Development mode must be explicit: an unset APP_ENVIRONMENT is treated as
+# production, which refuses to start without a private AUTH_SECRET_KEY.
+export APP_ENVIRONMENT=development
 
 uvicorn src.api.server:app --host 127.0.0.1 --port 8000 --reload
 ```
@@ -150,11 +153,15 @@ TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "<USERNAME>", "password": "<PASSWORD>"}' | jq -r '.access_token')
 
-# 3. Execute Pipeline on Sample Data
+# 3. Upload Sample Data, then Execute the Pipeline on it
+# Upload the dataset (bytes, never a server path) and keep the server-issued id
+DATASET_ID=$(curl -s -X POST http://127.0.0.1:8000/api/datasets \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@sample_data/customer_data.csv" | jq -r '.dataset_version_id')
 curl -s -X POST http://127.0.0.1:8000/api/pipeline \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"input_path": "sample_data/customer_data.csv"}' | jq .
+  -d "{\"dataset_version_id\": \"$DATASET_ID\"}" | jq .
 
 # 4. List User Reports
 curl -s http://127.0.0.1:8000/api/reports \

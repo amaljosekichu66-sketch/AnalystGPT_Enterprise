@@ -30,7 +30,7 @@
 | Previous Released Version | v13.0.0 |
 | Repository Status | ✅ Sprint 14 released as v14.0.0 (714 passed, 4 static gates — per PROJECT_STATE.md) |
 | Current Sprint | ✅ Sprint 14 released; 📋 Sprint 15 next (not started) |
-| Current Focus | **Start Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** |
+| Current Focus | **Pre-Sprint-15 hardening** (branch `pre-sprint-15-hardening`) — audit blockers B-01…B-06 + SEC-04 fixed and re-probed; **READY FOR RE-AUDIT**. Sprint 15 starts only after the re-audit. See PROJECT_STATE.md § *Pre-Sprint-15 Hardening*. |
 | Next Planned Sprint | 📋 Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation (v15.0.0) |
 | Subsequent Sprints | 📋 Sprint 16 — AI Provider Abstraction & Complete React Readiness (v16.0.0) → 📋 Sprint 17 — React Migration & Modern Presentation Layer (v17.0.0) |
 | Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction + AI Insight Engine + Production Deployment + Enterprise Identity & RBAC Multi-User Platform + Governance & Stabilization Platform |
@@ -63,7 +63,7 @@
 | Docker Multi-Stage Build | ✅ Operational |
 | Docker Compose Topology | ✅ Operational |
 | Automated Testing | 🟡 PROJECT_STATE.md records **714 passed, 0 failed, 15 deselected** (`integration`, 729 collected). Earlier roadmap figure (529 / 535, 6 live-LLM failures) is superseded; not re-executed for this roadmap update. Trustworthy regression baseline is a Sprint 15 deliverable |
-| Performance Validation | ✅ Completed |
+| Performance Validation | 🟡 PARTIALLY IMPLEMENTED — single-request benchmarks only; concurrent execution crashed the API until the pre-Sprint-15 hardening (B-03) |
 | Technical Debt | 🟡 Not verified as low — known debt (quality-gate exclusions, duplication/dead code, UI/API mismatches) scheduled for Sprint 15 audit |
 
 ---
@@ -766,6 +766,10 @@ Prepare AnalystGPT Enterprise for production-quality deployment.
 - ✅ Docker Compose multi-service topology validated
 - ✅ Healthcheck endpoints verified (`/api/health`, `/_stcore/health`)
 - ✅ Non-root container security and isolated PostgreSQL networking verified
+- ⚠️ *Correction (pre-Sprint-15 hardening):* only health endpoints were exercised. PostgreSQL
+  schema initialization could never succeed on a fresh database (B-06, verified against
+  PostgreSQL 16), and Compose ran in development posture with the published signing key
+  (B-05). Both are fixed on `pre-sprint-15-hardening`; a full `docker compose up` run is UNKNOWN.
 
 ### Output
 
@@ -827,6 +831,9 @@ Docker Compose Topology
 - ✅ Token issuance, signature verification, expiration, and revocation validated
 - ✅ Cross-user data isolation and tenant cache partitioning verified
 - ✅ IDOR prevention across API endpoints and repositories verified
+- ⚠️ *Correction (pre-Sprint-15 hardening):* contradicted by B-02 (client-supplied server
+  paths → arbitrary file read) and B-03 (concurrent runs wrote rows under another user's ids).
+  Both fixed and re-probed on `pre-sprint-15-hardening`; broader isolation is UNKNOWN until the re-audit.
 - ✅ RBAC permission matrices and 401/403 HTTP semantics verified
 - ✅ Frontend authentication gating and cross-tenant session cleanup verified
 
@@ -953,7 +960,11 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 
 ---
 
-#### Phase 2 — AI Execution, Job Lifecycle & Performance ✅ Complete (Implemented & Verified)
+#### Phase 2 — AI Execution, Job Lifecycle & Performance ✅ Implemented & Tested
+
+> *Correction (pre-Sprint-15 hardening):* previously labelled "Verified". The job lifecycle is
+> implemented and test-covered; concurrent pipeline execution crashed the API process until
+> B-03, and live-Ollama generation was not re-verified in the hardening phase (UNKNOWN).
 
 **Asynchronous AI Job Architecture**
 
@@ -1032,6 +1043,9 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 - Display impact assessment: rows affected, columns affected, percentage of data altered.
 - Analyst can approve, modify, or reject the cleaning policy.
 - Selected policy is persisted with the pipeline run.
+  - ⚠️ *Correction (pre-Sprint-15 hardening):* **BROKEN.** The Streamlit selector stores the
+    choice in session state only; the pipeline always applies `create_default_config()`
+    (DROP_ROWS). Sprint 15 work.
 
 **Cleaning Provenance & Lineage**
 
@@ -1263,7 +1277,7 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 - [x] Configurable missing-value policies implemented
 - [x] Cleaning preview available before destructive transformations
 - [x] Analyst can approve or modify cleaning policy before execution
-- [x] Selected policy is persisted with the pipeline run
+- [ ] Selected policy is persisted with the pipeline run — **BROKEN** (was ticked; the selection never reaches the backend; see PROJECT_STATE.md)
 - [x] Cleaning provenance recorded (rows removed, affected columns, percentage, policy details)
 - [x] Before/after data-quality metrics exposed
 - [x] Data lineage traceable from source → cleaning → pipeline → reports → AI
