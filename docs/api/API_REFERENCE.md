@@ -14,7 +14,7 @@
 >
 > Business logic remains inside the Application Layer.
 >
-> Current Version: **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+> Current Version: **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
 
 ---
 
@@ -22,7 +22,7 @@
 
 | Item | Value |
 |------|--------|
-| API Version | **v14.0.0** (`src/core/constants.py` → `APP_VERSION`; prepared, not yet released) |
+| API Version | **v14.0.0** (`src/core/constants.py` → `APP_VERSION`) |
 | Framework | FastAPI |
 | Specification | OpenAPI 3.1 |
 | Exported contract | `docs/api/openapi.json` — **33 paths, 42 schemas** |
@@ -220,8 +220,8 @@ Defined in `src/identity/permissions.py`.
 
 **API contract version:** OpenAPI **3.1.0** (`docs/api/openapi.json`)
 
-**Current application version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+**Current application version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
 
-**Current sprint:** Sprint 14 — Stabilization / Production Hardening (implemented and validated locally; release pending)
+**Current sprint:** Sprint 14 — Stabilization / Production Hardening (released as v14.0.0); next: Sprint 15
 
 **Next:** Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation (planned) → Sprint 16 → Sprint 17 — see ROADMAP.md

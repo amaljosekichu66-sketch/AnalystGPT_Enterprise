@@ -26,12 +26,11 @@
 
 | Item | Status |
 |------|--------|
-| Last Released Version | **v13.0.0** (tag `v13.0.0` = `c5ddf06`) |
-| Version In Preparation | **v14.0.0 — NOT released** (no release commit, no tag, branch unmerged) |
-| Previous Released Version | v12.0.0 |
-| Repository Status | 🟡 Sprint 14 implemented, tested and validated locally on `sprint-14-stabilization` (714 passed, 4 static gates — per PROJECT_STATE.md); release pending, main merge pending |
-| Current Sprint | 🟡 Sprint 14 — implemented, tested and validated locally; release pending; main merge pending |
-| Current Focus | **Close out Sprint 14 (validation sign-off + release)** |
+| Last Released Version | **v14.0.0** (released 2026-09-28, tag `v14.0.0`) |
+| Previous Released Version | v13.0.0 |
+| Repository Status | ✅ Sprint 14 released as v14.0.0 (714 passed, 4 static gates — per PROJECT_STATE.md) |
+| Current Sprint | ✅ Sprint 14 released; 📋 Sprint 15 next (not started) |
+| Current Focus | **Start Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** |
 | Next Planned Sprint | 📋 Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation (v15.0.0) |
 | Subsequent Sprints | 📋 Sprint 16 — AI Provider Abstraction & Complete React Readiness (v16.0.0) → 📋 Sprint 17 — React Migration & Modern Presentation Layer (v17.0.0) |
 | Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction + AI Insight Engine + Production Deployment + Enterprise Identity & RBAC Multi-User Platform + Governance & Stabilization Platform |
@@ -876,7 +875,7 @@ Database Repositories (Isolated per Tenant)
 | **v11.0.0** | **AI Insight Engine** ✅ |
 | **v12.0.0** | **Production Deployment** ✅ |
 | **v13.0.0** | **Enterprise Identity & Multi-User Platform** ✅ |
-| **v14.0.0** | **Enterprise Stabilization, Data Governance & Grounded Reporting** — 🟡 implemented, NOT released |
+| **v14.0.0** | **Enterprise Stabilization, Data Governance & Grounded Reporting** ✅ |
 | *v15.0.0* | *Enterprise Stabilization, Governance Completion & Product/UX Remediation* 📋 |
 | *v16.0.0* | *AI Provider Abstraction & Complete React Readiness* 📋 |
 | *v17.0.0* | *React Migration & Modern Presentation Layer* 📋 |
@@ -895,13 +894,14 @@ Enterprise Stabilization & Governance from Sprint 14.
 
 ---
 
-## Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting 🟡
+## Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting ✅
 
-> **Status:** **Implemented, tested and validated locally (per PROJECT_STATE.md § *Executed Validation*). Release pending. Main merge pending.**
+> **Status:** **Released as v14.0.0 (2026-09-28).** Validated per PROJECT_STATE.md
+> § *Executed Validation*.
 >
-> All seven phases are implemented on `sprint-14-stabilization` (commits `00e33af`,
-> `b59df37`, `0f6d5eb`). No `v14.0.0` tag and no `release(v14.0.0): …` commit exist, and the
-> branch is unmerged into `main` (still at `c5ddf06` / `v13.0.0`).
+> All seven phases were implemented on `sprint-14-stabilization` (commits `00e33af`,
+> `b59df37`, `0f6d5eb`, `d7f9eb6`), followed by documentation reconciliation (`30476c7`) and
+> the `release(v14.0.0)` commit; `main` was fast-forwarded and tagged `v14.0.0`.
 >
 > This section previously read *COMPLETED & VERIFIED (v14.0.0)*. That wording described the
 > intended end state, not verified Git state. See PROJECT_STATE.md § *Sprint 14 Status —
@@ -1705,7 +1705,7 @@ engineering maturity levels:
 | AI Layer | ✅ Complete |
 | Production Deployment | ✅ Complete |
 | Enterprise Identity & Multi-User | ✅ Complete |
-| UX Stabilization & Data Governance | 🟡 Implemented & tested in Sprint 14 (not released); end-to-end governance behavior NEEDS REMEDIATION in Sprint 15 |
+| UX Stabilization & Data Governance | 🟡 Implemented & tested, released in v14.0.0; end-to-end governance behavior NEEDS REMEDIATION in Sprint 15 |
 | Product Stabilization & Governance Completion | 📋 Sprint 15 |
 | AI Provider Abstraction & React Readiness | 📋 Sprint 16 |
 | React Migration | 📋 Sprint 17 |
@@ -1856,17 +1856,15 @@ Current repository state:
 - 🟡 Technical Debt not verified as low — known duplication, dead code, quality-gate exclusions and UI/API mismatches pending Sprint 15
 - 📋 AI provider abstraction (Ollama + Gemini) and final React-readiness gate pending Sprint 16
 - ✅ Sprint 13 Complete
-- 🟡 Sprint 14 implemented, tested and validated locally; release pending, main merge pending
-- ⏸️ Sprint 15 (Stabilization & Remediation) should not begin until Sprint 14 is released and merged to `main`
+- ✅ Sprint 14 released (v14.0.0)
+- 📋 Sprint 15 (Stabilization & Remediation) is next — may begin now that v14.0.0 is released
 - 📋 Sprint 16 (AI Provider Abstraction & React Readiness) follows v15.0.0
 - 📋 Sprint 17 (React Migration) follows v16.0.0 — no React work before then
 
 ---
 
-**Roadmap covers through:** **v17.0.0 (planned)** — v14.0.0 prepared, not released
+**Roadmap covers through:** **v17.0.0 (planned)**
 
-**Last released version:** **v13.0.0**
-
-**Pending Release:** **v14.0.0 — Sprint 14** (implemented, not tagged or merged)
+**Last released version:** **v14.0.0**
 
 **Next Planned Sprint Release:** **v15.0.0 — Sprint 15: Enterprise Stabilization, Governance Completion & Product/UX Remediation** → v16.0.0 (Sprint 16) → v17.0.0 (Sprint 17)

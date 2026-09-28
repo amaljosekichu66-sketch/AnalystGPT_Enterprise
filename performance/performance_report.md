@@ -1,6 +1,6 @@
 # AnalystGPT Enterprise — Performance Report
 
-**Current version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+**Current version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
 
 **Baseline measured at:** v13.0.0 (carried forward; not re-measured)
 
@@ -31,7 +31,7 @@ This report documents performance baseline benchmarks for AnalystGPT Enterprise 
 
 # Sprint 14 Performance Targets
 
-These were the targets set for Sprint 14. Sprint 14 is implemented (release pending); per-item measurement status
+These were the targets set for Sprint 14. Sprint 14 is released (v14.0.0); per-item measurement status
 is recorded beneath the list.
 
 1. **Decoupled AI Latency**:
@@ -44,7 +44,7 @@ is recorded beneath the list.
 4. **Concurrent Multi-User Throughput**:
    - Multi-tenant query isolation under concurrent pipeline executions.
 
-*Measurement status on the Sprint 14 working tree (v14.0.0 prepared):* **Partially measured.** Re-measurement is Sprint 15 Phase 7 scope.
+*Measurement status at v14.0.0:* **Partially measured.** Re-measurement is Sprint 15 Phase 7 scope.
 
 > Corrected during the Sprint 14 documentation audit. A Sprint 14 Phase 2 benchmark artifact
 > exists in this directory (`performance/phase2_benchmark_results.md`, committed in `00e33af`),

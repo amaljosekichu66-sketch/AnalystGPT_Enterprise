@@ -2708,6 +2708,14 @@ Sprint plans drifted across documents because each was edited independently. The
 the single authority for sequencing; other documents should reference it rather than
 restate sprint scope.
 
+## 2026-09-28 — Release v14.0.0
+
+Sprint 14 released as **v14.0.0**. The remaining uncommitted stabilization work was committed
+(`d7f9eb6`) and validated on the committed tree — `pytest -q` 714 passed, 15 deselected,
+0 failed; flake8, black, isort and mypy clean — followed by the documentation reconciliation
+(`30476c7`) and the release commit. `main` was fast-forwarded and tagged `v14.0.0`.
+Sprint 15 may now start.
+
 ---
 
 # Journal Summary
@@ -2731,15 +2739,15 @@ restate sprint scope.
 | Sprint 11 | v11.0.0 | AI Insight Engine | ✅ |
 | Sprint 12 | v12.0.0 | Production Deployment & Containerization | ✅ |
 | Sprint 13 | v13.0.0 | Enterprise Identity & Multi-User Platform | ✅ |
-| Sprint 14 | **v14.0.0** (prepared) | **Stabilization / Production Hardening** — Async AI Lifecycle, Data Governance & Lineage, Semantic Profiling, Publication-Grade Reporting, Grounded AI, API Contract Freeze | 🟡 **Implemented & validated; release pending** |
+| Sprint 14 | **v14.0.0** | **Stabilization / Production Hardening** — Async AI Lifecycle, Data Governance & Lineage, Semantic Profiling, Publication-Grade Reporting, Grounded AI, API Contract Freeze | ✅ **Released** |
 | Sprint 15 | Planned (v15.0.0) | Enterprise Stabilization, Governance Completion & Product/UX Remediation | 📋 Not started |
 | Sprint 16 | Planned (v16.0.0) | AI Provider Abstraction & Complete React Readiness | 📋 Not started |
 | Sprint 17 | Planned (v17.0.0) | React Migration & Modern Presentation Layer | 📋 Not started |
 
 ---
 
-**Journal covers through:** **Sprint 14 — Stabilization / Production Hardening (v14.0.0 prepared, not released)** and the 2026-09-28 roadmap re-baseline
+**Journal covers through:** **Sprint 14 — Stabilization / Production Hardening (v14.0.0, released 2026-09-28)** and the 2026-09-28 roadmap re-baseline
 
-**Last released version:** **v13.0.0**
+**Current version:** **v14.0.0**
 
 **Next sprint:** **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (planned, not started) → Sprint 16 → Sprint 17

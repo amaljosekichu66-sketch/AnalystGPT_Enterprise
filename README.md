@@ -1,596 +1,324 @@
-<!-- Banner Image -->
 <p align="center">
-  <img src="docs/image/banner.png" alt="AnalystGPT Enterprise Banner" width="100%">
+  <img src="docs/image/banner.png" alt="AnalystGPT Enterprise" width="100%">
 </p>
 
 <h1 align="center">AnalystGPT Enterprise</h1>
 
 <p align="center">
-  <strong>Enterprise AI‑powered Analytics Platform</strong><br>
-  Built with Python · FastAPI · Streamlit · PostgreSQL · Ollama
+  <strong>A governed analytics platform that turns raw datasets into validated statistics,<br>
+  publication-grade reports and grounded AI insights — behind a secure, multi-user REST API.</strong>
 </p>
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/Python-3.11-blue.svg" alt="Python 3.11"></a>
-  <a href="#"><img src="https://img.shields.io/badge/FastAPI-0.115+-green.svg" alt="FastAPI"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Streamlit-1.48+-red.svg" alt="Streamlit"></a>
-  <a href="#"><img src="https://img.shields.io/badge/Docker-Ready-2496ED.svg" alt="Docker"></a>
-  <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License MIT"></a>
-  <a href="#"><img src="https://img.shields.io/badge/released-v13.0.0-brightgreen" alt="Released version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/in%20preparation-v14.0.0%20(unreleased)-orange" alt="Version in preparation"></a>
-  <a href="#"><img src="https://img.shields.io/badge/tests-714%20passed%20%7C%200%20failed-brightgreen" alt="Tests"></a>
+  <img src="https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white" alt="Python 3.11">
+  <img src="https://img.shields.io/badge/FastAPI-OpenAPI%203.1-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Streamlit-UI-FF4B4B?logo=streamlit&logoColor=white" alt="Streamlit">
+  <img src="https://img.shields.io/badge/PostgreSQL%20%7C%20SQLite-persistence-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL and SQLite">
+  <img src="https://img.shields.io/badge/Ollama-gemma3%3A4b-000000" alt="Ollama gemma3:4b">
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose">
+  <br>
+  <img src="https://img.shields.io/badge/tests-714%20passed-brightgreen" alt="714 tests passed">
+  <img src="https://img.shields.io/badge/lint-flake8%20%C2%B7%20black%20%C2%B7%20isort%20%C2%B7%20mypy-brightgreen" alt="Quality gates">
+  <img src="https://img.shields.io/badge/release-v14.0.0-blue" alt="Release v14.0.0">
+  <img src="https://img.shields.io/badge/license-MIT-yellow" alt="MIT License">
 </p>
 
 <p align="center">
-  <a href="#-key-features">Features</a> •
-  <a href="#-installation--quick-start">Quick Start</a> •
-  <a href="#-rest-api">API Docs</a> •
-  <a href="#-roadmap">Roadmap</a> •
-  <a href="#-documentation">Docs</a> •
-  <a href="#-license">License</a>
+  <a href="#-quick-start">Quick start</a> ·
+  <a href="#-how-it-works">How it works</a> ·
+  <a href="#-rest-api">REST API</a> ·
+  <a href="#-architecture">Architecture</a> ·
+  <a href="#-quality--testing">Quality</a> ·
+  <a href="#-roadmap">Roadmap</a> ·
+  <a href="#-documentation">Docs</a>
 </p>
 
 ---
 
-## 📊 Quick Overview
+## Why AnalystGPT Enterprise
 
-| **Data Pipeline** | **REST API** | **Business Intelligence** | **Modern UI** | **Enterprise Identity & Multi-User** | **AI‑Ready** |
-| :---------------: | :----------: | :-----------------------: | :-----------: | :-----------------------------------: | :----------: |
-| Ingest, clean, validate & analyse data end‑to‑end | FastAPI with OpenAPI 3.1 & interactive docs | Power BI ready endpoints & dashboard integration | Streamlit frontend – interactive & responsive | PBKDF2 hashing, JWT tokens, RBAC & cross-tenant data isolation | Built for AI insights, recommendations & automation |
+Most "AI analytics" tools hand a spreadsheet to a language model and hope. AnalystGPT
+Enterprise does the opposite: **every number is computed deterministically first**, cleaning is
+**reviewed and traceable**, and the model only ever *interprets* statistics it is given — then
+its output is checked against them.
 
-- **Architecture**: Layered + REST + BI + Multi-Tenant Identity
-- **Database**: SQLite (dev) + PostgreSQL (prod)  
-- **Frontend**: Streamlit (React + TypeScript migration planned for Sprint 17)
-- **AI Engine**: Ollama + `gemma3:4b` via the `BaseLLM` / `LLMFactory` provider abstraction (Google Cloud / Gemini planned for Sprint 16)
-- **Testing**: **714 passed, 0 failed**; 15 live-LLM tests marked `integration` are deselected by
-  default (they need a local `gemma3:4b`) —
-  see [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md) § *Executed Validation*
-
----
-
-## 📸 Screenshots
-
-> **Coming soon** – once the Streamlit application is running, this section will be replaced with real screenshots of the Dashboard, Upload, Reports, and AI Insights pages.
-
-For now, the banner above gives a preview of the enterprise interface.
+| | |
+|---|---|
+| 🧮 **Deterministic first** | Upload → Cleaning → Quality → Analytics → Reporting runs and persists before any AI is involved. An AI failure never fails a pipeline run. |
+| 🛡️ **Governed data** | Immutable raw dataset versions (SHA-256), explicit cleaning policies, a non-destructive preview, before/after quality metrics and end-to-end lineage. |
+| 🤖 **Grounded AI** | Privacy-safe aggregated context (never raw rows), deterministic statistical wording, and a validator that flags contradicted or unsupported claims. |
+| ⚡ **Asynchronous AI** | AI generation runs as a persisted background job — `PENDING → GENERATING → READY / FAILED` — with retry and polling. Results appear immediately; insights follow. |
+| 🔐 **Multi-user by design** | PBKDF2-HMAC-SHA256 passwords, signed bearer tokens with revocation, `ADMIN` / `ANALYST` / `VIEWER` roles, and server-side ownership scoping on every query. |
+| 📄 **Publication-grade output** | Multi-page PDF and text reports with charts, KPI summaries, governance tables and lineage cards; Power BI-ready endpoints. |
 
 ---
 
-## 📖 Table of Contents
+## 🚀 Quick start
 
-- [🏗️ Layered Architecture](#️-layered-architecture)
-- [✨ Key Features](#-key-features)
-- [🤖 AI Insight Engine](#-ai-insight-engine)
-- [🛠️ Technology Stack](#️-technology-stack)
-- [📦 Installation & Quick Start](#-installation--quick-start)
-- [🌐 REST API](#-rest-api)
-- [📁 Project Structure](#-project-structure)
-- [⚡ Performance & Scalability](#-performance--scalability)
-- [🗺️ Roadmap](#-roadmap)
-- [📚 Documentation](#-documentation)
-- [🧑‍💻 Design Principles](#-design-principles)
-- [🎓 Resume Value](#-resume-value)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+**Prerequisites:** Python 3.11+. Optional: [Ollama](https://ollama.com) with `gemma3:4b` for AI
+insights, Docker for the full stack.
+
+### Option A — Docker Compose (full stack)
+
+```bash
+git clone https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise.git
+cd AnalystGPT_Enterprise
+cp .env.example .env            # set AUTH_SECRET_KEY outside development
+docker compose up -d --build
+```
+
+| Service | URL |
+|---|---|
+| Streamlit UI | http://localhost:8501 |
+| REST API (Swagger) | http://localhost:8000/docs |
+| Health | http://localhost:8000/api/health |
+
+PostgreSQL runs as an internal service and is not exposed on a host port.
+
+### Option B — Local development
+
+```bash
+git clone https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise.git
+cd AnalystGPT_Enterprise
+python -m venv venv
+source venv/bin/activate        # Windows: .\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env            # defaults to SQLite + development mode
+
+uvicorn src.api.server:app --reload            # API  → http://127.0.0.1:8000/docs
+streamlit run src/frontend/streamlit_app.py    # UI   → http://localhost:8501
+python main.py                                 # CLI  → runs the pipeline on sample_data/customer_data.csv
+```
+
+For AI insights, run Ollama locally and pull the default model:
+
+```bash
+ollama pull gemma3:4b
+```
+
+Full, platform-specific commands (including Windows PowerShell) are in the
+[Developer Runbook](docs/development/DEVELOPER_COMMANDS.md).
 
 ---
 
-## 🏗️ Layered Architecture
-
-The system follows a strict layered architecture ensuring separation of concerns, testability, and maintainability.
+## 🔍 How it works
 
 <p align="center">
-  <img src="docs/image/architecture.png" alt="Layered Architecture Diagram" width="90%">
+  <img src="docs/image/pipeline.png" alt="Analytics pipeline" width="90%">
 </p>
 
-| Layer | Responsibility | Components |
-|-------|----------------|------------|
-| **Presentation** | User interaction, input validation | Streamlit UI, FastAPI REST endpoints |
-| **Application** | Orchestration, use cases, services | PipelineService, DashboardService, AIService |
-| **Business** | Core domain logic | Upload, Cleaning, Quality, Analytics, Reporting |
-| **Persistence** | Data storage abstraction | Repository interfaces, SQLite/PostgreSQL adapters |
-| **Infrastructure** | External services, configurations | AI providers, logging, environment config |
+```text
+ Upload ──► Profiling ──► Governance ──► Cleaning ──► Quality ──► Analytics ──► Reporting ──► Persist
+ CSV/XLSX    semantic      policy +        applied      before /     stats,        PDF / TXT      runs,
+ JSON        types, roles  preview,        policy       after        correlation,  exports,       reports,
+             (PII-aware)   versioning                   metrics      distribution  Power BI       lineage
+                                                                                         │
+                                                        background AI job ◄──────────────┘
+                                          PENDING → GENERATING → READY / FAILED   (polled by the UI)
+```
 
----
-
-## ✨ Key Features
-
-### 📊 Enterprise Analytics Pipeline
-- **Multi‑format ingestion** – CSV, Excel, JSON with automatic type detection
-- **Automated data cleaning** – Missing values, outliers, duplicate detection
-- **Data quality validation** – Completeness, uniqueness, consistency, accuracy
-- **Statistical analytics** – Descriptive stats, correlations, distributions
-- **Structured reporting** – Executive summaries, KPIs, visualisations
-
-### 🤖 AI Insight Engine (v11.0.0)
-- **Provider abstraction** – Ollama integration with Gemma model
-- **Prompt engineering** – Structured prompts for consistent output
-- **Automated narrative generation** – Executive summaries, recommendations
-- **Hallucination prevention** – Prompt validation, response parsing
-- **Multi‑provider ready** – OpenAI, Anthropic, AWS Bedrock support planned
-
-### 🌐 REST API
-- **FastAPI** with dependency injection and global exception handling
-- **OpenAPI 3.1** specification with Swagger UI and ReDoc
-- **Type‑safe Pydantic models** for all requests and responses
-- **Comprehensive endpoints** – Health, version, pipeline execution, Power BI
-
-### 📈 Business Intelligence
-- **Power BI integration** – Dedicated endpoints for BI tools
-- **Dashboard service** – Summary statistics, correlations, distributions
-- **Categorical analysis** – Value counts, percentages, visualisations
-- **Pre‑aggregated metrics** – Optimised for dashboard performance
-
-### 💾 Persistence & Database
-- **Repository pattern** – Abstraction over database implementation
-- **Dual database support** – SQLite (dev) and PostgreSQL (production)
-- **Migration support** – Schema versioning and upgrades
-- **Efficient queries** – Indexed fields, query optimisation
+1. **Upload & profile** — files are ingested and stored as an immutable dataset version; the
+   semantic profiler separates domain meaning (identifier, postal code, contact field, measure,
+   dimension…) from pandas dtypes, so a postal code is never charted as a number.
+2. **Govern & clean** — cleaning policies are explicit and versioned; a non-destructive preview
+   shows the effect before execution, and every execution records rows removed, columns changed
+   and quality before vs. after.
+3. **Analyse & report** — descriptive, numerical, categorical, correlation and distribution
+   analysis feed a report with a planned, bounded chart set (4–8 charts).
+4. **Interpret** — an asynchronous job builds a privacy-safe `AIDataContext`, serializes the
+   statistics with authoritative wording, calls the configured LLM, and validates the result.
 
 ---
 
 ## 🤖 AI Insight Engine
 
-The AI Insight Engine brings large language model capabilities to analytics interpretation.
+<p align="center">
+  <img src="docs/image/ai_architecture.png" alt="AI architecture" width="85%">
+</p>
 
-### Provider Abstraction
+| Stage | Component | What it guarantees |
+|---|---|---|
+| Context | `context_builder.py` → `AIDataContext` | Aggregated, tenant-scoped statistics and data-quality metadata — no raw rows reach the model. |
+| Wording | `statistical_interpretation.py` | Skewness and kurtosis described deterministically and correctly; identifier-like columns flagged. |
+| Serialization | `ReportSerializer`, `PromptBuilder` | Category cardinality kept distinct from frequency; explicit anti-hallucination rules. |
+| Provider | `BaseLLM` → `LLMFactory` → `OllamaClient` | Engines depend only on the interface; the provider is configuration-driven (`LLM_PROVIDER`). |
+| Engines | `AIManager` | Executive summary, recommendations, explanations, narrative. |
+| Validation | `insight_validator.py` | Contradictions and unsupported conclusions recorded on the report's `limitations`, never silently dropped. |
+| Lifecycle | `AIJobService`, `AIJobExecutor` | Persisted state machine, atomic claim, retry, stale-job recovery. |
 
-```mermaid
-graph TD
-    A[AI Provider<br/>Abstract Base Class] --> B[OllamaProvider<br/>Gemma ✅ Current]
-    A --> C[OpenAIProvider<br/>GPT-4 🔄 Planned]
-    A --> D[AnthropicProvider<br/>Claude 🔄 Planned]
-    A --> E[BedrockProvider<br/>Titan 🔄 Planned]
-```
-
-### Processing Pipeline
-
-```mermaid
-flowchart LR
-    A[Analytics Module] --> B[AI Service]
-    B --> C[Prompt Builder]
-    C --> D[Prompt Validator]
-    D --> E[LLM Provider<br/>Ollama/Gemma]
-    E --> F[Parser]
-    F --> G[Response Validator]
-    G --> H[Report Generator]
-    H --> I[API/Frontend]
-```
-
-### Core Components
-
-| Component | Responsibility |
-|-----------|----------------|
-| **Provider Abstraction** | Interface for multiple LLM providers |
-| **Prompt Builder** | Constructs structured, contextual prompts from analytics data |
-| **Prompt Validator** | Ensures prompts meet quality and safety standards |
-| **Parser** | Extracts structured data from LLM responses |
-| **Response Validator** | Validates response format and consistency |
-| **Report Generator** | Combines analytics and AI narratives |
-
----
-
-## 🛠️ Technology Stack
-
-| Category | Technology |
-|----------|------------|
-| **Language** | Python 3.11 |
-| **Web Framework** | FastAPI, Uvicorn |
-| **Data Processing** | Pandas, NumPy |
-| **Validation** | Pydantic V2 |
-| **Frontend** | Streamlit, Matplotlib (charts) |
-| **Database** | SQLite (dev), PostgreSQL (prod) |
-| **AI** | Ollama, Gemma models |
-| **Testing** | pytest, pytest‑cov, HTTPX |
-| **Documentation** | Markdown, Mermaid, ADRs |
-
----
-
-## 📦 Installation & Quick Start
-
-### Quick Start (30 seconds)
-
-```bash
-git clone https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise.git
-cd AnalystGPT_Enterprise
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python main.py
-```
-
-### Full Development Setup
-
-```bash
-# Clone and enter
-git clone https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise.git
-cd AnalystGPT_Enterprise
-
-# Virtual environment
-python -m venv venv
-# Linux / macOS:
-source venv/bin/activate
-# Windows PowerShell:
-# venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Environment configuration
-cp .env.example .env
-# Edit .env with your settings (PostgreSQL, Ollama, etc.)
-
-# Run the CLI pipeline
-python main.py
-
-# Run the REST API
-python -m uvicorn src.api.server:app --reload
-# Open http://127.0.0.1:8000/docs
-
-# Run the Streamlit frontend
-streamlit run src/frontend/streamlit_app.py
-# Open http://localhost:8501
-
-# Run tests
-pytest
-
-# Run AI Insight Engine (requires Ollama)
-ollama run gemma:2b  # Pull the model first
-python -c "from src.ai.ai_manager import AIManager; print(AIManager().generate_ai_report(...))"
-```
+**Current provider:** Ollama (`gemma3:4b`, local inference).
+**Planned (Sprint 16):** Google Cloud / Gemini behind the same interface, with a clean path for
+further adapters such as Groq.
 
 ---
 
 ## 🌐 REST API
 
-### Endpoints
+The API is the single contract for every client — Streamlit today, React later, Power BI
+alongside. All functional routes live under `/api`; the contract is frozen in
+[`docs/api/openapi.json`](docs/api/openapi.json) (OpenAPI 3.1, 33 paths).
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/` | API root information |
-| `GET` | `/health` | Health check |
-| `GET` | `/api/v1/version` | Version information |
-| `POST` | `/api/v1/pipeline` | Execute full analytics pipeline |
-| `GET` | `/api/v1/report/{id}` | Retrieve a specific report |
-| `GET` | `/api/v1/reports` | List all reports |
-| `GET` | `/api/v1/dashboard/summary` | Dashboard summary statistics |
-| `GET` | `/api/v1/dashboard/correlations` | Correlation analysis |
-| `GET` | `/api/v1/dashboard/distributions` | Distribution metrics |
+| Area | Endpoints |
+|---|---|
+| **System** | `GET /` · `GET /api/health` · `GET /api/version` |
+| **Authentication** | `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me` · `POST /api/auth/logout` |
+| **Pipeline** | `POST /api/pipeline` |
+| **Governance** | `POST /api/governance/preview` · `GET /api/governance/dataset-versions` · `GET /api/governance/dataset-versions/{version_id}` · `GET /api/governance/lineage/run/{pipeline_run_id}` |
+| **AI Insights** | `GET /api/ai/jobs/{job_id}` · `GET /api/ai/jobs/latest/status` · `POST /api/ai/jobs/{job_id}/retry` |
+| **Reports** | `GET /api/reports` · `GET /api/reports/{report_id}/export/{text\|pdf}` · `GET /api/reports/export/{text\|pdf}` (latest) |
+| **Power BI** | `GET /api/powerbi/{dashboard,status,summary,statistics,correlation,distribution,categorical,report,pipeline}` |
+| **Administration** (`ADMIN`) | `GET /api/admin/users` · `GET` / `PATCH` / `DELETE /api/admin/users/{user_id}` |
 
-*Additional Power BI endpoints are available under `/powerbi`.*
-
-### API Documentation
-- **Swagger UI**: http://127.0.0.1:8000/docs
-- **ReDoc**: http://127.0.0.1:8000/redoc
-- **OpenAPI Spec**: http://127.0.0.1:8000/openapi.json
-
-### Example Request
+### Example
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/pipeline \
+# Log in and capture the token
+TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"file_path": "data/sample.csv", "generate_ai": true}'
+  -d '{"username": "<USERNAME>", "password": "<PASSWORD>"}' | jq -r '.access_token')
+
+# Run the pipeline — returns results immediately, plus the AI job to poll
+curl -s -X POST http://127.0.0.1:8000/api/pipeline \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"input_path": "sample_data/customer_data.csv"}' | jq '{success, execution_time, ai_job_id, ai_job_status}'
+
+# Poll the AI job, then download the PDF report
+curl -s http://127.0.0.1:8000/api/ai/jobs/<AI_JOB_ID> -H "Authorization: Bearer $TOKEN" | jq .
+curl -s -o report.pdf http://127.0.0.1:8000/api/reports/export/pdf -H "Authorization: Bearer $TOKEN"
 ```
 
-### Response (abridged)
-
-```json
-{
-  "status": "success",
-  "report_id": "abc-123",
-  "analytics": {
-    "summary": { "rows": 1000, "columns": 15 },
-    "statistics": {...},
-    "correlations": [...]
-  },
-  "ai_insight": {
-    "executive_summary": "...",
-    "key_findings": "...",
-    "recommendations": "..."
-  }
-}
-```
+Interactive docs: **Swagger** `/docs` · **ReDoc** `/redoc` · full reference in
+[API_REFERENCE.md](docs/api/API_REFERENCE.md).
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Architecture
+
+<p align="center">
+  <img src="docs/image/architecture.png" alt="Layered architecture" width="90%">
+</p>
+
+| Layer | Responsibility | Where |
+|---|---|---|
+| **Presentation** | Streamlit views and components; presentation logic only | `src/frontend/` |
+| **API** | Routing, validation, auth dependencies, error handling | `src/api/` |
+| **Application** | Orchestration — `Application.run()`, AI / dashboard / reporting orchestrators | `src/application/` |
+| **Business** | Upload, cleaning, quality, analytics, reporting, profiling, governance | `src/upload/` … `src/governance/` |
+| **AI** | Insight engines, job lifecycle, context, provider abstraction | `src/ai/`, `src/llm/` |
+| **Identity** | Users, hashing, tokens, RBAC, audit | `src/identity/` |
+| **Persistence** | Repositories over a database abstraction (SQLite / PostgreSQL) | `src/persistence/`, `src/database/` |
+| **Integrations** | Power BI dashboard service | `src/integrations/` |
+| **Core** | Configuration, constants, logging, exceptions — imported by all, imports none | `src/core/` |
+
+**Rules the codebase enforces:** dependencies point inward; views hold no business logic;
+frontend services talk to the backend only over REST; every repository query is scoped to the
+authenticated user; architectural changes are recorded as ADRs
+([28 so far](docs/adr/)).
+
+<details>
+<summary><strong>Project structure</strong></summary>
 
 ```text
 AnalystGPT_Enterprise/
 ├── src/
-│   ├── api/                    # REST API Layer (FastAPI)
-│   │   ├── server.py           # FastAPI app, routers mounted under /api
-│   │   ├── routes/             # Endpoint definitions
-│   │   ├── models/             # Pydantic request/response schemas
-│   │   ├── dependencies/       # DI, auth dependencies
-│   │   └── exceptions/         # Exception handlers
-│   ├── application/            # Application Layer
-│   │   ├── app.py              # Application.run() orchestration
-│   │   ├── ai_orchestrator.py
-│   │   ├── dashboard_orchestrator.py
-│   │   └── reporting_orchestrator.py
-│   ├── upload/                 # Business: Data ingestion
-│   ├── cleaning/               # Business: Data cleaning
-│   ├── quality/                # Business: Quality validation
-│   ├── analytics/              # Business: Analytics & statistical interpretation
-│   ├── reporting/              # Business: Report generation & PDF/TXT exporters
-│   ├── profiling/              # Semantic data profiling
-│   ├── governance/             # Cleaning governance, policies, preview
-│   ├── storage/                # Immutable artifact store
-│   ├── ai/                     # AI Insight Engine, async job lifecycle
-│   ├── llm/                    # LLM abstraction (BaseLLM, LLMFactory, Ollama client)
-│   ├── identity/               # Authentication, RBAC, user service
-│   ├── persistence/            # Persistence manager
-│   ├── database/               # Database adapters, schema, repositories
-│   ├── integrations/           # External integrations (Power BI)
-│   ├── frontend/               # Streamlit UI (views, components, services, theme)
-│   └── core/                   # Config, constants, logging, exceptions, PII rule
-├── tests/                      # pytest suite, one folder per package
-│   ├── integration/            # Live-LLM tests (marker: integration, deselected by default)
-│   └── ...
-├── docs/
-│   ├── adr/                    # Architecture Decision Records
-│   ├── api/                    # API reference, OpenAPI contract, React mapping
-│   ├── deployment/             # Deployment guide
-│   ├── development/            # Developer runbook
-│   ├── engineering/            # PROJECT_STATE and engineering manuals
-│   ├── project/                # Roadmap, architecture, journal, standards
-│   ├── sprints/                # Sprint release reports
-│   └── image/                  # Screenshots & diagrams
-├── performance/                # Benchmarks and performance reports
-├── scripts/                    # lint.ps1, run_tests.ps1, benchmarks
-├── sample_data/                # Example datasets
-├── data/                       # Data storage (gitignored)
-├── main.py                     # CLI entry point
-├── Dockerfile
-├── docker-compose.yml
-├── pyproject.toml
-├── requirements.txt
-├── .env.example
-├── LICENSE
-└── README.md
+│   ├── api/            # FastAPI app, routes, schemas, dependencies, exception handlers
+│   ├── application/    # Application.run() and orchestrators
+│   ├── upload/ cleaning/ quality/ analytics/ reporting/
+│   ├── profiling/      # Semantic data profiling
+│   ├── governance/     # Cleaning policies, preview, governance service
+│   ├── storage/        # Immutable artifact store
+│   ├── ai/  llm/       # Insight engine, async jobs, provider abstraction
+│   ├── identity/       # Authentication, RBAC, user service
+│   ├── persistence/  database/
+│   ├── integrations/   # Power BI
+│   ├── frontend/       # Streamlit: views, components, services, theme
+│   └── core/           # Config, constants, logging, exceptions, PII rule
+├── tests/              # pytest suite mirroring src/; live-LLM tests marked `integration`
+├── docs/               # adr/ api/ deployment/ development/ engineering/ project/ sprints/
+├── performance/        # Benchmarks and performance reports
+├── scripts/            # lint.ps1, run_tests.ps1, benchmarks
+├── sample_data/        # Example datasets
+├── Dockerfile  docker-compose.yml  pyproject.toml  requirements.txt  .env.example
+├── main.py             # CLI entry point
+└── LICENSE
 ```
 
----
-
-## 🔄 Data Flow
-
-<p align="center">
-  <img src="docs/image/data_flow.png" alt="Data Flow Diagram" width="90%">
-</p>
+</details>
 
 ---
 
-## ⚡ Performance & Scalability
+## ✅ Quality & testing
 
-### Performance Optimisations
-- **Efficient Pandas operations** – Vectorised processing where possible.
-- **Database indexing** – Foreign keys and frequently queried fields are indexed.
-- **Batch inserts** – For large datasets to reduce database overhead.
-- **Lazy loading** – Datasets are loaded only when needed.
-- **Query optimisation** – All queries are reviewed for performance.
+| Gate | Command | Result |
+|---|---|---|
+| Test suite | `pytest -q` | **714 passed**, 0 failed, 15 deselected |
+| Lint | `flake8 src tests` | 0 violations |
+| Format | `black --check src tests` | clean |
+| Imports | `isort --check src tests` | clean |
+| Types | `mypy src` | no issues (210 files) |
 
-### Scalability Approach
-- **Stateless API** – Allows horizontal scaling of web tier.
-- **Database separation** – Can be moved to a dedicated server for production.
-- **Asynchronous processing** – (Planned) for long‑running pipelines.
-- **Caching** – (Planned) for frequently requested dashboard metrics.
-- **Read replicas** – (Planned) for high‑load dashboard queries.
+The 15 deselected tests are marked `integration` and need a live Ollama server with
+`gemma3:4b` — run them with `pytest -m integration`. CI (GitHub Actions) runs quality, tests,
+Docker image builds and a full Compose integration check on `main`.
+
+Coverage spans unit, API contract, RBAC and cross-tenant isolation, concurrency, AI job
+idempotency and failure isolation, export, and grounding-regression suites. The authoritative,
+executed figures live in [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md#executed-validation--authoritative).
 
 ---
 
 ## 🗺️ Roadmap
 
-### Project Timeline
+| Sprint | Release | Focus | Status |
+|---|---|---|---|
+| 0 – 13 | v0.5.0 – v13.0.0 | Foundation → pipeline → persistence → REST API → Power BI → Streamlit → AI engine → Docker/CI → identity & multi-user | ✅ Released |
+| **14** | v14.0.0 | Stabilization, data governance & grounded reporting | ✅ Released |
+| 15 | v15.0.0 | Enterprise stabilization, governance completion & product/UX remediation | 📋 Planned |
+| 16 | v16.0.0 | AI provider abstraction (Ollama + Gemini) & complete React readiness | 📋 Planned |
+| 17 | v17.0.0 | React + TypeScript migration & modern presentation layer | 📋 Planned |
 
-<p align="center">
-  <img src="docs/image/project_timeline.png" alt="Project Timeline" width="90%">
-</p>
+Each sprint starts only after the previous one is released; React work does not begin before
+Sprint 17. Scope and Definitions of Done: [ROADMAP.md](docs/project/ROADMAP.md).
 
-### Completed Sprints
-
-```mermaid
-timeline
-    title AnalystGPT Enterprise Roadmap
-    section Sprint 1-5.5
-        Core analytics pipeline : ✅ Completed
-    section Sprint 6
-        SQLite persistence : ✅ Completed
-    section Sprint 7
-        Database abstraction & PostgreSQL : ✅ Completed
-    section Sprint 8
-        REST API : ✅ Completed
-    section Sprint 9
-        Power BI integration : ✅ Completed
-    section Sprint 10
-        Enterprise Streamlit frontend : ✅ Completed
-    section Sprint 11
-        AI Insight Engine : ✅ Completed
-    section Sprint 12
-        Production Deployment : ✅ Completed
-```
-
-### Current & Future Sprints
-
-> This table was previously out of date: it listed Sprint 13 as planned (it shipped as
-> v13.0.0) and attributed the React frontend to Sprint 14. The roadmap has since been
-> re-baselined: React is **Sprint 17**, after Sprint 15 (stabilization) and Sprint 16 (AI
-> provider abstraction and the final React-readiness gate). Corrected below against `git tag`,
-> CHANGELOG.md and ROADMAP.md.
-
-| Sprint | Focus | Status |
-|--------|-------|--------|
-| **12** | Production Deployment & Containerization | ✅ Released (v12.0.0) |
-| **13** | Enterprise Identity & Multi‑User Platform | ✅ Released (v13.0.0) |
-| **14** | Enterprise Stabilization, Data Governance & Grounded Reporting | 🟡 Implemented — **not released**; no `v14.0.0` tag, branch `sprint-14-stabilization` unmerged |
-| 15 | Enterprise Stabilization, Governance Completion & Product/UX Remediation | 📅 Planned (v15.0.0) |
-| 16 | AI Provider Abstraction (Ollama + Gemini) & Complete React Readiness | 📅 Planned (v16.0.0) |
-| 17 | React Migration & Modern Presentation Layer | 📅 Planned (v17.0.0) |
-
-The following were listed in earlier revisions of this README but are **not defined in**
-[ROADMAP.md](docs/project/ROADMAP.md), which plans through Sprint 17. They are retained here as
-aspirations, not commitments: real‑time streaming analytics, machine learning integration.
-(Multi‑AI provider support is now planned — Sprint 16.)
-
-### Progress Visual
-
-```text
-Upload     ████████████████████ 100%
-Cleaning   ████████████████████ 100%
-Quality    ████████████████████ 100%
-Analytics  ████████████████████ 100%
-Reporting  ████████████████████ 100%
-SQLite     ████████████████████ 100%
-PostgreSQL ████████████████████ 100%
-REST API   ████████████████████ 100%
-Power BI   ████████████████████ 100%
-Streamlit  ████████████████████ 100%
-AI Engine  ████████████████████ 100%
-Deployment ████████████████████ 100%
-CI/CD      ████████████████████ 100%
-```
+**Known limitations** (Sprint 15 scope): the governance workflow is not yet verified end-to-end
+through the UI; the Dashboard overlaps the pipeline result view; user deletion exists in the API
+but not in the Admin UI. See [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md) for the full
+technical-debt list.
 
 ---
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
-| [README.md](README.md) | Project overview and quick start |
-| [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md) | Current project status and health |
-| [ARCHITECTURE.md](docs/project/ARCHITECTURE.md) | Detailed system architecture |
-| [ROADMAP.md](docs/project/ROADMAP.md) | Long‑term development roadmap |
-| [PROJECT_JOURNAL.md](docs/project/PROJECT_JOURNAL.md) | Engineering journey per sprint |
-| [CHANGELOG.md](CHANGELOG.md) | Release notes and version history |
-| [API_REFERENCE.md](docs/api/API_REFERENCE.md) | REST API endpoints and contracts |
-| [DEVELOPER_COMMANDS.md](docs/development/DEVELOPER_COMMANDS.md) | Developer runbook: setup, tests, quality gates |
-| [DEPLOYMENT_GUIDE.md](docs/deployment/DEPLOYMENT_GUIDE.md) | Deployment guide |
-| [ADR/](docs/adr/) | Architecture Decision Records |
-
----
-
-## 🧑‍💻 Design Principles
-
-The codebase adheres to:
-
-- **Layered Architecture** – Each layer has a distinct responsibility.
-- **SOLID Principles** – Single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion.
-- **Clean Code** – Readable, maintainable, and self‑documenting code.
-- **Fail Fast** – Validation and error detection early.
-- **Single Source of Truth** – Centralised configuration and state management.
-- **Separation of Concerns** – Clear boundaries between modules.
-- **Interface‑based Design** – Abstractions for extensibility.
-- **Dependency Inversion** – Depend on abstractions, not concretions.
-- **Testability First** – Code is designed with testing in mind.
-
-### Why This Architecture?
-
-| Technology | Why Chosen |
-|------------|------------|
-| **FastAPI** | Modern, async‑capable, automatic OpenAPI docs, dependency injection, type hints. |
-| **Streamlit** | Rapid development of data apps, no frontend complexity for MVP, Python‑native. |
-| **Repository Pattern** | Decouples domain from persistence, easy to swap databases, testable. |
-| **SQLite + PostgreSQL** | SQLite for development (zero‑config), PostgreSQL for production (robust, scalable). |
-| **Ollama** | Local LLM hosting, privacy‑friendly, open‑source models (Gemma). |
-| **Pydantic** | Type‑safe data validation, serialisation, and schema enforcement. |
-| **Pandas** | De facto standard for data manipulation in Python, extensive ecosystem. |
-
----
-
-## 🎓 Resume Value
-
-### Skills Demonstrated
-- **Software Engineering**: Python, FastAPI, Streamlit, REST API, OpenAPI, Repository Pattern, SOLID, Clean Architecture, Dependency Injection.
-- **Data Engineering**: Pandas, Data Pipelines, ETL, Data Validation, Data Quality, CSV/Excel/JSON.
-- **Database**: SQLite, PostgreSQL, Schema Design, Query Optimisation, Migration Management.
-- **AI/ML**: LLM Integration, Prompt Engineering, Provider Abstraction, Hallucination Prevention, Ollama/Gemma.
-- **Frontend**: Streamlit, Matplotlib, Interactive Dashboards, Session Management.
-- **Testing**: pytest, Unit Testing, Integration Testing, Stress Testing.
-- **DevOps**: Environment Configuration, Docker & Docker Compose, CI/CD (GitHub Actions).
-
-### Concepts Demonstrated
-- **Enterprise Software Architecture** – Layered, modular, scalable.
-- **Business Analytics** – Data ingestion, cleaning, quality, analytics, reporting.
-- **AI Integration** – LLM narrative generation, hallucination prevention.
-- **Production Engineering** – Testing, performance, documentation.
-- **Project Management** – Sprints, milestones, ADRs, versioning.
+| Document | Purpose |
+|---|---|
+| [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md) | Current status, executed validation, technical debt |
+| [ROADMAP.md](docs/project/ROADMAP.md) | Sprint plan and Definitions of Done |
+| [ARCHITECTURE.md](docs/project/ARCHITECTURE.md) | Layers, modules, data flow, dependency rules |
+| [API_REFERENCE.md](docs/api/API_REFERENCE.md) · [openapi.json](docs/api/openapi.json) | REST contract |
+| [DEVELOPER_COMMANDS.md](docs/development/DEVELOPER_COMMANDS.md) | Setup, run, test and quality-gate commands |
+| [DEPLOYMENT_GUIDE.md](docs/deployment/DEPLOYMENT_GUIDE.md) | Docker, configuration, CI |
+| [ADRs](docs/adr/) | 28 Architecture Decision Records |
+| [CHANGELOG.md](CHANGELOG.md) · [PROJECT_JOURNAL.md](docs/project/PROJECT_JOURNAL.md) | Release history and engineering journal |
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow the standards in [DEFINITION_OF_DONE.md](docs/project/DEFINITION_OF_DONE.md) and [CODE_REVIEW_CHECKLIST.md](docs/project/CODE_REVIEW_CHECKLIST.md).
+Contributions follow the project's [Definition of Done](docs/project/DEFINITION_OF_DONE.md) and
+[Code Review Checklist](docs/project/CODE_REVIEW_CHECKLIST.md):
 
-### How to Contribute
-
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes (`git commit -m 'Add amazing feature'`).
-4. Push to the branch (`git push origin feature/amazing-feature`).
-5. Open a Pull Request.
-
-### Development Setup
-
-```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Run tests with coverage
-pytest --cov=src tests/
-
-# Run pre-commit hooks (planned)
-pre-commit run --all-files
-```
-
----
-
-## 🙏 Acknowledgements
-
-- **FastAPI** – For the incredible web framework.
-- **Streamlit** – For the frontend framework.
-- **Pandas** – For data processing capabilities.
-- **Ollama** – For local LLM deployment.
-- **Google Gemma** – For the open model.
-- **PyTest** – For testing framework.
-- **OpenAPI** – For API specification.
+1. Branch from `main` (`feature/<name>`).
+2. Keep business logic out of the presentation layer and every query user-scoped.
+3. Add tests; run `pytest -q` and the four quality gates before opening a pull request.
+4. Record architectural decisions as an ADR.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📫 Support
-
-- **Issues**: [GitHub Issues](https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise/discussions)
-- **Documentation**: `docs/`
-
----
-
-## ⭐ Star Us
-
-If you find this project useful, please consider starring the repository to help others discover it!
-
----
+Released under the [MIT License](LICENSE).
 
 <p align="center">
-  <img src="docs/image/banner.png" alt="AnalystGPT Enterprise Footer" width="80%">
+  <sub>Built by <a href="https://in.linkedin.com/in/mr-amaljose">Amal Jose</a> ·
+  <a href="https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise/issues">Report an issue</a></sub>
 </p>
-
-<p align="center">
-  <strong>Built with Python • FastAPI • Streamlit • PostgreSQL • SQLite • Ollama • Gemma</strong><br>
-  <em>Designed using Enterprise Software Engineering Principles</em>
-</p>
-
-<p align="center">
-  <a href="https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise">GitHub</a> •
-  <a href="https://in.linkedin.com/in/mr-amaljose">LinkedIn</a> •
-  <a href="#documentation">Documentation</a> •
-  <a href="https://github.com/amaljosekichu66-sketch/AnalystGPT_Enterprise/issues">Issues</a> •
-  <a href="LICENSE">License</a>
-</p>
-
----

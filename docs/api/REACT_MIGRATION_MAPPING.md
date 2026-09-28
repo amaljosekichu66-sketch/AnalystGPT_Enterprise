@@ -1,12 +1,12 @@
 # React Migration Mapping & Frontend Architecture Blueprint
 
-**Sprint:** Sprint 14 Phase 6 — OpenAPI / React Migration Readiness (implemented; v14.0.0 prepared, not released)
+**Sprint:** Sprint 14 Phase 6 — OpenAPI / React Migration Readiness (implemented; released in v14.0.0)
 **Target Release:** **v17.0.0 — Sprint 17, React Migration & Modern Presentation Layer** (planned, not started)
 **Status:** Approved preliminary blueprint — to be re-validated by the Sprint 16 readiness audit and superseded where the Sprint 16 React architecture ADR decides otherwise
 
 > **Scope note.** This blueprint is design guidance, not delivered work. The backend side of
 > it — the frozen OpenAPI 3.1 contract and the technology-neutral frontend service layer —
-> is implemented on `sprint-14-stabilization` (v14.0.0 prepared, not yet released). No React
+> was released in v14.0.0. No React
 > code exists in this repository.
 >
 > **Sequencing (ROADMAP.md is authoritative):** Sprint 15 — Enterprise Stabilization,

@@ -1,6 +1,6 @@
 # ADR-026 — Data Cleaning Governance and Lineage
 
-**Status:** ✅ **Accepted** — implemented in Sprint 14 (v14.0.0 prepared; not yet tagged or merged to `main`)
+**Status:** ✅ **Accepted** — implemented in Sprint 14, released in v14.0.0
 
 > Implemented in `src/governance/` (policies, preview service, governance service, custom registry), `src/storage/artifact_store.py`, `src/database/repositories/cleaning_execution_repository.py`, `src/database/repositories/dataset_version_repository.py`, and the `/api/governance/*` routes.
 >

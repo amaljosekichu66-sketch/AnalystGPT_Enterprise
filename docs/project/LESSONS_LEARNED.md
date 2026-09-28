@@ -10,9 +10,9 @@
 
 **Date:** August 2026 (Sprint 14 content)
 
-**Current version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+**Current version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
 
-**Current sprint:** Sprint 14 — Stabilization / Production Hardening (implemented and validated locally; release pending)
+**Current sprint:** Sprint 14 — Stabilization / Production Hardening (released as v14.0.0); next: Sprint 15
 
 > The Sprint 14 section near the end of this document was written *before* the sprint began
 > and records what was anticipated. The lessons drawn from actually executing Sprint 14 are
@@ -1089,8 +1089,8 @@ These principles established during Sprint 10 ensure that the frontend remains m
 # Sprint 14 — Architecture & Performance Insights
 
 > **Status note.** This section was authored *before* Sprint 14 began and was originally
-> headed "(Pre-Sprint)". Everything it anticipates was implemented in Sprint 14 (prepared as
-> **v14.0.0**, not yet released): the
+> headed "(Pre-Sprint)". Everything it anticipates was implemented in Sprint 14 and
+> released in **v14.0.0**: the
 > asynchronous job state machine in `src/ai/job_executor.py` and `src/ai/models.py`, and
 > cleaning governance in `src/governance/` with immutable artifact storage in
 > `src/storage/artifact_store.py`.

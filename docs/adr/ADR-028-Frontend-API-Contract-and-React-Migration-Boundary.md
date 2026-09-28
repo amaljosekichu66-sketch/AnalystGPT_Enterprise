@@ -1,6 +1,6 @@
 # ADR-028 — Frontend API Contract and React Migration Boundary
 
-**Status:** ✅ **Accepted** — implemented in Sprint 14 (v14.0.0 prepared; not yet tagged or merged to `main`)
+**Status:** ✅ **Accepted** — implemented in Sprint 14, released in v14.0.0
 
 > Implemented in `docs/api/openapi.json` (33 paths), `docs/api/REACT_MIGRATION_MAPPING.md`, and the technology-neutral service layer under `src/frontend/services/`.
 >

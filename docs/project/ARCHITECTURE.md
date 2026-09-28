@@ -6,10 +6,8 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation on `sprint-14-stabilization`, prepared as
-> **v14.0.0** (Sprint 14 — Stabilization / Production Hardening). Sprint 14 is implemented
-> and validated locally but **not released**: no `v14.0.0` tag exists and the branch is not
-> merged to `main` (last release: v13.0.0). Future sequencing (Sprints 15–17) is defined in
+> This document reflects the implementation as of **v14.0.0** (Sprint 14 — Stabilization /
+> Production Hardening, released 2026-09-28). Future sequencing (Sprints 15–17) is defined in
 > ROADMAP.md.
 
 ---
@@ -1733,7 +1731,7 @@ Validated through:
 
 Current results:
 
-**714 automated tests passing** on the Sprint 14 working tree (v14.0.0 in preparation; 729 collected, 714 passed, 0 failed,
+**714 automated tests passing** at v14.0.0 (729 collected, 714 passed, 0 failed,
 15 `integration`-marked tests deselected by default) across 118 test modules. The executed
 accounting, including the four static gates, is recorded once in PROJECT_STATE.md, section
 *Executed Validation*.
@@ -2212,8 +2210,7 @@ Sprint 13 transforms AnalystGPT Enterprise into a multi-tenant, secure enterpris
 
 # Sprint 14 — Stabilization & Governance Architecture (Delivered)
 
-> **Status: DELIVERED (implemented & tested; release pending).** Sprint 14 is prepared as
-> v14.0.0 but not yet tagged or merged to `main`. Earlier
+> **Status: DELIVERED — released in v14.0.0.** Earlier
 > revisions of this section were headed *Target Architecture* and marked
 > "PLANNED / NOT YET IMPLEMENTED"; every element below is now implemented, test-covered and
 > passing the quality gates. The implementing modules are named inline.
@@ -2288,9 +2285,9 @@ The current architecture provides a stable foundation for continued, sequenced e
 - Phase 4: API Security & Role-Based Access Control (RBAC) ✅
 - Phase 5: Frontend Authentication & Sprint Closure ✅
 
-## Sprint 14 — Stabilization / Production Hardening (Implemented — release pending)
+## Sprint 14 — Stabilization / Production Hardening (Released — v14.0.0)
 
-> Prepared as **v14.0.0** (not tagged, not merged). All seven phases are implemented,
+> Released as **v14.0.0**. All seven phases are implemented,
 > test-covered, and passing the full quality gate set.
 
 - Phase 1: Frontend UX Stabilization (Scroll reset, information hierarchy, dedicated AI Insights nav, public About)
@@ -2316,8 +2313,8 @@ Every architectural change affecting module boundaries or dependency direction m
 
 ---
 
-**Current Architecture Version:** **v14.0.0 (prepared, not released)** — Sprint 14, Stabilization / Production Hardening
+**Current Architecture Version:** **v14.0.0** — Sprint 14, Stabilization / Production Hardening (released)
 
-**Last Released Version:** **v13.0.0** — Enterprise Identity & Multi-User Platform
+**Previous Version:** **v13.0.0** — Enterprise Identity & Multi-User Platform
 
 **Next Planned:** v15.0.0 (Sprint 15) → v16.0.0 (Sprint 16) → v17.0.0 (Sprint 17)

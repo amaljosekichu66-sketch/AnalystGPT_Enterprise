@@ -214,6 +214,6 @@ AnalystGPT Enterprise.
 
 ---
 
-**Current Version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+**Current Version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
 
 **Status:** ✅ Active

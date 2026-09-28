@@ -25,10 +25,10 @@
 
 | | |
 |---|---|
-| **Last released version** | **v13.0.0** (tag `v13.0.0` = `c5ddf06`, `main`) |
-| **Version in preparation** | **v14.0.0** — `APP_VERSION` is `14.0.0`, but no `v14.0.0` tag exists and `sprint-14-stabilization` is not merged to `main` |
+| **Current version** | **v14.0.0** — released 2026-09-28 (tag `v14.0.0`, `main`) |
+| **Previous version** | v13.0.0 (tag `v13.0.0` = `c5ddf06`) |
 | **Current sprint** | **Sprint 14 — Stabilization / Production Hardening** |
-| **Sprint 14 status** | 🟡 **Implemented, tested and validated locally; release (tag + merge) pending** |
+| **Sprint 14 status** | ✅ **Released as v14.0.0** |
 | **Next sprint** | **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (planned, not started) |
 | **Sequence** | Sprint 15 (Stabilization) → Sprint 16 (AI Provider Abstraction & React Readiness) → Sprint 17 (React Migration) — see ROADMAP.md |
 
@@ -69,8 +69,7 @@ backward compatible.
 | **2. Validation** | ✅ **Passing** | `pytest -q` → **714 passed, 15 deselected, 0 failed**, 118.73 s. See *Executed Validation* below. |
 | **3. Quality gates** | ✅ **Passing** | `flake8 src tests` → 0. `black --check src tests` → 341 files unchanged. `isort --check src tests` → clean. `mypy src` → no issues in 210 source files. |
 
-**Sprint 14 is implemented and validated locally, but NOT released: there is no `v14.0.0`
-tag and the branch is not merged to `main`. Sprint 15 — Enterprise Stabilization, Governance
+**Sprint 14 is released as v14.0.0 (tag `v14.0.0`, merged to `main`). Sprint 15 — Enterprise Stabilization, Governance
 Completion & Product/UX Remediation — has not started; no Sprint 15 work exists in this
 repository.**
 
@@ -130,7 +129,7 @@ These figures appear in older documents. None of them describes the current base
 
 | Number | Scope |
 |---|---|
-| **714** | **Current.** Passing tests on the Sprint 14 working tree (v14.0.0 in preparation). |
+| **714** | **Current.** Passing tests at v14.0.0. |
 | **535 / 529** | Historical Sprint 14 in-flight totals, recorded before the suite was completed and before the `integration` marker existed. |
 | **531** | Historical claim from the Sprint 14 closure entry. Never reconciled; superseded. |
 | **329** | Historical **Sprint 13** total. |
@@ -204,10 +203,10 @@ in scope for Sprint 15 (or Sprint 16 where noted), per ROADMAP.md.
 | Area | Status |
 |------|--------|
 | Project | AnalystGPT Enterprise |
-| Version | **v14.0.0 in preparation** (last released: v13.0.0) |
-| Repository Status | 🟡 Sprint 14 implemented — all 7 phases, 714 / 714 tests passing, all four static gates passing; not tagged, not merged to `main` |
-| Current Sprint | 🟡 **Sprint 14 — Stabilization / Production Hardening (implemented; release pending)** |
-| Current Focus | **Release Sprint 14 (tag + merge), then Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** |
+| Version | **v14.0.0** (released 2026-09-28) |
+| Repository Status | ✅ Sprint 14 released — all 7 phases, 714 / 714 tests passing, all four static gates passing |
+| Current Sprint | ✅ **Sprint 14 — Stabilization / Production Hardening (released as v14.0.0)**; Sprint 15 next |
+| Current Focus | **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** |
 | Architecture | ✅ Enterprise Layered Architecture + REST API + Streamlit Frontend + AI Insight Engine + Docker Containerization + GitHub Actions CI + Enterprise Identity & Authentication Engine + Resource Ownership & Data Isolation + Declarative RBAC & Admin Management + Frontend Authentication & Session Isolation + Stabilized Frontend UX + Asynchronous AI Job Lifecycle & Persistent Background Worker + Semantic Data Profiling & Visual Analytics + Data Cleaning Governance + Publication-Grade PDF/TXT Exporters |
 | Documentation | 🟡 Reconciled with ROADMAP.md; ARCHITECTURE.md, ADR-028 and REACT_MIGRATION_MAPPING.md pending Sprint 15 Phase 8 |
 | Frontend UX Stabilization | ✅ Implemented (Sprint 14 Phase 1 Accepted) |
@@ -868,8 +867,7 @@ Dependency chain: Sprint 14 release → Sprint 15 → Sprint 16 → Sprint 17.
 
 # Current Blockers
 
-**No engineering blockers for the v14.0.0 release** beyond the release itself (tag + merge).
-Known product defects are Sprint 15 scope.
+**None.** v14.0.0 is released. Known product defects are Sprint 15 scope.
 
 Current repository status:
 
@@ -888,7 +886,7 @@ Current repository status:
 - 🟡 Data Cleaning Governance & Lineage implemented & tested; end-to-end remediation pending Sprint 15
 - 🟡 PROJECT_STATE reconciled with ROADMAP.md; remaining documents pending Sprint 15
 - ✅ Sprint 13 complete (v13.0.0)
-- 🟡 **Sprint 14 implemented and validated; v14.0.0 release pending**
+- ✅ **Sprint 14 released (v14.0.0)**
 - 📋 Sprint 15 → Sprint 16 → Sprint 17 planned, not started
 
 Items that remain open are recorded under *Known Technical Debt* near the top of this
@@ -904,7 +902,8 @@ the live FastAPI schema. Historical statements were **scoped, not deleted**.
 
 | Area | Correction |
 |---|---|
-| Version and sprint status | *Superseded by the roadmap reconciliation:* an earlier revision recorded v14.0.0 as the current baseline. Git evidence (no `v14.0.0` tag; `main` at `c5ddf06`) shows it is prepared, not released; this document now says so, matching ROADMAP.md. |
+| Release | v14.0.0 released 2026-09-28 (release commit + tag `v14.0.0`, `main` fast-forwarded). |
+| Version and sprint status | *Superseded by the roadmap reconciliation (pre-release):* an earlier revision recorded v14.0.0 as the current baseline. Git evidence (no `v14.0.0` tag; `main` at `c5ddf06`) shows it is prepared, not released; this document now says so, matching ROADMAP.md. |
 | Sprint 15–17 sequence | Sprint 15 renamed from *Refactoring & Architectural Evolution* to *Enterprise Stabilization, Governance Completion & Product/UX Remediation*; Sprint 16 (AI Provider Abstraction & React Readiness) and Sprint 17 (React Migration) added, matching ROADMAP.md. |
 | Test counts | Superseded by a single executed figure: **714 passed / 729 collected / 15 deselected**. The historical 535 / 531 / 529 / 329 / 180 totals are catalogued and scoped. |
 | Static analysis | Previously recorded as "not run" and as covering only 4 of 18 `src/` packages. Both statements are now false: all four gates were executed and pass, and `pyproject.toml` covers all of `src/` and `tests/`. |
@@ -979,11 +978,11 @@ The project succeeds when I can independently:
 
 ---
 
-**Last released version:** **v13.0.0** — Enterprise Identity & Multi-User Platform
+**Current version:** **v14.0.0** — Enterprise Stabilization, Data Governance & Grounded Reporting (released 2026-09-28)
 
-**Version in preparation:** **v14.0.0** (not tagged, not merged)
+**Previous version:** **v13.0.0** — Enterprise Identity & Multi-User Platform
 
-**Current sprint:** **Sprint 14 — Stabilization / Production Hardening (implemented; release pending)**
+**Last completed sprint:** **Sprint 14 — Stabilization / Production Hardening (released)**
 
 **Next sprint:** **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (planned, not started)
 

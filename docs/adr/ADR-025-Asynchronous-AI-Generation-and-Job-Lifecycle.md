@@ -1,6 +1,6 @@
 # ADR-025 — Asynchronous AI Generation and Job Lifecycle
 
-**Status:** ✅ **Accepted** — implemented in Sprint 14 (v14.0.0 prepared; not yet tagged or merged to `main`)
+**Status:** ✅ **Accepted** — implemented in Sprint 14, released in v14.0.0
 
 > Implemented in `src/ai/job_executor.py`, `src/ai/models.py`, `src/ai/ai_job_service.py`, `src/database/repositories/ai_job_repository.py`, `src/database/repositories/ai_report_repository.py`, and the `/api/ai/jobs/*` routes.
 >

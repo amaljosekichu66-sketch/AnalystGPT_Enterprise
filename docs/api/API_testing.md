@@ -8,7 +8,7 @@
 > It covers local execution, Swagger UI, OpenAPI validation,
 > automated testing, security validation, and endpoint verification.
 >
-> Current Version: **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+> Current Version: **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
 
 ---
 
@@ -91,7 +91,7 @@ PYTHONPATH=. pytest tests/frontend/test_frontend_auth.py -v
 pytest -q
 ```
 
-Expected output on the Sprint 14 working tree (v14.0.0 prepared):
+Expected output at v14.0.0:
 
 ```text
 714 passed, 15 deselected, 1 warning in ~119s
@@ -137,7 +137,7 @@ PROJECT_STATE.md, section *Executed Validation*.
 
 # Summary & Status
 
-> **What the rows below represent.** Executed results on the Sprint 14 working tree. The suite
+> **What the rows below represent.** Executed results at v14.0.0 (commit `d7f9eb6`). The suite
 > and all four static gates were run; see PROJECT_STATE.md, section *Executed Validation*,
 > for the full accounting.
 
@@ -155,9 +155,9 @@ PROJECT_STATE.md, section *Executed Validation*.
 
 ---
 
-**Current application version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+**Current application version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
 
-**Current sprint:** Sprint 14 — Stabilization / Production Hardening (implemented and validated locally; release pending)
+**Current sprint:** Sprint 14 — Stabilization / Production Hardening (released as v14.0.0); next: Sprint 15
 
 **Testing Status:** ✅ **Passing (executed locally).** 714 passed, 0 failed, 15 `integration`-marked tests
 deselected by default. All four static gates pass. Historical totals of 535 / 531 / 529 are

@@ -6,8 +6,7 @@
 
 **Version:** v14.0.0
 
-**Status:** 🟡 **Implemented and validated locally — release pending** (no `v14.0.0` tag;
-`sprint-14-stabilization` not merged to `main`)
+**Status:** ✅ **Released** — 2026-09-28, tag `v14.0.0`
 
 ---
 
@@ -89,7 +88,7 @@ Deliver enterprise stabilization across the presentation, analytical, and govern
 
 # Verification & Test Results
 
-Executed on the Sprint 14 working tree (v14.0.0 prepared, not yet released).
+Executed at v14.0.0 (commit `d7f9eb6`).
 
 | Gate | Command | Result |
 |---|---|---|

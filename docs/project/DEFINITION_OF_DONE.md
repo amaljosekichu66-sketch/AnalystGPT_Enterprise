@@ -13,9 +13,9 @@ maintains production-quality engineering standards throughout its development.
 
 # Last Updated
 
-**Version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+**Version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
 
-**Current sprint:** Sprint 14 — Stabilization / Production Hardening (implemented and validated locally; release pending)
+**Current sprint:** Sprint 14 — Stabilization / Production Hardening (released as v14.0.0); next: Sprint 15
 
 **Date:** August 2026
 
@@ -313,7 +313,7 @@ The release must be:
 | Sprint 11 | ✅ Complete |
 | Sprint 12 | ✅ Complete |
 | Sprint 13 | ✅ Complete (v13.0.0) |
-| Sprint 14 | 🟡 Implemented & validated locally (v14.0.0 prepared; release — tag + merge — pending) — Phases 1–7 delivered; **714 / 714 tests passing**, 15 `integration`-marked tests deselected by default; all four static gates passing; OpenAPI contract re-exported and in sync (33 paths) |
+| Sprint 14 | ✅ Complete (v14.0.0) — Phases 1–7 delivered; **714 / 714 tests passing**, 15 `integration`-marked tests deselected by default; all four static gates passing; OpenAPI contract re-exported and in sync (33 paths) |
 | Sprint 15 | 📋 Planned — Enterprise Stabilization, Governance Completion & Product/UX Remediation (v15.0.0). Not started. |
 | Sprint 16 | 📋 Planned — AI Provider Abstraction & Complete React Readiness (v16.0.0). Not started. |
 | Sprint 17 | 📋 Planned — React Migration & Modern Presentation Layer (v17.0.0). Not started. |

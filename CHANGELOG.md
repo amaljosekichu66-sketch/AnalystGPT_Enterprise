@@ -1285,8 +1285,7 @@ Sprint 13 transforms AnalystGPT Enterprise into a multi-user enterprise platform
 ## [v14.0.0] — Enterprise Stabilization, Data Governance & Grounded Reporting
 
 **Sprint:** Sprint 14 — Stabilization / Production Hardening
-**Status:** 🟡 **Implemented and validated locally — not yet released** (no `v14.0.0` tag;
-`sprint-14-stabilization` not merged to `main`; last released version is v13.0.0)
+**Status:** ✅ **Released** — 2026-09-28, tag `v14.0.0`
 
 ### Overview
 
@@ -1400,7 +1399,7 @@ The 15 deselected tests are `integration`-marked and require a live Ollama serve
 - Streamlit Presentation Layer → Stable
 - Automated Tests → **714 passing**
 - Static Analysis → flake8 0 · black clean · isort clean · mypy clean
-- Release Version → **v14.0.0** (prepared, not released)
+- Release Version → **v14.0.0**
 
 ---
 
@@ -1458,7 +1457,7 @@ equivalent with the same contract - `/reports/export/text` becomes
 - `docs/engineering/PROJECT_STATE.md`, `docs/project/ARCHITECTURE.md`, ADR-028 and
   `docs/api/REACT_MIGRATION_MAPPING.md` reconciled to that sequence; the interim Sprint 15 name
   *Refactoring & Architectural Evolution* is superseded.
-- Status wording made evidence-based: v14.0.0 recorded as prepared, not released; Dashboard,
+- Status wording made evidence-based (v14.0.0 was recorded as prepared until this release); Dashboard,
   Streamlit frontend, data governance, Admin UI and technical debt marked as needing Sprint 15
   remediation rather than complete; Sprint 14 Phase 6 recorded as the initial React-readiness
   foundation, with Sprint 16 as the definitive gate.

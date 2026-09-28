@@ -148,7 +148,7 @@ curl -s http://127.0.0.1:8000/api/version | jq .
 # 2. Authenticate User (Replace with active credentials)
 TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "<USERNAME>", "password": "<PASSWORD>"}' | jq -r '.data.token')
+  -d '{"username": "<USERNAME>", "password": "<PASSWORD>"}' | jq -r '.access_token')
 
 # 3. Execute Pipeline on Sample Data
 curl -s -X POST http://127.0.0.1:8000/api/pipeline \
@@ -157,26 +157,26 @@ curl -s -X POST http://127.0.0.1:8000/api/pipeline \
   -d '{"input_path": "sample_data/customer_data.csv"}' | jq .
 
 # 4. List User Reports
-curl -s http://127.0.0.1:8000/reports \
+curl -s http://127.0.0.1:8000/api/reports \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # 5. Download & Validate Latest TXT Report
 curl -s -w "\nHTTP Status: %{http_code}\n" -o downloaded_report.txt \
-  http://127.0.0.1:8000/reports/latest/export/text \
+  http://127.0.0.1:8000/api/reports/latest/export/text \
   -H "Authorization: Bearer $TOKEN"
 ls -lh downloaded_report.txt
 head -n 15 downloaded_report.txt
 
 # 6. Download & Validate Latest PDF Report
 curl -s -w "\nHTTP Status: %{http_code}\n" -o downloaded_report.pdf \
-  http://127.0.0.1:8000/reports/latest/export/pdf \
+  http://127.0.0.1:8000/api/reports/latest/export/pdf \
   -H "Authorization: Bearer $TOKEN"
 ls -lh downloaded_report.pdf
 head -c 8 downloaded_report.pdf; echo ""
 
 # 7. Specific Report Export (Replace <REPORT_ID> with integer ID)
-curl -s -o report_specific.txt http://127.0.0.1:8000/reports/<REPORT_ID>/export/text -H "Authorization: Bearer $TOKEN"
-curl -s -o report_specific.pdf http://127.0.0.1:8000/reports/<REPORT_ID>/export/pdf -H "Authorization: Bearer $TOKEN"
+curl -s -o report_specific.txt http://127.0.0.1:8000/api/reports/<REPORT_ID>/export/text -H "Authorization: Bearer $TOKEN"
+curl -s -o report_specific.pdf http://127.0.0.1:8000/api/reports/<REPORT_ID>/export/pdf -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
@@ -337,8 +337,8 @@ isort --check src tests
 mypy src
 ```
 
-> These four gates are exactly what CI's `quality` job runs, and all four pass on the Sprint 14
-> working tree (v14.0.0 prepared, not yet released): flake8 0, black 341 files unchanged, isort clean, mypy clean over 210 source files.
+> These four gates are exactly what CI's `quality` job runs, and all four pass at
+> v14.0.0: flake8 0, black 341 files unchanged, isort clean, mypy clean over 210 source files.
 >
 > `black` and `isort` cover **all** of `src/` and `tests/`; only non-source trees are excluded.
 > (Until the Sprint 14 stabilization pass, `pyproject.toml` excluded `tests/` and 15 of 17

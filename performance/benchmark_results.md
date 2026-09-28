@@ -229,7 +229,7 @@ Planned at the start of Sprint 14; per-item measurement status is recorded below
 - Multi-user concurrent execution & cache isolation overhead
 - Report export and streaming latency
 
-*Status on the Sprint 14 working tree (v14.0.0 prepared):* **Partially measured.**
+*Status at v14.0.0:* **Partially measured.**
 
 > Corrected during the Sprint 14 documentation audit against
 > `performance/phase2_benchmark_results.md` (committed in `00e33af`):
@@ -248,7 +248,7 @@ Planned at the start of Sprint 14; per-item measurement status is recorded below
 
 ---
 
-**Current version:** **v14.0.0** (prepared — not yet tagged or merged to `main`; last released v13.0.0)
+**Current version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
 
 **Baseline measured at:** **v13.0.0.** The deterministic pipeline figures above have not been
 re-measured since, so they are labelled with the version they were taken at rather than
