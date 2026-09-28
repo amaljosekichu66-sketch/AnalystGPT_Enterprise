@@ -28,6 +28,8 @@ from contextlib import contextmanager
 
 import streamlit as st
 
+from src.frontend.components.safe_text import html_text
+
 
 @contextmanager
 def loading(
@@ -74,8 +76,8 @@ def show_loading_message(
         st.markdown(
             f"""
             <div style="text-align:center; padding:30px;">
-                <h2>⏳ {title}</h2>
-                <p>{description}</p>
+                <h2>⏳ {html_text(title)}</h2>
+                <p>{html_text(description)}</p>
             </div>
             """,
             unsafe_allow_html=True,

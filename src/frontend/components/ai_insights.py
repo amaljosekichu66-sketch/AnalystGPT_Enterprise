@@ -14,6 +14,8 @@ from typing import Any
 
 import streamlit as st
 
+from src.frontend.components.safe_text import html_text, markdown_text
+
 
 def _extract_ai_report(data: Any) -> dict[str, Any] | None:
     """
@@ -66,7 +68,7 @@ def render_ai_insights(data: Any) -> None:
         st.markdown(
             f"""
             <div style="background-color: rgba(28, 131, 225, 0.08); border-left: 4px solid #1c83e1; padding: 14px 18px; border-radius: 4px; margin-bottom: 18px;">
-                <p style="margin: 0; font-size: 1.05rem; line-height: 1.6;">{summary}</p>
+                <p style="margin: 0; font-size: 1.05rem; line-height: 1.6;">{html_text(summary)}</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -82,7 +84,7 @@ def render_ai_insights(data: Any) -> None:
         findings = ai_report.get("key_findings") or ai_report.get("explanations", [])
         if findings:
             for item in findings:
-                st.markdown(f"• **Finding:** {item}")
+                st.markdown(f"• **Finding:** {markdown_text(item)}")
         else:
             st.caption("No specific findings recorded.")
 
@@ -91,7 +93,7 @@ def render_ai_insights(data: Any) -> None:
         implications = ai_report.get("business_implications") or ai_report.get("explanations", [])[:2]
         if implications:
             for item in implications:
-                st.markdown(f"• **Impact:** {item}")
+                st.markdown(f"• **Impact:** {markdown_text(item)}")
         else:
             st.caption("No strategic implications recorded.")
 
@@ -110,7 +112,7 @@ def render_ai_insights(data: Any) -> None:
                 st.markdown(
                     f"""
                     <div style="background-color: rgba(255, 75, 75, 0.08); border-left: 3px solid #ff4b4b; padding: 10px 14px; border-radius: 4px; margin-bottom: 8px;">
-                        <span style="font-size: 0.95rem;">{r}</span>
+                        <span style="font-size: 0.95rem;">{html_text(r)}</span>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -126,7 +128,7 @@ def render_ai_insights(data: Any) -> None:
                 st.markdown(
                     f"""
                     <div style="background-color: rgba(9, 171, 59, 0.08); border-left: 3px solid #09ab3b; padding: 10px 14px; border-radius: 4px; margin-bottom: 8px;">
-                        <span style="font-size: 0.95rem;">{o}</span>
+                        <span style="font-size: 0.95rem;">{html_text(o)}</span>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -143,7 +145,7 @@ def render_ai_insights(data: Any) -> None:
     actions = ai_report.get("actions") or ai_report.get("recommendations", [])
     if actions:
         for idx, act in enumerate(actions, start=1):
-            st.markdown(f"**{idx}.** {act}")
+            st.markdown(f"**{idx}.** {markdown_text(act)}")
     else:
         st.caption("No prioritized recommendations available.")
 
@@ -154,7 +156,7 @@ def render_ai_insights(data: Any) -> None:
     if narrative:
         st.divider()
         with st.expander("📖 Complete Strategic Narrative", expanded=False):
-            st.write(narrative)
+            st.markdown(markdown_text(narrative))
 
     # ==========================================================
     # 6. Confidence, Limitations & Evidence
@@ -165,7 +167,7 @@ def render_ai_insights(data: Any) -> None:
     with col_conf:
         st.caption("ANALYSIS CONFIDENCE")
         confidence = ai_report.get("confidence", "High (Grounded in Deterministic Analytics)")
-        st.success(f"🛡️ **{confidence}**")
+        st.success(f"🛡️ **{markdown_text(confidence)}**")
 
     with col_lim:
         st.caption("DATA LIMITATIONS & CAVEATS")
@@ -174,7 +176,7 @@ def render_ai_insights(data: Any) -> None:
             "Causal relationships cannot be established solely from non-experimental records.",
         ]
         for lim in limitations:
-            st.markdown(f"• *{lim}*")
+            st.markdown(f"• *{markdown_text(lim)}*")
 
     # ==========================================================
     # 7. Engine Metadata

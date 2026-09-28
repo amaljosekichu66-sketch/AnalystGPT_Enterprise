@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import streamlit as st
 
+from src.frontend.components.safe_text import html_text
+
 
 def render_empty_state(
     title: str,
@@ -51,17 +53,17 @@ def render_empty_state(
     with centre:
 
         st.markdown(
-            f"<h1 style='text-align:center'>{icon}</h1>",
+            f"<h1 style='text-align:center'>{html_text(icon)}</h1>",
             unsafe_allow_html=True,
         )
 
         st.markdown(
-            f"<h2 style='text-align:center'>{title}</h2>",
+            f"<h2 style='text-align:center'>{html_text(title)}</h2>",
             unsafe_allow_html=True,
         )
 
         st.markdown(
-            ("<p style='text-align:center;" "color:grey;'>" f"{message}" "</p>"),
+            ("<p style='text-align:center;" "color:grey;'>" f"{html_text(message)}" "</p>"),
             unsafe_allow_html=True,
         )
 
