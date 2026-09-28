@@ -144,7 +144,7 @@ class TestAPIAuthorizationSemantics:
     def test_unauthenticated_request_returns_401(self) -> None:
         """Accessing protected endpoints without token returns 401 Unauthorized."""
         # Pipeline endpoint
-        res = self.client.post("/api/pipeline", json={"input_path": "sample.csv"})
+        res = self.client.post("/api/pipeline", json={"dataset_version_id": "00000000-0000-4000-8000-000000000000"})
         assert res.status_code == 401
 
         # Reports endpoint
@@ -167,7 +167,7 @@ class TestAPIAuthorizationSemantics:
         """Viewer role attempting to execute pipeline receives 403 Forbidden."""
         res = self.client.post(
             "/api/pipeline",
-            json={"input_path": "sample.csv"},
+            json={"dataset_version_id": "00000000-0000-4000-8000-000000000000"},
             headers={"Authorization": f"Bearer {self.viewer_token}"},
         )
         assert res.status_code == 403

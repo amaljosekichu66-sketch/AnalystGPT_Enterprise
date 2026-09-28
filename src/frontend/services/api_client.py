@@ -37,6 +37,8 @@ class APIClient:
 
     PIPELINE = "/api/pipeline"
 
+    DATASETS = "/api/datasets"
+
     REPORTS = "/api/reports"
 
     DASHBOARD = "/api/powerbi/dashboard"
@@ -98,6 +100,7 @@ class APIClient:
         json: dict[str, Any] | None = None,
         headers: dict[str, str] | None = None,
         token: str | None = None,
+        files: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """
         Execute an HTTP request with automatic Bearer token injection.
@@ -109,12 +112,17 @@ class APIClient:
 
         try:
 
+            request_kwargs: dict[str, Any] = {}
+            if files is not None:
+                request_kwargs["files"] = files
+
             response = self._client.request(
                 method=method,
                 url=endpoint,
                 params=params,
                 json=json,
                 headers=request_headers if request_headers else None,
+                **request_kwargs,
             )
 
             response.raise_for_status()
@@ -249,30 +257,29 @@ class APIClient:
 
     def dashboard(
         self,
-        dataset: str,
+        dataset_version_id: str,
     ) -> dict[str, Any]:
         """
-        Execute the analytics pipeline and
-        return dashboard information.
+        Return dashboard information for an uploaded dataset.
         """
 
         return self._get(
             self.DASHBOARD,
             params={
-                "dataset": dataset,
+                "dataset_version_id": dataset_version_id,
             },
         )
 
     def powerbi_dashboard(
         self,
-        dataset: str,
+        dataset_version_id: str,
     ) -> dict[str, Any]:
         """
         Backwards-compatible alias.
         """
 
         return self.dashboard(
-            dataset,
+            dataset_version_id,
         )
 
     # ==========================================================
@@ -358,7 +365,7 @@ class APIClient:
 
     def powerbi_summary(
         self,
-        dataset: str,
+        dataset_version_id: str,
     ) -> dict[str, Any]:
         """
         Retrieve Power BI summary data.
@@ -367,13 +374,13 @@ class APIClient:
         return self._get(
             self.POWERBI_SUMMARY,
             params={
-                "dataset": dataset,
+                "dataset_version_id": dataset_version_id,
             },
         )
 
     def powerbi_pipeline(
         self,
-        dataset: str,
+        dataset_version_id: str,
     ) -> dict[str, Any]:
         """
         Retrieve pipeline summary.
@@ -382,8 +389,29 @@ class APIClient:
         return self._get(
             self.POWERBI_PIPELINE,
             params={
-                "dataset": dataset,
+                "dataset_version_id": dataset_version_id,
             },
+        )
+
+    # ==========================================================
+    # Datasets
+    # ==========================================================
+
+    def upload_dataset(
+        self,
+        filename: str,
+        content: bytes,
+        token: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        Upload dataset bytes (multipart). Returns the server-issued `dataset_version_id`.
+        """
+
+        return self._request(
+            "POST",
+            self.DATASETS,
+            files={"file": (filename, content)},
+            token=token,
         )
 
     # ==========================================================

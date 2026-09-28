@@ -207,11 +207,31 @@ class AIReportResponse(BaseModel):
 # ==========================================================
 
 
+class DatasetUploadResponse(APIResponse):
+    """
+    Response returned after a dataset upload.
+
+    `dataset_version_id` is the only handle a client needs (and the only one
+    it gets) for pipeline, dashboard and governance calls.
+    """
+
+    dataset_version_id: str
+    filename: str
+    content_type: str
+    byte_size: int
+    checksum_sha256: str
+    row_count: int
+    column_count: int
+
+
 class PipelineResponse(APIResponse):
     """
     Response returned after pipeline execution.
     """
 
+    dataset_version_id: str | None = None
+
+    #: Bare file name of the generated report; never a server path.
     output_path: str | None = None
 
     execution_time: float = 0.0
@@ -281,7 +301,7 @@ class ReportDataResponse(BaseModel):
 
     output_path: str | None = Field(
         default=None,
-        description="File path of the generated report artifact.",
+        description="File name of the generated report artifact (never a server path).",
     )
 
 

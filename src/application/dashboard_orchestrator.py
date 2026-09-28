@@ -22,6 +22,7 @@ from src.core.constants import (
     APP_NAME,
     APP_VERSION,
 )
+from src.core.redaction import public_artifact_name, public_report_dict
 
 
 class DashboardOrchestrator:
@@ -52,7 +53,7 @@ class DashboardOrchestrator:
 
     def get_dashboard(
         self,
-        dataset: str,
+        dataset_version_id: str,
         user_context: Any | None = None,
     ) -> dict[str, Any]:
         """
@@ -63,8 +64,8 @@ class DashboardOrchestrator:
 
         Parameters
         ----------
-        dataset : str
-            Path to the dataset.
+        dataset_version_id : str
+            Server-issued dataset identifier from POST /api/datasets.
         user_context : UserContext | None
             Optional authenticated security context.
 
@@ -78,19 +79,14 @@ class DashboardOrchestrator:
         ValueError
             If dataset is empty.
         """
-        if not dataset:
-            raise ValueError("Dataset path must not be empty.")
+        if not dataset_version_id:
+            raise ValueError("dataset_version_id must not be empty.")
 
         # Use cached or run new pipeline
-        try:
-            result = self._application.get_or_run(
-                input_path=dataset,
-                user_context=user_context,
-            )
-        except TypeError:
-            result = self._application.get_or_run(
-                input_path=dataset,
-            )
+        result = self._application.get_or_run_dataset_version(
+            dataset_version_id,
+            user_context=user_context,
+        )
 
         return self._build_dashboard(
             result,
@@ -190,11 +186,11 @@ class DashboardOrchestrator:
             "pipeline": {
                 "success": result.success,
                 "execution_time": result.execution_time,
-                "output_path": result.output_path,
+                "output_path": public_artifact_name(result.output_path),
                 "ai_job_id": getattr(result, "ai_job_id", None),
                 "ai_job_status": getattr(result, "ai_job_status", None),
             },
-            "report": (reporting_report.to_dict() if reporting_report is not None else {}),
+            "report": (public_report_dict(reporting_report.to_dict()) if reporting_report is not None else {}),
             "ai_report": self._build_ai_report(
                 result,
                 user_context=user_context,

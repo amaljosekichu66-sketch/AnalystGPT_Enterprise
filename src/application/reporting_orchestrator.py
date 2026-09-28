@@ -26,6 +26,7 @@ from src.core.config import (
     DEFAULT_REPORT_FILENAME,
 )
 from src.core.logger import logger
+from src.core.redaction import public_artifact_name, public_report_dict
 from src.reporting.structured_report import StructuredReport
 
 
@@ -248,10 +249,10 @@ class ReportingOrchestrator:
             "reports": self._build_report_list(
                 ai_report_dict is not None,
             ),
-            "report": reporting_report.to_dict(),
+            "report": public_report_dict(reporting_report.to_dict()),
             "ai_report": ai_report_dict,
             "execution_time": result.execution_time,
-            "output_path": result.output_path,
+            "output_path": public_artifact_name(result.output_path),
         }
 
     # ==========================================================

@@ -20,7 +20,7 @@ from src.frontend.components.scroll_to_top import scroll_to_top
 from src.frontend.components.uploader import render_uploader
 from src.frontend.services.session_manager import (
     clear_dataset,
-    get_dataset_path,
+    get_dataset_version_id,
     store_dataset,
 )
 from src.governance.governance_service import CleaningGovernanceService
@@ -44,12 +44,12 @@ def render() -> None:
         return
 
     # Preserve dataset in session
-    dataset_path = get_dataset_path()
+    dataset_version_id = get_dataset_version_id()
     clear_dataset()
     store_dataset(
         uploaded_file=uploaded_file,
         dataframe=dataframe,
-        dataset_path=dataset_path,
+        dataset_version_id=dataset_version_id,
     )
 
     # 1. Authoritative Semantic Profiling

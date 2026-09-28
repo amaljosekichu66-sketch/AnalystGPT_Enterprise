@@ -89,7 +89,14 @@ class CleaningGovernanceService:
 
         from src.upload.upload_manager import UploadManager
 
-        raw_df = UploadManager().upload(storage_path)
+        try:
+            raw_df = UploadManager().upload(storage_path)
+        except Exception:
+            # Unparseable content must not leave an orphaned artifact behind.
+            discard = getattr(self.artifact_store, "discard_raw_artifact", None)
+            if discard is not None:
+                discard(storage_path)
+            raise
 
         source_version = DatasetVersion(
             version_id=version_id,

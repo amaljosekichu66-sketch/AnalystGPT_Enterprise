@@ -33,6 +33,7 @@ from src.api.routes import (
     version_router,
 )
 from src.api.routes.dashboard import router as dashboard_router
+from src.api.routes.datasets import router as datasets_router
 from src.api.routes.governance import router as governance_router
 from src.api.routes.powerbi import router as powerbi_router
 from src.api.routes.reports import router as reports_router
@@ -183,6 +184,12 @@ def register_routes(
         admin_router,
         prefix=API_PREFIX,
         tags=["Administration"],
+    )
+
+    application.include_router(
+        datasets_router,
+        prefix=API_PREFIX,
+        tags=["Datasets"],
     )
 
     application.include_router(

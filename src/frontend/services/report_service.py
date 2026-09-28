@@ -21,7 +21,7 @@ from src.frontend.services.session_manager import (
     get_auth_token,
     get_auth_user,
     get_dataset,
-    get_dataset_path,
+    get_dataset_version_id,
     get_pipeline_result,
 )
 
@@ -34,15 +34,15 @@ _REPORTS_DATASET_KEY = "reports_dataset"
 
 
 def _get_cached_reports(
-    dataset_path: str | None,
+    dataset_version_id: str | None,
 ) -> dict[str, Any] | None:
     """
     Retrieve cached report data if valid for the current dataset.
     """
-    if not dataset_path:
+    if not dataset_version_id:
         return None
 
-    if st.session_state.get(_REPORTS_DATASET_KEY) != dataset_path:
+    if st.session_state.get(_REPORTS_DATASET_KEY) != dataset_version_id:
         return None
 
     cached = st.session_state.get(_REPORTS_CACHE_KEY)
@@ -53,16 +53,16 @@ def _get_cached_reports(
 
 
 def _cache_reports(
-    dataset_path: str | None,
+    dataset_version_id: str | None,
     report_data: dict[str, Any],
 ) -> None:
     """
     Cache successful report data in session state.
     """
-    if not dataset_path:
+    if not dataset_version_id:
         return
 
-    st.session_state[_REPORTS_DATASET_KEY] = dataset_path
+    st.session_state[_REPORTS_DATASET_KEY] = dataset_version_id
     st.session_state[_REPORTS_CACHE_KEY] = deepcopy(report_data)
 
 
@@ -165,9 +165,9 @@ def get_report_data() -> dict[str, Any]:
     Uses session-level cache to avoid repeated backend calls.
     Falls back to the local session when the REST API is unavailable.
     """
-    dataset_path = get_dataset_path()
+    dataset_version_id = get_dataset_version_id()
 
-    cached = _get_cached_reports(dataset_path)
+    cached = _get_cached_reports(dataset_version_id)
     if cached is not None:
         return cached
 
@@ -235,7 +235,7 @@ def get_report_data() -> dict[str, Any]:
         )
 
         if api_response.get("success", True):
-            _cache_reports(dataset_path, report_data)
+            _cache_reports(dataset_version_id, report_data)
 
         return report_data
 

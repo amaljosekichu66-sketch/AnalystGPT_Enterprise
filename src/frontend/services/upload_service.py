@@ -20,7 +20,9 @@ class UploadService:
     Technology-neutral frontend service for dataset upload and pipeline triggers.
     """
 
-    ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".xls", ".parquet", ".json"}
+    # Mirrors the server allow-list (`src/upload/upload_policy.py`); the
+    # server remains the authority.
+    ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".xls", ".json"}
     MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024  # 500 MB
 
     def __init__(self, api_client: APIClient | None = None) -> None:
@@ -72,19 +74,36 @@ class UploadService:
         except Exception as exc:
             return False, None, str(exc)
 
-    def execute_pipeline(
+    def upload_dataset(
         self,
-        input_path: str,
+        filename: str,
+        content: bytes,
         token: str | None = None,
     ) -> tuple[bool, dict[str, Any] | None, str | None]:
         """
-        Trigger analytics pipeline execution.
+        Upload dataset bytes; the response carries the server-issued `dataset_version_id`.
+        """
+        ok, message = self.validate_file(filename, size_bytes=len(content))
+        if not ok:
+            return False, None, message
+        try:
+            return True, self._api_client.upload_dataset(filename=filename, content=content, token=token), None
+        except Exception as exc:
+            return False, None, str(exc)
+
+    def execute_pipeline(
+        self,
+        dataset_version_id: str,
+        token: str | None = None,
+    ) -> tuple[bool, dict[str, Any] | None, str | None]:
+        """
+        Trigger analytics pipeline execution on an uploaded dataset.
         """
         try:
             res = self._api_client._request(
                 "POST",
                 "/api/pipeline",
-                json={"input_path": input_path},
+                json={"dataset_version_id": dataset_version_id},
                 token=token,
             )
             if res.get("success"):

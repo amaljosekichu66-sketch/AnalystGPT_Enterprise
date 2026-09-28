@@ -5,6 +5,8 @@ Global exception handlers for AnalystGPT Enterprise REST API.
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
+from src.core.exceptions import DatasetNotFoundError
+from src.core.redaction import redact_server_paths
 from src.identity.exceptions import (
     AdminOperationError,
     AuthenticationError,
@@ -14,6 +16,7 @@ from src.identity.exceptions import (
     UserDisabledError,
     UserNotFoundError,
 )
+from src.upload.upload_policy import UploadRejectedError
 
 
 def _error_response(
@@ -31,13 +34,16 @@ def _error_response(
 
     Returns:
         JSONResponse with consistent error structure.
+
+    Every error body passes through here, so this is where server
+    filesystem paths are scrubbed from exception text.
     """
     return JSONResponse(
         status_code=status_code,
         content={
             "success": False,
-            "message": message,
-            "error": error,
+            "message": redact_server_paths(message),
+            "error": redact_server_paths(error),
         },
     )
 
@@ -110,6 +116,28 @@ def register_exception_handlers(app: FastAPI) -> None:
         return _error_response(
             status.HTTP_409_CONFLICT,
             "User already exists.",
+            str(exc),
+        )
+
+    @app.exception_handler(DatasetNotFoundError)
+    async def dataset_not_found_handler(
+        _request: Request,
+        exc: DatasetNotFoundError,
+    ) -> JSONResponse:
+        return _error_response(
+            status.HTTP_404_NOT_FOUND,
+            "Dataset not found.",
+            str(exc),
+        )
+
+    @app.exception_handler(UploadRejectedError)
+    async def upload_rejected_handler(
+        _request: Request,
+        exc: UploadRejectedError,
+    ) -> JSONResponse:
+        return _error_response(
+            exc.status_code,
+            "Upload rejected.",
             str(exc),
         )
 

@@ -53,6 +53,9 @@ class PipelineResult:
     ai_job_id: str | None = None
     ai_job_status: str | None = None
 
+    #: Server-issued id of the source dataset this run processed.
+    dataset_version_id: str | None = None
+
     # ==========================================================
     # Error
     # ==========================================================
@@ -91,6 +94,7 @@ class PipelineResult:
             "execution_time": self.execution_time,
             "ai_job_id": self.ai_job_id,
             "ai_job_status": self.ai_job_status,
+            "dataset_version_id": self.dataset_version_id,
             "generated_at": (self.generated_at.isoformat()),
             "pipeline_report": (self.pipeline_report.to_dict() if self.pipeline_report else None),
             "error": (str(self.error) if self.error else None),

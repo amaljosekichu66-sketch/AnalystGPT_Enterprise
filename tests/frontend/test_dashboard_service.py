@@ -92,7 +92,7 @@ def test_clear_dashboard_cache():
 
 
 @patch("src.frontend.services.dashboard_service.get_dataset")
-@patch("src.frontend.services.dashboard_service.get_dataset_path")
+@patch("src.frontend.services.dashboard_service.get_dataset_version_id")
 @patch("src.frontend.services.dashboard_service._get_cached_dashboard")
 @patch("src.frontend.services.dashboard_service.APIClient")
 def test_dashboard_api_success(
@@ -107,8 +107,8 @@ def test_dashboard_api_success(
     Dashboard uses API successfully when dataset is loaded locally and no cache exists.
     """
     # Arrange
-    dataset_path = "/fake/path/dataset.csv"
-    mock_get_path.return_value = dataset_path
+    dataset_version_id = "/fake/path/dataset.csv"
+    mock_get_path.return_value = dataset_version_id
     mock_cache.return_value = None  # No cached data
 
     # Mock get_dataset to return a real dataset so _local_dashboard_data loads it
@@ -138,13 +138,13 @@ def test_dashboard_api_success(
     assert result["ai_report"] == {"summary": "AI summary"}
     assert result["backend_report"] == {"some": "data"}
 
-    client.powerbi_dashboard.assert_called_once_with(dataset_path)
+    client.powerbi_dashboard.assert_called_once_with(dataset_version_id)
     mock_client_cls.return_value.__enter__.assert_called_once()
     mock_client_cls.return_value.__exit__.assert_called_once()
 
 
 @patch("src.frontend.services.dashboard_service.get_dataset")
-@patch("src.frontend.services.dashboard_service.get_dataset_path")
+@patch("src.frontend.services.dashboard_service.get_dataset_version_id")
 @patch("src.frontend.services.dashboard_service._get_cached_dashboard")
 @patch("src.frontend.services.dashboard_service.APIClient")
 def test_dashboard_api_failure(
@@ -156,8 +156,8 @@ def test_dashboard_api_failure(
     sample_dataframe,
 ):
     """Dashboard falls back to session when API raises OSError."""
-    dataset_path = "/fake/path/dataset.csv"
-    mock_get_path.return_value = dataset_path
+    dataset_version_id = "/fake/path/dataset.csv"
+    mock_get_path.return_value = dataset_version_id
     mock_cache.return_value = None
 
     mock_get_dataset.return_value = (uploaded_file, sample_dataframe)
@@ -179,7 +179,7 @@ def test_dashboard_api_failure(
 
 
 @patch("src.frontend.services.dashboard_service.get_dataset")
-@patch("src.frontend.services.dashboard_service.get_dataset_path")
+@patch("src.frontend.services.dashboard_service.get_dataset_version_id")
 @patch("src.frontend.services.dashboard_service._get_cached_dashboard")
 @patch("src.frontend.services.dashboard_service.APIClient")
 def test_dashboard_http_error(
@@ -191,8 +191,8 @@ def test_dashboard_http_error(
     sample_dataframe,
 ):
     """HTTP errors fall back to session."""
-    dataset_path = "/fake/path/dataset.csv"
-    mock_get_path.return_value = dataset_path
+    dataset_version_id = "/fake/path/dataset.csv"
+    mock_get_path.return_value = dataset_version_id
     mock_cache.return_value = None
 
     mock_get_dataset.return_value = (uploaded_file, sample_dataframe)
@@ -212,12 +212,12 @@ def test_dashboard_http_error(
     mock_client_cls.return_value.__exit__.assert_called_once()
 
 
-@patch("src.frontend.services.dashboard_service.get_dataset_path")
+@patch("src.frontend.services.dashboard_service.get_dataset_version_id")
 @patch("src.frontend.services.dashboard_service._get_cached_dashboard")
 def test_dashboard_uses_cache(mock_cache, mock_get_path):
     """Dashboard returns cached data if available."""
-    dataset_path = "/fake/path/dataset.csv"
-    mock_get_path.return_value = dataset_path
+    dataset_version_id = "/fake/path/dataset.csv"
+    mock_get_path.return_value = dataset_version_id
 
     cached_data = {
         "dataset_loaded": True,
@@ -246,4 +246,4 @@ def test_dashboard_uses_cache(mock_cache, mock_get_path):
     assert result["backend_report"] == {"foo": "bar"}
     assert result["ai_report"] == {"baz": "qux"}
     assert result["dataframe"] is not None
-    mock_cache.assert_called_once_with(dataset_path)
+    mock_cache.assert_called_once_with(dataset_version_id)

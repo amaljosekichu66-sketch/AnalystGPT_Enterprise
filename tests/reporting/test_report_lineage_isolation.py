@@ -21,6 +21,7 @@ from src.core.config import (
 from src.frontend.services.report_service import export_pdf_report, export_text_report
 from src.identity.context import UserContext
 from src.identity.models import UserRole
+from tests.fixtures.datasets import run_pipeline_on_file
 
 
 @pytest.fixture
@@ -191,7 +192,7 @@ def test_api_export_by_report_id_isolation_between_multiple_runs(tmp_path):
     headers = {"Authorization": f"Bearer {token}"}
 
     # Execute Pipeline A
-    res_a = client.post("/api/pipeline", json={"input_path": str(csv_a)}, headers=headers)
+    res_a = run_pipeline_on_file(client, csv_a, headers)
     assert res_a.status_code == 200
 
     from src.database.connection_factory import ConnectionFactory
@@ -206,7 +207,7 @@ def test_api_export_by_report_id_isolation_between_multiple_runs(tmp_path):
     report_id_a = reports_after_a[0]["id"]
 
     # Execute Pipeline B
-    res_b = client.post("/api/pipeline", json={"input_path": str(csv_b)}, headers=headers)
+    res_b = run_pipeline_on_file(client, csv_b, headers)
     assert res_b.status_code == 200
 
     reports_after_b = rep_repo.get_all(user_id=user_id)

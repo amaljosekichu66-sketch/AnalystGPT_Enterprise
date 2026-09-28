@@ -109,11 +109,11 @@ class FakePipelineResult:
 
 
 class FakeApplication:
-    def run(self, input_path: str):
+    def run_dataset_version(self, dataset_version_id: str, user_context=None):
         return FakePipelineResult()
 
-    def get_or_run(self, input_path: str):
-        return self.run(input_path)
+    def get_or_run_dataset_version(self, dataset_version_id: str, user_context=None):
+        return self.run_dataset_version(dataset_version_id, user_context=user_context)
 
 
 # ==========================================================
@@ -141,7 +141,7 @@ def override_application():
 # ==========================================================
 
 client = TestClient(app)
-DATASET = "sample_data/customer_data.csv"
+DATASET = "0b7c1f2e-3d4a-4b5c-8d9e-0f1a2b3c4d5e"
 
 
 # ==========================================================
@@ -152,7 +152,7 @@ DATASET = "sample_data/customer_data.csv"
 @patch("os.path.exists", return_value=True)
 @patch("src.api.routes.powerbi._execute_pipeline", return_value=FakePipelineResult())
 def test_pipeline_endpoint(mock_execute, mock_exists):
-    response = client.get("/api/powerbi/pipeline", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/pipeline", params={"dataset_version_id": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
@@ -162,7 +162,7 @@ def test_pipeline_endpoint(mock_execute, mock_exists):
 @patch("os.path.exists", return_value=True)
 @patch("src.api.routes.powerbi._execute_pipeline", return_value=FakePipelineResult())
 def test_report_endpoint(mock_execute, mock_exists):
-    response = client.get("/api/powerbi/report", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/report", params={"dataset_version_id": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "report" in body
@@ -177,7 +177,7 @@ def test_report_endpoint(mock_execute, mock_exists):
 
 
 def test_dashboard_endpoint():
-    response = client.get("/api/powerbi/dashboard", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/dashboard", params={"dataset_version_id": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
@@ -187,7 +187,7 @@ def test_dashboard_endpoint():
 
 
 def test_summary_endpoint():
-    response = client.get("/api/powerbi/summary", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/summary", params={"dataset_version_id": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
@@ -197,28 +197,28 @@ def test_summary_endpoint():
 
 
 def test_statistics_endpoint():
-    response = client.get("/api/powerbi/statistics", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/statistics", params={"dataset_version_id": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "descriptive_statistics" in body
 
 
 def test_correlation_endpoint():
-    response = client.get("/api/powerbi/correlation", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/correlation", params={"dataset_version_id": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "correlation_analysis" in body
 
 
 def test_distribution_endpoint():
-    response = client.get("/api/powerbi/distribution", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/distribution", params={"dataset_version_id": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "distribution_analysis" in body
 
 
 def test_categorical_endpoint():
-    response = client.get("/api/powerbi/categorical", params={"dataset": DATASET})
+    response = client.get("/api/powerbi/categorical", params={"dataset_version_id": DATASET})
     assert response.status_code == 200
     body = response.json()
     assert "categorical_analysis" in body

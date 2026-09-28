@@ -75,7 +75,7 @@ def test_local_report_with_dataset(mock_get_dataset, uploaded_file, sample_dataf
 
 @patch("src.frontend.services.report_service.APIClient")
 @patch("src.frontend.services.report_service._local_report_data")
-@patch("src.frontend.services.session_manager.get_dataset_path")
+@patch("src.frontend.services.session_manager.get_dataset_version_id")
 def test_report_api_success(mock_get_path, mock_local, mock_client):
     # Force a dataset path so the service attempts the API
     mock_get_path.return_value = "/fake/path/dataset.csv"
@@ -115,7 +115,7 @@ def test_report_api_success(mock_get_path, mock_local, mock_client):
 
 @patch("src.frontend.services.report_service.APIClient")
 @patch("src.frontend.services.report_service._local_report_data")
-@patch("src.frontend.services.session_manager.get_dataset_path")
+@patch("src.frontend.services.session_manager.get_dataset_version_id")
 def test_report_api_failure(mock_get_path, mock_local, mock_client):
     mock_get_path.return_value = "/fake/path/dataset.csv"
     mock_local.return_value = {
@@ -140,7 +140,7 @@ def test_report_api_failure(mock_get_path, mock_local, mock_client):
 
 @patch("src.frontend.services.report_service.APIClient")
 @patch("src.frontend.services.report_service._local_report_data")
-@patch("src.frontend.services.session_manager.get_dataset_path")
+@patch("src.frontend.services.session_manager.get_dataset_version_id")
 def test_report_http_error(mock_get_path, mock_local, mock_client):
     mock_get_path.return_value = "/fake/path/dataset.csv"
     mock_local.return_value = {
@@ -175,12 +175,12 @@ def test_clear_reports_cache():
         assert "reports_dataset" not in st.session_state
 
 
-@patch("src.frontend.services.report_service.get_dataset_path")
+@patch("src.frontend.services.report_service.get_dataset_version_id")
 @patch("src.frontend.services.report_service._get_cached_reports")
 def test_report_uses_cache(mock_cache, mock_get_path):
     """Reports service returns cached data when available."""
-    dataset_path = "/fake/path/dataset.csv"
-    mock_get_path.return_value = dataset_path
+    dataset_version_id = "/fake/path/dataset.csv"
+    mock_get_path.return_value = dataset_version_id
 
     cached_data = {
         "dataset_loaded": True,
@@ -199,7 +199,7 @@ def test_report_uses_cache(mock_cache, mock_get_path):
     assert result["reports"] == ["Dataset Summary", "Quality Report"]
     assert result["report"] == {"summary": "Cached summary"}
     assert result["ai_report"] == {"executive_summary": "AI Cached"}
-    mock_cache.assert_called_once_with(dataset_path)
+    mock_cache.assert_called_once_with(dataset_version_id)
 
 
 # ==========================================================

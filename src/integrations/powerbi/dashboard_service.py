@@ -8,6 +8,7 @@ from AnalystGPT Enterprise PipelineResult objects.
 from __future__ import annotations
 
 from src.application.pipeline_result import PipelineResult
+from src.core.redaction import public_artifact_name, public_report_dict
 from src.integrations.powerbi.dashboard_categorical import (
     DashboardCategorical,
 )
@@ -160,7 +161,7 @@ class DashboardService:
             reporting_report,
             "to_dict",
         ):
-            return reporting_report.to_dict()
+            return public_report_dict(reporting_report.to_dict())
 
         report = getattr(
             reporting_report,
@@ -249,7 +250,7 @@ class DashboardService:
             execution_time=pipeline_result.execution_time,
             report=report,
             ai_report=ai_model,
-            output_path=pipeline_result.output_path,
+            output_path=public_artifact_name(pipeline_result.output_path),
             ai_job_id=job_id,
             generated_at=self._generated_at(
                 pipeline_result,
@@ -268,7 +269,7 @@ class DashboardService:
         return PipelineSummary(
             success=pipeline_result.success,
             execution_time=pipeline_result.execution_time,
-            output_path=pipeline_result.output_path,
+            output_path=public_artifact_name(pipeline_result.output_path),
             ai_job_id=getattr(pipeline_result, "ai_job_id", None),
             ai_generated=(
                 self._ai_report(
@@ -305,7 +306,7 @@ class DashboardService:
             report=report,
             ai_report=ai_model,
             execution_time=pipeline_result.execution_time,
-            output_path=pipeline_result.output_path,
+            output_path=public_artifact_name(pipeline_result.output_path),
             generated_at=self._generated_at(
                 pipeline_result,
             ),

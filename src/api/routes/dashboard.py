@@ -25,6 +25,7 @@ from src.api.dependencies.application_dependency import (
 from src.api.dependencies.auth_dependencies import (
     require_permission,
 )
+from src.api.models.request_models import DATASET_VERSION_ID_PATTERN
 from src.api.models.response_models import (
     DashboardStatusResponse,
 )
@@ -32,7 +33,9 @@ from src.application.app import Application
 from src.application.dashboard_orchestrator import (
     DashboardOrchestrator,
 )
+from src.core.exceptions import DatasetNotFoundError
 from src.identity.context import UserContext
+from src.identity.exceptions import IdentityError
 from src.identity.permissions import Permission
 from src.integrations.powerbi.powerbi_models import (
     DashboardResponse,
@@ -77,9 +80,10 @@ def get_dashboard_orchestrator(
     description=("Return the complete enterprise dashboard, " "including analytics, reporting and AI insights."),
 )
 async def get_dashboard(
-    dataset: str = Query(
+    dataset_version_id: str = Query(
         ...,
-        description="Absolute path of the dataset.",
+        pattern=DATASET_VERSION_ID_PATTERN,
+        description="Identifier returned by POST /api/datasets.",
     ),
     context: UserContext = Depends(
         require_permission(Permission.DASHBOARD_VIEW),
@@ -95,7 +99,7 @@ async def get_dashboard(
     try:
 
         dashboard = orchestrator.get_dashboard(
-            dataset,
+            dataset_version_id,
             user_context=context,
         )
 
@@ -108,6 +112,10 @@ async def get_dashboard(
             output_path=pipeline["output_path"],
             ai_report=dashboard["ai_report"],
         )
+
+    except (DatasetNotFoundError, IdentityError):
+        # Ownership / authorization outcomes keep their own status codes.
+        raise
 
     except Exception as exc:
 

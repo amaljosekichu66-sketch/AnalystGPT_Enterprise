@@ -75,6 +75,10 @@ services:
     volumes:
       - reports_data:/app/reports
       - logs_data:/app/logs
+      # Managed upload store: clients upload bytes to POST /api/datasets and
+      # reference them by dataset_version_id, so the stored artifacts must
+      # outlive the container.
+      - artifacts_data:/app/data/artifacts
     networks:
       - analystgpt-network
     depends_on:
@@ -125,6 +129,8 @@ volumes:
     name: analystgpt_reports_data
   logs_data:
     name: analystgpt_logs_data
+  artifacts_data:
+    name: analystgpt_artifacts_data
 
 # ==========================================================
 # Bridge Network

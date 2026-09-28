@@ -78,6 +78,11 @@ class CleaningPreviewRequest(BaseModel):
 
 
 class DatasetVersionResponse(BaseModel):
+    """
+    Public view of a DatasetVersion. The server storage path is deliberately
+    absent: clients reference datasets by `version_id` only.
+    """
+
     model_config = ConfigDict(frozen=True)
 
     version_id: str
@@ -88,7 +93,6 @@ class DatasetVersionResponse(BaseModel):
     row_count: int
     column_count: int
     is_source: bool
-    storage_path: str
     parent_version_id: str | None = None
     dataset_schema_json: str | None = None
     created_at: str | None = None

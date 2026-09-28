@@ -15,8 +15,9 @@ def test_validate_file_extensions():
     valid, _ = service.validate_file("data.csv")
     assert valid is True
 
+    # The server cannot parse parquet uploads, so the client no longer offers it.
     valid, _ = service.validate_file("dataset.parquet")
-    assert valid is True
+    assert valid is False
 
     valid, msg = service.validate_file("malicious.exe")
     assert valid is False
@@ -53,8 +54,29 @@ def test_execute_pipeline_delegation():
     mock_client._request.return_value = {"success": True, "output_path": "report.txt"}
 
     service = UploadService(api_client=mock_client)
-    success, data, err = service.execute_pipeline(input_path="sample.csv")
+    success, data, err = service.execute_pipeline(dataset_version_id="dsv-1")
 
     assert success is True
     assert data["output_path"] == "report.txt"
     assert err is None
+    assert mock_client._request.call_args.kwargs["json"] == {"dataset_version_id": "dsv-1"}
+
+
+def test_upload_dataset_sends_bytes_not_paths():
+    mock_client = MagicMock()
+    mock_client.upload_dataset.return_value = {"dataset_version_id": "dsv-9"}
+
+    success, data, err = UploadService(api_client=mock_client).upload_dataset("sales.csv", b"a,b\n1,2\n")
+
+    assert (success, data, err) == (True, {"dataset_version_id": "dsv-9"}, None)
+    mock_client.upload_dataset.assert_called_once_with(filename="sales.csv", content=b"a,b\n1,2\n", token=None)
+
+
+def test_upload_dataset_rejects_unsupported_type_locally():
+    mock_client = MagicMock()
+
+    success, _, err = UploadService(api_client=mock_client).upload_dataset("payload.exe", b"MZ")
+
+    assert success is False
+    assert "Unsupported file format" in err
+    mock_client.upload_dataset.assert_not_called()

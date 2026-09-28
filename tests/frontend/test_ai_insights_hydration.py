@@ -228,7 +228,7 @@ def test_http_401_auth_expired_shows_session_expired():
 
 
 def test_stale_dashboard_cache_does_not_overwrite_ready_report():
-    dataset_path = "/tmp/test_dataset.csv"
+    dataset_version_id = "/tmp/test_dataset.csv"
     ready_report = {
         "executive_summary": "Authoritative READY Report.",
         "key_findings": ["F1"],
@@ -240,9 +240,9 @@ def test_stale_dashboard_cache_does_not_overwrite_ready_report():
         "filename": "test_dataset.csv",
         "ai_report": None,
     }
-    _cache_dashboard(dataset_path, stale_dashboard)
+    _cache_dashboard(dataset_version_id, stale_dashboard)
 
-    with patch("src.frontend.services.dashboard_service.get_dataset_path", return_value=dataset_path):
+    with patch("src.frontend.services.dashboard_service.get_dataset_version_id", return_value=dataset_version_id):
         data = get_dashboard_data()
         assert data["ai_report"] is not None
         assert data["ai_report"]["executive_summary"] == "Authoritative READY Report."

@@ -165,7 +165,14 @@ CORS_ALLOWED_ORIGINS = [
 # Upload Configuration
 # ==========================================================
 
-MAX_FILE_SIZE_MB = 500
+# Enforced server-side by `src/upload/upload_policy.py` on POST /api/datasets,
+# before the payload is persisted or parsed.
+MAX_FILE_SIZE_MB = int(
+    os.getenv(
+        "MAX_FILE_SIZE_MB",
+        "500",
+    )
+)
 
 # ==========================================================
 # Artifact Storage

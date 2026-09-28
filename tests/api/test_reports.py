@@ -15,6 +15,7 @@ from src.database.repositories.user_repository import UserRepository
 from src.database.schema_manager import SchemaManager
 from src.identity.models import UserCreate, UserLogin, UserRole
 from src.identity.user_service import UserService
+from tests.fixtures.datasets import run_pipeline_on_file
 
 
 @pytest.fixture
@@ -56,11 +57,7 @@ def test_get_reports_success_and_contract(reports_api_setup):
     sample_csv = reports_api_setup["sample_csv"]
 
     # 1. Execute pipeline
-    exec_res = client.post(
-        "/api/pipeline",
-        json={"input_path": sample_csv},
-        headers={"Authorization": f"Bearer {token_a}"},
-    )
+    exec_res = run_pipeline_on_file(client, sample_csv, {"Authorization": f"Bearer {token_a}"})
     assert exec_res.status_code == 200
 
     # 2. Fetch reports via /api/reports and /reports
@@ -89,11 +86,7 @@ def test_get_reports_tenant_isolation(reports_api_setup):
     sample_csv = reports_api_setup["sample_csv"]
 
     # User A executes pipeline
-    client.post(
-        "/api/pipeline",
-        json={"input_path": sample_csv},
-        headers={"Authorization": f"Bearer {token_a}"},
-    )
+    run_pipeline_on_file(client, sample_csv, {"Authorization": f"Bearer {token_a}"})
 
     # User B requests reports -> returns empty payload
     res_b = client.get(

@@ -23,7 +23,7 @@ from src.frontend.services.session_manager import (
     get_ai_job_id,
     get_ai_report,
     get_dataset,
-    get_dataset_path,
+    get_dataset_version_id,
     set_ai_job_id,
     set_ai_report,
 )
@@ -76,13 +76,13 @@ def _deepcopy_metadata(dashboard: dict[str, Any]) -> dict[str, Any]:
 
 
 def _get_cached_dashboard(
-    dataset_path: str,
+    dataset_version_id: str,
 ) -> dict[str, Any] | None:
     """
     Retrieve a cached dashboard if it matches the given dataset path.
     Returns a shallow copy with deep-copied metadata to prevent mutation.
     """
-    if st.session_state.get(_CACHE_DATASET) != dataset_path:
+    if st.session_state.get(_CACHE_DATASET) != dataset_version_id:
         return None
 
     cached = st.session_state.get(_CACHE_KEY)
@@ -93,14 +93,14 @@ def _get_cached_dashboard(
 
 
 def _cache_dashboard(
-    dataset_path: str,
+    dataset_version_id: str,
     dashboard: dict[str, Any],
 ) -> None:
     """
     Store a copy of the dashboard in the session cache.
     The DataFrame is shared (not copied), but metadata is deep-copied.
     """
-    st.session_state[_CACHE_DATASET] = dataset_path
+    st.session_state[_CACHE_DATASET] = dataset_version_id
     st.session_state[_CACHE_KEY] = _deepcopy_metadata(dashboard)
 
 
@@ -198,14 +198,14 @@ def _extract_ai_report(
 
 def get_dashboard_data() -> dict[str, Any]:
 
-    dataset_path = get_dataset_path()
+    dataset_version_id = get_dataset_version_id()
 
     logger.info("=" * 80)
     logger.info("FRONTEND DASHBOARD SERVICE")
     logger.info("=" * 80)
-    logger.info("Dataset Path : %s", dataset_path)
+    logger.info("Dataset Path : %s", dataset_version_id)
 
-    if not dataset_path:
+    if not dataset_version_id:
         logger.info("No dataset selected. Returning local session data.")
         return _local_dashboard_data()
 
@@ -213,13 +213,13 @@ def get_dashboard_data() -> dict[str, Any]:
     # 1. Check session cache (only successful responses)
     # ----------------------------------------------------------
 
-    cached = _get_cached_dashboard(dataset_path)
+    cached = _get_cached_dashboard(dataset_version_id)
     if cached is not None:
         # Check if AI report is in session state or was missing but has now become READY
         session_ai_report = get_ai_report()
         if session_ai_report is not None:
             cached["ai_report"] = session_ai_report
-            _cache_dashboard(dataset_path, cached)
+            _cache_dashboard(dataset_version_id, cached)
         elif cached.get("ai_report") is None:
             active_job_id = get_ai_job_id()
             if active_job_id:
@@ -230,7 +230,7 @@ def get_dashboard_data() -> dict[str, Any]:
                     if job_data.get("status") == "READY" and job_data.get("ai_report"):
                         cached["ai_report"] = job_data["ai_report"]
                         set_ai_report(job_data["ai_report"])
-                        _cache_dashboard(dataset_path, cached)
+                        _cache_dashboard(dataset_version_id, cached)
                         logger.info("Hydrated READY AI report into cached dashboard data.")
                 except Exception as exc:
                     logger.debug("Could not lazy-hydrate AI report: %s", exc)
@@ -256,7 +256,7 @@ def get_dashboard_data() -> dict[str, Any]:
         logger.info("Calling backend API for dashboard data...")
 
         with APIClient(timeout=180) as client:
-            response = client.powerbi_dashboard(dataset_path)
+            response = client.powerbi_dashboard(dataset_version_id)
 
         logger.info("Backend response received successfully.")
 
@@ -286,7 +286,7 @@ def get_dashboard_data() -> dict[str, Any]:
         # ----------------------------------------------------------
 
         if response.get("success", False):
-            _cache_dashboard(dataset_path, dashboard)
+            _cache_dashboard(dataset_version_id, dashboard)
             logger.info("Dashboard data cached for future requests.")
         else:
             logger.warning("Backend returned unsuccessful response. Not caching.")

@@ -24,7 +24,7 @@ from src.application.pipeline_result import PipelineResult
 
 DATAFRAME_KEY = "dataframe"
 UPLOADED_FILE_KEY = "uploaded_file"
-DATASET_PATH_KEY = "dataset_path"
+DATASET_VERSION_ID_KEY = "dataset_version_id"
 PIPELINE_RESULT_KEY = "pipeline_result"
 AI_JOB_ID_KEY = "ai_job_id"
 AI_REPORT_KEY = "ai_report"
@@ -110,7 +110,7 @@ def clear_authenticated_session() -> None:
 def store_dataset(
     uploaded_file,
     dataframe: pd.DataFrame,
-    dataset_path: str | None = None,
+    dataset_version_id: str | None = None,
 ) -> None:
     for cache_key in (
         "dashboard_cache",
@@ -126,7 +126,7 @@ def store_dataset(
 
     st.session_state[UPLOADED_FILE_KEY] = uploaded_file
     st.session_state[DATAFRAME_KEY] = dataframe
-    st.session_state[DATASET_PATH_KEY] = dataset_path
+    st.session_state[DATASET_VERSION_ID_KEY] = dataset_version_id
 
 
 def store_pipeline_result(
@@ -177,8 +177,8 @@ def get_uploaded_file():
     return st.session_state.get(UPLOADED_FILE_KEY)
 
 
-def get_dataset_path() -> str | None:
-    return st.session_state.get(DATASET_PATH_KEY)
+def get_dataset_version_id() -> str | None:
+    return st.session_state.get(DATASET_VERSION_ID_KEY)
 
 
 def get_dataset():
@@ -229,7 +229,7 @@ def clear_dataset() -> None:
     for key in (
         DATAFRAME_KEY,
         UPLOADED_FILE_KEY,
-        DATASET_PATH_KEY,
+        DATASET_VERSION_ID_KEY,
         PIPELINE_RESULT_KEY,
         AI_JOB_ID_KEY,
         AI_REPORT_KEY,

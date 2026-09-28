@@ -6,7 +6,6 @@ Sprint 11
 
 from __future__ import annotations
 
-import tempfile
 from io import BytesIO
 from pathlib import Path
 
@@ -14,8 +13,9 @@ import pandas as pd
 import streamlit as st
 
 from src.frontend.services.session_manager import (
-    DATASET_PATH_KEY,
+    DATASET_VERSION_ID_KEY,
 )
+from src.frontend.services.upload_service import UploadService
 
 SUPPORTED_FILE_TYPES = [
     "csv",
@@ -70,37 +70,27 @@ def load_dataframe(
     raise ValueError(f"Unsupported file format: {extension}")
 
 
-def save_uploaded_file(
+def upload_to_backend(
     uploaded_file,
 ) -> str:
     """
-    Save the uploaded dataset to a temporary file.
+    Upload the dataset bytes to the API and return the server-issued
+    `dataset_version_id`.
 
-    A fresh temporary file is created for every upload.
-
-    Returns
-    -------
-    str
-        Absolute filesystem path of the temporary dataset.
+    The frontend used to write a temp file and hand its path to the API,
+    which only worked when both processes shared a filesystem and required
+    the API to trust client-supplied paths. The API now accepts bytes only.
     """
 
-    suffix = Path(uploaded_file.name).suffix.lower()
-
-    with tempfile.NamedTemporaryFile(
-        mode="wb",
-        delete=False,
-        suffix=suffix,
-    ) as temp_file:
-
-        temp_file.write(uploaded_file.getbuffer())
-
-        temp_path = Path(
-            temp_file.name,
-        ).resolve()
-
-    return str(
-        temp_path,
+    success, data, error = UploadService().upload_dataset(
+        filename=uploaded_file.name,
+        content=uploaded_file.getvalue(),
     )
+
+    if not success or not data:
+        raise RuntimeError(error or "Upload failed.")
+
+    return data["dataset_version_id"]
 
 
 # ==========================================================
@@ -156,11 +146,11 @@ def render_uploader():
             filename=uploaded_file.name,
         )
 
-        dataset_path = save_uploaded_file(
+        dataset_version_id = upload_to_backend(
             uploaded_file,
         )
 
-        st.session_state[DATASET_PATH_KEY] = dataset_path
+        st.session_state[DATASET_VERSION_ID_KEY] = dataset_version_id
 
     except Exception as error:
 
@@ -173,7 +163,7 @@ def render_uploader():
 
     st.success("Dataset loaded successfully.")
 
-    st.caption(f"Temporary Dataset: {dataset_path}")
+    st.caption(f"Dataset ID: {dataset_version_id}")
 
     return (
         uploaded_file,

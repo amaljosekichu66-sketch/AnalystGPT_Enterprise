@@ -21,21 +21,31 @@ from pydantic import (
 # ==========================================================
 
 
+#: Canonical UUID text form, as issued by POST /api/datasets.
+DATASET_VERSION_ID_PATTERN = r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+
+
 class PipelineRequest(BaseModel):
     """
     Request model for pipeline execution.
+
+    The dataset is referenced ONLY by the server-issued identifier returned
+    from `POST /api/datasets`. There is no path field, and unknown fields are
+    rejected: the previous `input_path` let a client make the server read any
+    file it could reach.
     """
 
     model_config = ConfigDict(
         frozen=True,
         str_strip_whitespace=True,
+        extra="forbid",
     )
 
-    input_path: str = Field(
+    dataset_version_id: str = Field(
         ...,
-        min_length=1,
-        description=("Absolute or relative path to the " "input dataset."),
+        pattern=DATASET_VERSION_ID_PATTERN,
+        description="Identifier returned by POST /api/datasets.",
         examples=[
-            "sample_data/sales.csv",
+            "0b7c1f2e-3d4a-4b5c-8d9e-0f1a2b3c4d5e",
         ],
     )

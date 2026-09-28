@@ -13,6 +13,7 @@ processing pipeline.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,7 @@ from src.analytics.analytics_manager import AnalyticsManager
 from src.analytics.analytics_report import AnalyticsReport
 from src.cleaning.cleaning_manager import CleaningManager
 from src.core import config as _core_config
+from src.core.exceptions import DatasetNotFoundError
 from src.core.logger import logger
 
 # Governance Layer (Sprint 14 Phase 3)
@@ -44,13 +46,17 @@ from src.identity.context import (
     UserContext,
     get_current_user_context,
 )
+from src.identity.exceptions import PermissionDeniedError
+from src.identity.permissions import Permission
 from src.persistence.persistence_manager import PersistenceManager
 from src.quality.quality_manager import QualityManager
 from src.quality.quality_report import QualityReport
 from src.reporting.reporting_manager import ReportingManager
 from src.reporting.reporting_report import ReportingReport
 from src.storage.artifact_store import LocalArtifactStore
+from src.storage.exceptions import ArtifactStoreError
 from src.upload.upload_manager import UploadManager
+from src.upload.upload_policy import UnparseableUploadError
 
 from .pipeline_report import PipelineReport
 from .pipeline_result import PipelineResult
@@ -134,19 +140,188 @@ class Application:
         self._user_cached_paths: dict[int | None, str] = {}
         self._report_pipeline_results: dict[int, PipelineResult] = {}
 
+    # ==========================================================
+    # Managed datasets (server-issued identifiers)
+    # ==========================================================
+
+    def register_upload(
+        self,
+        content: bytes,
+        filename: str,
+        user_context: UserContext | None = None,
+    ) -> DatasetVersion:
+        """
+        Store client-uploaded bytes in the managed artifact store and register
+        them as a source DatasetVersion owned by the caller.
+
+        `filename` must already have passed `upload_policy.validate_upload_filename`;
+        it is a display label only. The returned `version_id` is the ONLY
+        handle a client gets - the storage path never leaves the server.
+        """
+        context = user_context or get_current_user_context()
+
+        persistence = PersistenceManager()
+        persistence.initialize()
+        try:
+            owner_id = self._persisted_user_id(persistence, context)
+            if owner_id is None:
+                raise PermissionDeniedError("Dataset uploads require a registered, authenticated account.")
+
+            try:
+                source_version, _ = self.governance_service.register_source_dataset(
+                    file_path_or_bytes=content,
+                    filename=filename,
+                    user_id=owner_id,
+                )
+            except ArtifactStoreError:
+                raise
+            except Exception as exc:
+                # The artifact is discarded by the governance service; the
+                # parser's message can quote server paths, so it stays in logs.
+                logger.warning("Uploaded dataset '%s' could not be parsed: %s", filename, exc)
+                raise UnparseableUploadError("Uploaded file could not be parsed as a dataset.") from exc
+
+            persistence.dataset_version_repository.create(source_version)
+        finally:
+            persistence.shutdown()
+
+        logger.info(
+            "Registered uploaded dataset version_id=%s owner=%s rows=%d",
+            source_version.version_id,
+            owner_id,
+            source_version.row_count,
+        )
+        return source_version
+
+    def resolve_source_version(
+        self,
+        dataset_version_id: str,
+        user_context: UserContext | None = None,
+    ) -> DatasetVersion:
+        """
+        Resolve a client-supplied dataset identifier to a stored source version.
+
+        Enforces ownership (admins may resolve any dataset, matching the
+        governance catalog) and re-checks that the stored artifact lives
+        inside the managed store. Unknown, foreign and non-source versions all
+        raise the same `DatasetNotFoundError`, so existence is not disclosed.
+        """
+        context = user_context or get_current_user_context()
+        if not context.is_authenticated:
+            raise DatasetNotFoundError("Dataset not found.")
+
+        scoped_user_id = None if context.has_permission(Permission.USER_MANAGE) else context.user_id
+
+        persistence = PersistenceManager()
+        persistence.initialize()
+        try:
+            row = persistence.dataset_version_repository.get_by_version_id(
+                dataset_version_id,
+                user_id=scoped_user_id,
+            )
+        finally:
+            persistence.shutdown()
+
+        if row is None or not bool(row.get("is_source", 1)):
+            raise DatasetNotFoundError("Dataset not found.")
+
+        try:
+            storage_path = self.artifact_store.resolve_managed_raw_path(row["storage_path"])
+        except ArtifactStoreError as exc:
+            logger.error("Dataset %s failed managed-store resolution: %s", dataset_version_id, exc)
+            raise DatasetNotFoundError("Dataset not found.") from exc
+
+        return DatasetVersion(
+            version_id=row["version_id"],
+            source_filename=row.get("source_filename") or "dataset",
+            byte_size=row.get("byte_size") or 0,
+            checksum_sha256=row.get("checksum_sha256") or "",
+            row_count=row.get("row_count") or 0,
+            column_count=row.get("column_count") or 0,
+            storage_path=str(storage_path),
+            is_source=True,
+            content_type=row.get("content_type") or "application/octet-stream",
+            parent_version_id=row.get("parent_version_id"),
+            schema_json=row.get("schema_json"),
+            user_id=row.get("user_id"),
+            created_at=str(row.get("created_at") or ""),
+        )
+
+    def load_source_dataframe(self, source_version: DatasetVersion) -> DataFrame:
+        """Parse a resolved source version from the managed store."""
+        return self.upload_manager.upload(source_version.storage_path)
+
+    def run_dataset_version(
+        self,
+        dataset_version_id: str,
+        user_context: UserContext | None = None,
+    ) -> PipelineResult:
+        """
+        Execute the pipeline on a previously uploaded dataset.
+
+        This is the entry point for API callers. Resolution failures raise
+        `DatasetNotFoundError` BEFORE a pipeline run record is created.
+        """
+        source_version = self.resolve_source_version(dataset_version_id, user_context)
+
+        return self._execute(
+            user_context=user_context,
+            cache_key=self.dataset_cache_key(dataset_version_id),
+            input_label=f"dataset_version_id={dataset_version_id}",
+            load_source=lambda _owner_id: (source_version, self.load_source_dataframe(source_version)),
+        )
+
+    def get_or_run_dataset_version(
+        self,
+        dataset_version_id: str,
+        user_context: UserContext | None = None,
+    ) -> PipelineResult:
+        """Return the caller's cached result for this dataset, or run it."""
+        return self.get_or_run(
+            input_path=self.dataset_cache_key(dataset_version_id),
+            user_context=user_context,
+            _runner=lambda ctx: self.run_dataset_version(dataset_version_id, user_context=ctx),
+        )
+
+    @staticmethod
+    def dataset_cache_key(dataset_version_id: str) -> str:
+        return f"dataset_version:{dataset_version_id}"
+
+    @staticmethod
+    def _persisted_user_id(
+        persistence: PersistenceManager,
+        context: UserContext,
+    ) -> int | None:
+        """Return the caller's user id if it exists in the users table, else None (FK safety)."""
+        if not context.is_authenticated or context.user_id is None:
+            return None
+        if persistence.user_repository is None:
+            return None
+        if persistence.user_repository.get_by_id(context.user_id) is None:
+            return None
+        return context.user_id
+
+    # ==========================================================
+    # Pipeline execution
+    # ==========================================================
+
     def run(
         self,
         input_path: str,
         user_context: UserContext | None = None,
     ) -> PipelineResult:
         """
-        Execute the complete AnalystGPT Enterprise
-        processing pipeline.
+        Execute the pipeline on a file from the server's OWN filesystem.
+
+        Trusted, local entry point for the CLI (`main.py`) and in-process
+        tests. It is deliberately not reachable from HTTP: API callers upload
+        bytes and use `run_dataset_version`, so a client can never name a
+        server path.
 
         Parameters
         ----------
         input_path:
-            Dataset location.
+            Dataset location on the local filesystem.
         user_context:
             Optional authenticated identity context (Sprint 13).
             If omitted, defaults to active request context.
@@ -155,6 +330,32 @@ class Application:
         -------
         PipelineResult
         """
+        return self._execute(
+            user_context=user_context,
+            cache_key=input_path,
+            input_label=input_path,
+            load_source=lambda owner_id: self.governance_service.register_source_dataset(
+                file_path_or_bytes=Path(input_path),
+                filename=Path(input_path).name,
+                user_id=owner_id,
+            ),
+        )
+
+    def _execute(
+        self,
+        user_context: UserContext | None,
+        cache_key: str,
+        input_label: str,
+        load_source: Callable[[int | None], tuple[DatasetVersion, DataFrame]],
+    ) -> PipelineResult:
+        """
+        Run every pipeline stage for one source dataset.
+
+        `load_source(owner_id)` supplies the source DatasetVersion and its
+        parsed DataFrame; everything downstream is identical for the local
+        and the managed-dataset entry points.
+        """
+        input_path = input_label
         active_context = user_context or get_current_user_context()
         user_id = active_context.user_id if active_context.is_authenticated else None
 
@@ -211,11 +412,7 @@ class Application:
             # Upload & Immutable Artifact Preservation (Sprint 14 Phase 3)
             # -------------------------------------------------
 
-            source_version, raw_dataframe = self.governance_service.register_source_dataset(
-                file_path_or_bytes=Path(input_path),
-                filename=Path(input_path).name,
-                user_id=eff_user_id,
-            )
+            source_version, raw_dataframe = load_source(eff_user_id)
 
             self.persistence.save_dataset(
                 dataset_name=source_version.source_filename,
@@ -319,6 +516,7 @@ class Application:
                 execution_time=execution_time,
                 ai_job_id=ai_job.job_id,
                 ai_job_status=ai_job.status.value,
+                dataset_version_id=source_version.version_id,
             )
 
             logger.info("=" * 60)
@@ -360,7 +558,7 @@ class Application:
 
             # --------------------------------------------
 
-            self._cache_pipeline_result(result, input_path, user_context=active_context)
+            self._cache_pipeline_result(result, cache_key, user_context=active_context)
 
             return result
 
@@ -855,6 +1053,7 @@ class Application:
         execution_time: float = 0.0,
         ai_job_id: str | None = None,
         ai_job_status: str | None = None,
+        dataset_version_id: str | None = None,
     ) -> PipelineResult:
         """
         Build the final application result.
@@ -878,6 +1077,7 @@ class Application:
             execution_time=execution_time,
             ai_job_id=ai_job_id,
             ai_job_status=ai_job_status,
+            dataset_version_id=dataset_version_id,
         )
 
     def _cache_pipeline_result(
@@ -1000,6 +1200,7 @@ class Application:
         self,
         input_path: str,
         user_context: UserContext | None = None,
+        _runner: Callable[[UserContext], PipelineResult] | None = None,
     ) -> PipelineResult:
         """
 
@@ -1034,6 +1235,9 @@ class Application:
         logger.info("RUNNING PIPELINE")
 
         logger.info("=" * 80)
+
+        if _runner is not None:
+            return _runner(active_context)
 
         return self.run(
             input_path=input_path,

@@ -57,7 +57,7 @@ FROM base AS runtime-base
 COPY --from=builder --chown=appuser:appuser /home/appuser/.local /home/appuser/.local
 
 # Create operational directories with proper permissions
-RUN mkdir -p /app/logs /app/reports /app/sample_data && \
+RUN mkdir -p /app/logs /app/reports /app/sample_data /app/data/artifacts && \
     chown -R appuser:appuser /app
 
 # Copy application source files

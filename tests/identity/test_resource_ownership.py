@@ -27,6 +27,7 @@ from src.identity.password_hasher import PBKDF2PasswordHasher
 from src.identity.token_revocation import TokenRevocationService
 from src.identity.token_service import TokenService
 from src.identity.user_service import UserService
+from tests.fixtures.datasets import run_pipeline_on_file
 
 
 @pytest.fixture
@@ -342,11 +343,7 @@ class TestAPIDataIsolation:
         client = TestClient(app)
 
         # User A executes pipeline
-        res_a = client.post(
-            "/api/pipeline",
-            json={"input_path": sample_csv},
-            headers={"Authorization": f"Bearer {token_a}"},
-        )
+        res_a = run_pipeline_on_file(client, sample_csv, {"Authorization": f"Bearer {token_a}"})
         assert res_a.status_code == 200
 
         # User A calls /reports -> gets reports

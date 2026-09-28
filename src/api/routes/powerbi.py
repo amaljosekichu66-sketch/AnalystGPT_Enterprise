@@ -22,6 +22,7 @@ from src.api.dependencies.application_dependency import (
 from src.api.dependencies.auth_dependencies import (
     require_permission,
 )
+from src.api.models.request_models import DATASET_VERSION_ID_PATTERN
 from src.api.models.response_models import (
     ErrorResponse,
 )
@@ -61,6 +62,8 @@ router = APIRouter(
 
 _dashboard_service = DashboardService()
 
+_DATASET_QUERY_HELP = "Identifier returned by POST /api/datasets."
+
 
 # ==========================================================
 # Internal Helper
@@ -68,7 +71,7 @@ _dashboard_service = DashboardService()
 
 
 def _execute_pipeline(
-    dataset: str,
+    dataset_version_id: str,
     application: Application,
     context: UserContext | None = None,
 ) -> PipelineResult:
@@ -84,18 +87,13 @@ def _execute_pipeline(
 
     logger.info(
         "Dataset : %s",
-        dataset,
+        dataset_version_id,
     )
 
-    try:
-        result = application.get_or_run(
-            input_path=dataset,
-            user_context=context,
-        )
-    except TypeError:
-        result = application.get_or_run(
-            input_path=dataset,
-        )
+    result = application.get_or_run_dataset_version(
+        dataset_version_id,
+        user_context=context,
+    )
 
     logger.info(
         "Pipeline Success : %s",
@@ -124,10 +122,7 @@ def _execute_pipeline(
     description="Return the complete dashboard response including analytics, reporting, and AI insights.",
 )
 def dashboard(
-    dataset: str = Query(
-        ...,
-        description="Dataset path.",
-    ),
+    dataset_version_id: str = Query(..., pattern=DATASET_VERSION_ID_PATTERN, description=_DATASET_QUERY_HELP),
     context: UserContext = Depends(
         require_permission(Permission.DASHBOARD_VIEW),
     ),
@@ -140,7 +135,7 @@ def dashboard(
     """
 
     result = _execute_pipeline(
-        dataset,
+        dataset_version_id,
         application,
         context=context,
     )
@@ -167,7 +162,7 @@ def dashboard(
     description="Return high-level dashboard metrics (rows, columns, memory usage).",
 )
 def summary(
-    dataset: str = Query(..., description="Dataset path."),
+    dataset_version_id: str = Query(..., pattern=DATASET_VERSION_ID_PATTERN, description=_DATASET_QUERY_HELP),
     context: UserContext = Depends(
         require_permission(Permission.REPORT_VIEW),
     ),
@@ -180,7 +175,7 @@ def summary(
     """
 
     result = _execute_pipeline(
-        dataset,
+        dataset_version_id,
         application,
         context=context,
     )
@@ -207,7 +202,7 @@ def summary(
     description="Return descriptive statistics for numerical columns.",
 )
 def statistics(
-    dataset: str = Query(..., description="Dataset path."),
+    dataset_version_id: str = Query(..., pattern=DATASET_VERSION_ID_PATTERN, description=_DATASET_QUERY_HELP),
     context: UserContext = Depends(
         require_permission(Permission.REPORT_VIEW),
     ),
@@ -220,7 +215,7 @@ def statistics(
     """
 
     result = _execute_pipeline(
-        dataset,
+        dataset_version_id,
         application,
         context=context,
     )
@@ -247,7 +242,7 @@ def statistics(
     description="Return correlation matrix and strong correlations across numerical columns.",
 )
 def correlation(
-    dataset: str = Query(..., description="Dataset path."),
+    dataset_version_id: str = Query(..., pattern=DATASET_VERSION_ID_PATTERN, description=_DATASET_QUERY_HELP),
     context: UserContext = Depends(
         require_permission(Permission.REPORT_VIEW),
     ),
@@ -260,7 +255,7 @@ def correlation(
     """
 
     result = _execute_pipeline(
-        dataset,
+        dataset_version_id,
         application,
         context=context,
     )
@@ -287,7 +282,7 @@ def correlation(
     description="Return distribution analysis including skewness and kurtosis.",
 )
 def distribution(
-    dataset: str = Query(..., description="Dataset path."),
+    dataset_version_id: str = Query(..., pattern=DATASET_VERSION_ID_PATTERN, description=_DATASET_QUERY_HELP),
     context: UserContext = Depends(
         require_permission(Permission.REPORT_VIEW),
     ),
@@ -300,7 +295,7 @@ def distribution(
     """
 
     result = _execute_pipeline(
-        dataset,
+        dataset_version_id,
         application,
         context=context,
     )
@@ -327,7 +322,7 @@ def distribution(
     description="Return unique value counts, top categories, and frequency profiles.",
 )
 def categorical(
-    dataset: str = Query(..., description="Dataset path."),
+    dataset_version_id: str = Query(..., pattern=DATASET_VERSION_ID_PATTERN, description=_DATASET_QUERY_HELP),
     context: UserContext = Depends(
         require_permission(Permission.REPORT_VIEW),
     ),
@@ -340,7 +335,7 @@ def categorical(
     """
 
     result = _execute_pipeline(
-        dataset,
+        dataset_version_id,
         application,
         context=context,
     )
@@ -367,7 +362,7 @@ def categorical(
     description="Return full reporting outputs including KPIs, analytical summaries, and AI insights.",
 )
 def report(
-    dataset: str = Query(..., description="Dataset path."),
+    dataset_version_id: str = Query(..., pattern=DATASET_VERSION_ID_PATTERN, description=_DATASET_QUERY_HELP),
     context: UserContext = Depends(
         require_permission(Permission.REPORT_VIEW),
     ),
@@ -380,7 +375,7 @@ def report(
     """
 
     result = _execute_pipeline(
-        dataset,
+        dataset_version_id,
         application,
         context=context,
     )
@@ -407,7 +402,7 @@ def report(
     description="Return pipeline execution status and metadata.",
 )
 def pipeline(
-    dataset: str = Query(..., description="Dataset path."),
+    dataset_version_id: str = Query(..., pattern=DATASET_VERSION_ID_PATTERN, description=_DATASET_QUERY_HELP),
     context: UserContext = Depends(
         require_permission(Permission.REPORT_VIEW),
     ),
@@ -420,7 +415,7 @@ def pipeline(
     """
 
     result = _execute_pipeline(
-        dataset,
+        dataset_version_id,
         application,
         context=context,
     )

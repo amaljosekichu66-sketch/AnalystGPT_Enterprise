@@ -15,6 +15,7 @@ from src.database.repositories.user_repository import UserRepository
 from src.database.schema_manager import SchemaManager
 from src.identity.models import UserCreate, UserLogin, UserRole
 from src.identity.user_service import UserService
+from tests.fixtures.datasets import run_pipeline_on_file
 
 
 @pytest.fixture
@@ -64,11 +65,7 @@ def test_export_text_and_pdf_endpoints(test_setup):
     sample_csv = test_setup["sample_csv"]
 
     # 1. User A executes pipeline
-    res_a = client.post(
-        "/api/pipeline",
-        json={"input_path": sample_csv},
-        headers={"Authorization": f"Bearer {token_a}"},
-    )
+    res_a = run_pipeline_on_file(client, sample_csv, {"Authorization": f"Bearer {token_a}"})
     assert res_a.status_code == 200
 
     # 2. User A exports latest text report

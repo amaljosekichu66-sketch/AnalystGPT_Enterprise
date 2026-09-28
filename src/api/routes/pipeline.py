@@ -28,6 +28,7 @@ from src.api.models.response_models import (
     PipelineResponse,
 )
 from src.application.app import Application
+from src.core.redaction import public_artifact_name, redact_server_paths
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
 
@@ -53,11 +54,14 @@ def execute_pipeline(
     ),
 ) -> PipelineResponse:
     """
-    Execute the complete analytics pipeline.
+    Execute the complete analytics pipeline on an uploaded dataset.
+
+    The dataset is resolved server-side from `dataset_version_id`, with
+    ownership enforced; an unknown or foreign id is a 404.
     """
 
-    result = application.run(
-        input_path=request.input_path,
+    result = application.run_dataset_version(
+        request.dataset_version_id,
         user_context=context,
     )
 
@@ -79,10 +83,11 @@ def execute_pipeline(
 
     return PipelineResponse(
         success=result.success,
-        output_path=result.output_path,
+        dataset_version_id=result.dataset_version_id or request.dataset_version_id,
+        output_path=public_artifact_name(result.output_path),
         execution_time=result.execution_time or 0.0,
         ai_job_id=result.ai_job_id,
         ai_job_status=result.ai_job_status,
         ai_report=ai_response,
-        error=(str(result.error) if result.error else None),
+        error=(redact_server_paths(str(result.error)) if result.error else None),
     )

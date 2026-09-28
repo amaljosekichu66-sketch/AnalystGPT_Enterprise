@@ -118,11 +118,11 @@ def test_version(mock_get, client):
 def test_dashboard(mock_get, client):
     """Test dashboard endpoint."""
     mock_get.return_value = {}
-    client.dashboard(dataset="test_dataset")
-    # The actual call uses /powerbi/dashboard with a query parameter
+    client.dashboard(dataset_version_id="dsv-1")
+    # The dataset is referenced by its server-issued id, never a path.
     mock_get.assert_called_once_with(
         "/api/powerbi/dashboard",
-        params={"dataset": "test_dataset"},
+        params={"dataset_version_id": "dsv-1"},
     )
 
 

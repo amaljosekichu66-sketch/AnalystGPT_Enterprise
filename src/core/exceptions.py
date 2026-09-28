@@ -55,6 +55,16 @@ class FileTooLargeError(AnalystGPTError):
     pass
 
 
+class DatasetNotFoundError(AnalystGPTError):
+    """
+    Raised when a dataset identifier does not resolve to a source dataset the
+    caller may use. Unknown and foreign identifiers are deliberately
+    indistinguishable.
+    """
+
+    pass
+
+
 # ==========================================================
 # Identity & Security Exceptions (Sprint 13)
 # ==========================================================

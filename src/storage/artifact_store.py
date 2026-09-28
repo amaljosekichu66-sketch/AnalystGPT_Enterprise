@@ -198,6 +198,33 @@ class LocalArtifactStore(ArtifactStore):
                 target_path.unlink(missing_ok=True)
             raise ArtifactStoreError(f"Failed to persist cleaned dataframe: {exc}") from exc
 
+    def resolve_managed_raw_path(self, storage_path: str) -> Path:
+        """
+        Resolve a stored raw-artifact path, refusing anything outside `raw_dir`.
+
+        Storage paths come from the database, never from a client, but they
+        are re-checked here so a tampered or legacy row cannot turn a dataset
+        reference into an arbitrary file read.
+        """
+        resolved = Path(storage_path).resolve()
+        if not resolved.is_relative_to(self.raw_dir.resolve()):
+            raise ArtifactStoreError("Stored artifact is outside the managed raw artifact store.")
+        if not resolved.is_file():
+            raise ArtifactStoreError("Stored artifact is missing.")
+        return resolved
+
+    def discard_raw_artifact(self, storage_path: str) -> None:
+        """Delete a raw artifact written by this store (e.g. an upload that failed to parse)."""
+        try:
+            resolved = self.resolve_managed_raw_path(storage_path)
+        except ArtifactStoreError:
+            return
+        resolved.unlink(missing_ok=True)
+        try:
+            resolved.parent.rmdir()
+        except OSError:
+            pass
+
     def read_raw_artifact(self, storage_path: str) -> bytes:
         p = Path(storage_path)
         if not p.exists():

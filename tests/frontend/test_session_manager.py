@@ -193,7 +193,7 @@ def test_store_dataset_invalidates_caches(mock_session_state):
     assert "dashboard_dataset" not in mock_session_state
     assert "reports_cache" not in mock_session_state
     assert "reports_dataset" not in mock_session_state
-    assert mock_session_state[session_manager.DATASET_PATH_KEY] == "/new/path.csv"
+    assert mock_session_state[session_manager.DATASET_VERSION_ID_KEY] == "/new/path.csv"
 
 
 @patch("streamlit.session_state", new_callable=dict)

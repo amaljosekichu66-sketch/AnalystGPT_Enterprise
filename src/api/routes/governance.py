@@ -32,6 +32,7 @@ from src.api.models.governance_models import (
     QualityComparisonResponse,
 )
 from src.application.app import Application
+from src.core.exceptions import DatasetNotFoundError
 from src.governance.models import CleaningConfig, MissingValuePolicy
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
@@ -64,29 +65,17 @@ def preview_cleaning(
     ),
     application: Application = Depends(get_application),
 ) -> CleaningPreviewResponse:
-    # 1. Resolve source DataFrame from registered immutable DatasetVersion
-    if application.persistence.dataset_version_repository is None:
-        application.persistence.initialize()
-
-    repo = application.persistence.dataset_version_repository
-    if repo is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Governance repository uninitialized.",
-        )
-    is_admin = context.has_permission(Permission.USER_MANAGE)
-    scoped_uid = None if is_admin else context.user_id
-
-    version_row = repo.get_by_version_id(request.dataset_version_id, user_id=scoped_uid)
-    if not version_row:
+    # 1. Resolve source DataFrame from registered immutable DatasetVersion.
+    #    Ownership and managed-store containment are enforced by the resolver.
+    try:
+        source_version = application.resolve_source_version(request.dataset_version_id, user_context=context)
+    except DatasetNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"DatasetVersion '{request.dataset_version_id}' not found.",
-        )
-    storage_path = version_row["storage_path"]
-    from src.upload.upload_manager import UploadManager
+        ) from exc
 
-    raw_df = UploadManager().upload(storage_path)
+    raw_df = application.load_source_dataframe(source_version)
 
     # 2. Build transient CleaningConfig
 
@@ -266,7 +255,6 @@ def _dataset_version_row_to_response(row: dict) -> DatasetVersionResponse:
         row_count=row.get("row_count", 0),
         column_count=row.get("column_count", 0),
         is_source=bool(is_source_val),
-        storage_path=row.get("storage_path", ""),
         parent_version_id=row.get("parent_version_id"),
         dataset_schema_json=row.get("schema_json"),
         created_at=str(row.get("created_at", "")),
