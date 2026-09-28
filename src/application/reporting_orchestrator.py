@@ -260,6 +260,24 @@ class ReportingOrchestrator:
     # Export Operations
     # ==========================================================
 
+    def _owned_report_record(
+        self,
+        report_id: int,
+        user_id: int | None,
+    ) -> dict[str, Any] | None:
+        """
+        Return the report row only if it exists AND belongs to `user_id`.
+
+        Fails closed. This used to read `application.persistence._report_repository`
+        through `getattr(..., None)` and skip the check when that was missing -
+        which it became once persistence moved to per-request sessions, so any
+        user could export any report by id.
+        """
+        if user_id is None:
+            return None
+        with self._application.persistence_session() as persistence:
+            return persistence._report_repository.get_by_id(report_id, user_id=user_id)
+
     def export_text_report(
         self,
         dataframe: Any = None,
@@ -277,25 +295,23 @@ class ReportingOrchestrator:
 
         # Database-level ownership verification if report_id provided
         if report_id is not None:
-            report_repo = getattr(getattr(self._application, "persistence", None), "_report_repository", None)
-            if report_repo is not None:
-                record = report_repo.get_by_id(report_id, user_id=user_id)
-                if record is None:
-                    return {
-                        "success": False,
-                        "message": "Report not found or access denied.",
-                    }
-                # Check if file exists on disk
-                disk_path = Path(record.get("report_path", ""))
-                if disk_path.exists():
-                    return {
-                        "success": True,
-                        "message": "Text report exported successfully.",
-                        "export_path": str(disk_path.resolve()),
-                        "path": str(disk_path.resolve()),
-                        "filename": disk_path.name,
-                        "mime_type": "text/plain",
-                    }
+            record = self._owned_report_record(report_id, user_id)
+            if record is None:
+                return {
+                    "success": False,
+                    "message": "Report not found or access denied.",
+                }
+            # Check if file exists on disk
+            disk_path = Path(record.get("report_path", ""))
+            if disk_path.exists():
+                return {
+                    "success": True,
+                    "message": "Text report exported successfully.",
+                    "export_path": str(disk_path.resolve()),
+                    "path": str(disk_path.resolve()),
+                    "filename": disk_path.name,
+                    "mime_type": "text/plain",
+                }
 
         structured_report, ai_report, lineage = self._resolve_context_and_report(
             user_id=user_id,
@@ -343,15 +359,11 @@ class ReportingOrchestrator:
         logger.info("ReportingOrchestrator: export_pdf_report requested (user_id=%s, report_id=%s)", user_id, report_id)
 
         # Database-level ownership verification if report_id provided
-        if report_id is not None:
-            report_repo = getattr(getattr(self._application, "persistence", None), "_report_repository", None)
-            if report_repo is not None:
-                record = report_repo.get_by_id(report_id, user_id=user_id)
-                if record is None:
-                    return {
-                        "success": False,
-                        "message": "Report not found or access denied.",
-                    }
+        if report_id is not None and self._owned_report_record(report_id, user_id) is None:
+            return {
+                "success": False,
+                "message": "Report not found or access denied.",
+            }
 
         structured_report, ai_report, lineage = self._resolve_context_and_report(
             user_id=user_id,
