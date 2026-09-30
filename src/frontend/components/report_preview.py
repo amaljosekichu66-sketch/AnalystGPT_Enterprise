@@ -12,6 +12,8 @@ from typing import Any
 
 import streamlit as st
 
+from src.frontend.components.safe_text import markdown_text
+
 # ==========================================================
 # Dataset Summary
 # ==========================================================
@@ -90,7 +92,7 @@ def _render_reporting(
 
             st.markdown("### Executive Summary")
 
-            st.write(report["executive_summary"])
+            st.markdown(markdown_text(report["executive_summary"]))
 
         if report.get("kpis"):
 
@@ -148,7 +150,7 @@ def _render_ai(
 
         except Exception:
 
-            st.write(
+            st.text(
                 ai_report,
             )
 
@@ -161,7 +163,7 @@ def _render_ai(
     if summary:
 
         st.success(
-            summary,
+            markdown_text(summary),
         )
 
     recommendations = ai_report.get(
@@ -175,7 +177,7 @@ def _render_ai(
 
         for item in recommendations:
 
-            st.markdown(f"- {item}")
+            st.markdown(f"- {markdown_text(item)}")
 
     explanations = ai_report.get(
         "explanations",
@@ -189,7 +191,7 @@ def _render_ai(
         for item in explanations:
 
             st.info(
-                item,
+                markdown_text(item),
             )
 
     narrative = ai_report.get(
@@ -200,8 +202,8 @@ def _render_ai(
 
         st.markdown("### Narrative")
 
-        st.write(
-            narrative,
+        st.markdown(
+            markdown_text(narrative),
         )
 
     st.divider()

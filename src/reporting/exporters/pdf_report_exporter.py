@@ -79,7 +79,10 @@ class PdfReportExporter:
 
         pages = self._build_report_pages(report, ai_report=ai_report, lineage=lineage)
 
-        with PdfPages(str(report_path.resolve())) as pdf:
+        # Dataset strings are drawn as matplotlib text: with mathtext on, a
+        # column named "$\\badcmd{$" raised ValueError (500) and "$5 and $10"
+        # rendered as math (L17). Nothing in the report needs mathtext.
+        with plt.rc_context({"text.parse_math": False}), PdfPages(str(report_path.resolve())) as pdf:
             total_pages = len(pages)
             for page_idx, render_fn in enumerate(pages, start=1):
                 fig = plt.figure(

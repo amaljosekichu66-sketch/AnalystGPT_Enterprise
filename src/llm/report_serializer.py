@@ -7,11 +7,33 @@ Sprint 14 Remediation — AI Insights + Enterprise Reporting Reliability Remedia
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from typing import Any
 
 from src.core.pii import is_contact_pii_column
 from src.reporting.reporting_report import ReportingReport
+
+_WHITESPACE = re.compile(r"\s+")
+
+#: Longest dataset-derived string (column name, category value) placed in a prompt.
+_MAX_VALUE_CHARS = 120
+
+
+def _prompt_value(value: Any) -> str:
+    """
+    Flatten a dataset-derived string for the prompt (M9).
+
+    Column names and cell values are attacker-controllable. Newlines let a
+    value start what looks like a new section or instruction line, and quotes
+    break out of the `"value"` framing, so both are neutralised and the
+    length is bounded.
+    """
+    text = _WHITESPACE.sub(" ", "" if value is None else str(value)).strip()
+    text = text.replace('"', "'")
+    if len(text) > _MAX_VALUE_CHARS:
+        text = text[:_MAX_VALUE_CHARS] + "..."
+    return text
 
 
 class ReportSerializer:
@@ -264,7 +286,7 @@ class ReportSerializer:
             title,
             "-" * len(title),
         ]
-        lines.extend(f"- {item}" for item in values)
+        lines.extend(f"- {_prompt_value(item)}" for item in values)
         lines.append("")
         return lines
 
@@ -379,7 +401,7 @@ class ReportSerializer:
 
         for col_name, stats in value.items():
             if cls._is_pii_field(col_name):
-                lines.append(f"- {col_name}: <masked identifier column>")
+                lines.append(f"- {_prompt_value(col_name)}: <masked identifier column>")
                 continue
 
             if isinstance(stats, Mapping):
@@ -397,7 +419,7 @@ class ReportSerializer:
 
                 # Check if this has standard categorical analysis fields
                 if count is not None or unique_cnt is not None or (top_val is not None and top_freq is not None):
-                    lines.append(f"- {col_name}:")
+                    lines.append(f"- {_prompt_value(col_name)}:")
                     if unique_cnt is not None:
                         lines.append(
                             f"  - distinct_category_count: {unique_cnt} (distinct categories / cardinality count, NOT percentage)"
@@ -406,7 +428,7 @@ class ReportSerializer:
                         lines.append(f"  - row_count: {count}")
                     if top_val is not None:
                         lines.append("  - top_category:")
-                        lines.append(f'    - value: "{top_val}"')
+                        lines.append(f'    - value: "{_prompt_value(top_val)}"')
                         if top_freq is not None:
                             lines.append(f"    - count: {top_freq} records")
                             if rows_base:
@@ -420,15 +442,15 @@ class ReportSerializer:
                                 break
                             if rows_base and isinstance(cat_v, (int, float)):
                                 cat_pct = (cat_v / rows_base) * 100.0
-                                lines.append(f'    - "{cat_k}": {cat_v} records | {cat_pct:.1f}%')
+                                lines.append(f'    - "{_prompt_value(cat_k)}": {cat_v} records | {cat_pct:.1f}%')
                             else:
-                                lines.append(f'    - "{cat_k}": {cat_v} records')
+                                lines.append(f'    - "{_prompt_value(cat_k)}": {cat_v} records')
                 else:
                     # Fallback for simple/custom stubs (e.g. {"top_category": "Electronics"})
                     summary = cls._format_mapping_summary(stats, depth=1, max_items=4)
-                    lines.append(f"- {col_name}: {summary}")
+                    lines.append(f"- {_prompt_value(col_name)}: {summary}")
             else:
-                lines.append(f"- {col_name}: {stats}")
+                lines.append(f"- {_prompt_value(col_name)}: {_prompt_value(stats)}")
 
         lines.append("")
         return lines
@@ -477,9 +499,9 @@ class ReportSerializer:
                 if cls._is_pii_field(key):
                     if isinstance(val, (dict, list)):
                         count = len(val)
-                        lines.append(f"- {key}: <{count} masked identifier entries>")
+                        lines.append(f"- {_prompt_value(key)}: <{count} masked identifier entries>")
                     else:
-                        lines.append(f"- {key}: <masked identifier>")
+                        lines.append(f"- {_prompt_value(key)}: <masked identifier>")
                     continue
 
                 if isinstance(val, (dict, list)):
@@ -489,9 +511,9 @@ class ReportSerializer:
                     # deviation, quartiles and range the prompt asks the model
                     # to interpret.
                     nested_summary = cls._format_mapping_summary(val, depth=depth + 1, max_items=max(4, max_items // 2))
-                    lines.append(f"- {key}: {nested_summary}")
+                    lines.append(f"- {_prompt_value(key)}: {nested_summary}")
                 else:
-                    lines.append(f"- {key}: {val}")
+                    lines.append(f"- {_prompt_value(key)}: {_prompt_value(val)}")
             if truncated:
                 lines.append("- ... (and more)")
             return "\n".join(lines) if lines else "Empty."

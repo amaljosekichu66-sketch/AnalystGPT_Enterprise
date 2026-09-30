@@ -20,6 +20,7 @@ from src.analytics.visualization_planner import (
     VisualizationPlanner,
 )
 from src.core.config import MAX_CHART_ROWS
+from src.frontend.components.safe_text import markdown_text
 from src.profiling.data_profiler import DataProfiler
 from src.profiling.models import DatasetProfile
 
@@ -39,10 +40,11 @@ def _style_axes(ax: plt.Axes, title: str, subtitle: str = "") -> None:
 
 def _render_single_chart(chart: PlannedChart, dataframe: pd.DataFrame) -> None:
     """Render a single planned chart card."""
-    with st.container(border=True):
-        st.markdown(f"**{chart.title}**")
+    # Column names and category values become axis text: no mathtext (L17).
+    with st.container(border=True), plt.rc_context({"text.parse_math": False}):
+        st.markdown(f"**{markdown_text(chart.title)}**")
         if chart.subtitle:
-            st.caption(chart.subtitle)
+            st.caption(markdown_text(chart.subtitle))
 
         fig, ax = plt.subplots(figsize=(5.5, 3.2), facecolor="#14171F")
         _style_axes(ax, "")
@@ -159,7 +161,7 @@ def render_charts(
         if plan.excluded_columns:
             with st.expander("ℹ️ Why were some columns excluded from charts?"):
                 for exc in plan.excluded_columns:
-                    st.write(f"- {exc}")
+                    st.markdown(f"- {markdown_text(exc)}")
         return
 
     # 2. Render Grid Layout (2x2 or 3x3)
@@ -180,4 +182,4 @@ def render_charts(
                 "To maintain dashboard focus, constant columns, unique keys, and contact fields are omitted from default charts."
             )
             for exc in plan.excluded_columns:
-                st.markdown(f"- `{exc}`")
+                st.markdown(f"- {markdown_text(exc)}")

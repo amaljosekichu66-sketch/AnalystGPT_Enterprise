@@ -8,6 +8,7 @@ logic and allows prompts to evolve without modifying AI engines.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from src.core.logger import logger
@@ -21,6 +22,7 @@ from src.reporting.reporting_report import ReportingReport
 _NOT_AVAILABLE = "Not available."
 _REPORT_START = "REPORT START"
 _REPORT_END = "REPORT END"
+_DELIMITER = re.compile(r"(?i)report[\s_-]*(start|end)")
 
 
 # ==========================================================
@@ -138,6 +140,11 @@ class PromptBuilder:
         Serialise the reporting report and optional data context.
         """
         report = ReportSerializer.serialize(reporting_report, data_context=data_context)
+
+        # The body must not be able to close the data block early (M9): a
+        # column or value spelling "REPORT END" would put what follows it
+        # outside the delimiters, where the model reads it as instructions.
+        report = _DELIMITER.sub(lambda m: m.group(0).replace(" ", "_"), report)
 
         if not report or not report.strip():
             logger.error("Serialised report is empty.")
