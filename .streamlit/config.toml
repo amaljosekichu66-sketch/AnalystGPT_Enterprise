@@ -1,3 +1,7 @@
 [server]
 # MB. Matches the API's MAX_FILE_SIZE_MB (M8); larger files are refused there anyway.
 maxUploadSize = 100
+
+[client]
+# No exception text or tracebacks in the browser (L7); they are logged.
+showErrorDetails = "none"

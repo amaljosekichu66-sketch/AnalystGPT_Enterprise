@@ -186,10 +186,10 @@ try:
         PAGES[page]()
 
 except Exception as error:
+    # Tracebacks stay in the server log (L7): st.exception showed them to
+    # every visitor, with file paths and code.
     logger.exception("Frontend error: %s", error)
-    st.error("An unexpected error occurred.")
-    with st.expander("Technical Details"):
-        st.exception(error)
+    st.error("An unexpected error occurred. Please try again; if it persists, contact an administrator.")
 
 # ==========================================================
 # Global Footer

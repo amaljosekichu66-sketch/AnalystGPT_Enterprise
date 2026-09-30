@@ -3,6 +3,7 @@ Global exception handlers for AnalystGPT Enterprise REST API.
 """
 
 from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from src.api.rate_limit import RateLimitExceededError
@@ -268,6 +269,17 @@ def register_exception_handlers(app: FastAPI) -> None:
             "Administrative safety violation.",
             str(exc),
         )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(
+        _request: Request,
+        exc: RequestValidationError,
+    ) -> JSONResponse:
+        # FastAPI's default body echoes each invalid value back as `input`,
+        # including a rejected password (I10). Location, message and type
+        # are enough for a client to fix the request.
+        errors = [{key: error.get(key) for key in ("loc", "msg", "type")} for error in exc.errors()]
+        return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, content={"detail": errors})
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(

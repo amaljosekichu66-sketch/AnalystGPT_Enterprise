@@ -14,13 +14,34 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from src.ai.exceptions import AIJobNotFoundError, AIStateTransitionError
+from src.ai.models import AIFailureCategory
 from src.api.dependencies.application_dependency import get_application
 from src.api.dependencies.auth_dependencies import require_permission
 from src.api.models.ai_models import AIJobResponse, AIJobRetryResponse
 from src.api.models.response_models import AIReportResponse
 from src.application.app import Application
+from src.core.logger import logger
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
+
+#: What a client is told about a failed AI job (L7). The stored error can
+#: carry exception text, provider URLs or file paths; it stays server-side.
+_PUBLIC_JOB_ERRORS = {
+    AIFailureCategory.TIMEOUT.value: "AI generation timed out.",
+    AIFailureCategory.PROVIDER_UNAVAILABLE.value: "The AI provider is unavailable.",
+    AIFailureCategory.MODEL_ERROR.value: "The AI model returned an error.",
+    AIFailureCategory.INVALID_OUTPUT.value: "The AI model returned output that could not be used.",
+    AIFailureCategory.SYSTEM_ERROR.value: "AI generation failed because of an internal error.",
+}
+
+
+def public_job_error(failure_category: str | None, error: str | None) -> str | None:
+    """Map a job's failure to a fixed, client-safe message."""
+    if not error and not failure_category:
+        return None
+    return _PUBLIC_JOB_ERRORS.get(str(failure_category or ""), "AI generation failed.")
+
 
 router = APIRouter(
     prefix="/ai",
@@ -92,7 +113,7 @@ def get_ai_job(
         model=job_data["model"],
         attempt_count=job_data.get("attempt_count", 0),
         max_attempts=job_data.get("max_attempts", 3),
-        error=job_data.get("error"),
+        error=public_job_error(job_data.get("failure_category"), job_data.get("error")),
         failure_category=job_data.get("failure_category"),
         created_at=job_data.get("created_at"),
         started_at=job_data.get("started_at"),
@@ -139,7 +160,7 @@ def get_latest_ai_job(
         model=job_data["model"],
         attempt_count=job_data.get("attempt_count", 0),
         max_attempts=job_data.get("max_attempts", 3),
-        error=job_data.get("error"),
+        error=public_job_error(job_data.get("failure_category"), job_data.get("error")),
         failure_category=job_data.get("failure_category"),
         created_at=job_data.get("created_at"),
         started_at=job_data.get("started_at"),
@@ -181,8 +202,18 @@ def retry_ai_job(
             status=updated_job.status.value,
             message="AI job re-queued for execution.",
         )
-    except Exception as exc:
+    except AIJobNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="AI job not found.") from exc
+    except AIStateTransitionError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to retry AI job: {exc}",
-        )
+            detail="Only a failed AI job can be retried.",
+        ) from exc
+    except Exception as exc:
+        # The exception text can quote internals (L7); it stays in the log,
+        # correlated by the request id the error body carries.
+        logger.exception("AI job retry failed for job '%s'.", job_id)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to retry AI job.",
+        ) from exc
