@@ -110,10 +110,11 @@ def test_job_slot_is_taken_before_the_body_is_read(client: TestClient, headers, 
     application = get_application()
     reads: list[bool] = []
 
-    def refuse(_context):
+    def refuse(_self, _context):
         raise TooManyConcurrentJobsError("busy")
 
-    monkeypatch.setattr(application, "job_slot", refuse)
+    # On the class: an instance attribute would outlive monkeypatch's undo.
+    monkeypatch.setattr(type(application), "job_slot", refuse)
     monkeypatch.setattr("src.api.routes.datasets.read_bounded", lambda stream: reads.append(True) or b"")
 
     res = client.post("/api/datasets", headers=headers, files={"file": ("a.csv", b"a,b\n1,2\n", "text/csv")})

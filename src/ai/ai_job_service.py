@@ -16,6 +16,7 @@ from src.ai.exceptions import AIJobNotFoundError, AIStateTransitionError
 from src.ai.job_executor import AIJobExecutor
 from src.ai.models import AIJob, AIJobStatus
 from src.core import config
+from src.core.exceptions import TooManyConcurrentJobsError
 from src.core.logger import logger
 from src.database.connection_factory import ConnectionFactory
 from src.database.database_connection import DatabaseConnection
@@ -45,6 +46,23 @@ class AIJobService:
         conn = ConnectionFactory.create_connection()
         conn.connect()
         return conn
+
+    def ensure_capacity(self, user_id: int | None) -> None:
+        """
+        Refuse new AI work for a user who already has the maximum unfinished (M7).
+
+        Sequential pipeline runs never hit the concurrent-job cap, yet each
+        queued an LLM job on a shared 4-worker pool: one account could starve
+        every other user's insights.
+        """
+        if user_id is None:
+            return
+        limit = max(1, int(config.MAX_ACTIVE_AI_JOBS_PER_USER))
+        conn = self._get_connection()
+        if AIJobRepository(conn).count_active_for_user(user_id) >= limit:
+            raise TooManyConcurrentJobsError(
+                f"You already have {limit} AI insight jobs in progress. Wait for one to finish and retry."
+            )
 
     # ==========================================================
     # Create / Dispatch
@@ -189,6 +207,8 @@ class AIJobService:
             raise AIStateTransitionError(
                 f"Cannot retry job in '{job.status.value}' state. " "Only FAILED jobs can be retried."
             )
+
+        self.ensure_capacity(job.user_id)
 
         job_repo.schedule_retry(
             job_id=job_id,

@@ -123,6 +123,8 @@ class AIJobExecutor:
         )
         self._ai_manager = ai_manager or AIManager()
         self._lock = threading.Lock()
+        # ThreadPoolExecutor's queue is unbounded (M7): cap waiting + running work.
+        self._queue_slots = threading.BoundedSemaphore(max(1, int(config.AI_MAX_QUEUED_JOBS)))
 
         # Outstanding retry timers, so shutdown() can cancel a retry that
         # would otherwise resubmit work into an already-drained pool.
@@ -159,18 +161,28 @@ class AIJobExecutor:
                 )
                 return
 
+        if not self._queue_slots.acquire(blocking=False):
+            logger.warning(
+                "AI queue is full (%d jobs); AI job '%s' stays PENDING until capacity frees.",
+                config.AI_MAX_QUEUED_JOBS,
+                job_id,
+            )
+            return
+
         logger.info(
             "Submitting AI job '%s' to background worker pool...",
             job_id,
         )
 
         try:
-            self._executor.submit(
+            future = self._executor.submit(
                 self.execute_job_sync,
                 job_id,
                 reporting_report,
             )
+            future.add_done_callback(lambda _future: self._queue_slots.release())
         except RuntimeError:
+            self._queue_slots.release()
             # Shutdown landed between the check above and this submit.
             logger.warning(
                 "Executor shut down while submitting AI job '%s'; job remains " "PENDING for stale-job recovery.",

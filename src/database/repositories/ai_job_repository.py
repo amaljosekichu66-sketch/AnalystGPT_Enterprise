@@ -228,6 +228,14 @@ class AIJobRepository(BaseRepository):
 
         return AIJob.from_dict(row)
 
+    def count_active_for_user(self, user_id: int) -> int:
+        """Unfinished (PENDING or GENERATING) jobs owned by the user (M7)."""
+        row = self.fetch_one(
+            f"SELECT COUNT(*) AS active FROM {self.TABLE_NAME} WHERE user_id = ? AND status IN (?, ?);",
+            (user_id, AIJobStatus.PENDING.value, AIJobStatus.GENERATING.value),
+        )
+        return int((row or {}).get("active") or 0)
+
     # ==========================================================
     # Atomic Claim & Concurrency
     # ==========================================================

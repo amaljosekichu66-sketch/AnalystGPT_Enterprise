@@ -20,7 +20,10 @@ from src.api.dependencies.application_dependency import get_application
 from src.api.dependencies.auth_dependencies import require_permission
 from src.api.models.ai_models import AIJobResponse, AIJobRetryResponse
 from src.api.models.response_models import AIReportResponse
+from src.api.rate_limit import rate_limit
 from src.application.app import Application
+from src.core import config
+from src.core.exceptions import TooManyConcurrentJobsError
 from src.core.logger import logger
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
@@ -174,6 +177,7 @@ def get_latest_ai_job(
     response_model=AIJobRetryResponse,
     status_code=status.HTTP_200_OK,
     summary="Retry Failed AI Job",
+    dependencies=[Depends(rate_limit("ai_retry", lambda: config.AI_RETRY_RATE_LIMIT))],
     description="Re-queue a FAILED AI insight generation job for background processing.",
 )
 def retry_ai_job(
@@ -202,6 +206,8 @@ def retry_ai_job(
             status=updated_job.status.value,
             message="AI job re-queued for execution.",
         )
+    except TooManyConcurrentJobsError:
+        raise
     except AIJobNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="AI job not found.") from exc
     except AIStateTransitionError as exc:

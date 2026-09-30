@@ -31,6 +31,7 @@ from src.analytics.analytics_manager import AnalyticsManager
 from src.analytics.analytics_report import AnalyticsReport
 from src.cleaning.cleaning_manager import CleaningManager
 from src.core import config as _core_config
+from src.core.bounded_cache import BoundedTTLCache
 from src.core.exceptions import (
     DatasetNotFoundError,
     PipelineResultNotFoundError,
@@ -158,10 +159,16 @@ class Application:
         self._cached_dataset_path: str | None = None
         self._user_pipeline_results: dict[int | None, PipelineResult] = {}
         self._user_cached_paths: dict[int | None, str] = {}
-        self._report_pipeline_results: dict[int, PipelineResult] = {}
+        # Bounded (L10): these grew by one full PipelineResult per run. Report
+        # entries carry their owner, so a purge can drop all of them (I9).
+        self._report_pipeline_results: BoundedTTLCache[int, tuple[int | None, PipelineResult]] = BoundedTTLCache(
+            _core_config.RESULT_CACHE_MAX_ENTRIES, _core_config.RESULT_CACHE_TTL_SECONDS
+        )
 
         #: (runner user_id, dataset_version_id) -> latest result, for read-only views.
-        self._dataset_results: dict[tuple[int | None, str], PipelineResult] = {}
+        self._dataset_results: BoundedTTLCache[tuple[int | None, str], PipelineResult] = BoundedTTLCache(
+            _core_config.RESULT_CACHE_MAX_ENTRIES, _core_config.RESULT_CACHE_TTL_SECONDS
+        )
 
     # ==========================================================
     # Persistence sessions
@@ -224,7 +231,8 @@ class Application:
                 del self._dataset_results[key]
             if removed is not None and self._last_pipeline_result is removed:
                 self._last_pipeline_result = None
-            for report_id in [r for r, res in self._report_pipeline_results.items() if res is removed]:
+            # Every report entry the user owns, not only the latest result (I9).
+            for report_id in [r for r, (owner, _) in self._report_pipeline_results.items() if owner == user_id]:
                 del self._report_pipeline_results[report_id]
         return deleted
 
@@ -353,6 +361,9 @@ class Application:
         """
         source_version = self.resolve_source_version(dataset_version_id, user_context)
         context = user_context or get_current_user_context()
+
+        # Refused before any work if the user's AI queue is full (M7).
+        self.ai_job_service.ensure_capacity(context.user_id if context.is_authenticated else None)
 
         with self._job_slot(context):
             return self._execute(
@@ -1285,7 +1296,7 @@ class Application:
                     self._dataset_results[key] = result
 
                 if report_id is not None:
-                    self._report_pipeline_results[report_id] = result
+                    self._report_pipeline_results[report_id] = (user_id, result)
 
                 self._last_pipeline_result = result
                 self._cached_dataset_path = dataset_path
@@ -1407,7 +1418,7 @@ class Application:
                 self._user_pipeline_results[user_id] = result
             self._last_pipeline_result = result
             if report_id is not None:
-                self._report_pipeline_results[report_id] = result
+                self._report_pipeline_results[report_id] = (user_id, result)
 
     def get_result_by_report_id(
         self,
@@ -1416,7 +1427,9 @@ class Application:
         """
         Retrieve cached pipeline result by report ID.
         """
-        return self._report_pipeline_results.get(report_id)
+        with self._cache_lock:
+            entry = self._report_pipeline_results.get(report_id)
+        return None if entry is None else entry[1]
 
     @property
     def last_result(self) -> PipelineResult | None:

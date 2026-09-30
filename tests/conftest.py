@@ -98,6 +98,10 @@ def _isolate_persistence_roots() -> None:
     # Hundreds of tests register and log in from the same client address.
     # Rate limiting is enabled explicitly by the tests that exercise it.
     os.environ.setdefault("AUTH_RATE_LIMIT_ENABLED", "false")
+    # Unit runs have no LLM, so AI jobs stay unfinished for a while and the
+    # per-user AI quota (M7) would refuse later pipeline runs. Tests of the
+    # quota set it explicitly.
+    os.environ.setdefault("MAX_ACTIVE_AI_JOBS_PER_USER", "1000")
     os.environ.setdefault("REPORT_OUTPUT_DIRECTORY", str(reports_dir))
     os.environ.setdefault("ARTIFACT_STORE_DIRECTORY", str(artifacts_dir))
 

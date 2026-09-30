@@ -190,6 +190,21 @@ MAX_FILE_SIZE_MB = int(
 # pandas has no streaming JSON reader, so JSON gets its own, smaller cap (M5).
 MAX_JSON_FILE_SIZE_MB = int(os.getenv("MAX_JSON_FILE_SIZE_MB", "50"))
 
+# Expensive-operation quotas (M6, M7). AI insight jobs are queued per user;
+# the pipeline refuses to start another while this many are unfinished.
+MAX_ACTIVE_AI_JOBS_PER_USER = int(os.getenv("MAX_ACTIVE_AI_JOBS_PER_USER", "2"))
+#: Jobs waiting for an AI worker, across all users. Beyond it a job stays
+#: PENDING and is picked up when capacity frees.
+AI_MAX_QUEUED_JOBS = int(os.getenv("AI_MAX_QUEUED_JOBS", "32"))
+#: Per-client limits ("<requests>/<seconds>").
+PIPELINE_RATE_LIMIT = os.getenv("PIPELINE_RATE_LIMIT", "10/60").strip()
+AI_RETRY_RATE_LIMIT = os.getenv("AI_RETRY_RATE_LIMIT", "10/60").strip()
+GOVERNANCE_PREVIEW_RATE_LIMIT = os.getenv("GOVERNANCE_PREVIEW_RATE_LIMIT", "30/60").strip()
+
+# In-memory pipeline result caches (L10): bounded LRU with a time-to-live.
+RESULT_CACHE_MAX_ENTRIES = int(os.getenv("RESULT_CACHE_MAX_ENTRIES", "256"))
+RESULT_CACHE_TTL_SECONDS = int(os.getenv("RESULT_CACHE_TTL_SECONDS", str(6 * 3600)))
+
 # Every other API request body (JSON) is capped at this size (M3, L14),
 # enforced as bytes arrive by `src/api/body_limit.py`.
 MAX_REQUEST_BODY_KB = int(os.getenv("MAX_REQUEST_BODY_KB", "1024"))

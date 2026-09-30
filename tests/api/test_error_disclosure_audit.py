@@ -55,7 +55,9 @@ def test_job_errors_are_mapped_to_fixed_messages(category: str, expected: str) -
 
 def test_job_response_does_not_carry_the_stored_error(client: TestClient, monkeypatch) -> None:
     service = get_application().ai_job_service
-    monkeypatch.setattr(service, "get_job_with_report", lambda **_: _job(SECRET_DETAIL, "PROVIDER_UNAVAILABLE"))
+    monkeypatch.setattr(
+        type(service), "get_job_with_report", lambda self, **_: _job(SECRET_DETAIL, "PROVIDER_UNAVAILABLE")
+    )
 
     res = client.get("/api/ai/jobs/job-1", headers=ANALYST)
 
@@ -66,10 +68,10 @@ def test_job_response_does_not_carry_the_stored_error(client: TestClient, monkey
 
 class TestRetryRoute:
     def _retry(self, client: TestClient, monkeypatch, exc: Exception):
-        def fail(**_):
+        def fail(self, **_):
             raise exc
 
-        monkeypatch.setattr(get_application().ai_job_service, "retry_job", fail)
+        monkeypatch.setattr(type(get_application().ai_job_service), "retry_job", fail)
         return client.post("/api/ai/jobs/job-1/retry", headers=ANALYST)
 
     def test_unexpected_error_text_is_not_returned(self, client: TestClient, monkeypatch) -> None:

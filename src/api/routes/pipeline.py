@@ -28,7 +28,9 @@ from src.api.models.response_models import (
     AIReportResponse,
     PipelineResponse,
 )
+from src.api.rate_limit import rate_limit
 from src.application.app import Application
+from src.core import config
 from src.core.redaction import public_artifact_name, redact_server_paths
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
@@ -44,6 +46,7 @@ router = APIRouter(
     status_code=status.HTTP_200_OK,
     summary="Execute Pipeline",
     description=("Execute the complete AnalystGPT Enterprise " "analytics pipeline."),
+    dependencies=[Depends(rate_limit("pipeline", lambda: config.PIPELINE_RATE_LIMIT))],
 )
 def execute_pipeline(
     request: PipelineRequest,

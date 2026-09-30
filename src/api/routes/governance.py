@@ -32,8 +32,10 @@ from src.api.models.governance_models import (
     LineageResponse,
     QualityComparisonResponse,
 )
+from src.api.rate_limit import rate_limit
 from src.api.request_context import current_request_id
 from src.application.app import Application
+from src.core import config as core_config
 from src.core.exceptions import DatasetNotFoundError
 from src.core.logger import logger
 from src.governance.models import CleaningConfig, MissingValuePolicy
@@ -56,6 +58,7 @@ router = APIRouter(
     response_model=CleaningPreviewResponse,
     status_code=status.HTTP_200_OK,
     summary="Non-Destructive Cleaning Preview",
+    dependencies=[Depends(rate_limit("governance_preview", lambda: core_config.GOVERNANCE_PREVIEW_RATE_LIMIT))],
     description=(
         "Simulates cleaning transformations and calculates quality metrics "
         "without persisting artifacts or creating pipeline run records."
@@ -78,6 +81,18 @@ def preview_cleaning(
             detail=f"DatasetVersion '{request.dataset_version_id}' not found.",
         ) from exc
 
+    # Parsing and cleaning the whole dataset is as expensive as a pipeline
+    # stage: hold one of the caller's job slots for it (M6).
+    with application.job_slot(context):
+        return _run_preview(request, context, application, source_version)
+
+
+def _run_preview(
+    request: CleaningPreviewRequest,
+    context: UserContext,
+    application: Application,
+    source_version,
+) -> CleaningPreviewResponse:
     raw_df = application.load_source_dataframe(source_version)
 
     # 2. Build transient CleaningConfig
