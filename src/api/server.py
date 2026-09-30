@@ -20,6 +20,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.body_limit import BodySizeLimitMiddleware
 from src.api.exceptions.exception_handlers import (
     register_exception_handlers,
 )
@@ -143,6 +144,9 @@ app.add_middleware(
 register_exception_handlers(
     app,
 )
+
+# Body size limit for every route (M3, L14), counted as bytes arrive.
+app.add_middleware(BodySizeLimitMiddleware)
 
 # Correlation id for every request (SEC-11): attached to error bodies and the
 # X-Request-ID response header, and used to find the logged exception.

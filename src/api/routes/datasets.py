@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, Request, status
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 
+from src.api.body_limit import MULTIPART_OVERHEAD_BYTES
 from src.api.dependencies.application_dependency import get_application
 from src.api.dependencies.auth_dependencies import require_permission
 from src.api.models.response_models import DatasetUploadResponse, ErrorResponse
@@ -29,6 +30,7 @@ from src.upload.upload_policy import (
     check_archive_safety,
     check_declared_size,
     read_bounded,
+    require_declared_length,
     validate_upload_filename,
 )
 
@@ -38,7 +40,7 @@ router = APIRouter(
 )
 
 #: Allowance for multipart boundaries and part headers on top of the file itself.
-_MULTIPART_OVERHEAD_BYTES = 64 * 1024
+_MULTIPART_OVERHEAD_BYTES = MULTIPART_OVERHEAD_BYTES
 
 _UPLOAD_REQUEST_BODY = {
     "required": True,
@@ -51,7 +53,7 @@ _UPLOAD_REQUEST_BODY = {
                     "file": {
                         "type": "string",
                         "format": "binary",
-                        "description": "Dataset file (.csv, .xlsx, .xls, .json).",
+                        "description": "Dataset file (.csv, .xlsx, .json).",
                     }
                 },
             }
@@ -87,31 +89,35 @@ async def upload_dataset(
     both run BEFORE the multipart body is parsed.
     """
     declared = request.headers.get("content-length")
-    if declared is not None and declared.isdigit():
-        check_declared_size(int(declared) - _MULTIPART_OVERHEAD_BYTES)
+    require_declared_length(declared)
+    check_declared_size(int(declared or 0) - _MULTIPART_OVERHEAD_BYTES)
 
-    form = await request.form(max_files=1, max_fields=1)
-    try:
-        upload = form.get("file")
-        if not isinstance(upload, UploadFile):
-            raise UploadRejectedError("Expected a multipart form field named 'file'.")
+    # The per-user job slot is taken before the body is read (M3), so parallel
+    # uploads beyond the cap are refused before they cost memory or disk.
+    with application.job_slot(context):
+        form = await request.form(max_files=1, max_fields=1)
+        try:
+            upload = form.get("file")
+            if not isinstance(upload, UploadFile):
+                raise UploadRejectedError("Expected a multipart form field named 'file'.")
 
-        # Type and size are checked before anything is persisted or parsed.
-        filename = validate_upload_filename(upload.filename)
-        check_declared_size(upload.size)
-        content = await run_in_threadpool(read_bounded, upload.file)
-    finally:
-        await form.close()
+            # Type and size are checked before anything is persisted or parsed.
+            filename = validate_upload_filename(upload.filename)
+            check_declared_size(upload.size)
+            content = await run_in_threadpool(read_bounded, upload.file)
+        finally:
+            await form.close()
 
-    # Zip-bomb check on the archive directory, before persisting or parsing.
-    check_archive_safety(content, filename)
+        # Zip-bomb check on the archive directory, before persisting or parsing.
+        check_archive_safety(content, filename)
 
-    source_version = await run_in_threadpool(
-        application.register_upload,
-        content,
-        filename,
-        context,
-    )
+        source_version = await run_in_threadpool(
+            application.register_upload,
+            content,
+            filename,
+            context,
+            hold_slot=False,
+        )
 
     return DatasetUploadResponse(
         success=True,

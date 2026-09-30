@@ -1611,7 +1611,7 @@
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "Dataset file (.csv, .xlsx, .xls, .json)."
+                    "description": "Dataset file (.csv, .xlsx, .json)."
                   }
                 }
               }

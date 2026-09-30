@@ -22,11 +22,15 @@ from typing import BinaryIO
 from src.core import config
 
 #: Extensions `UploadManager` can parse. Anything else is refused up front.
-ALLOWED_UPLOAD_EXTENSIONS: frozenset[str] = frozenset({".csv", ".xlsx", ".xls", ".json"})
+#: No `.xls` (M4): xlrd is not installed, so pandas parsed a renamed .xlsx
+#: with openpyxl while the zip-bomb check only ran for the `.xlsx` suffix.
+ALLOWED_UPLOAD_EXTENSIONS: frozenset[str] = frozenset({".csv", ".xlsx", ".json"})
+
+#: Local file header of a zip archive (every .xlsx starts with it).
+ZIP_SIGNATURE = b"PK\x03\x04"
 
 _MAX_FILENAME_LENGTH = 255
 _UNSAFE_FILENAME_CHARS = re.compile(r"[\x00-\x1f<>:\"|?*]")
-_COPY_CHUNK_BYTES = 1024 * 1024
 
 
 class UploadRejectedError(ValueError):
@@ -45,6 +49,10 @@ class UploadTooLargeError(UploadRejectedError):
 
 class UnparseableUploadError(UploadRejectedError):
     status_code = 422
+
+
+class UploadLengthRequiredError(UploadRejectedError):
+    status_code = 411
 
 
 def max_upload_bytes() -> int:
@@ -86,6 +94,17 @@ def validate_upload_filename(filename: str | None) -> str:
     return name
 
 
+def require_declared_length(content_length: str | None) -> None:
+    """
+    Refuse an upload without a numeric `Content-Length` (M3).
+
+    Chunked uploads skipped the size pre-check entirely. The body-limit
+    middleware still counts the bytes of every request.
+    """
+    if content_length is None or not content_length.strip().isdigit():
+        raise UploadLengthRequiredError("Uploads must declare their size with a Content-Length header.")
+
+
 def check_declared_size(size_bytes: int | None) -> None:
     """Reject a payload whose declared size already exceeds the limit."""
     if size_bytes is not None and size_bytes > max_upload_bytes():
@@ -94,28 +113,22 @@ def check_declared_size(size_bytes: int | None) -> None:
 
 def read_bounded(stream: BinaryIO) -> bytes:
     """
-    Read an upload stream, refusing it as soon as it exceeds the limit.
+    Read an upload stream, refusing it if it exceeds the limit.
 
     The declared size is not trusted on its own: this counts the bytes that
-    actually arrive.
+    actually arrive. One bounded read into one buffer - collecting chunks and
+    joining them held every upload in memory twice (M3).
     """
     limit = max_upload_bytes()
-    chunks: list[bytes] = []
-    total = 0
+    content = stream.read(limit + 1)
 
-    while True:
-        chunk = stream.read(_COPY_CHUNK_BYTES)
-        if not chunk:
-            break
-        total += len(chunk)
-        if total > limit:
-            raise UploadTooLargeError(f"Upload exceeds the maximum size of {config.MAX_FILE_SIZE_MB} MB.")
-        chunks.append(chunk)
+    if len(content) > limit:
+        raise UploadTooLargeError(f"Upload exceeds the maximum size of {config.MAX_FILE_SIZE_MB} MB.")
 
-    if total == 0:
+    if not content:
         raise UploadRejectedError("Uploaded file is empty.")
 
-    return b"".join(chunks)
+    return content
 
 
 def check_archive_safety(content: bytes, filename: str) -> None:
@@ -123,9 +136,10 @@ def check_archive_safety(content: bytes, filename: str) -> None:
     Refuse zip-bomb workbooks by inspecting the archive directory only.
 
     Nothing is decompressed: the central directory already records every
-    entry's compressed and uncompressed size.
+    entry's compressed and uncompressed size. Runs on the content, not the
+    name (M4): any zip archive is checked, whatever it is called.
     """
-    if PurePosixPath(filename).suffix.lower() != ".xlsx":
+    if PurePosixPath(filename).suffix.lower() != ".xlsx" and not content.startswith(ZIP_SIGNATURE):
         return
 
     try:

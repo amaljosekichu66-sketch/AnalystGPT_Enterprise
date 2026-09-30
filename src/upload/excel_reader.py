@@ -19,7 +19,7 @@ class ExcelReader:
         """
         try:
             logger.info(f"Reading Excel file: {file_path}")
-            return pd.read_excel(file_path)
+            return pd.read_excel(file_path, engine="openpyxl")
 
         except Exception as error:
             logger.error(f"Failed to read Excel file: {error}")

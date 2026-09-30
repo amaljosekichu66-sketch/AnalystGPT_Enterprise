@@ -15,7 +15,7 @@ from __future__ import annotations
 import threading
 import time
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -180,6 +180,10 @@ class Application:
         finally:
             persistence.shutdown()
 
+    def job_slot(self, context: UserContext):
+        """Public form of `_job_slot`, for callers that must hold it across several steps."""
+        return self._job_slot(context)
+
     @contextmanager
     def _job_slot(self, context: UserContext) -> Iterator[None]:
         """
@@ -233,6 +237,7 @@ class Application:
         content: bytes,
         filename: str,
         user_context: UserContext | None = None,
+        hold_slot: bool = True,
     ) -> DatasetVersion:
         """
         Store client-uploaded bytes in the managed artifact store and register
@@ -241,10 +246,12 @@ class Application:
         `filename` must already have passed `upload_policy.validate_upload_filename`;
         it is a display label only. The returned `version_id` is the ONLY
         handle a client gets - the storage path never leaves the server.
+        `hold_slot=False` when the caller already holds the user's job slot.
         """
         context = user_context or get_current_user_context()
+        slot = self._job_slot(context) if hold_slot else nullcontext()
 
-        with self._job_slot(context), self.persistence_session() as persistence:
+        with slot, self.persistence_session() as persistence:
             owner_id = self._persisted_user_id(persistence, context)
             if owner_id is None:
                 raise PermissionDeniedError("Dataset uploads require a registered, authenticated account.")

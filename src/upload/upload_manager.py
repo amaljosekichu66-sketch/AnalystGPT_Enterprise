@@ -49,7 +49,7 @@ class UploadManager:
         if extension == ".csv":
             return self.csv_reader.read(file_path)
 
-        if extension in [".xlsx", ".xls"]:
+        if extension == ".xlsx":
             return self.excel_reader.read(file_path)
 
         if extension == ".json":

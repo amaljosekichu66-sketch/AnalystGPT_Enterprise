@@ -185,6 +185,10 @@ MAX_FILE_SIZE_MB = int(
     )
 )
 
+# Every other API request body (JSON) is capped at this size (M3, L14),
+# enforced as bytes arrive by `src/api/body_limit.py`.
+MAX_REQUEST_BODY_KB = int(os.getenv("MAX_REQUEST_BODY_KB", "1024"))
+
 # Parsed-shape limits (SEC-10), checked after parsing and before the dataset is
 # registered. 1,000,000 rows admits the repository's stress-test dataset.
 MAX_UPLOAD_ROWS = int(os.getenv("MAX_UPLOAD_ROWS", "1000000"))

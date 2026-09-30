@@ -22,7 +22,7 @@ class UploadService:
 
     # Mirrors the server allow-list (`src/upload/upload_policy.py`); the
     # server remains the authority.
-    ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".xls", ".json"}
+    ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".json"}
     MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024  # 500 MB
 
     def __init__(self, api_client: APIClient | None = None) -> None:

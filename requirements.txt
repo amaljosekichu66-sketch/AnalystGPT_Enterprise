@@ -28,11 +28,14 @@ pandas>=2.2.3
 numpy>=2.2.0
 
 # Loaded by pandas rather than imported directly:
-#   openpyxl  -> pd.read_excel for .xlsx/.xls (src/upload/excel_reader.py,
+#   openpyxl  -> pd.read_excel for .xlsx (src/upload/excel_reader.py,
 #                src/frontend/components/uploader.py)
 #   pyarrow   -> DataFrame.to_parquet / pd.read_parquet for the cleaned
 #                analytical dataset (src/storage/artifact_store.py)
 openpyxl>=3.1.5
+# openpyxl parses workbook XML with defusedxml when it is installed (I5):
+# entity-expansion and external-entity protection in production too.
+defusedxml>=0.7.1
 pyarrow>=21.0.0
 
 # ==========================================================
