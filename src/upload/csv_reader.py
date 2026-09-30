@@ -8,6 +8,8 @@ import pandas as pd
 
 from src.core.exceptions import FileReadError
 from src.core.logger import logger
+from src.upload.bounded_parse import read_csv_bounded
+from src.upload.upload_policy import UploadRejectedError
 
 
 class CSVReader:
@@ -19,7 +21,11 @@ class CSVReader:
         """
         try:
             logger.info(f"Reading CSV file: {file_path}")
-            return pd.read_csv(file_path)
+            return read_csv_bounded(file_path)
+
+        except UploadRejectedError:
+            # Shape and size limits (M5) keep their own status codes.
+            raise
 
         except Exception as error:
             logger.error(f"Failed to read CSV file: {error}")

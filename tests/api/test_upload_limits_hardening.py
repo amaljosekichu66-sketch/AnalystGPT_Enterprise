@@ -159,10 +159,12 @@ class TestArchiveCheckByContent:
         upload_policy.check_archive_safety(b"a,b\n1,2\n", "plain.csv")
 
     def test_excel_engine_is_pinned(self, monkeypatch) -> None:
-        from src.upload import excel_reader
+        import pandas as pd
+
+        from src.upload import bounded_parse, excel_reader
 
         seen: dict = {}
-        monkeypatch.setattr(excel_reader.pd, "read_excel", lambda path, **kw: seen.update(kw) or None)
+        monkeypatch.setattr(bounded_parse.pd, "read_excel", lambda path, **kw: seen.update(kw) or pd.DataFrame())
         excel_reader.ExcelReader().read("x.xlsx")
         assert seen.get("engine") == "openpyxl"
 

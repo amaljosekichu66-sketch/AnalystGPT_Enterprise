@@ -1,2 +1,3 @@
 [server]
-maxUploadSize = 500
+# MB. Matches the API's MAX_FILE_SIZE_MB (M8); larger files are refused there anyway.
+maxUploadSize = 100

@@ -8,6 +8,8 @@ import pandas as pd
 
 from src.core.exceptions import FileReadError
 from src.core.logger import logger
+from src.upload.bounded_parse import read_json_bounded
+from src.upload.upload_policy import UploadRejectedError
 
 
 class JSONReader:
@@ -19,7 +21,11 @@ class JSONReader:
         """
         try:
             logger.info(f"Reading JSON file: {file_path}")
-            return pd.read_json(file_path)
+            return read_json_bounded(file_path)
+
+        except UploadRejectedError:
+            # Shape and size limits (M5) keep their own status codes.
+            raise
 
         except Exception as error:
             logger.error(f"Failed to read JSON file: {error}")

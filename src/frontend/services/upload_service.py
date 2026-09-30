@@ -12,6 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from src.core import config
 from src.frontend.services.api_client import APIClient
 
 
@@ -23,7 +24,7 @@ class UploadService:
     # Mirrors the server allow-list (`src/upload/upload_policy.py`); the
     # server remains the authority.
     ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".json"}
-    MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024  # 500 MB
+    MAX_FILE_SIZE_BYTES = config.MAX_FILE_SIZE_MB * 1024 * 1024
 
     def __init__(self, api_client: APIClient | None = None) -> None:
         self._api_client = api_client or APIClient()

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import io
 import re
+import unicodedata
 import zipfile
 from pathlib import PurePosixPath, PureWindowsPath
 from typing import BinaryIO
@@ -29,6 +30,7 @@ ALLOWED_UPLOAD_EXTENSIONS: frozenset[str] = frozenset({".csv", ".xlsx", ".json"}
 #: Local file header of a zip archive (every .xlsx starts with it).
 ZIP_SIGNATURE = b"PK\x03\x04"
 
+#: In UTF-8 bytes.
 _MAX_FILENAME_LENGTH = 255
 _UNSAFE_FILENAME_CHARS = re.compile(r"[\x00-\x1f<>:\"|?*]")
 
@@ -71,12 +73,17 @@ def safe_upload_filename(filename: str | None) -> str:
     """
     raw = (filename or "").strip()
     name = PurePosixPath(PureWindowsPath(raw).name).name
-    name = _UNSAFE_FILENAME_CHARS.sub("_", name).strip(" .")
+    name = _UNSAFE_FILENAME_CHARS.sub("_", name)
+    # Bidi overrides and zero-width characters (Unicode "format", Cf) let a
+    # name display as something else, e.g. `invoice\u202excs.exe` (I8).
+    name = "".join(ch for ch in name if unicodedata.category(ch) != "Cf").strip(" .")
 
     if not name or name in {".", ".."}:
         raise UploadRejectedError("Uploaded file must have a filename.")
 
-    if len(name) > _MAX_FILENAME_LENGTH:
+    # Bytes, not characters (I8): 255 multibyte characters overflowed later
+    # storage and answered 500.
+    if len(name.encode("utf-8")) > _MAX_FILENAME_LENGTH:
         raise UploadRejectedError("Uploaded filename is too long.")
 
     return name

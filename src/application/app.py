@@ -262,7 +262,7 @@ class Application:
                     filename=filename,
                     user_id=owner_id,
                 )
-            except ArtifactStoreError:
+            except (ArtifactStoreError, UploadRejectedError):
                 raise
             except Exception as exc:
                 # The artifact is discarded by the governance service; the

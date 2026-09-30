@@ -178,12 +178,17 @@ CORS_ALLOWED_ORIGINS = [
 
 # Enforced server-side by `src/upload/upload_policy.py` on POST /api/datasets,
 # before the payload is persisted or parsed.
+# 100 MB, matching the Streamlit uploader (M5): 500 MB CSV and JSON files
+# were parsed fully in memory.
 MAX_FILE_SIZE_MB = int(
     os.getenv(
         "MAX_FILE_SIZE_MB",
-        "500",
+        "100",
     )
 )
+
+# pandas has no streaming JSON reader, so JSON gets its own, smaller cap (M5).
+MAX_JSON_FILE_SIZE_MB = int(os.getenv("MAX_JSON_FILE_SIZE_MB", "50"))
 
 # Every other API request body (JSON) is capped at this size (M3, L14),
 # enforced as bytes arrive by `src/api/body_limit.py`.
@@ -198,7 +203,7 @@ MAX_UPLOAD_COLUMNS = int(os.getenv("MAX_UPLOAD_COLUMNS", "1000"))
 # decompression (SEC-10). A 94 KB workbook expanding 406:1 to 37 MB of sheet
 # XML used to cost ~57 s of parsing per request. Normal workbooks compress
 # roughly 3-10:1.
-MAX_XLSX_UNCOMPRESSED_MB = int(os.getenv("MAX_XLSX_UNCOMPRESSED_MB", "1024"))
+MAX_XLSX_UNCOMPRESSED_MB = int(os.getenv("MAX_XLSX_UNCOMPRESSED_MB", "256"))
 MAX_XLSX_COMPRESSION_RATIO = int(os.getenv("MAX_XLSX_COMPRESSION_RATIO", "100"))
 MAX_XLSX_ENTRIES = int(os.getenv("MAX_XLSX_ENTRIES", "1000"))
 
