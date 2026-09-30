@@ -10,9 +10,10 @@ Sprint 14 Phase 2 — Asynchronous AI Execution, Persistent Job Lifecycle & Perf
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from typing import Any
 
-from src.ai.exceptions import AIJobNotFoundError, AIStateTransitionError
+from src.ai.exceptions import AIJobNotFoundError, AIRetryUnavailableError, AIStateTransitionError
 from src.ai.job_executor import AIJobExecutor
 from src.ai.models import AIJob, AIJobStatus
 from src.core import config
@@ -58,8 +59,10 @@ class AIJobService:
         if user_id is None:
             return
         limit = max(1, int(config.MAX_ACTIVE_AI_JOBS_PER_USER))
-        conn = self._get_connection()
-        if AIJobRepository(conn).count_active_for_user(user_id) >= limit:
+        repo = AIJobRepository(self._get_connection())
+        # Interrupted jobs must not hold the quota forever (L12).
+        repo.recover_stale_jobs()
+        if repo.count_active_for_user(user_id) >= limit:
             raise TooManyConcurrentJobsError(
                 f"You already have {limit} AI insight jobs in progress. Wait for one to finish and retry."
             )
@@ -192,9 +195,14 @@ class AIJobService:
         job_id: str,
         reporting_report: ReportingReport | None = None,
         user_id: int | None = None,
+        report_provider: Callable[[AIJob], ReportingReport | None] | None = None,
     ) -> AIJob:
         """
         Manually trigger a retry for a FAILED job.
+
+        The job runs from the pipeline's ReportingReport. When it is no longer
+        available (`report_provider` returns None, e.g. after a restart) the
+        retry is refused instead of leaving the job PENDING forever (L12).
         """
         conn = self._get_connection()
         job_repo = AIJobRepository(conn)
@@ -209,6 +217,13 @@ class AIJobService:
             )
 
         self.ensure_capacity(job.user_id)
+
+        if reporting_report is None and report_provider is not None:
+            reporting_report = report_provider(job)
+        if self._job_executor is not None and reporting_report is None:
+            raise AIRetryUnavailableError(
+                "This job's pipeline result is no longer available. Run the pipeline again to regenerate insights."
+            )
 
         job_repo.schedule_retry(
             job_id=job_id,

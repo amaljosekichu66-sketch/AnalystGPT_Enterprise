@@ -14,7 +14,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.ai.exceptions import AIJobNotFoundError, AIStateTransitionError
+from src.ai.exceptions import AIJobNotFoundError, AIRetryUnavailableError, AIStateTransitionError
 from src.ai.models import AIFailureCategory
 from src.api.dependencies.application_dependency import get_application
 from src.api.dependencies.auth_dependencies import require_permission
@@ -26,6 +26,7 @@ from src.core import config
 from src.core.exceptions import TooManyConcurrentJobsError
 from src.core.logger import logger
 from src.identity.context import UserContext
+from src.identity.exceptions import AuthenticationError
 from src.identity.permissions import Permission
 
 #: What a client is told about a failed AI job (L7). The stored error can
@@ -143,10 +144,12 @@ def get_latest_ai_job(
     """
     Retrieve latest AI job for the active user context.
     """
-    user_id = context.user_id if context.is_authenticated else None
+    # Never unscoped (I16): None used to mean "the latest job of anyone".
+    if not context.is_authenticated or context.user_id is None:
+        raise AuthenticationError("Authentication required to access this resource.")
 
     job_data = application.ai_job_service.get_latest_job_for_user(
-        user_id=user_id,
+        user_id=context.user_id,
     )
 
     if job_data is None:
@@ -199,6 +202,7 @@ def retry_ai_job(
         updated_job = application.ai_job_service.retry_job(
             job_id=job_id,
             user_id=scoped_user_id,
+            report_provider=lambda job: application.reporting_report_for(job.report_id),
         )
         return AIJobRetryResponse(
             success=True,
@@ -208,6 +212,11 @@ def retry_ai_job(
         )
     except TooManyConcurrentJobsError:
         raise
+    except AIRetryUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This job's pipeline result is no longer available. Run the pipeline again.",
+        ) from exc
     except AIJobNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="AI job not found.") from exc
     except AIStateTransitionError as exc:

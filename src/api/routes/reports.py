@@ -35,6 +35,7 @@ from src.application.reporting_orchestrator import (
     ReportingOrchestrator,
 )
 from src.identity.context import UserContext
+from src.identity.exceptions import AuthenticationError
 from src.identity.permissions import Permission
 
 
@@ -71,14 +72,16 @@ def get_reports(
     """
     Return the latest generated reports.
     """
-    user_id = context.user_id if context.is_authenticated else None
+    # Never unscoped (I16): None used to mean "everyone's latest report".
+    if not context.is_authenticated or context.user_id is None:
+        raise AuthenticationError("Authentication required to access this resource.")
 
     orchestrator = ReportingOrchestrator(
         application,
     )
 
     report_data = orchestrator.get_reports(
-        user_id=user_id,
+        user_id=context.user_id,
     )
 
     return ReportsListResponse(

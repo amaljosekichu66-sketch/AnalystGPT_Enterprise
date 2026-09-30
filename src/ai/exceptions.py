@@ -19,6 +19,10 @@ class AIStateTransitionError(AIError):
     """Raised when an invalid state transition is attempted on an AI job."""
 
 
+class AIRetryUnavailableError(AIError):
+    """Raised when a failed job cannot be retried because its pipeline result is gone (L12)."""
+
+
 class AIRetryableError(AIError):
     """Raised when a transient failure occurs that can be safely retried."""
 

@@ -323,6 +323,9 @@ class SchemaManager:
             for table_name in ["pipeline_runs", "datasets", "reports"]:
                 self._add_column_if_missing(cursor, table_name, "user_id", "INTEGER")
 
+            # AI job lease, epoch seconds (audit 2026-09-29, L12)
+            self._add_column_if_missing(cursor, "ai_jobs", "lease_expires_at", self._float_sql())
+
             # Token invalidation counter (audit 2026-09-29, I2)
             self._add_column_if_missing(cursor, "users", "token_version", "INTEGER NOT NULL DEFAULT 0")
 

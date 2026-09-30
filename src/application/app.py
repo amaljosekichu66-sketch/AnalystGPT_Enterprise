@@ -1420,6 +1420,13 @@ class Application:
             if report_id is not None:
                 self._report_pipeline_results[report_id] = (user_id, result)
 
+    def reporting_report_for(self, report_id: int | None) -> ReportingReport | None:
+        """The cached ReportingReport an AI job for `report_id` runs from, if still cached."""
+        result = self.get_result_by_report_id(report_id) if report_id is not None else None
+        if result is None or result.pipeline_report is None:
+            return None
+        return result.pipeline_report.reporting_report
+
     def get_result_by_report_id(
         self,
         report_id: int,

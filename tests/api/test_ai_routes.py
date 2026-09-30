@@ -221,10 +221,20 @@ def test_get_latest_ai_job_status(ai_test_setup) -> None:
     assert data["status"] == "PENDING"
 
 
-def test_retry_ai_job_endpoint(ai_test_setup) -> None:
+def test_retry_ai_job_endpoint(ai_test_setup, monkeypatch) -> None:
     """
     Verify POST /api/ai/jobs/{job_id}/retry transitions FAILED job back to PENDING.
+
+    A retry needs the pipeline's ReportingReport (L12), so the report cache is
+    seeded, and the executor submission is stubbed: no worker runs here.
     """
+    from unittest.mock import MagicMock
+
+    from src.ai.job_executor import AIJobExecutor
+    from src.application.app import Application
+
+    monkeypatch.setattr(Application, "reporting_report_for", lambda self, report_id: MagicMock())
+    monkeypatch.setattr(AIJobExecutor, "submit_job", lambda self, job_id, reporting_report: None)
     client = ai_test_setup["client"]
     conn = ai_test_setup["connection"]
     user1 = ai_test_setup["user1"]
@@ -263,3 +273,23 @@ def test_retry_ai_job_endpoint(ai_test_setup) -> None:
         headers={"Authorization": f"Bearer {token1}"},
     )
     assert res_invalid.status_code == 400
+
+
+def test_retry_without_the_pipeline_result_is_refused(ai_test_setup, monkeypatch) -> None:
+    """A retry whose ReportingReport is gone is refused, not left PENDING forever (L12)."""
+    from src.application.app import Application
+
+    monkeypatch.setattr(Application, "reporting_report_for", lambda self, report_id: None)
+    client, conn, user1 = ai_test_setup["client"], ai_test_setup["connection"], ai_test_setup["user1"]
+    conn.get_connection().execute(f"INSERT INTO pipeline_runs (user_id, status) VALUES ({user1.id}, 'SUCCESS');")
+    conn.commit()
+    job_repo = AIJobRepository(conn)
+    job_repo.create_job(job_id="job_orphan", pipeline_run_id=1, user_id=user1.id)
+    job_repo.claim_next_pending_job()
+    job_repo.mark_failed("job_orphan", error="x", failure_category=AIFailureCategory.TIMEOUT)
+
+    res = client.post("/api/ai/jobs/job_orphan/retry", headers={"Authorization": f"Bearer {ai_test_setup['token1']}"})
+
+    assert res.status_code == 400
+    assert "Run the pipeline again" in res.text
+    assert job_repo.get_by_job_id("job_orphan").status.value == "FAILED"

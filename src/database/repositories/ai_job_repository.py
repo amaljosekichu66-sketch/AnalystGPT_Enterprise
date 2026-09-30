@@ -6,12 +6,27 @@ Sprint 14 Phase 2 — Asynchronous AI Execution, Persistent Job Lifecycle & Perf
 
 from __future__ import annotations
 
+import time
 from datetime import UTC, datetime
 from typing import Any
 
 from src.ai.models import AIFailureCategory, AIJob, AIJobStatus
+from src.core import config
 from src.database.database_connection import DatabaseConnection
 from src.database.repositories.base_repository import BaseRepository
+
+#: Stored on jobs that were interrupted (restart, lost worker) before finishing.
+INTERRUPTED_ERROR = "Interrupted before completion. Run the pipeline again to regenerate insights."
+
+
+def pending_lease() -> float:
+    """Lease for a job waiting for a worker (L12)."""
+    return time.time() + int(config.AI_JOB_PENDING_TTL_SECONDS)
+
+
+def running_lease() -> float:
+    """Lease for one generation attempt (L12)."""
+    return time.time() + float(config.AI_TIMEOUT) + int(config.AI_JOB_LEASE_MARGIN_SECONDS)
 
 
 class AIJobRepository(BaseRepository):
@@ -62,9 +77,10 @@ class AIJobRepository(BaseRepository):
             attempt_count,
             max_attempts,
             created_at,
-            updated_at
+            updated_at,
+            lease_expires_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
 
         try:
@@ -82,6 +98,7 @@ class AIJobRepository(BaseRepository):
                     max_attempts,
                     now,
                     now,
+                    pending_lease(),
                 ),
             )
 
@@ -268,7 +285,8 @@ class AIJobRepository(BaseRepository):
         SET status = ?,
             started_at = ?,
             attempt_count = attempt_count + 1,
-            updated_at = ?
+            updated_at = ?,
+            lease_expires_at = ?
         WHERE job_id = ? AND status = ?;
         """
 
@@ -278,6 +296,7 @@ class AIJobRepository(BaseRepository):
                 AIJobStatus.GENERATING.value,
                 now,
                 now,
+                running_lease(),
                 job_id,
                 AIJobStatus.PENDING.value,
             ),
@@ -308,7 +327,8 @@ class AIJobRepository(BaseRepository):
             completed_at = ?,
             error = NULL,
             failure_category = NULL,
-            updated_at = ?
+            updated_at = ?,
+            lease_expires_at = NULL
         WHERE job_id = ? AND status = ?;
         """
         cursor = self.execute(
@@ -330,7 +350,10 @@ class AIJobRepository(BaseRepository):
         failure_category: AIFailureCategory | str | None = None,
     ) -> bool:
         """
-        Transition job to FAILED state.
+        Transition an unfinished (PENDING or GENERATING) job to FAILED.
+
+        Conditional (L12): a job that already reached READY or FAILED is left
+        alone, so a late failure cannot overwrite a finished result.
         """
         now = datetime.now(UTC).isoformat()
         category_str = (
@@ -344,8 +367,9 @@ class AIJobRepository(BaseRepository):
             completed_at = ?,
             error = ?,
             failure_category = ?,
-            updated_at = ?
-        WHERE job_id = ?;
+            updated_at = ?,
+            lease_expires_at = NULL
+        WHERE job_id = ? AND status IN (?, ?);
         """
         cursor = self.execute(
             query,
@@ -356,6 +380,8 @@ class AIJobRepository(BaseRepository):
                 category_str,
                 now,
                 job_id,
+                AIJobStatus.PENDING.value,
+                AIJobStatus.GENERATING.value,
             ),
         )
         return cursor.rowcount > 0
@@ -367,7 +393,9 @@ class AIJobRepository(BaseRepository):
         failure_category: AIFailureCategory | str | None = None,
     ) -> bool:
         """
-        Transition a GENERATING job back to PENDING for retry.
+        Transition a GENERATING (automatic) or FAILED (manual) job back to PENDING.
+
+        Conditional (L12): READY and already-PENDING jobs are not touched.
         """
         now = datetime.now(UTC).isoformat()
         category_str = (
@@ -380,8 +408,9 @@ class AIJobRepository(BaseRepository):
         SET status = ?,
             error = ?,
             failure_category = ?,
-            updated_at = ?
-        WHERE job_id = ?;
+            updated_at = ?,
+            lease_expires_at = ?
+        WHERE job_id = ? AND status IN (?, ?);
         """
         cursor = self.execute(
             query,
@@ -390,7 +419,10 @@ class AIJobRepository(BaseRepository):
                 error,
                 category_str,
                 now,
+                pending_lease(),
                 job_id,
+                AIJobStatus.GENERATING.value,
+                AIJobStatus.FAILED.value,
             ),
         )
         return cursor.rowcount > 0
@@ -425,39 +457,40 @@ class AIJobRepository(BaseRepository):
 
     def recover_stale_jobs(self) -> int:
         """
-        Recover stale jobs left in GENERATING state (e.g. from an abrupt process termination).
+        Fail unfinished jobs whose lease has expired (L12).
 
-        - Jobs with attempt_count < max_attempts are reset to PENDING for retry.
-        - Jobs with attempt_count >= max_attempts are marked FAILED (SYSTEM_ERROR).
+        A job runs from an in-memory ReportingReport that does not survive the
+        process, so an interrupted job can never resume: it used to be reset
+        to PENDING and stay there forever. Every start also reset ALL
+        GENERATING jobs, including other processes' in-flight ones. Now only
+        jobs whose lease ran out (or that predate leases) are marked FAILED;
+        the user runs the pipeline again.
 
-        Returns total count of recovered jobs.
+        Returns the number of jobs failed.
         """
-        now = datetime.now(UTC).isoformat()
-
-        # 1. Reset retryable GENERATING jobs to PENDING
-        retryable_query = f"""
+        now_iso = datetime.now(UTC).isoformat()
+        query = f"""
         UPDATE {self.TABLE_NAME}
-        SET status = '{AIJobStatus.PENDING.value}',
-            error = 'Recovered from interrupted process state',
-            updated_at = ?
-        WHERE status = '{AIJobStatus.GENERATING.value}'
-          AND attempt_count < max_attempts;
-        """
-        cursor1 = self.execute(retryable_query, (now,))
-        recovered_pending = cursor1.rowcount if cursor1 else 0
-
-        # 2. Mark exhausted GENERATING jobs as FAILED
-        exhausted_query = f"""
-        UPDATE {self.TABLE_NAME}
-        SET status = '{AIJobStatus.FAILED.value}',
-            failure_category = '{AIFailureCategory.SYSTEM_ERROR.value}',
-            error = 'Process terminated while job was executing (attempts exhausted)',
+        SET status = ?,
+            failure_category = ?,
+            error = ?,
             completed_at = ?,
-            updated_at = ?
-        WHERE status = '{AIJobStatus.GENERATING.value}'
-          AND attempt_count >= max_attempts;
+            updated_at = ?,
+            lease_expires_at = NULL
+        WHERE status IN (?, ?)
+          AND (lease_expires_at IS NULL OR lease_expires_at < ?);
         """
-        cursor2 = self.execute(exhausted_query, (now, now))
-        exhausted_failed = cursor2.rowcount if cursor2 else 0
-
-        return (recovered_pending or 0) + (exhausted_failed or 0)
+        cursor = self.execute(
+            query,
+            (
+                AIJobStatus.FAILED.value,
+                AIFailureCategory.SYSTEM_ERROR.value,
+                INTERRUPTED_ERROR,
+                now_iso,
+                now_iso,
+                AIJobStatus.PENDING.value,
+                AIJobStatus.GENERATING.value,
+                time.time(),
+            ),
+        )
+        return (cursor.rowcount if cursor else 0) or 0

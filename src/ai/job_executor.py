@@ -21,7 +21,7 @@ from src.ai.models import AIFailureCategory, AIJob, AIJobStatus
 from src.core import config
 from src.core.logger import logger
 from src.database.connection_factory import ConnectionFactory
-from src.database.repositories.ai_job_repository import AIJobRepository
+from src.database.repositories.ai_job_repository import AIJobRepository, running_lease
 from src.database.repositories.ai_report_repository import AIReportRepository
 from src.reporting.reporting_report import ReportingReport
 
@@ -162,11 +162,9 @@ class AIJobExecutor:
                 return
 
         if not self._queue_slots.acquire(blocking=False):
-            logger.warning(
-                "AI queue is full (%d jobs); AI job '%s' stays PENDING until capacity frees.",
-                config.AI_MAX_QUEUED_JOBS,
-                job_id,
-            )
+            # Nothing would ever pick a stranded PENDING job up again (L12).
+            logger.warning("AI queue is full (%d jobs); AI job '%s' failed.", config.AI_MAX_QUEUED_JOBS, job_id)
+            self._fail_unqueued(job_id)
             return
 
         logger.info(
@@ -229,7 +227,8 @@ class AIJobExecutor:
                 SET status = ?,
                     started_at = ?,
                     attempt_count = attempt_count + 1,
-                    updated_at = ?
+                    updated_at = ?,
+                    lease_expires_at = ?
                 WHERE job_id = ? AND status = ?;
                 """
                 cursor = job_repo.execute(
@@ -238,6 +237,7 @@ class AIJobExecutor:
                         AIJobStatus.GENERATING.value,
                         now_str,
                         now_str,
+                        running_lease(),
                         job_id,
                         AIJobStatus.PENDING.value,
                     ),
@@ -329,6 +329,19 @@ class AIJobExecutor:
 
         finally:
             connection.close()
+
+    @staticmethod
+    def _fail_unqueued(job_id: str) -> None:
+        connection = ConnectionFactory.create_connection()
+        connection.connect()
+        try:
+            AIJobRepository(connection).mark_failed(
+                job_id,
+                error="The AI queue was full. Retry the job in a few minutes.",
+                failure_category=AIFailureCategory.SYSTEM_ERROR,
+            )
+        finally:
+            connection.disconnect()
 
     # ==========================================================
     # Failure & Retry Handling

@@ -201,6 +201,13 @@ PIPELINE_RATE_LIMIT = os.getenv("PIPELINE_RATE_LIMIT", "10/60").strip()
 AI_RETRY_RATE_LIMIT = os.getenv("AI_RETRY_RATE_LIMIT", "10/60").strip()
 GOVERNANCE_PREVIEW_RATE_LIMIT = os.getenv("GOVERNANCE_PREVIEW_RATE_LIMIT", "30/60").strip()
 
+# AI job leases (L12), in seconds. A GENERATING job's lease is one attempt
+# (AI_TIMEOUT) plus this margin; a PENDING job's covers its wait for a worker.
+# Only jobs whose lease has expired are treated as interrupted, so one API
+# process starting up no longer resets another process's in-flight jobs.
+AI_JOB_LEASE_MARGIN_SECONDS = int(os.getenv("AI_JOB_LEASE_MARGIN_SECONDS", "120"))
+AI_JOB_PENDING_TTL_SECONDS = int(os.getenv("AI_JOB_PENDING_TTL_SECONDS", "7200"))
+
 # In-memory pipeline result caches (L10): bounded LRU with a time-to-live.
 RESULT_CACHE_MAX_ENTRIES = int(os.getenv("RESULT_CACHE_MAX_ENTRIES", "256"))
 RESULT_CACHE_TTL_SECONDS = int(os.getenv("RESULT_CACHE_TTL_SECONDS", str(6 * 3600)))

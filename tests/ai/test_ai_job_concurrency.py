@@ -203,52 +203,55 @@ def test_report_id_persistent_association_and_scoping(test_db) -> None:
 
 def test_process_restart_recovery_of_stale_jobs(test_db) -> None:
     """
-    Verify that stale GENERATING jobs (e.g. from an abrupt process termination)
-    are cleanly recovered on startup:
-    - Jobs with attempt_count < max_attempts -> reset to PENDING.
-    - Jobs with attempt_count >= max_attempts -> marked FAILED.
+    Unfinished jobs whose lease has expired are failed on startup (L12).
+
+    A job runs from an in-memory ReportingReport, so an interrupted job can
+    never resume: it used to be reset to PENDING and stay there forever. And
+    only EXPIRED leases count, so one process starting up leaves another
+    process's in-flight job alone.
     """
     repo = AIJobRepository(test_db)
 
-    # Job 1: 1 attempt out of 3, left in GENERATING
-    repo.create_job(
-        job_id="stale_generating_001",
-        pipeline_run_id=1,
-        user_id=1,
-        report_id=1,
-        max_attempts=3,
-    )
-    repo.claim_next_pending_job()  # transitions to GENERATING, attempt_count=1
-
-    # Job 2: create another pipeline run & job with max_attempts=1, left in GENERATING
-    test_db.get_connection().execute("INSERT INTO pipeline_runs (id, status) VALUES (2, 'SUCCESS');")
-    test_db.commit()
-    repo.create_job(
-        job_id="stale_exhausted_002",
-        pipeline_run_id=2,
-        user_id=1,
-        report_id=1,
-        max_attempts=1,
-    )
-    # Claim it (attempt_count becomes 1 == max_attempts 1)
+    repo.create_job(job_id="stale_generating_001", pipeline_run_id=1, user_id=1, report_id=1, max_attempts=3)
     repo.claim_next_pending_job()
 
-    # Simulate application restart: recover_stale_jobs() is executed
+    test_db.get_connection().execute("INSERT INTO pipeline_runs (id, status) VALUES (2, 'SUCCESS');")
+    test_db.get_connection().execute("INSERT INTO pipeline_runs (id, status) VALUES (3, 'SUCCESS');")
+    test_db.commit()
+    repo.create_job(job_id="stale_pending_002", pipeline_run_id=2, user_id=1, report_id=1, max_attempts=1)
+    repo.create_job(job_id="live_generating_003", pipeline_run_id=3, user_id=1, report_id=1, max_attempts=3)
+
+    # The first two leases ran out (their process died); the third is live.
+    test_db.get_connection().execute(
+        "UPDATE ai_jobs SET lease_expires_at = 1 WHERE job_id IN ('stale_generating_001', 'stale_pending_002');"
+    )
+    test_db.get_connection().execute("UPDATE ai_jobs SET status = 'GENERATING' WHERE job_id = 'live_generating_003';")
+    test_db.commit()
+
     recovered_count = repo.recover_stale_jobs()
     assert recovered_count == 2
 
-    # Verify Job 1 reset to PENDING
-    job1 = repo.get_by_job_id("stale_generating_001")
-    assert job1 is not None
-    assert job1.status == AIJobStatus.PENDING
-    assert "Recovered" in (job1.error or "")
+    for job_id in ("stale_generating_001", "stale_pending_002"):
+        job = repo.get_by_job_id(job_id)
+        assert job is not None
+        assert job.status == AIJobStatus.FAILED
+        assert job.failure_category == AIFailureCategory.SYSTEM_ERROR.value
+        assert "Interrupted" in (job.error or "")
 
-    # Verify Job 2 marked FAILED (attempts exhausted)
-    job2 = repo.get_by_job_id("stale_exhausted_002")
-    assert job2 is not None
-    assert job2.status == AIJobStatus.FAILED
-    assert job2.failure_category == AIFailureCategory.SYSTEM_ERROR.value
-    assert "terminated" in (job2.error or "")
+    live = repo.get_by_job_id("live_generating_003")
+    assert live is not None and live.status == AIJobStatus.GENERATING
+
+
+def test_late_transitions_cannot_overwrite_a_finished_job(test_db) -> None:
+    """mark_failed / schedule_retry are conditional on the current state (L12)."""
+    repo = AIJobRepository(test_db)
+    repo.create_job(job_id="finished_001", pipeline_run_id=1, user_id=1, report_id=1)
+    repo.claim_next_pending_job()
+    assert repo.mark_ready("finished_001") is True
+
+    assert repo.mark_failed("finished_001", error="late failure") is False
+    assert repo.schedule_retry("finished_001", error="late retry") is False
+    assert repo.get_by_job_id("finished_001").status == AIJobStatus.READY
 
 
 # ==========================================================
