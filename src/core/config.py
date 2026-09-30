@@ -497,16 +497,28 @@ INSECURE_DEFAULT_AUTH_SECRET_KEY = "analystgpt-enterprise-insecure-dev-secret-ke
 AUTH_SECRET_KEY_MIN_LENGTH = 32
 
 
-def validate_auth_secret_key(environment: str, raw_key: str | None) -> str:
+_LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+def validate_auth_secret_key(environment: str, raw_key: str | None, api_host: str = "127.0.0.1") -> str:
     """
     Return the signing key to use, or raise `RuntimeError` if it is unsafe.
 
     Outside development the key must be present, non-empty, not the
     published default, and at least `AUTH_SECRET_KEY_MIN_LENGTH` bytes.
-    Explicit development mode may fall back to the built-in key.
+    Explicit development mode may fall back to the built-in key, but only
+    while the API binds a loopback address (L4): a development API reachable
+    from the network with a published key lets anyone forge an ADMIN token.
     """
     is_development = environment == "development"
     key = (raw_key or "").strip()
+
+    if is_development and key in ("", INSECURE_DEFAULT_AUTH_SECRET_KEY) and api_host not in _LOOPBACK_HOSTS:
+        raise RuntimeError(
+            f"API_HOST='{api_host}' is not a loopback address, and the API would sign tokens with the "
+            "published development key. Set AUTH_SECRET_KEY to a private random value, or bind "
+            "API_HOST=127.0.0.1."
+        )
 
     if not key:
         if is_development:
@@ -544,7 +556,7 @@ def validate_auth_secret_key(environment: str, raw_key: str | None) -> str:
 # called when the API package loads and when a TokenService is built from
 # configuration - so the API refuses to start while other processes do not.
 try:
-    AUTH_SECRET_KEY = validate_auth_secret_key(APP_ENVIRONMENT, os.getenv("AUTH_SECRET_KEY"))
+    AUTH_SECRET_KEY = validate_auth_secret_key(APP_ENVIRONMENT, os.getenv("AUTH_SECRET_KEY"), API_HOST)
     AUTH_SECRET_KEY_ERROR: str | None = None
 except RuntimeError as _auth_secret_error:
     AUTH_SECRET_KEY = ""
@@ -640,6 +652,11 @@ AUTH_ACCESS_TOKEN_EXPIRE_MINUTES = int(
         "60",
     )
 )
+
+# Upper bound on any access token's lifetime (I2). Tokens are stateless, so
+# this caps how long a leaked token stays usable; AUTH_ACCESS_TOKEN_EXPIRE_MINUTES
+# above it is clamped.
+AUTH_TOKEN_MAX_LIFETIME_MINUTES = int(os.getenv("AUTH_TOKEN_MAX_LIFETIME_MINUTES", "720"))
 
 AUTH_PASSWORD_MIN_LENGTH = int(
     os.getenv(

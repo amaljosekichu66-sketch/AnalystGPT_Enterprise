@@ -85,6 +85,10 @@ class IUserRepository(Protocol):
         """Count active administrators."""
         ...
 
+    def bump_token_version(self, user_id: int) -> None:
+        """Invalidate every outstanding token of the user."""
+        ...
+
 
 # ==========================================================
 # Authentication Service Protocol

@@ -82,6 +82,10 @@ class User:
     status: UserStatus = UserStatus.ACTIVE
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    #: Carried in every token as `ver`. Bumping it invalidates all of the
+    #: user's outstanding tokens (password change, role/status change,
+    #: "sign out everywhere") - I2.
+    token_version: int = 0
 
     @property
     def is_active(self) -> bool:
@@ -180,6 +184,15 @@ class UserLogin(BaseModel):
 
     username: str = Field(..., min_length=1, max_length=254)
     password: str = Field(..., min_length=1, max_length=128)
+
+
+class PasswordChange(BaseModel):
+    """Schema for an authenticated user changing their own password."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    current_password: str = Field(..., min_length=1, max_length=128)
+    new_password: str = Field(..., min_length=8, max_length=128)
 
 
 class TokenResponse(BaseModel):

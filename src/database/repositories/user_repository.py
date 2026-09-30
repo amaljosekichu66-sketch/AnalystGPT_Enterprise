@@ -55,6 +55,7 @@ class UserRepository(BaseRepository):
             status=UserStatus.from_string(row["status"]),
             created_at=created_at,
             updated_at=updated_at,
+            token_version=int(row.get("token_version") or 0),
         )
 
     # ==========================================================
@@ -191,6 +192,13 @@ class UserRepository(BaseRepository):
         if updated_user is None:
             raise RuntimeError("Failed to retrieve updated user from database.")
         return updated_user
+
+    def bump_token_version(self, user_id: int) -> None:
+        """Invalidate every outstanding token of the user (I2)."""
+        self.execute(
+            f"UPDATE {self.TABLE_NAME} SET token_version = token_version + 1 WHERE id = ?;",
+            (user_id,),
+        )
 
     def delete(self, user_id: int) -> bool:
         """Delete user by ID."""

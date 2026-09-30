@@ -15,6 +15,15 @@ from src.core import config as _config
 # key. This runs before any router (and the Application singleton) loads.
 _config.require_auth_secret_key()
 
+if _config.AUTH_SECRET_KEY == _config.INSECURE_DEFAULT_AUTH_SECRET_KEY:
+    # Allowed only in development on loopback (L4), but never silently.
+    from src.core.logger import logger as _logger
+
+    _logger.warning(
+        "SECURITY_ALERT | Access tokens are signed with the PUBLISHED development key. "
+        "Anyone who can reach this API can forge an ADMIN token. Set AUTH_SECRET_KEY."
+    )
+
 from .routes import (  # noqa: E402
     health_router,
     pipeline_router,

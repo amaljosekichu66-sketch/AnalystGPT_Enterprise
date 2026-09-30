@@ -323,6 +323,9 @@ class SchemaManager:
             for table_name in ["pipeline_runs", "datasets", "reports"]:
                 self._add_column_if_missing(cursor, table_name, "user_id", "INTEGER")
 
+            # Token invalidation counter (audit 2026-09-29, I2)
+            self._add_column_if_missing(cursor, "users", "token_version", "INTEGER NOT NULL DEFAULT 0")
+
             # -------------------------------------------------
             # Dataset Versions (Sprint 14 Phase 3 Governance)
             # -------------------------------------------------

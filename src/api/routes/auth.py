@@ -7,6 +7,8 @@ Endpoints
 - POST /api/auth/login    : Authenticate and issue signed access token (200 OK)
 - GET  /api/auth/me       : Get current authenticated user profile (200 OK)
 - POST /api/auth/logout   : Revoke access token / session invalidation (200 OK)
+- POST /api/auth/password : Change own password; signs out every session (200 OK)
+- POST /api/auth/logout-all : Sign out of every session (200 OK)
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ from src.identity.context import UserContext
 from src.identity.exceptions import PermissionDeniedError
 from src.identity.models import (
     LogoutResponse,
+    PasswordChange,
     TokenResponse,
     UserLogin,
     UserRegistration,
@@ -164,3 +167,40 @@ def logout(
         success=True,
         message="Logged out successfully.",
     )
+
+
+@auth_router.post(
+    "/password",
+    response_model=LogoutResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Change the current user's password",
+    dependencies=[Depends(rate_limit("password", lambda: config.AUTH_LOGIN_RATE_LIMIT))],
+)
+def change_password(
+    change: PasswordChange,
+    context: UserContext = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+) -> LogoutResponse:
+    """
+    Change the caller's password. Every existing session, including this one,
+    is signed out; sign in again with the new password.
+    """
+    user_service.change_password(context.user_id, change)
+    return LogoutResponse(success=True, message="Password changed. Please sign in again.")
+
+
+@auth_router.post(
+    "/logout-all",
+    response_model=LogoutResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Sign out of every session",
+)
+def logout_all(
+    context: UserContext = Depends(get_current_active_user),
+    user_service: UserService = Depends(get_user_service),
+) -> LogoutResponse:
+    """
+    Invalidate every access token issued to the caller, on every device.
+    """
+    user_service.logout_everywhere(context)
+    return LogoutResponse(success=True, message="Signed out of every session.")

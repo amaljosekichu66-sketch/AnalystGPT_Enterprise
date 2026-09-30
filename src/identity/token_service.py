@@ -62,6 +62,8 @@ class TokenService:
             expire_minutes if expire_minutes is not None else config.AUTH_ACCESS_TOKEN_EXPIRE_MINUTES
         ) * 60
 
+        self._max_lifetime_seconds = int(config.AUTH_TOKEN_MAX_LIFETIME_MINUTES) * 60
+
         if self._algorithm != "HS256":
             raise ValueError(f"Unsupported token algorithm: {self._algorithm}. Only HS256 is supported.")
 
@@ -87,6 +89,8 @@ class TokenService:
         """
         now = int(time.time())
         ttl = expires_delta_seconds if expires_delta_seconds is not None else self._expire_seconds
+        # Hard upper bound on lifetime (I2), whatever the configuration says.
+        ttl = min(ttl, self._max_lifetime_seconds)
         exp = now + ttl
 
         header = {
@@ -108,6 +112,7 @@ class TokenService:
             "iat": now,
             "exp": exp,
             "jti": uuid.uuid4().hex,
+            "ver": user.token_version,
             "iss": config.AUTH_TOKEN_ISSUER,
             "aud": config.AUTH_TOKEN_AUDIENCE,
         }
@@ -184,6 +189,10 @@ class TokenService:
         now = int(time.time())
         if payload["exp"] < now:
             raise InvalidTokenError("Authentication token has expired.")
+
+        issued_at = payload.get("iat")
+        if not isinstance(issued_at, int) or payload["exp"] - issued_at > self._max_lifetime_seconds:
+            raise InvalidTokenError("Token lifetime exceeds the allowed maximum.")
 
         if payload.get("type") != "access":
             raise InvalidTokenError("Invalid token type.")

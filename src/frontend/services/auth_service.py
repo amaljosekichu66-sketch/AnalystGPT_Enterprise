@@ -17,6 +17,7 @@ from src.frontend.services.api_client import APIClient
 from src.frontend.services.session_manager import (
     clear_authenticated_session,
     get_auth_token,
+    set_auth_user,
     set_authenticated_session,
 )
 
@@ -128,6 +129,57 @@ class AuthService:
             logger.info("Frontend authenticated session cleared.")
 
         return True, None
+
+    def change_password(self, current_password: str, new_password: str) -> tuple[bool, str | None]:
+        """
+        Change the password; on success the session is cleared (every token is revoked).
+        """
+        try:
+            self._client.change_password(current_password, new_password)
+        except RuntimeError as exc:
+            message = str(exc)
+            if "incorrect" in message.lower():
+                return False, "Current password is incorrect."
+            if "400" in message or "422" in message:
+                return False, "The new password does not meet the password policy."
+            return False, "Could not change the password. Please try again."
+        clear_authenticated_session()
+        return True, None
+
+    def logout_everywhere(self) -> tuple[bool, str | None]:
+        """
+        Sign out of every session on every device, then clear this one.
+        """
+        try:
+            self._client.logout_all()
+        except Exception as exc:
+            logger.warning("Sign out everywhere failed: %s", exc)
+            return False, "Could not sign out of other sessions. Please try again."
+        clear_authenticated_session()
+        return True, None
+
+    def revalidate_session(self, max_age_seconds: int = 300) -> None:
+        """
+        Re-check the session against GET /api/auth/me at most every `max_age_seconds` (I2).
+
+        Refreshes the cached role (a demoted user stopped seeing stale pages
+        only after signing out) and clears the session when the backend no
+        longer accepts the token: revoked, invalidated, expired or disabled.
+        """
+        import time
+
+        import streamlit as st
+
+        now = time.monotonic()
+        if now - st.session_state.get("_session_checked_at", 0.0) < max_age_seconds:
+            return
+        st.session_state["_session_checked_at"] = now
+
+        ok, user_data, error = self.fetch_current_user()
+        if ok and user_data:
+            set_auth_user(user_data)
+        elif error and ("401" in error or "403" in error or "expired" in error.lower()):
+            clear_authenticated_session()
 
     def fetch_current_user(self) -> tuple[bool, dict[str, Any] | None, str | None]:
         """

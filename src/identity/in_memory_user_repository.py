@@ -4,6 +4,7 @@ In-memory user repository for testing and standalone operations.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from threading import Lock
 
@@ -106,10 +107,18 @@ class InMemoryUserRepository:
                 status=user_update.status if user_update.status is not None else current_user.status,
                 created_at=current_user.created_at,
                 updated_at=datetime.now(UTC),
+                token_version=current_user.token_version,
             )
 
             self._users[user_id] = updated_user
             return updated_user
+
+    def bump_token_version(self, user_id: int) -> None:
+        """Invalidate every outstanding token of the user (I2)."""
+        with self._lock:
+            current_user = self._users.get(user_id)
+            if current_user is not None:
+                self._users[user_id] = replace(current_user, token_version=current_user.token_version + 1)
 
     def delete(self, user_id: int) -> bool:
         """Delete user by ID."""

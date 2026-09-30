@@ -86,6 +86,10 @@ if "backend_connected" not in st.session_state:
 # Sidebar
 # ==========================================================
 
+if is_authenticated():
+    # Picks up role changes and revoked sessions (I2); cheap, at most every 5 min.
+    AuthService().revalidate_session()
+
 with st.sidebar:
     st.title("📊 AnalystGPT")
     st.caption("Enterprise Analytics Platform")
@@ -124,6 +128,25 @@ with st.sidebar:
         if st.button("🚪 Sign Out", use_container_width=True):
             AuthService().logout()
             st.rerun()
+
+        with st.expander("Account security"):
+            with st.form("change_password_form", clear_on_submit=True):
+                current_password = st.text_input("Current password", type="password")
+                new_password = st.text_input("New password", type="password")
+                if st.form_submit_button("Change password", use_container_width=True):
+                    changed, change_error = AuthService().change_password(current_password, new_password)
+                    if changed:
+                        st.session_state.current_page = "Sign In"
+                        st.rerun()
+                    else:
+                        st.error(change_error)
+
+            if st.button("Sign out everywhere", use_container_width=True):
+                signed_out, signout_error = AuthService().logout_everywhere()
+                if signed_out:
+                    st.rerun()
+                else:
+                    st.error(signout_error)
 
     else:
         st.info("🔒 Authentication Required")

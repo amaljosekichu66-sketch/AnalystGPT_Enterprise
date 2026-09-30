@@ -40,6 +40,7 @@ from src.identity.login_throttle import LoginThrottle
 from src.identity.models import (
     AdminUserUpdate,
     AuditEventType,
+    PasswordChange,
     User,
     UserCreate,
     UserLogin,
@@ -49,7 +50,7 @@ from src.identity.models import (
     UserUpdate,
 )
 from src.identity.password_hasher import PBKDF2PasswordHasher
-from src.identity.password_policy import validate_password_strength
+from src.identity.password_policy import WeakPasswordError, validate_password_strength
 from src.identity.token_revocation import TokenRevocationService
 from src.identity.token_service import TokenService
 
@@ -424,7 +425,72 @@ class UserService:
         if not user.is_active:
             raise UserDisabledError(f"User account is {user.status.value.lower()}.")
 
+        # Tokens issued before a password, role or status change, or before
+        # "sign out everywhere", carry an older version (I2).
+        if claims.get("ver", 0) != user.token_version:
+            raise InvalidTokenError("Authentication token is no longer valid.")
+
         return user
+
+    # ==========================================================
+    # Password change & session invalidation (I2)
+    # ==========================================================
+
+    def change_password(self, user_id: int, change: PasswordChange) -> User:
+        """
+        Change the caller's own password after re-checking the current one.
+
+        Every outstanding token, including the one used for this request, stops
+        working; the client signs in again with the new password.
+        """
+        user = self.get_user_by_id(user_id)
+        if user is None:
+            raise UserNotFoundError(f"User with ID {user_id} not found.")
+
+        if not self._password_hasher.verify(change.current_password, user.hashed_password):
+            self._audit_service.record_event(
+                event_type=AuditEventType.USER_UPDATED,
+                action="PASSWORD_CHANGE",
+                actor_id=user.id,
+                actor_username=user.username,
+                target_id=user.id,
+                target_resource="USER",
+                outcome="FAILED",
+                details={"reason": "CURRENT_PASSWORD_INCORRECT"},
+            )
+            raise WeakPasswordError("Current password is incorrect.")
+
+        validate_password_strength(change.new_password, user.username, user.email)
+        updated = self._user_repository.update(
+            user.id,
+            UserUpdate(email=None, password=None),
+            hashed_password=self._password_hasher.hash(change.new_password),
+        )
+        self._user_repository.bump_token_version(user.id)
+
+        logger.info("Password changed for user ID=%d; all sessions invalidated.", user.id)
+        self._audit_service.record_event(
+            event_type=AuditEventType.USER_UPDATED,
+            action="PASSWORD_CHANGE",
+            actor_id=user.id,
+            actor_username=user.username,
+            target_id=user.id,
+            target_resource="USER",
+            outcome="SUCCESS",
+        )
+        return updated
+
+    def logout_everywhere(self, actor_context: UserContext) -> None:
+        """Invalidate every outstanding token of the caller."""
+        self._user_repository.bump_token_version(actor_context.user_id)
+        self._audit_service.record_event(
+            event_type=AuditEventType.LOGOUT,
+            action="USER_LOGOUT_ALL",
+            actor_id=actor_context.user_id,
+            actor_username=actor_context.username,
+            target_resource="AUTH",
+            outcome="SUCCESS",
+        )
 
     # ==========================================================
     # Logout
@@ -538,6 +604,12 @@ class UserService:
                     raise AdminOperationError("Cannot demote, deactivate, or suspend the last active administrator.")
 
             updated_user = self._user_repository.update(user_id=user_id, user_update=repo_update)
+
+        # A demoted or suspended user must not keep acting on old tokens (I2).
+        role_changed = user_update.role is not None and user_update.role != target_user.role
+        status_changed = user_update.status is not None and user_update.status != target_user.status
+        if role_changed or status_changed:
+            self._user_repository.bump_token_version(user_id)
 
         # Audit events
         actor_id = actor_context.user_id if actor_context else None

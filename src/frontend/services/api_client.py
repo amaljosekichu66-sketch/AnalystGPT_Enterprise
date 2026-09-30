@@ -77,6 +77,10 @@ class APIClient:
 
     AUTH_LOGOUT = "/api/auth/logout"
 
+    AUTH_PASSWORD = "/api/auth/password"
+
+    AUTH_LOGOUT_ALL = "/api/auth/logout-all"
+
     ADMIN_USERS = "/api/admin/users"
 
     AI_JOBS = "/api/ai/jobs"
@@ -485,6 +489,21 @@ class APIClient:
             self.AUTH_REGISTER,
             payload=payload,
         )
+
+    def change_password(self, current_password: str, new_password: str) -> dict[str, Any]:
+        """
+        Change the signed-in user's password. Every session is signed out.
+        """
+        return self._post(
+            self.AUTH_PASSWORD,
+            payload={"current_password": current_password, "new_password": new_password},
+        )
+
+    def logout_all(self) -> dict[str, Any]:
+        """
+        Invalidate every access token of the signed-in user.
+        """
+        return self._post(self.AUTH_LOGOUT_ALL, payload={})
 
     def me(
         self,

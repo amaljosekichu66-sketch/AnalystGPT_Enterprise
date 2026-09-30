@@ -288,6 +288,7 @@ class TestTokenClaims:
         claims = {
             "sub": "1",
             "type": "access",
+            "iat": int(time.time()),
             "exp": int(time.time()) + 60,
             "jti": uuid.uuid4().hex,
             "iss": config.AUTH_TOKEN_ISSUER,
