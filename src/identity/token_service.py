@@ -11,6 +11,7 @@ import base64
 import hashlib
 import hmac
 import json
+import re
 import time
 import uuid
 from typing import Any
@@ -19,6 +20,8 @@ from src.core import config
 from src.identity.exceptions import InvalidTokenError
 from src.identity.models import User
 
+_B64URL_SEGMENT = re.compile(r"[A-Za-z0-9_-]+")
+
 
 def _b64url_encode(data: bytes) -> str:
     """Encode bytes to URL-safe base64 string without trailing padding."""
@@ -26,11 +29,18 @@ def _b64url_encode(data: bytes) -> str:
 
 
 def _b64url_decode(data_str: str) -> bytes:
-    """Decode URL-safe base64 string with restored padding."""
-    rem = len(data_str) % 4
-    if rem > 0:
-        data_str += "=" * (4 - rem)
-    return base64.urlsafe_b64decode(data_str.encode("ascii"))
+    """
+    Decode an unpadded URL-safe base64 segment, accepting only its canonical form.
+
+    Padding or non-alphabet characters are refused (I1): `token + "=="` used to
+    verify as the same token.
+    """
+    if not data_str or not _B64URL_SEGMENT.fullmatch(data_str) or len(data_str) % 4 == 1:
+        raise ValueError("Non-canonical base64url segment.")
+    decoded = base64.urlsafe_b64decode((data_str + "=" * (-len(data_str) % 4)).encode("ascii"))
+    if _b64url_encode(decoded) != data_str:
+        raise ValueError("Non-canonical base64url segment.")
+    return decoded
 
 
 class TokenService:

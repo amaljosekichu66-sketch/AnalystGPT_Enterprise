@@ -192,7 +192,8 @@ class TestAuthRoutes:
                 "password": "Password123!",
             },
         )
-        assert response.status_code == 403
+        # 401, identical to a wrong password (L1): a 403 confirmed the password.
+        assert response.status_code == 401
 
     # ==========================================================
     # Current User Profile (/api/auth/me)

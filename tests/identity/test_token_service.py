@@ -68,7 +68,8 @@ class TestTokenService:
         header, payload, signature = token.split(".")
         tampered_token = f"{header}.{payload}.invalidsignature123"
 
-        with pytest.raises(InvalidTokenError, match="signature verification failed"):
+        # A non-canonical segment is refused at decoding (I1), before comparison.
+        with pytest.raises(InvalidTokenError, match="signature"):
             token_service.verify_access_token(tampered_token)
 
     def test_tampered_payload_rejected(self, token_service: TokenService, sample_user: User) -> None:

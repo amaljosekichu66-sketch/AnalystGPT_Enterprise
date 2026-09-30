@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Callable
 
 from fastapi import Depends, Header, Request
+from starlette.concurrency import run_in_threadpool
 
 from src.core import config
 from src.core.logger import logger
@@ -117,7 +118,10 @@ async def get_user_context(
             if not token:
                 raise InvalidTokenError("Bearer token missing.")
 
-            user = user_service.get_current_user_from_token(token)
+            # Off the event loop (M2): verification does blocking DB lookups.
+            # The dependency itself stays async so the context variable set
+            # below is visible to the endpoint.
+            user = await run_in_threadpool(user_service.get_current_user_from_token, token)
             context = UserContext.from_user(user)
             set_current_user_context(context)
             return context

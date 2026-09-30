@@ -11,6 +11,8 @@ Responsibilities
 
 from __future__ import annotations
 
+import hashlib
+import secrets
 import threading
 from collections.abc import Callable
 
@@ -60,8 +62,22 @@ _ADMIN_GUARD_LOCK = threading.RLock()
 #: Returned for any registration conflict; deliberately does not say which field.
 DUPLICATE_ACCOUNT_MESSAGE = "An account with this username or email address already exists."
 
-# Constant dummy hash used to neutralize timing attacks on nonexistent user logins
-_DUMMY_HASH = "$pbkdf2-sha256$600000$ZHVtbXlzYWx0MTIzNDU2Nw$ZHVtbXloYXNoMTIzNDU2Nzg5MDEyMzQ1Njc4OTA="
+#: Longest identifier echoed into a log line (L2); longer values are cut.
+_LOGGED_IDENTIFIER_MAX = 64
+
+
+def _log_safe(value: str) -> str:
+    """Neutralise CR/LF and bound length so a login identifier cannot forge log lines (L2)."""
+    cleaned = value.replace("\r", "\\r").replace("\n", "\\n")
+    if len(cleaned) > _LOGGED_IDENTIFIER_MAX:
+        cleaned = cleaned[:_LOGGED_IDENTIFIER_MAX] + "..."
+    return cleaned
+
+
+def _mask_email(email: str) -> str:
+    """Keep the domain and the first character only: 'a***@example.com' (I4)."""
+    local, _, domain = email.partition("@")
+    return f"{local[:1]}***@{domain}" if domain else "***"
 
 
 class UserService:
@@ -87,6 +103,11 @@ class UserService:
         self._revocation_service = revocation_service if revocation_service is not None else TokenRevocationService()
         self._audit_service = audit_service if audit_service is not None else get_audit_service()
         self._login_throttle = login_throttle if login_throttle is not None else LoginThrottle()
+        # Verified against when the identifier matches no account, so that path
+        # costs the same PBKDF2 work as a real password check (M1). It must be a
+        # real hash from this hasher: the old constant had an undecodable salt,
+        # so verify() returned in microseconds and exposed which accounts exist.
+        self._dummy_hash = self._password_hasher.hash(secrets.token_urlsafe(32))
 
     # ==========================================================
     # User Registration
@@ -135,7 +156,7 @@ class UserService:
         logger.info(
             "Registering user '%s' (%s) with role '%s'...",
             user_create.username,
-            user_create.email,
+            _mask_email(user_create.email),
             user_create.role.value,
         )
 
@@ -172,7 +193,7 @@ class UserService:
             outcome="SUCCESS",
             details={
                 "username": created_user.username,
-                "email": created_user.email,
+                "email": _mask_email(created_user.email),
                 "role": created_user.role.value,
             },
         )
@@ -220,7 +241,7 @@ class UserService:
             self._audit_service.record_event(
                 event_type=AuditEventType.LOGIN_FAILURE,
                 action="USER_LOGIN",
-                actor_username=clean_identifier,
+                actor_username=_log_safe(clean_identifier),
                 target_resource="AUTH",
                 outcome="DENIED",
                 details={"reason": "LOCKED_OUT", "retry_after_seconds": retry_after},
@@ -234,15 +255,16 @@ class UserService:
 
         if user is None:
             # Perform dummy verification to neutralize timing attack enumeration
-            self._password_hasher.verify(password, _DUMMY_HASH)
+            self._password_hasher.verify(password, self._dummy_hash)
+            # The identifier may be a mistyped password: log only a digest.
             logger.warning(
-                "Authentication failed: User identifier '%s' not found.",
-                clean_identifier,
+                "Authentication failed: unknown identifier (sha256:%s).",
+                hashlib.sha256(clean_identifier.encode("utf-8")).hexdigest()[:12],
             )
             self._audit_service.record_event(
                 event_type=AuditEventType.LOGIN_FAILURE,
                 action="USER_LOGIN",
-                actor_username=clean_identifier,
+                actor_username="sha256:" + hashlib.sha256(clean_identifier.encode("utf-8")).hexdigest()[:12],
                 target_resource="AUTH",
                 outcome="FAILED",
                 details={"reason": "USER_NOT_FOUND"},
@@ -284,7 +306,9 @@ class UserService:
                 outcome="DENIED",
                 details={"reason": f"ACCOUNT_{user.status.value}"},
             )
-            raise UserDisabledError(f"User account is {user.status.value.lower()}.")
+            # Same 401 as a wrong password (L1): a distinct 403 here confirmed
+            # that the password was correct and revealed the account's status.
+            raise InvalidCredentialsError("Invalid username or password.")
 
         self._login_throttle.record_success(clean_identifier)
 
@@ -318,7 +342,7 @@ class UserService:
             self._audit_service.record_event(
                 event_type=AuditEventType.LOGIN_FAILURE,
                 action="ACCOUNT_LOCKOUT",
-                actor_username=identifier,
+                actor_username=_log_safe(identifier),
                 target_resource="AUTH",
                 outcome="DENIED",
                 details={"reason": "LOCKOUT_TRIGGERED", "lockout_seconds": lockout},

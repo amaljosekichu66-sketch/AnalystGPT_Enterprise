@@ -42,7 +42,7 @@ auth_router = APIRouter(
     summary="Register a new user account",
     dependencies=[Depends(rate_limit("register", lambda: config.AUTH_REGISTER_RATE_LIMIT))],
 )
-async def register(
+def register(
     registration: UserRegistration,
     user_service: UserService = Depends(get_user_service),
 ) -> UserResponse:
@@ -71,12 +71,16 @@ async def register(
     summary="Authenticate user and issue access token",
     dependencies=[Depends(rate_limit("login", lambda: config.AUTH_LOGIN_RATE_LIMIT))],
 )
-async def login(
+def login(
     user_login: UserLogin,
     user_service: UserService = Depends(get_user_service),
 ) -> TokenResponse:
     """
     Validate user credentials, enforce account status, and return a signed Bearer token.
+
+    Plain `def` on purpose (M2): PBKDF2 at 600k iterations takes ~0.5 s, and
+    in an `async def` it ran on the event loop and stalled every other request.
+    FastAPI runs sync endpoints in its threadpool.
     """
     user, access_token, expires_in = user_service.login(user_login)
     return TokenResponse(
@@ -131,7 +135,7 @@ async def get_current_user_profile(
     status_code=status.HTTP_200_OK,
     summary="Invalidate user session / token",
 )
-async def logout(
+def logout(
     authorization: str | None = Header(None, alias="Authorization"),
     context: UserContext = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),

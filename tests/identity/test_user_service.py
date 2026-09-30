@@ -148,7 +148,7 @@ class TestUserService:
                 password="AnyPassword123!",
             )
 
-    def test_authenticate_suspended_or_inactive_user_raises_disabled(self, user_service: UserService) -> None:
+    def test_authenticate_suspended_or_inactive_user_is_rejected_generically(self, user_service: UserService) -> None:
         user = user_service.register_user(
             UserCreate(
                 username="suspended_user",
@@ -160,7 +160,8 @@ class TestUserService:
         # Update status to suspended
         user_service._user_repository.update(user.id, UserUpdate(status=UserStatus.SUSPENDED))
 
-        with pytest.raises(UserDisabledError, match="suspended"):
+        # Same error as a wrong password (L1), so the status is not revealed.
+        with pytest.raises(InvalidCredentialsError):
             user_service.authenticate_user("suspended_user", "Password123!")
 
     def test_login_workflow(self, user_service: UserService) -> None:

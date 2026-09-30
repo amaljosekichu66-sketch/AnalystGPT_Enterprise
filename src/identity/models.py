@@ -174,8 +174,12 @@ class UserResponse(BaseModel):
 class UserLogin(BaseModel):
     """Schema for user login credentials."""
 
-    username: str = Field(..., min_length=1)
-    password: str = Field(..., min_length=1)
+    # Bounded (L2): the identifier is logged and audited, and an unbounded
+    # value let one request write megabytes into both.
+    model_config = ConfigDict(extra="forbid")
+
+    username: str = Field(..., min_length=1, max_length=254)
+    password: str = Field(..., min_length=1, max_length=128)
 
 
 class TokenResponse(BaseModel):
