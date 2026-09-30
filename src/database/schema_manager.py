@@ -81,6 +81,32 @@ class SchemaManager:
             return
         cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition};")
 
+    def _ensure_case_insensitive_user_uniqueness(self, cursor) -> None:
+        """
+        Enforce unique usernames and emails regardless of case (L6).
+
+        The column UNIQUE constraints are case-sensitive while every lookup
+        uses LOWER(), so two concurrent registrations of 'Alice' and 'alice'
+        could both succeed. Existing case-duplicates are reported rather than
+        silently merged: an operator has to decide which account survives.
+        On PostgreSQL the index creation itself fails and names the duplicate
+        key; SQLite gets an explicit check for a clearer message.
+        """
+        for column in ("username", "email"):
+            if self._database_type == "sqlite":
+                cursor.execute(
+                    f"SELECT LOWER({column}) AS value FROM users GROUP BY LOWER({column}) HAVING COUNT(*) > 1;"
+                )
+                duplicates = cursor.fetchall()
+            else:
+                duplicates = []
+            if duplicates:
+                raise RuntimeError(
+                    f"users.{column} has values that differ only by case; resolve the duplicate "
+                    "accounts before starting the application."
+                )
+            cursor.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS uq_users_{column}_lower ON users(LOWER({column}));")
+
     def _create_schema(self):
         """
         Create or migrate the whole schema in ONE transaction.
@@ -455,6 +481,7 @@ class SchemaManager:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_revoked_tokens_expires ON revoked_tokens(expires_at);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_type ON audit_events(event_type);")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_actor ON audit_events(actor_id);")
+            self._ensure_case_insensitive_user_uniqueness(cursor)
 
             # Sprint 14 Phase 4 & Remediation — AI Report Structured & Provenance Migrations
             for col_def in [

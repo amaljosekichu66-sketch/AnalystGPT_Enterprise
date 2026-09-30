@@ -90,6 +90,9 @@ def render() -> None:
                         )
 
                     if success:
-                        st.success("Account created successfully! You can now sign in.")
+                        st.success(
+                            "Account created with read-only (Viewer) access. You can sign in now; "
+                            "ask an administrator if you need to upload data or run analyses."
+                        )
                     else:
                         st.error(error_msg or "Registration failed.")

@@ -59,8 +59,9 @@ class TestSelfRegistrationRole:
         res = client.post("/api/auth/register", json=_payload("plain_user"))
 
         assert res.status_code == 201
-        assert res.json()["role"] == UserService.SELF_REGISTRATION_ROLE.value == "ANALYST"
-        assert service.get_user_by_id(res.json()["id"]).role == UserRole.ANALYST
+        # VIEWER since M10: self-registration must not grant upload or LLM access.
+        assert res.json()["role"] == UserService.SELF_REGISTRATION_ROLE.value == "VIEWER"
+        assert service.get_user_by_id(res.json()["id"]).role == UserRole.VIEWER
 
     @pytest.mark.parametrize("role", ["ADMIN", "admin", " Admin ", "ANALYST", "VIEWER"])
     def test_register_with_role_is_rejected_and_creates_nothing(
@@ -100,7 +101,7 @@ class TestPrivilegedRoleChanges:
         res = client.patch(f"/api/admin/users/{created['id']}", json={"role": "ADMIN"})
 
         assert res.status_code == 401
-        assert service.get_user_by_id(created["id"]).role == UserRole.ANALYST
+        assert service.get_user_by_id(created["id"]).role == UserRole.VIEWER
 
     def test_self_registered_user_cannot_promote_self(self, client: TestClient, service: UserService) -> None:
         created = client.post("/api/auth/register", json=_payload("self_promoter")).json()
@@ -113,7 +114,7 @@ class TestPrivilegedRoleChanges:
         )
 
         assert res.status_code == 403
-        assert service.get_user_by_id(created["id"]).role == UserRole.ANALYST
+        assert service.get_user_by_id(created["id"]).role == UserRole.VIEWER
 
     def test_admin_can_still_change_roles(self, client: TestClient, service: UserService) -> None:
         service.register_user(

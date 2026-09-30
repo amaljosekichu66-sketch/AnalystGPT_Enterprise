@@ -86,7 +86,9 @@ class UserService:
     """
 
     #: Role assigned to every self-registered account. Not caller-selectable.
-    SELF_REGISTRATION_ROLE = UserRole.ANALYST
+    #: Read-only (M10): ANALYST granted upload, pipeline and LLM access to anyone
+    #: who could reach the sign-up form. An admin promotes accounts as needed.
+    SELF_REGISTRATION_ROLE = UserRole.VIEWER
 
     def __init__(
         self,

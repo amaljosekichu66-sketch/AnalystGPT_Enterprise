@@ -604,6 +604,11 @@ AUTH_LOGIN_MAX_FAILURES = int(os.getenv("AUTH_LOGIN_MAX_FAILURES", "5"))
 AUTH_LOGIN_LOCKOUT_BASE_SECONDS = int(os.getenv("AUTH_LOGIN_LOCKOUT_BASE_SECONDS", "60"))
 AUTH_LOGIN_LOCKOUT_MAX_SECONDS = int(os.getenv("AUTH_LOGIN_LOCKOUT_MAX_SECONDS", "900"))
 
+# Public self-registration (M10). Self-registered accounts get the read-only
+# VIEWER role; an administrator promotes them with PATCH /api/admin/users/{id}.
+# Set to false to accept only accounts created by an administrator.
+AUTH_SELF_REGISTRATION_ENABLED = _env_flag("AUTH_SELF_REGISTRATION_ENABLED", default=True)
+
 AUTH_RATE_LIMIT_ENABLED = _env_flag("AUTH_RATE_LIMIT_ENABLED", default=True)
 AUTH_LOGIN_RATE_LIMIT = os.getenv("AUTH_LOGIN_RATE_LIMIT", "20/60").strip()
 AUTH_REGISTER_RATE_LIMIT = os.getenv("AUTH_REGISTER_RATE_LIMIT", "5/600").strip()

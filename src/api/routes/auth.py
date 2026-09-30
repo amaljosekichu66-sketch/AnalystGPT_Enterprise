@@ -20,6 +20,7 @@ from src.api.dependencies.auth_dependencies import (
 from src.api.rate_limit import rate_limit
 from src.core import config
 from src.identity.context import UserContext
+from src.identity.exceptions import PermissionDeniedError
 from src.identity.models import (
     LogoutResponse,
     TokenResponse,
@@ -51,7 +52,16 @@ def register(
 
     The role is assigned server-side and cannot be chosen by the caller; a
     payload carrying `role` (or any other unknown field) is rejected with 422.
+    New accounts are VIEWER (M10). With `AUTH_SELF_REGISTRATION_ENABLED=false`
+    the endpoint refuses every request with 403.
+
+    A duplicate username or email answers 409 with a message that does not
+    say which (SEC-15). The status itself still confirms that one of them is
+    taken; that is an accepted risk (L3), bounded by the registration rate
+    limit, because users need to know to pick another name.
     """
+    if not config.AUTH_SELF_REGISTRATION_ENABLED:
+        raise PermissionDeniedError("Self-registration is disabled. Ask an administrator for an account.")
     user = user_service.register_self(registration)
     return UserResponse(
         id=user.id,

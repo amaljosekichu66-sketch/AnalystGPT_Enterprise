@@ -59,7 +59,7 @@ class TestAuthRoutes:
         data = response.json()
         assert data["username"] == "new_analyst"
         assert data["email"] == "new_analyst@enterprise.com"
-        assert data["role"] == "ANALYST"
+        assert data["role"] == "VIEWER"
         assert data["status"] == "ACTIVE"
         assert "password" not in data
         assert "hashed_password" not in data

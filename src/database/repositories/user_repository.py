@@ -13,6 +13,8 @@ from src.database.repositories.base_repository import BaseRepository
 from src.identity.exceptions import UserAlreadyExistsError, UserNotFoundError
 from src.identity.models import User, UserCreate, UserRole, UserStatus, UserUpdate
 
+_DUPLICATE_ACCOUNT_MESSAGE = "An account with this username or email address already exists."
+
 
 class UserRepository(BaseRepository):
     """
@@ -97,10 +99,9 @@ class UserRepository(BaseRepository):
 
     def create(self, user_create: UserCreate, hashed_password: str) -> User:
         """Create and persist a new user entity."""
-        if self.get_by_username(user_create.username) is not None:
-            raise UserAlreadyExistsError(f"User with username '{user_create.username}' already exists.")
-        if self.get_by_email(user_create.email) is not None:
-            raise UserAlreadyExistsError(f"User with email '{user_create.email}' already exists.")
+        # Generic on purpose (L3): the message must not say which field clashed.
+        if self.get_by_username(user_create.username) is not None or self.get_by_email(user_create.email) is not None:
+            raise UserAlreadyExistsError(_DUPLICATE_ACCOUNT_MESSAGE)
 
         now = datetime.now(UTC).isoformat()
 
@@ -117,18 +118,25 @@ class UserRepository(BaseRepository):
         VALUES (?, ?, ?, ?, ?, ?, ?);
         """
 
-        user_id = self.insert_and_return_id(
-            query,
-            (
-                user_create.username.strip(),
-                user_create.email.strip().lower(),
-                hashed_password,
-                user_create.role.value,
-                UserStatus.ACTIVE.value,
-                now,
-                now,
-            ),
-        )
+        try:
+            user_id = self.insert_and_return_id(
+                query,
+                (
+                    user_create.username.strip(),
+                    user_create.email.strip().lower(),
+                    hashed_password,
+                    user_create.role.value,
+                    UserStatus.ACTIVE.value,
+                    now,
+                    now,
+                ),
+            )
+        except Exception as exc:
+            # A concurrent registration that passed the checks above is caught
+            # by the case-insensitive unique indexes (L6).
+            if type(exc).__name__ in {"IntegrityError", "UniqueViolation"}:
+                raise UserAlreadyExistsError(_DUPLICATE_ACCOUNT_MESSAGE) from exc
+            raise
 
         created_user = self.get_by_id(user_id)
         if created_user is None:

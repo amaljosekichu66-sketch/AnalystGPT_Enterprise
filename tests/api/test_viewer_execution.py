@@ -146,7 +146,12 @@ def test_demoted_viewer_cannot_execute_own_dataset_through_views(
     was then demoted to VIEWER still owns the dataset. Views must not run it.
     """
     name = f"b04_demoted_{uuid.uuid4().hex[:6]}"
-    client.post("/api/auth/register", json={"username": name, "email": f"{name}@example.com", "password": _PASSWORD})
+    registered = client.post(
+        "/api/auth/register", json={"username": name, "email": f"{name}@example.com", "password": _PASSWORD}
+    ).json()
+    # Self-registration yields VIEWER (M10); an admin grants ANALYST to upload.
+    promote = client.patch(f"/api/admin/users/{registered['id']}", json={"role": "ANALYST"}, headers=tokens["admin"])
+    assert promote.status_code == 200
     login = client.post("/api/auth/login", json={"username": name, "password": _PASSWORD}).json()
     headers = {"Authorization": f"Bearer {login['access_token']}"}
     dataset_id = upload_dataset(client, SAMPLE_CSV, headers)
