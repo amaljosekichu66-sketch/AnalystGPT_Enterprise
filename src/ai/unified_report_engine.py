@@ -13,6 +13,7 @@ Architectural contract:
 
 from __future__ import annotations
 
+import hashlib
 import re
 import time
 from dataclasses import dataclass
@@ -215,14 +216,16 @@ class UnifiedReportEngine:
         # ---- LLM Call ----
         llm_start = time.perf_counter()
         response = self._call_llm(prompt)
-        logger.info("=" * 80)
-        logger.info("RAW GEMMA RESPONSE")
-        logger.info("=" * 80)
-        logger.info(response)
-        logger.info("=" * 80)
-        # Log last few chars to detect truncation
-        if len(response) > 100:
-            logger.info("Response tail: ...%s", response[-100:])
+        # Length and digest only (L9): the response can repeat dataset values,
+        # and raw newlines in it forged log lines. The text is logged, flattened,
+        # only with LOG_LLM_RESPONSES=true, at DEBUG.
+        logger.info(
+            "LLM response: %d characters, sha256=%s",
+            len(response),
+            hashlib.sha256(response.encode("utf-8", "replace")).hexdigest()[:16],
+        )
+        if config.LOG_LLM_RESPONSES:
+            logger.debug("LLM response text: %s", response.replace("\r", "\\r").replace("\n", "\\n"))
         llm_time = time.perf_counter() - llm_start
 
         # ---- Parsing ----

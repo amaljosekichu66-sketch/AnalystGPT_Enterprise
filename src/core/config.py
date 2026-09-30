@@ -702,6 +702,10 @@ AUTH_ACCESS_TOKEN_EXPIRE_MINUTES = int(
     )
 )
 
+# Raw LLM responses in the log (L9). Off: they can repeat dataset values.
+# When on, they are logged at DEBUG with newlines escaped.
+LOG_LLM_RESPONSES = _env_flag("LOG_LLM_RESPONSES", default=False)
+
 # Upper bound on any access token's lifetime (I2). Tokens are stateless, so
 # this caps how long a leaked token stays usable; AUTH_ACCESS_TOKEN_EXPIRE_MINUTES
 # above it is clamped.

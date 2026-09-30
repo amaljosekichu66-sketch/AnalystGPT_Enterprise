@@ -73,6 +73,17 @@ from .pipeline_result import PipelineResult
 # Application layer contracts
 
 
+def _presence(value: object) -> str:
+    """
+    Summarise a logged object without its content (L9).
+
+    Pipeline, reporting and AI reports carry dataset values (names,
+    addresses) and model text; logging them at INFO copied that data into
+    every log sink.
+    """
+    return "absent" if value is None else f"present ({type(value).__name__})"
+
+
 class Application:
     """
 
@@ -724,17 +735,17 @@ class Application:
 
             logger.info(
                 "Pipeline Report  : %s",
-                result.pipeline_report,
+                _presence(result.pipeline_report),
             )
 
             logger.info(
                 "Reporting Report : %s",
-                result.pipeline_report.reporting_report,
+                _presence(result.pipeline_report.reporting_report),
             )
 
             logger.info(
                 "AI Report        : %s",
-                result.pipeline_report.ai_report,
+                _presence(result.pipeline_report.ai_report),
             )
 
             logger.info(
@@ -829,11 +840,11 @@ class Application:
 
         dataframe = self.upload_manager.upload(input_path)
 
-        logger.info("Data Preview Before Cleaning:")
+        logger.info("Dataset before cleaning:")
 
         logger.info(
-            "\n%s",
-            dataframe.head(),
+            "Shape: %d rows x %d columns (values are not logged)",
+            *dataframe.shape,
         )
 
         return dataframe
@@ -876,11 +887,11 @@ class Application:
 
         cleaned_dataframe = self.cleaning_manager.clean(dataframe)
 
-        logger.info("Data Preview After Cleaning:")
+        logger.info("Dataset after cleaning:")
 
         logger.info(
-            "\n%s",
-            cleaned_dataframe.head(),
+            "Shape: %d rows x %d columns (values are not logged)",
+            *cleaned_dataframe.shape,
         )
 
         return cleaned_dataframe
@@ -931,10 +942,10 @@ class Application:
             user_id=user_id,
         )
 
-        logger.info("Data Preview After Cleaning:")
+        logger.info("Dataset after cleaning:")
         logger.info(
-            "\n%s",
-            governed_result.cleaned_df.head(),
+            "Shape: %d rows x %d columns (values are not logged)",
+            *governed_result.cleaned_df.shape,
         )
 
         return governed_result
@@ -1324,17 +1335,17 @@ class Application:
 
         logger.info(
             "Cached Result : %s",
-            result,
+            _presence(result),
         )
 
         logger.info(
             "Pipeline Report : %s",
-            result.pipeline_report,
+            _presence(result.pipeline_report),
         )
 
         logger.info(
             "AI Report : %s",
-            result.pipeline_report.ai_report,
+            _presence(result.pipeline_report.ai_report),
         )
 
         logger.info("=" * 80)
@@ -1538,24 +1549,24 @@ class Application:
 
         logger.info(
             "Cached Result : %s",
-            self._last_pipeline_result,
+            _presence(self._last_pipeline_result),
         )
 
         if self._last_pipeline_result is not None:
 
             logger.info(
                 "Pipeline Report : %s",
-                self._last_pipeline_result.pipeline_report,
+                _presence(self._last_pipeline_result.pipeline_report),
             )
 
             logger.info(
                 "Reporting Report : %s",
-                self._last_pipeline_result.pipeline_report.reporting_report,
+                _presence(self._last_pipeline_result.pipeline_report.reporting_report),
             )
 
             logger.info(
                 "AI Report : %s",
-                self._last_pipeline_result.pipeline_report.ai_report,
+                _presence(self._last_pipeline_result.pipeline_report.ai_report),
             )
 
         logger.info("=" * 80)
