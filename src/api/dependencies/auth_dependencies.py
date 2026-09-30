@@ -58,11 +58,15 @@ def get_user_service() -> UserService:
 
         user_repo = UserRepository(connection)
         # Persistent revocations: survive restarts and are shared by workers.
+        # Lockout counters in the database too (I3): a restart used to clear them.
+        from src.identity.login_throttle import LoginThrottle
+        from src.identity.login_throttle_store import DatabaseThrottleStore
         from src.identity.token_revocation import DatabaseTokenRevocationService
 
         _global_user_service = UserService(
             user_repository=user_repo,
             revocation_service=DatabaseTokenRevocationService(),
+            login_throttle=LoginThrottle(store=DatabaseThrottleStore()),
         )
 
     return _global_user_service

@@ -11,13 +11,13 @@ Endpoints
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Header, status
+from fastapi import APIRouter, Depends, Header, Request, status
 
 from src.api.dependencies.auth_dependencies import (
     get_current_active_user,
     get_user_service,
 )
-from src.api.rate_limit import rate_limit
+from src.api.rate_limit import client_address, rate_limit
 from src.core import config
 from src.identity.context import UserContext
 from src.identity.exceptions import PermissionDeniedError
@@ -52,14 +52,13 @@ def register(
 
     The role is assigned server-side and cannot be chosen by the caller; a
     payload carrying `role` (or any other unknown field) is rejected with 422.
-    New accounts are VIEWER (M10). With `AUTH_SELF_REGISTRATION_ENABLED=false`
-    the endpoint refuses every request with 403.
-
-    A duplicate username or email answers 409 with a message that does not
-    say which (SEC-15). The status itself still confirms that one of them is
-    taken; that is an accepted risk (L3), bounded by the registration rate
-    limit, because users need to know to pick another name.
+    New accounts have the read-only VIEWER role. Returns 403 when
+    self-registration is disabled.
     """
+    # VIEWER, not ANALYST (M10): sign-up must not grant upload or LLM access.
+    # A duplicate answers 409 with a message that does not say which field
+    # (SEC-15). The status still confirms one of them is taken: an accepted
+    # risk (L3), bounded by the rate limit, so users know to pick another name.
     if not config.AUTH_SELF_REGISTRATION_ENABLED:
         raise PermissionDeniedError("Self-registration is disabled. Ask an administrator for an account.")
     user = user_service.register_self(registration)
@@ -83,16 +82,16 @@ def register(
 )
 def login(
     user_login: UserLogin,
+    request: Request,
     user_service: UserService = Depends(get_user_service),
 ) -> TokenResponse:
     """
     Validate user credentials, enforce account status, and return a signed Bearer token.
-
-    Plain `def` on purpose (M2): PBKDF2 at 600k iterations takes ~0.5 s, and
-    in an `async def` it ran on the event loop and stalled every other request.
-    FastAPI runs sync endpoints in its threadpool.
     """
-    user, access_token, expires_in = user_service.login(user_login)
+    # Plain `def` on purpose (M2): PBKDF2 at 600k iterations takes ~0.5 s, and
+    # in an `async def` it ran on the event loop and stalled every other
+    # request. FastAPI runs sync endpoints in its threadpool.
+    user, access_token, expires_in = user_service.login(user_login, client=client_address(request))
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",

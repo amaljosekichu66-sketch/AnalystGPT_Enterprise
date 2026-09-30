@@ -15,12 +15,25 @@ Rules
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from src.core import config
 
-#: Frequently breached passwords, lower-cased. Deliberately short and local:
-#: no network lookup happens at registration time.
+#: Bundled list of commonly used passwords (L5): the 8+ character entries of
+#: SecLists' 10k-most-common list. Local on purpose: no network lookup happens
+#: at registration time.
+_COMMON_PASSWORDS_FILE = Path(__file__).with_name("common_passwords.txt")
+
+
+def _load_common_passwords() -> frozenset[str]:
+    lines = _COMMON_PASSWORDS_FILE.read_text(encoding="utf-8").splitlines()
+    return frozenset(line.strip().lower() for line in lines if line.strip() and not line.startswith("#"))
+
+
+#: Frequently breached passwords, lower-cased: the bundled list plus a few
+#: product-specific and common variants.
 # fmt: off
-COMMON_PASSWORDS: frozenset[str] = frozenset(
+COMMON_PASSWORDS: frozenset[str] = _load_common_passwords() | frozenset(
     {
         "password", "password1", "password12", "password123", "password1234", "passw0rd", "p@ssw0rd",
         "p@ssword", "passwort", "123456789", "1234567890", "12345678", "123123123", "11111111",

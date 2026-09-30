@@ -210,6 +210,7 @@ class UserService:
         self,
         username_or_email: str,
         password: str,
+        client: str = "",
     ) -> User:
         """
         Authenticate user credentials and enforce account lifecycle status.
@@ -220,6 +221,8 @@ class UserService:
             Supplied username or email address.
         password:
             Plaintext password.
+        client:
+            Address the attempt came from; lockouts are per account and source.
 
         Returns
         -------
@@ -234,11 +237,18 @@ class UserService:
             If user account is suspended or inactive.
         """
         clean_identifier = username_or_email.strip()
-        user: User | None = None
 
-        # Locked identifiers are refused before the password is checked, so a
+        if "@" in clean_identifier:
+            user = self._user_repository.get_by_email(clean_identifier)
+        else:
+            user = self._user_repository.get_by_username(clean_identifier)
+
+        # Username and email of one account share a counter (M12).
+        account = f"user:{user.id}" if user is not None else "id:" + LoginThrottle.normalise(clean_identifier)
+
+        # Locked accounts are refused before the password is checked, so a
         # correct guess during the lockout is indistinguishable from a wrong one.
-        retry_after = self._login_throttle.retry_after(clean_identifier)
+        retry_after = self._login_throttle.retry_after(account, client)
         if retry_after:
             self._audit_service.record_event(
                 event_type=AuditEventType.LOGIN_FAILURE,
@@ -249,11 +259,6 @@ class UserService:
                 details={"reason": "LOCKED_OUT", "retry_after_seconds": retry_after},
             )
             raise AccountLockedError("Too many failed login attempts. Try again later.", retry_after)
-
-        if "@" in clean_identifier:
-            user = self._user_repository.get_by_email(clean_identifier)
-        else:
-            user = self._user_repository.get_by_username(clean_identifier)
 
         if user is None:
             # Perform dummy verification to neutralize timing attack enumeration
@@ -271,7 +276,7 @@ class UserService:
                 outcome="FAILED",
                 details={"reason": "USER_NOT_FOUND"},
             )
-            self._register_failed_login(clean_identifier)
+            self._register_failed_login(account, client, clean_identifier)
             raise InvalidCredentialsError("Invalid username or password.")
 
         if not self._password_hasher.verify(password, user.hashed_password):
@@ -289,7 +294,7 @@ class UserService:
                 outcome="FAILED",
                 details={"reason": "INVALID_PASSWORD"},
             )
-            self._register_failed_login(clean_identifier)
+            self._register_failed_login(account, client, clean_identifier)
             raise InvalidCredentialsError("Invalid username or password.")
 
         if not user.is_active:
@@ -312,7 +317,7 @@ class UserService:
             # that the password was correct and revealed the account's status.
             raise InvalidCredentialsError("Invalid username or password.")
 
-        self._login_throttle.record_success(clean_identifier)
+        self._login_throttle.record_success(account, client)
 
         logger.info(
             "User '%s' (ID=%d, Role=%s) authenticated successfully.",
@@ -334,8 +339,8 @@ class UserService:
 
         return user
 
-    def _register_failed_login(self, identifier: str) -> None:
-        lockout = self._login_throttle.record_failure(identifier)
+    def _register_failed_login(self, account: str, client: str, identifier: str) -> None:
+        lockout = self._login_throttle.record_failure(account, client)
         if lockout:
             logger.warning(
                 "SECURITY_ALERT | Login identifier locked for %ds after repeated failures.",
@@ -350,7 +355,7 @@ class UserService:
                 details={"reason": "LOCKOUT_TRIGGERED", "lockout_seconds": lockout},
             )
 
-    def login(self, user_login: UserLogin) -> tuple[User, str, int]:
+    def login(self, user_login: UserLogin, client: str = "") -> tuple[User, str, int]:
         """
         Execute login workflow and issue a cryptographically signed access token.
 
@@ -358,6 +363,8 @@ class UserService:
         ----------
         user_login:
             Validated login credentials.
+        client:
+            Address the attempt came from (see `rate_limit.client_address`).
 
         Returns
         -------
@@ -367,6 +374,7 @@ class UserService:
         user = self.authenticate_user(
             username_or_email=user_login.username,
             password=user_login.password,
+            client=client,
         )
 
         token = self._token_service.create_access_token(user)
@@ -581,6 +589,34 @@ class UserService:
         )
 
         return updated_user
+
+    def unlock_user(self, user_id: int, actor_context: UserContext | None = None) -> User:
+        """
+        Clear every login lockout for an account, from every source (M12).
+
+        Raises
+        ------
+        UserNotFoundError
+            If user does not exist.
+        """
+        target_user = self.get_user_by_id(user_id)
+        if target_user is None:
+            raise UserNotFoundError(f"User with ID {user_id} not found.")
+
+        self._login_throttle.unlock(f"user:{target_user.id}")
+
+        logger.info("Login lockout cleared for user ID=%d.", target_user.id)
+        self._audit_service.record_event(
+            event_type=AuditEventType.USER_UPDATED,
+            action="ADMIN_UNLOCK_USER",
+            actor_id=actor_context.user_id if actor_context else None,
+            actor_username=actor_context.username if actor_context else None,
+            target_id=target_user.id,
+            target_resource="USER",
+            outcome="SUCCESS",
+            details={"username": target_user.username},
+        )
+        return target_user
 
     def delete_user_admin(
         self,

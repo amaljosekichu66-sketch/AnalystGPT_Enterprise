@@ -435,6 +435,22 @@ class SchemaManager:
                 """)
 
             # -------------------------------------------------
+            # Login throttle counters (audit 2026-09-29, I3 / M12)
+            # -------------------------------------------------
+            # Epoch seconds. Survive restarts and are shared by API workers.
+
+            cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS login_failures(
+                    scope TEXT NOT NULL,
+                    key TEXT NOT NULL,
+                    failures INTEGER NOT NULL,
+                    locked_until {float_type} NOT NULL,
+                    last_failure {float_type} NOT NULL,
+                    PRIMARY KEY (scope, key)
+                );
+                """)
+
+            # -------------------------------------------------
             # Durable audit trail (pre-Sprint-15 hardening, SEC-25)
             # -------------------------------------------------
             # No foreign keys on purpose: audit rows must outlive the users and

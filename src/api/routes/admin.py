@@ -142,6 +142,34 @@ async def update_user(
     )
 
 
+@admin_router.post(
+    "/users/{user_id}/unlock",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Clear a user's login lockout (Admin)",
+    description="Clear every failed-login counter for the account, from every client address.",
+)
+def unlock_user(
+    user_id: int,
+    context: UserContext = Depends(require_permission(Permission.USER_MANAGE)),
+    user_service: UserService = Depends(get_user_service),
+) -> UserResponse:
+    """
+    Lift a lockout early. Lockouts also expire on their own.
+    """
+    user = user_service.unlock_user(user_id=user_id, actor_context=context)
+
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        role=user.role,
+        status=user.status,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+    )
+
+
 @admin_router.delete(
     "/users/{user_id}",
     response_model=UserDeleteResponse,

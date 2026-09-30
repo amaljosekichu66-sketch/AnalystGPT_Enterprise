@@ -88,7 +88,7 @@
           "Authentication"
         ],
         "summary": "Register a new user account",
-        "description": "Register a new user with secure password hashing.\n\nThe role is assigned server-side and cannot be chosen by the caller; a\npayload carrying `role` (or any other unknown field) is rejected with 422.",
+        "description": "Register a new user with secure password hashing.\n\nThe role is assigned server-side and cannot be chosen by the caller; a\npayload carrying `role` (or any other unknown field) is rejected with 422.\nNew accounts have the read-only VIEWER role. Returns 403 when\nself-registration is disabled.",
         "operationId": "register_api_auth_register_post",
         "requestBody": {
           "content": {
@@ -900,6 +900,130 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/users/{user_id}/unlock": {
+      "post": {
+        "tags": [
+          "Administration",
+          "Administration"
+        ],
+        "summary": "Clear a user's login lockout (Admin)",
+        "description": "Clear every failed-login counter for the account, from every client address.",
+        "operationId": "unlock_user_api_admin_users__user_id__unlock_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          },
+          {
+            "name": "X-User-Name",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Name"
+            }
+          },
+          {
+            "name": "X-User-Email",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          },
+          {
+            "name": "X-User-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Role"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
                 }
               }
             }
@@ -6269,15 +6393,18 @@
         "properties": {
           "username": {
             "type": "string",
+            "maxLength": 254,
             "minLength": 1,
             "title": "Username"
           },
           "password": {
             "type": "string",
+            "maxLength": 128,
             "minLength": 1,
             "title": "Password"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
           "username",

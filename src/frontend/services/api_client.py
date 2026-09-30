@@ -20,6 +20,28 @@ from src.frontend.config.settings import API_BASE_URL
 from src.frontend.services.session_manager import get_auth_token
 
 
+def _forwarding_headers() -> dict[str, str]:
+    """
+    Tell the API which browser this request is for (M11).
+
+    Every Streamlit user reaches the API from the frontend's own address, so
+    without this all of them shared one rate-limit bucket. The API believes
+    the header only from peers in its TRUSTED_PROXY_IPS. An upstream proxy's
+    X-Forwarded-For chain is kept, with the address Streamlit saw appended.
+    """
+    try:
+        import streamlit as st
+
+        if not st.runtime.exists():
+            return {}
+        browser = st.context.ip_address
+        upstream = st.context.headers.get("X-Forwarded-For")
+    except Exception:
+        return {}
+    chain = [hop for hop in (upstream, browser) if hop]
+    return {"X-Forwarded-For": ", ".join(chain)} if chain else {}
+
+
 class APIClient:
     """
     REST client used by the Streamlit frontend.
@@ -106,6 +128,7 @@ class APIClient:
         Execute an HTTP request with automatic Bearer token injection.
         """
         request_headers = dict(headers) if headers else {}
+        request_headers.update(_forwarding_headers())
         auth_token = token or get_auth_token()
         if auth_token and "Authorization" not in request_headers:
             request_headers["Authorization"] = f"Bearer {auth_token}"
@@ -323,7 +346,7 @@ class APIClient:
         """
         Download raw file bytes from a report export endpoint.
         """
-        request_headers: dict[str, str] = {}
+        request_headers: dict[str, str] = _forwarding_headers()
         auth_token = token or get_auth_token()
         if auth_token:
             request_headers["Authorization"] = f"Bearer {auth_token}"

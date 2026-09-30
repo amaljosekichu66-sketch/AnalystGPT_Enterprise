@@ -54,6 +54,11 @@ services:
       APP_ENVIRONMENT: production
       AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?AUTH_SECRET_KEY must be set to a private random value of at least 32 characters (see .env.example)}
 
+      # Rate limits and lockouts are per client address (M11). Believe the
+      # forwarded browser address only from the frontend container (and from
+      # your reverse proxy, if you add its address here).
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-${ANALYSTGPT_FRONTEND_IP:-172.28.0.10}}
+
       # Database Connection (Routed to internal postgres service)
       DATABASE_ENGINE: postgresql
       POSTGRES_HOST: postgres
@@ -124,7 +129,9 @@ services:
       API_BASE_URL: http://api:8000
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     networks:
-      - analystgpt-network
+      analystgpt-network:
+        # Fixed so the API can trust exactly this peer's X-Forwarded-For (M11).
+        ipv4_address: ${ANALYSTGPT_FRONTEND_IP:-172.28.0.10}
     depends_on:
       api:
         condition: service_healthy
@@ -155,3 +162,9 @@ networks:
   analystgpt-network:
     name: analystgpt_network
     driver: bridge
+    # Fixed subnet so the frontend has a stable address (M11). Override
+    # ANALYSTGPT_SUBNET and ANALYSTGPT_FRONTEND_IP if it clashes with a
+    # network on the host.
+    ipam:
+      config:
+        - subnet: ${ANALYSTGPT_SUBNET:-172.28.0.0/24}

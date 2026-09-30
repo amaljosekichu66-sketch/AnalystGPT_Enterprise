@@ -598,11 +598,27 @@ AUTH_TOKEN_AUDIENCE = os.getenv("AUTH_TOKEN_AUDIENCE", "analystgpt-api").strip()
 #
 # Per-client rate limits ("<requests>/<seconds>") on login and registration.
 #
-# Both are in-process: with several API workers each keeps its own counters.
+# Lockout state is stored in the database (shared by workers). The per-client
+# rate limits are in-process: run a single API worker, or each keeps its own.
 
 AUTH_LOGIN_MAX_FAILURES = int(os.getenv("AUTH_LOGIN_MAX_FAILURES", "5"))
 AUTH_LOGIN_LOCKOUT_BASE_SECONDS = int(os.getenv("AUTH_LOGIN_LOCKOUT_BASE_SECONDS", "60"))
 AUTH_LOGIN_LOCKOUT_MAX_SECONDS = int(os.getenv("AUTH_LOGIN_LOCKOUT_MAX_SECONDS", "900"))
+
+# The per-failure lockout above applies to one account from one client
+# address (M12). Across every address, an account only gets a short,
+# non-escalating back-off, so nobody can keep its owner locked out. Across
+# every account, one address is locked progressively after
+# AUTH_LOGIN_SOURCE_MAX_FAILURES failures (password spraying, L5).
+AUTH_LOGIN_ACCOUNT_MAX_FAILURES = int(os.getenv("AUTH_LOGIN_ACCOUNT_MAX_FAILURES", "20"))
+AUTH_LOGIN_ACCOUNT_LOCKOUT_SECONDS = int(os.getenv("AUTH_LOGIN_ACCOUNT_LOCKOUT_SECONDS", "30"))
+AUTH_LOGIN_SOURCE_MAX_FAILURES = int(os.getenv("AUTH_LOGIN_SOURCE_MAX_FAILURES", "30"))
+
+# Peers whose X-Forwarded-For header is believed (M11): comma-separated IPs or
+# CIDRs of the Streamlit frontend and any reverse proxy. Everything else is
+# identified by its socket address. Without this, every frontend user shared
+# the frontend container's address - one rate-limit bucket for everybody.
+TRUSTED_PROXY_IPS = os.getenv("TRUSTED_PROXY_IPS", "").strip()
 
 # Public self-registration (M10). Self-registered accounts get the read-only
 # VIEWER role; an administrator promotes them with PATCH /api/admin/users/{id}.
