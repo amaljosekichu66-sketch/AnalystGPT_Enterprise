@@ -21,7 +21,7 @@ from starlette.datastructures import UploadFile
 from src.api.body_limit import MULTIPART_OVERHEAD_BYTES
 from src.api.dependencies.application_dependency import get_application
 from src.api.dependencies.auth_dependencies import require_permission
-from src.api.models.response_models import DatasetUploadResponse, ErrorResponse
+from src.api.models.response_models import DatasetDeleteResponse, DatasetUploadResponse, ErrorResponse
 from src.application.app import Application
 from src.identity.audit import get_audit_service
 from src.identity.context import UserContext
@@ -146,3 +146,38 @@ async def upload_dataset(
         row_count=source_version.row_count,
         column_count=source_version.column_count,
     )
+
+
+@router.delete(
+    "/{dataset_version_id}",
+    response_model=DatasetDeleteResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"model": ErrorResponse, "description": "Authentication required"},
+        403: {"model": ErrorResponse, "description": "Permission denied"},
+        404: {"model": ErrorResponse, "description": "Dataset not found"},
+    },
+    summary="Delete Dataset",
+    description="Delete an uploaded dataset and its cleaned versions. Existing reports are kept.",
+)
+def delete_dataset(
+    dataset_version_id: str,
+    context: UserContext = Depends(require_permission(Permission.DATASET_UPLOAD)),
+    application: Application = Depends(get_application),
+) -> DatasetDeleteResponse:
+    """
+    Delete one of the caller's uploads (an administrator may delete any).
+    """
+    application.delete_dataset(dataset_version_id, user_context=context)
+
+    get_audit_service().record_event(
+        event_type=AuditEventType.DATASET_DELETED,
+        action="DATASET_DELETE",
+        actor_id=context.user_id,
+        actor_username=context.username,
+        target_resource="DATASET",
+        outcome="SUCCESS",
+        details={"dataset_version_id": dataset_version_id},
+    )
+
+    return DatasetDeleteResponse(success=True, message="Dataset deleted.", dataset_version_id=dataset_version_id)

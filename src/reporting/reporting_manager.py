@@ -228,40 +228,6 @@ class ReportingManager:
             output_path=output_path,
         )
 
-        if output_path is not None:
-            self._mirror_as_latest(path)
-
+        # No shared "latest report" copy any more (L16): every user's report
+        # was mirrored to one analystgpt_report.txt that no purge removed.
         return path
-
-    @staticmethod
-    def _mirror_as_latest(exported_path: str | Path) -> None:
-        """
-        Copy the just-written report to the conventional "latest" filename.
-
-        Two things were wrong here. The destination was the relative literal
-        `reports/analystgpt_report.txt`, which resolves against the process
-        working directory - the repository root under pytest - so a test run
-        overwrote the developer's real report. And the copy was wrapped in a
-        bare `except Exception: pass`, so a genuine failure to write it was
-        indistinguishable from success.
-
-        The destination now comes from `config.REPORT_OUTPUT_DIRECTORY`, and a
-        failure is logged. It is still non-fatal: the authoritative artifact is
-        the one already written to `exported_path`, and losing a convenience
-        copy must not fail an otherwise successful pipeline run.
-        """
-        destination = Path(config.REPORT_OUTPUT_DIRECTORY) / config.DEFAULT_REPORT_FILENAME
-
-        try:
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_text(
-                Path(exported_path).read_text(encoding="utf-8"),
-                encoding="utf-8",
-            )
-        except OSError:
-            logger.warning(
-                "Could not update the latest-report copy at '%s'. The exported " "report at '%s' is unaffected.",
-                destination,
-                exported_path,
-                exc_info=True,
-            )

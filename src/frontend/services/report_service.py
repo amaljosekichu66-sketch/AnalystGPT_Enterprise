@@ -7,22 +7,18 @@ Sprint 11
 from __future__ import annotations
 
 from copy import deepcopy
-from pathlib import Path
 from typing import Any
 
 import httpx
 import pandas as pd
 import streamlit as st
 
-from src.core import config
 from src.core.logger import logger
 from src.frontend.services.api_client import APIClient
 from src.frontend.services.session_manager import (
     get_auth_token,
-    get_auth_user,
     get_dataset,
     get_dataset_version_id,
-    get_pipeline_result,
 )
 
 # ==========================================================
@@ -255,175 +251,57 @@ def get_report_data() -> dict[str, Any]:
 # Export API
 # ==========================================================
 
-# Exceptions that mean "the REST API simply isn't there" - expected whenever the
-# frontend runs standalone without the API server. Anything else reaching the
-# fallback is a genuine defect in the REST export path and must not be reduced
-# to a one-line warning.
-_API_UNREACHABLE_ERRORS = (
-    httpx.ConnectError,
-    httpx.ConnectTimeout,
-    httpx.ReadTimeout,
-    ConnectionError,
-    OSError,
-)
 
-
-def _export_destination(filename: str) -> Path:
+def _export_via_api(kind: str, report_id: int | None, suffix: str, mime_type: str) -> dict[str, Any]:
     """
-    Resolve where a downloaded export is written.
+    Fetch an export from the API and keep its bytes in memory.
 
-    Previously this was the relative literal `Path(f"reports/{filename}")`,
-    which resolves against the process working directory. Under pytest that is
-    the repository root, so exports landed in the real `reports/` directory and
-    a test run overwrote the developer's `analystgpt_report.txt` and `.pdf`.
-    Routing through `config.REPORT_OUTPUT_DIRECTORY` keeps the production
-    location identical while letting a test session redirect it.
+    Two things changed (L16, L18). Exports used to be written to shared
+    filenames under the report directory - every user's latest export in one
+    `analystgpt_report.txt` - and were never deleted. And when the REST call
+    failed for ANY reason, a 403 included, the frontend built an Application
+    in-process and exported directly, without the API's permission checks.
+    The API is now the only path; its error is reported, not worked around.
     """
-    return Path(config.REPORT_OUTPUT_DIRECTORY) / filename
+    token = get_auth_token()
+    try:
+        with APIClient() as client:
+            fetch = client.export_pdf_report if suffix == ".pdf" else client.export_text_report
+            content = fetch(report_id=report_id, token=token)
+    except Exception as exc:
+        logger.warning("%s report export failed: %s", kind, exc)
+        if "HTTP 404" in str(exc):
+            return {"success": False, "message": f"No generated report was found to export as {kind}."}
+        if "HTTP 403" in str(exc):
+            return {"success": False, "message": "Your account cannot export reports."}
+        return {"success": False, "message": f"The {kind} report could not be exported. Please try again."}
 
+    if not content or (suffix == ".pdf" and not content.startswith(b"%PDF-")):
+        return {"success": False, "message": f"No generated report was found to export as {kind}."}
 
-def _log_export_fallback(kind: str, exc: Exception) -> None:
-    """
-    Report why a REST export fell back to the local orchestrator.
-
-    An unreachable API is logged at INFO (normal standalone operation); every
-    other failure is logged with a full traceback so real bugs in the REST
-    export path surface instead of being silently masked by the fallback.
-    """
-    if isinstance(exc, _API_UNREACHABLE_ERRORS):
-        logger.info(
-            "REST API unavailable for %s report export; using local orchestrator: %s",
-            kind,
-            exc,
-        )
-        return
-
-    logger.exception(
-        "REST API %s report export failed unexpectedly, falling back to local orchestrator. "
-        "This is a defect in the REST export path, not an unavailable API.",
-        kind,
-    )
+    filename = f"report_{report_id}{suffix}" if report_id is not None else f"analystgpt_report{suffix}"
+    return {
+        "success": True,
+        "message": f"{kind} report ready for download.",
+        "filename": filename,
+        "mime_type": mime_type,
+        "data": content,
+    }
 
 
 def export_text_report(
     report_id: int | None = None,
 ) -> dict[str, Any]:
     """
-    Generate and export a plain-text report artifact.
+    Export a plain-text report through the API.
     """
-    user = get_auth_user()
-    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
-    token = get_auth_token()
-
-    # 1. Try REST API export if available
-    try:
-        with APIClient() as client:
-            content = client.export_text_report(report_id=report_id, token=token)
-            if content:
-                filename = f"report_{report_id}.txt" if report_id is not None else "analystgpt_report.txt"
-                out_path = _export_destination(filename)
-                out_path.parent.mkdir(parents=True, exist_ok=True)
-                out_path.write_bytes(content)
-                return {
-                    "success": True,
-                    "message": "Text report ready for download.",
-                    "path": str(out_path.resolve()),
-                    "export_path": str(out_path.resolve()),
-                    "filename": filename,
-                    "mime_type": "text/plain",
-                    "data": content,
-                }
-    except Exception as exc:
-        _log_export_fallback("text", exc)
-
-    # 2. Local session / in-process fallback
-    pipeline_result = get_pipeline_result()
-    app = st.session_state.get("application")
-
-    if pipeline_result is not None and getattr(pipeline_result, "pipeline_report", None):
-        if app is None:
-            try:
-                from src.application.app import Application
-
-                app = Application()
-            except Exception:
-                app = None
-        if app is not None:
-            from src.application.reporting_orchestrator import ReportingOrchestrator
-
-            app.set_result_for_user(user_id, pipeline_result)
-            orchestrator = ReportingOrchestrator(app)
-            return orchestrator.export_text_report(user_id=user_id, report_id=report_id)
-
-    if app is not None:
-        from src.application.reporting_orchestrator import ReportingOrchestrator
-
-        orchestrator = ReportingOrchestrator(app)
-        return orchestrator.export_text_report(user_id=user_id, report_id=report_id)
-
-    return {
-        "success": False,
-        "message": "No generated report was found to export as text.",
-    }
+    return _export_via_api("text", report_id, ".txt", "text/plain")
 
 
 def export_pdf_report(
     report_id: int | None = None,
 ) -> dict[str, Any]:
     """
-    Generate and export a PDF report artifact.
+    Export a PDF report through the API.
     """
-    user = get_auth_user()
-    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", None)
-    token = get_auth_token()
-
-    # 1. Try REST API export if available
-    try:
-        with APIClient() as client:
-            content = client.export_pdf_report(report_id=report_id, token=token)
-            if content and content.startswith(b"%PDF-"):
-                filename = f"report_{report_id}.pdf" if report_id is not None else "analystgpt_report.pdf"
-                out_path = _export_destination(filename)
-                out_path.parent.mkdir(parents=True, exist_ok=True)
-                out_path.write_bytes(content)
-                return {
-                    "success": True,
-                    "message": "PDF report ready.",
-                    "path": str(out_path.resolve()),
-                    "export_path": str(out_path.resolve()),
-                    "filename": filename,
-                    "mime_type": "application/pdf",
-                    "data": content,
-                }
-    except Exception as exc:
-        _log_export_fallback("PDF", exc)
-
-    # 2. Local session / in-process fallback
-    pipeline_result = get_pipeline_result()
-    app = st.session_state.get("application")
-
-    if pipeline_result is not None and getattr(pipeline_result, "pipeline_report", None):
-        if app is None:
-            try:
-                from src.application.app import Application
-
-                app = Application()
-            except Exception:
-                app = None
-        if app is not None:
-            from src.application.reporting_orchestrator import ReportingOrchestrator
-
-            app.set_result_for_user(user_id, pipeline_result)
-            orchestrator = ReportingOrchestrator(app)
-            return orchestrator.export_pdf_report(user_id=user_id, report_id=report_id)
-
-    if app is not None:
-        from src.application.reporting_orchestrator import ReportingOrchestrator
-
-        orchestrator = ReportingOrchestrator(app)
-        return orchestrator.export_pdf_report(user_id=user_id, report_id=report_id)
-
-    return {
-        "success": False,
-        "message": "No generated report was found to export as PDF.",
-    }
+    return _export_via_api("PDF", report_id, ".pdf", "application/pdf")

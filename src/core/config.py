@@ -222,6 +222,10 @@ GOVERNANCE_PREVIEW_RATE_LIMIT = os.getenv("GOVERNANCE_PREVIEW_RATE_LIMIT", "30/6
 AI_JOB_LEASE_MARGIN_SECONDS = int(os.getenv("AI_JOB_LEASE_MARGIN_SECONDS", "120"))
 AI_JOB_PENDING_TTL_SECONDS = int(os.getenv("AI_JOB_PENDING_TTL_SECONDS", "7200"))
 
+# Uploaded datasets older than this many days are deleted at startup (I7).
+# 0 keeps them until the owner deletes them or the account is purged.
+DATASET_RETENTION_DAYS = int(os.getenv("DATASET_RETENTION_DAYS", "0"))
+
 # In-memory pipeline result caches (L10): bounded LRU with a time-to-live.
 RESULT_CACHE_MAX_ENTRIES = int(os.getenv("RESULT_CACHE_MAX_ENTRIES", "256"))
 RESULT_CACHE_TTL_SECONDS = int(os.getenv("RESULT_CACHE_TTL_SECONDS", str(6 * 3600)))

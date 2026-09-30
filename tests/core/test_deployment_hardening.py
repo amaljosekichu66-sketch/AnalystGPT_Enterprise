@@ -116,6 +116,9 @@ def _run_api(code: str, tmp_path: Path, **env: str) -> subprocess.CompletedProce
         PYTHONPATH=str(REPO),
         **env,
     )
+    # TestClient sends Host: testserver, which the deployed Host allow-list
+    # (API_ALLOWED_HOSTS, L14) would otherwise refuse with 400.
+    child.setdefault("API_ALLOWED_HOSTS", "testserver")
     return subprocess.run(
         [sys.executable, "-c", code], cwd=REPO, env=child, capture_output=True, text=True, timeout=120
     )
@@ -136,6 +139,16 @@ class TestExposure:
     def test_docs_can_be_enabled_explicitly(self, tmp_path: Path) -> None:
         proc = _run_api(_PROBE, tmp_path, APP_ENVIRONMENT="production", API_DOCS_ENABLED="true")
         assert json.loads(proc.stdout.strip().splitlines()[-1])["/openapi.json"] == 200
+
+    def test_production_rejects_unknown_host_headers(self, tmp_path: Path) -> None:
+        probe = (
+            "import json; from fastapi.testclient import TestClient; from src.api.server import app; "
+            "print(json.dumps([TestClient(app, base_url=f'http://{h}').get('/api/health').status_code "
+            "for h in ('evil.example', 'localhost', 'api')]))"
+        )
+        proc = _run_api(probe, tmp_path, APP_ENVIRONMENT="production", API_ALLOWED_HOSTS="api,localhost,127.0.0.1")
+        assert proc.returncode == 0, proc.stderr[-1500:]
+        assert json.loads(proc.stdout.strip().splitlines()[-1]) == [400, 200, 200]
 
     def test_docs_on_in_development(self, tmp_path: Path) -> None:
         proc = _run_api(_PROBE, tmp_path, APP_ENVIRONMENT="development")

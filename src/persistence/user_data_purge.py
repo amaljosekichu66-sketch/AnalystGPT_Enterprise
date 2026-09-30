@@ -22,6 +22,9 @@ from src.database.connection_factory import ConnectionFactory
 from src.database.schema_manager import SchemaManager
 from src.storage.artifact_store import LocalArtifactStore
 
+#: Bound variables per IN list; SQLite's default limit is 999 on older builds.
+_IN_CHUNK = 500
+
 
 class UserDataPurger:
     def __init__(self, artifact_store: LocalArtifactStore) -> None:
@@ -55,30 +58,34 @@ class UserDataPurger:
             cursor.execute(q("SELECT report_path FROM reports WHERE user_id = ?;"), (user_id,))
             report_paths = [self._first(r) for r in cursor.fetchall()]
 
-            owned_or_run = "user_id = ?" + (
-                f" OR pipeline_run_id IN ({','.join('?' * len(run_ids))})" if run_ids else ""
-            )
-            run_only = f"pipeline_run_id IN ({','.join('?' * len(run_ids))})" if run_ids else None
-            params = (user_id, *run_ids)
-
             deleted: dict[str, int] = {}
 
             def delete(table: str, where: str, args: tuple) -> None:
                 cursor.execute(q(f"DELETE FROM {table} WHERE {where};"), args)
                 deleted[table] = deleted.get(table, 0) + max(cursor.rowcount, 0)
 
+            def delete_owned_or_run(table: str) -> None:
+                delete(table, "user_id = ?", (user_id,))
+                delete_runs(table)
+
+            def delete_runs(table: str) -> None:
+                # Chunked (I14): one IN list per run id overflowed SQLite's
+                # bound-variable limit for accounts with many runs.
+                for start in range(0, len(run_ids), _IN_CHUNK):
+                    chunk = tuple(run_ids[start : start + _IN_CHUNK])
+                    delete(table, f"pipeline_run_id IN ({','.join('?' * len(chunk))})", chunk)
+
             # Children before parents.
-            delete("ai_reports", owned_or_run, params)
-            delete("ai_jobs", owned_or_run, params)
-            delete("cleaning_executions", owned_or_run, params)
+            delete_owned_or_run("ai_reports")
+            delete_owned_or_run("ai_jobs")
+            delete_owned_or_run("cleaning_executions")
             delete("cleaning_configs", "user_id = ?", (user_id,))
             delete("dataset_versions", "user_id = ? AND parent_version_id IS NOT NULL", (user_id,))
             delete("dataset_versions", "user_id = ?", (user_id,))
-            if run_only:
-                delete("quality_reports", run_only, tuple(run_ids))
-                delete("analytics_reports", run_only, tuple(run_ids))
-            delete("reports", owned_or_run, params)
-            delete("datasets", owned_or_run, params)
+            delete_runs("quality_reports")
+            delete_runs("analytics_reports")
+            delete_owned_or_run("reports")
+            delete_owned_or_run("datasets")
             delete("pipeline_runs", "user_id = ?", (user_id,))
 
             conn.commit()

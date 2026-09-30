@@ -78,40 +78,28 @@ def test_artifact_store_defaults_to_the_isolated_root() -> None:
     assert not _is_under_project_root(store.base_dir)
 
 
-def test_frontend_export_destination_is_redirected() -> None:
+def test_frontend_export_writes_no_file(tmp_path: Path) -> None:
     """
-    The frontend export wrote to the relative literal `reports/<name>`, which
-    resolved against the repository root under pytest and clobbered the real
-    default report artifacts.
+    The frontend used to write every export to a shared filename under the
+    report directory (first the repository's own `reports/`, which a test run
+    clobbered; later REPORT_OUTPUT_DIRECTORY). Exports now stay in memory (L16).
     """
-    from src.frontend.services.report_service import _export_destination
+    from unittest.mock import MagicMock, patch
 
-    destination = _export_destination("analystgpt_report.txt")
-
-    assert not _is_under_project_root(destination)
-    assert destination.name == "analystgpt_report.txt"
-
-
-# ==========================================================
-# The developer's real artifacts stay untouched
-# ==========================================================
-
-
-def test_real_default_report_artifacts_are_not_written(tmp_path: Path) -> None:
-    """
-    Writing an export must not touch `<repo>/reports/analystgpt_report.txt`.
-
-    Recorded as a hash comparison rather than an existence check, because the
-    original defect overwrote a file that already existed.
-    """
-    from src.frontend.services.report_service import _export_destination
+    from src.frontend.services import report_service
 
     real_report = config.PROJECT_ROOT / "reports" / "analystgpt_report.txt"
     before = real_report.read_bytes() if real_report.exists() else None
+    report_dir = Path(config.REPORT_OUTPUT_DIRECTORY)
+    files_before = set(report_dir.rglob("*")) if report_dir.exists() else set()
 
-    destination = _export_destination("analystgpt_report.txt")
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_bytes(b"isolated export")
+    client = MagicMock()
+    client.__enter__.return_value.export_text_report.return_value = b"isolated export"
+    with patch.object(report_service, "APIClient", return_value=client):
+        result = report_service.export_text_report()
 
+    assert result["success"] is True and result["data"] == b"isolated export"
+    assert "path" not in result
+    assert (set(report_dir.rglob("*")) if report_dir.exists() else set()) == files_before
     after = real_report.read_bytes() if real_report.exists() else None
     assert after == before

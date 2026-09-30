@@ -207,6 +207,12 @@ class AIReportResponse(BaseModel):
 # ==========================================================
 
 
+class DatasetDeleteResponse(APIResponse):
+    """Response returned after a dataset is deleted."""
+
+    dataset_version_id: str
+
+
 class DatasetUploadResponse(APIResponse):
     """
     Response returned after a dataset upload.

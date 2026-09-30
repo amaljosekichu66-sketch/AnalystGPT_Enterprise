@@ -31,6 +31,18 @@ from src.core.redaction import public_artifact_name, public_report_dict
 from src.reporting.structured_report import StructuredReport
 
 
+def _contained_report_file(raw: str | None) -> Path | None:
+    """The stored report path, if it is an existing file inside REPORT_OUTPUT_DIRECTORY."""
+    if not raw:
+        return None
+    path = Path(raw).resolve()
+    root = Path(config.REPORT_OUTPUT_DIRECTORY).resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        logger.warning("Refusing to serve a stored report path outside the report directory.")
+        return None
+    return path
+
+
 class ReportingOrchestrator:
     """
     Coordinates reporting operations.
@@ -316,9 +328,10 @@ class ReportingOrchestrator:
                     "success": False,
                     "message": "Report not found or access denied.",
                 }
-            # Check if file exists on disk
-            disk_path = Path(record.get("report_path", ""))
-            if disk_path.exists():
+            # Only a file inside the report directory is served (I6): the path
+            # comes from the database and was trusted as-is.
+            disk_path = _contained_report_file(record.get("report_path"))
+            if disk_path is not None:
                 return {
                     "success": True,
                     "message": "Text report exported successfully.",

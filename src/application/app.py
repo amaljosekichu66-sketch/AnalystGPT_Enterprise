@@ -172,6 +172,11 @@ class Application:
             _core_config.RESULT_CACHE_MAX_ENTRIES, _core_config.RESULT_CACHE_TTL_SECONDS
         )
 
+        try:
+            self._apply_dataset_retention()
+        except Exception as exc:
+            logger.warning("Could not apply dataset retention: %s", exc)
+
     # ==========================================================
     # Persistence sessions
     # ==========================================================
@@ -218,6 +223,35 @@ class Application:
                     self._active_jobs[user_id] = remaining
                 else:
                     self._active_jobs.pop(user_id, None)
+
+    def delete_dataset(self, dataset_version_id: str, user_context: UserContext | None = None) -> None:
+        """
+        Delete an uploaded dataset and its cleaned derivatives (I7).
+
+        Ownership is enforced by `resolve_source_version`: an unknown or
+        foreign id raises `DatasetNotFoundError`.
+        """
+        from src.persistence.dataset_delete import DatasetDeleter
+
+        source_version = self.resolve_source_version(dataset_version_id, user_context)
+        DatasetDeleter(self.artifact_store).delete(source_version.version_id)
+        with self._cache_lock:
+            for key in [k for k in self._dataset_results if k[1] == source_version.version_id]:
+                del self._dataset_results[key]
+
+    def _apply_dataset_retention(self) -> None:
+        """Delete uploads older than DATASET_RETENTION_DAYS, if set (I7)."""
+        days = int(_core_config.DATASET_RETENTION_DAYS)
+        if days <= 0:
+            return
+        from src.persistence.dataset_delete import DatasetDeleter
+
+        deleter = DatasetDeleter(self.artifact_store)
+        expired = deleter.expired_source_versions(days)
+        for version_id in expired:
+            deleter.delete(version_id)
+        if expired:
+            logger.info("Dataset retention: deleted %d uploads older than %d days.", len(expired), days)
 
     def purge_user_data(self, user_id: int, username: str) -> dict[str, int]:
         """
@@ -286,7 +320,12 @@ class Application:
                 self.artifact_store.discard_raw_artifact(source_version.storage_path)
                 raise
 
-            persistence.dataset_version_repository.create(source_version)
+            try:
+                persistence.dataset_version_repository.create(source_version)
+            except Exception:
+                # No orphaned upload when the database write fails (I7).
+                self.artifact_store.discard_raw_artifact(source_version.storage_path)
+                raise
 
         logger.info(
             "Registered uploaded dataset version_id=%s owner=%s rows=%d",
@@ -639,7 +678,10 @@ class Application:
             ai_job = self.ai_job_service.create_and_dispatch_job(
                 pipeline_run_id=persistence._pipeline_run_id,
                 reporting_report=reporting_report,
-                user_id=user_id,
+                # The persisted owner, like every other row of this run: the
+                # raw context id violated ai_jobs.user_id's foreign key for an
+                # unregistered identity once SQLite enforced it (I14).
+                user_id=eff_user_id,
                 report_id=persistence._report_id,
             )
 

@@ -38,6 +38,11 @@ class SQLiteConnection(DatabaseConnection):
 
             self._connection.row_factory = sqlite3.Row
 
+            # Per connection, not per database (I14): it used to be enabled only
+            # on the schema-setup connection, so no other connection enforced
+            # the declared foreign keys.
+            self._connection.execute("PRAGMA foreign_keys = ON;")
+
     # ---------------------------------------------------------
 
     def disconnect(self):
