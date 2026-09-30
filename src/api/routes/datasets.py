@@ -23,7 +23,9 @@ from src.api.dependencies.application_dependency import get_application
 from src.api.dependencies.auth_dependencies import require_permission
 from src.api.models.response_models import DatasetUploadResponse, ErrorResponse
 from src.application.app import Application
+from src.identity.audit import get_audit_service
 from src.identity.context import UserContext
+from src.identity.models import AuditEventType
 from src.identity.permissions import Permission
 from src.upload.upload_policy import (
     UploadRejectedError,
@@ -118,6 +120,20 @@ async def upload_dataset(
             context,
             hold_slot=False,
         )
+
+    get_audit_service().record_event(
+        event_type=AuditEventType.DATASET_UPLOADED,
+        action="DATASET_UPLOAD",
+        actor_id=context.user_id,
+        actor_username=context.username,
+        target_resource="DATASET",
+        outcome="SUCCESS",
+        details={
+            "dataset_version_id": source_version.version_id,
+            "byte_size": source_version.byte_size,
+            "checksum_sha256": source_version.checksum_sha256,
+        },
+    )
 
     return DatasetUploadResponse(
         success=True,

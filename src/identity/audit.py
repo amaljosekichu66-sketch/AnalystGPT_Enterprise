@@ -10,6 +10,8 @@ Responsibilities
 
 from __future__ import annotations
 
+import threading
+import time
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -42,6 +44,8 @@ class AuditService:
     """
 
     def __init__(self, max_in_memory_events: int = 1000, sink: Any | None = None) -> None:
+        self._throttle_last: dict[str, float] = {}
+        self._throttle_lock = threading.Lock()
         self._max_in_memory_events = max_in_memory_events
         self._events: list[AuditEvent] = []
         #: Durable store (SEC-25). None = in-memory only (unit tests).
@@ -140,6 +144,25 @@ class AuditService:
 
         return event
 
+    def record_event_throttled(self, throttle_key: str, interval_seconds: float, **event: Any) -> AuditEvent | None:
+        """
+        Record at most one event per `throttle_key` per `interval_seconds` (L13).
+
+        For events an unauthenticated caller can trigger at will (rejected
+        tokens, rate-limit hits): each one is a database write, so recording
+        every occurrence would turn the audit trail into a write amplifier.
+        """
+        now = time.monotonic()
+        with self._throttle_lock:
+            last = self._throttle_last.get(throttle_key)
+            if last is not None and now - last < interval_seconds:
+                return None
+            self._throttle_last[throttle_key] = now
+            if len(self._throttle_last) > 10_000:
+                cutoff = now - interval_seconds
+                self._throttle_last = {k: v for k, v in self._throttle_last.items() if v >= cutoff}
+        return self.record_event(**event)
+
     def get_events(
         self,
         event_type: AuditEventType | None = None,
@@ -172,6 +195,9 @@ _ALERT_EVENT_TYPES = frozenset(
         AuditEventType.USER_ROLE_CHANGED,
         AuditEventType.USER_STATUS_CHANGED,
         AuditEventType.USER_DELETED,
+        AuditEventType.ADMIN_CROSS_TENANT_ACCESS,
+        AuditEventType.ADMIN_OPERATION_BLOCKED,
+        AuditEventType.RATE_LIMITED,
     }
 )
 

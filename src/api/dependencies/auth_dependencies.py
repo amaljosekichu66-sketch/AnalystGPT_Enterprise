@@ -85,6 +85,24 @@ def set_user_service_instance(service: UserService | None) -> None:
 # ==========================================================
 
 
+def _audit_rejected_token(request: Request, exc: InvalidTokenError) -> None:
+    """Audit an invalid, expired or revoked token, once a minute per client (L13)."""
+    from src.api.rate_limit import client_address
+    from src.identity.audit import get_audit_service
+    from src.identity.models import AuditEventType
+
+    client = client_address(request)
+    get_audit_service().record_event_throttled(
+        f"token_rejected:{client}",
+        60,
+        event_type=AuditEventType.TOKEN_REJECTED,
+        action="TOKEN_VERIFY",
+        target_resource="AUTH",
+        outcome="DENIED",
+        details={"reason": str(exc), "client": client},
+    )
+
+
 async def get_user_context(
     request: Request,
     authorization: str | None = Header(None, alias="Authorization"),
@@ -125,7 +143,11 @@ async def get_user_context(
             # Off the event loop (M2): verification does blocking DB lookups.
             # The dependency itself stays async so the context variable set
             # below is visible to the endpoint.
-            user = await run_in_threadpool(user_service.get_current_user_from_token, token)
+            try:
+                user = await run_in_threadpool(user_service.get_current_user_from_token, token)
+            except InvalidTokenError as exc:
+                _audit_rejected_token(request, exc)
+                raise
             context = UserContext.from_user(user)
             set_current_user_context(context)
             return context

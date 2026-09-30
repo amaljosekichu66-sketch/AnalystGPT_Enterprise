@@ -114,6 +114,23 @@ def rate_limit(bucket: str, spec_getter: Callable[[], str]) -> Callable:
         if not config.AUTH_RATE_LIMIT_ENABLED:
             return
         limit, window = parse_limit(spec_getter())
-        limiter.check(bucket, client_address(request), limit, window)
+        client = client_address(request)
+        try:
+            limiter.check(bucket, client, limit, window)
+        except RateLimitExceededError:
+            # Once per window per client and bucket (L13): not a write per 429.
+            from src.identity.audit import get_audit_service
+            from src.identity.models import AuditEventType
+
+            get_audit_service().record_event_throttled(
+                f"rate_limited:{bucket}:{client}",
+                window,
+                event_type=AuditEventType.RATE_LIMITED,
+                action=f"RATE_LIMIT_{bucket.upper()}",
+                target_resource="API",
+                outcome="DENIED",
+                details={"bucket": bucket, "client": client, "limit": f"{limit}/{window}s"},
+            )
+            raise
 
     return dependency

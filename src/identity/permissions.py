@@ -42,6 +42,7 @@ class Permission(str, Enum):
     USER_READ = "user:read"
     USER_MANAGE = "user:manage"
     AUDIT_READ = "audit:read"
+    #: Reserved: no route requires it yet; ADMIN holds it (I10).
     SYSTEM_ADMIN = "system:admin"
 
 

@@ -49,11 +49,13 @@ from src.governance.models import CleaningConfig, DatasetVersion, MissingValuePo
 from src.governance.preview_service import CleaningPreviewResult, CleaningPreviewService
 
 # Identity Layer (Sprint 13)
+from src.identity.audit import get_audit_service
 from src.identity.context import (
     UserContext,
     get_current_user_context,
 )
 from src.identity.exceptions import PermissionDeniedError
+from src.identity.models import AuditEventType
 from src.identity.permissions import Permission
 from src.persistence.persistence_manager import PersistenceManager
 from src.quality.quality_manager import QualityManager
@@ -397,11 +399,25 @@ class Application:
         user_id = context.user_id if context.is_authenticated else None
         with self._cache_lock:
             result = self._dataset_results.get((user_id, dataset_version_id))
+            owner_id = user_id
             if result is None and context.has_permission(Permission.USER_MANAGE):
-                for (_, cached_dataset_id), cached in reversed(list(self._dataset_results.items())):
+                for (cached_owner, cached_dataset_id), cached in reversed(list(self._dataset_results.items())):
                     if cached_dataset_id == dataset_version_id:
-                        result = cached
+                        result, owner_id = cached, cached_owner
                         break
+
+        if result is not None and owner_id != user_id:
+            # An administrator viewing another account's result (L13).
+            get_audit_service().record_event(
+                event_type=AuditEventType.ADMIN_CROSS_TENANT_ACCESS,
+                action="READ_PIPELINE_RESULT",
+                actor_id=user_id,
+                actor_username=context.username,
+                target_id=owner_id,
+                target_resource="DATASET",
+                outcome="SUCCESS",
+                details={"dataset_version_id": dataset_version_id},
+            )
 
         if result is None:
             raise PipelineResultNotFoundError(

@@ -601,6 +601,7 @@ class UserService:
                         target_user.username,
                         target_user.id,
                     )
+                    self._audit_blocked_admin_operation(actor_context, target_user, "DEMOTE_OR_DISABLE")
                     raise AdminOperationError("Cannot demote, deactivate, or suspend the last active administrator.")
 
             updated_user = self._user_repository.update(user_id=user_id, user_update=repo_update)
@@ -661,6 +662,19 @@ class UserService:
         )
 
         return updated_user
+
+    def _audit_blocked_admin_operation(self, actor_context: UserContext | None, target: User, operation: str) -> None:
+        """Record a refused attempt to remove the last active administrator (L13)."""
+        self._audit_service.record_event(
+            event_type=AuditEventType.ADMIN_OPERATION_BLOCKED,
+            action=f"LAST_ADMIN_{operation}",
+            actor_id=actor_context.user_id if actor_context else None,
+            actor_username=actor_context.username if actor_context else None,
+            target_id=target.id,
+            target_resource="USER",
+            outcome="DENIED",
+            details={"reason": "LAST_ACTIVE_ADMIN"},
+        )
 
     def unlock_user(self, user_id: int, actor_context: UserContext | None = None) -> User:
         """
@@ -731,6 +745,7 @@ class UserService:
                         target_user.username,
                         target_user.id,
                     )
+                    self._audit_blocked_admin_operation(actor_context, target_user, "DELETE")
                     raise AdminOperationError("Cannot delete the last active administrator.")
 
             # SEC-20: remove the account's data first (callers supply the purge),

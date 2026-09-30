@@ -224,6 +224,9 @@ class UserDeleteResponse(BaseModel):
 class AdminUserUpdate(BaseModel):
     """Administrative user management update schema preventing overposting."""
 
+    # Unknown fields (e.g. `password`, `hashed_password`) are refused, not ignored (I10).
+    model_config = ConfigDict(extra="forbid")
+
     email: str | None = Field(None, pattern=_EMAIL_PATTERN)
     role: UserRole | None = None
     status: UserStatus | None = None
@@ -251,6 +254,13 @@ class AuditEventType(str, Enum):
     USER_DELETED = "USER_DELETED"
     ACCESS_DENIED = "ACCESS_DENIED"
     PIPELINE_EXECUTED = "PIPELINE_EXECUTED"
+    # Audit trail gaps closed by the 2026-09-29 audit (L13).
+    DATASET_UPLOADED = "DATASET_UPLOADED"
+    REPORT_EXPORTED = "REPORT_EXPORTED"
+    ADMIN_CROSS_TENANT_ACCESS = "ADMIN_CROSS_TENANT_ACCESS"
+    TOKEN_REJECTED = "TOKEN_REJECTED"
+    RATE_LIMITED = "RATE_LIMITED"
+    ADMIN_OPERATION_BLOCKED = "ADMIN_OPERATION_BLOCKED"
 
 
 class AuditEvent(BaseModel):

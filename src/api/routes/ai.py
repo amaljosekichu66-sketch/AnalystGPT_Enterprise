@@ -25,8 +25,10 @@ from src.application.app import Application
 from src.core import config
 from src.core.exceptions import TooManyConcurrentJobsError
 from src.core.logger import logger
+from src.identity.audit import get_audit_service
 from src.identity.context import UserContext
 from src.identity.exceptions import AuthenticationError
+from src.identity.models import AuditEventType
 from src.identity.permissions import Permission
 
 #: What a client is told about a failed AI job (L7). The stored error can
@@ -38,6 +40,22 @@ _PUBLIC_JOB_ERRORS = {
     AIFailureCategory.INVALID_OUTPUT.value: "The AI model returned output that could not be used.",
     AIFailureCategory.SYSTEM_ERROR.value: "AI generation failed because of an internal error.",
 }
+
+
+def audit_cross_tenant_read(context: UserContext, owner_id: int | None, resource: str, resource_ref: str) -> None:
+    """Record an administrator reading another account's data (L13)."""
+    if owner_id is None or owner_id == context.user_id:
+        return
+    get_audit_service().record_event(
+        event_type=AuditEventType.ADMIN_CROSS_TENANT_ACCESS,
+        action=f"READ_{resource}",
+        actor_id=context.user_id,
+        actor_username=context.username,
+        target_id=owner_id,
+        target_resource=resource,
+        outcome="SUCCESS",
+        details={"resource_ref": resource_ref},
+    )
 
 
 def public_job_error(failure_category: str | None, error: str | None) -> str | None:
@@ -108,6 +126,8 @@ def get_ai_job(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"AI job '{job_id}' not found.",
         )
+
+    audit_cross_tenant_read(context, owner_id=job_data.get("user_id"), resource="AI_JOB", resource_ref=job_id)
 
     return AIJobResponse(
         job_id=job_data["job_id"],
@@ -186,7 +206,7 @@ def get_latest_ai_job(
 def retry_ai_job(
     job_id: str,
     context: UserContext = Depends(
-        require_permission(Permission.PIPELINE_EXECUTE),
+        require_permission(Permission.AI_GENERATE),
     ),
     application: Application = Depends(
         get_application,

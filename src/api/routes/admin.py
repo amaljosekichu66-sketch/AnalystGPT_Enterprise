@@ -49,7 +49,7 @@ admin_router = APIRouter(
 async def list_users(
     limit: int = Query(100, ge=1, le=1000, description="Maximum users to return."),
     offset: int = Query(0, ge=0, description="Number of users to skip."),
-    _context: UserContext = Depends(require_permission(Permission.USER_MANAGE)),
+    _context: UserContext = Depends(require_permission(Permission.USER_READ)),
     user_service: UserService = Depends(get_user_service),
 ) -> PaginatedUserResponse:
     """
@@ -86,7 +86,7 @@ async def list_users(
 )
 async def get_user(
     user_id: int,
-    _context: UserContext = Depends(require_permission(Permission.USER_MANAGE)),
+    _context: UserContext = Depends(require_permission(Permission.USER_READ)),
     user_service: UserService = Depends(get_user_service),
 ) -> UserResponse:
     """

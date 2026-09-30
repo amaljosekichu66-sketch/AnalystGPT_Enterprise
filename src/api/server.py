@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from src.api.body_limit import BodySizeLimitMiddleware
 from src.api.exceptions.exception_handlers import (
@@ -39,6 +40,7 @@ from src.api.routes.datasets import router as datasets_router
 from src.api.routes.governance import router as governance_router
 from src.api.routes.powerbi import router as powerbi_router
 from src.api.routes.reports import router as reports_router
+from src.api.security_headers import SecurityHeadersMiddleware
 from src.core import config
 from src.core.constants import (
     API_DOCS_URL,
@@ -128,13 +130,21 @@ app = FastAPI(
 # so it reflects the caller's Origin instead - turning every website into a
 # credentialed origin. The allow-list is explicit and configurable via
 # CORS_ALLOWED_ORIGINS.
+#
+# No credentials (I10): the API authenticates with Authorization headers, not
+# cookies, and the Streamlit frontend calls it server-side, so browsers never
+# need credentialed cross-origin requests.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Hardening headers on every response and a Host allow-list (L14).
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=config.API_ALLOWED_HOSTS)
 
 
 # ==========================================================

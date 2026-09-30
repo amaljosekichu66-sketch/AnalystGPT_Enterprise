@@ -5165,6 +5165,7 @@
             ]
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "title": "AdminUserUpdate",
         "description": "Administrative user management update schema preventing overposting."
@@ -5181,7 +5182,13 @@
           "USER_ROLE_CHANGED",
           "USER_DELETED",
           "ACCESS_DENIED",
-          "PIPELINE_EXECUTED"
+          "PIPELINE_EXECUTED",
+          "DATASET_UPLOADED",
+          "REPORT_EXPORTED",
+          "ADMIN_CROSS_TENANT_ACCESS",
+          "TOKEN_REJECTED",
+          "RATE_LIMITED",
+          "ADMIN_OPERATION_BLOCKED"
         ],
         "title": "AuditEventType",
         "description": "Types of auditable security and lifecycle events."

@@ -13,11 +13,11 @@ This module intentionally contains no business logic.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
-from starlette.background import BackgroundTask
+from fastapi.responses import Response
 
 from src.api.dependencies.application_dependency import (
     get_application,
@@ -34,16 +34,55 @@ from src.application.app import Application
 from src.application.reporting_orchestrator import (
     ReportingOrchestrator,
 )
+from src.identity.audit import get_audit_service
 from src.identity.context import UserContext
 from src.identity.exceptions import AuthenticationError
+from src.identity.models import AuditEventType
 from src.identity.permissions import Permission
 
+_UNSAFE_FILENAME = re.compile(r"[^A-Za-z0-9._-]")
 
-def _discard_after_send(result: dict, file_path: Path) -> BackgroundTask | None:
-    """Delete a per-request export file once it has been streamed (SEC-12)."""
-    if not result.get("ephemeral"):
-        return None
-    return BackgroundTask(file_path.unlink, missing_ok=True)
+
+def _serve_export(result: dict, media_type: str, context: UserContext) -> Response:
+    """
+    Return an export's bytes, delete a per-request file at once, and audit it.
+
+    FileResponse deleted the per-request file (SEC-12) in a BackgroundTask,
+    which never ran when the client sent a malformed Range header or
+    disconnected: export_<uuid> files piled up outside the account purge
+    (L15). Reports are small text and PDF files, so they are read into
+    memory and the file is removed before the response is sent. Every
+    export is recorded in the audit trail (L13).
+    """
+    file_path = Path(result["path"])
+    try:
+        content = file_path.read_bytes()
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Exported report file not found on disk.",
+        ) from exc
+    finally:
+        if result.get("ephemeral"):
+            file_path.unlink(missing_ok=True)
+
+    get_audit_service().record_event(
+        event_type=AuditEventType.REPORT_EXPORTED,
+        action="REPORT_EXPORT",
+        actor_id=context.user_id,
+        actor_username=context.username,
+        target_id=result.get("report_id"),
+        target_resource="REPORT",
+        outcome="SUCCESS",
+        details={"format": media_type, "bytes": len(content)},
+    )
+
+    filename = _UNSAFE_FILENAME.sub("_", str(result.get("filename") or file_path.name))
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 router = APIRouter(
@@ -132,7 +171,7 @@ def export_latest_text_report(
     application: Application = Depends(
         get_application,
     ),
-) -> FileResponse:
+) -> Response:
     """
     Export and stream the latest text report artifact.
     """
@@ -149,19 +188,7 @@ def export_latest_text_report(
             detail=result.get("message", "No generated report found to export."),
         )
 
-    file_path = Path(result["path"])
-    if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exported report file not found on disk.",
-        )
-
-    return FileResponse(
-        path=str(file_path),
-        media_type="text/plain",
-        filename=result.get("filename", file_path.name),
-        background=_discard_after_send(result, file_path),
-    )
+    return _serve_export(result, "text/plain", context)
 
 
 @router.get(
@@ -186,7 +213,7 @@ def export_text_report_by_id(
     application: Application = Depends(
         get_application,
     ),
-) -> FileResponse:
+) -> Response:
     """
     Export and stream a text report artifact for an identified report.
     """
@@ -204,19 +231,7 @@ def export_text_report_by_id(
             detail=result.get("message", "Report not found or access denied."),
         )
 
-    file_path = Path(result["path"])
-    if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exported report file not found on disk.",
-        )
-
-    return FileResponse(
-        path=str(file_path),
-        media_type="text/plain",
-        filename=result.get("filename", file_path.name),
-        background=_discard_after_send(result, file_path),
-    )
+    return _serve_export(result, "text/plain", context)
 
 
 @router.get(
@@ -254,7 +269,7 @@ def export_latest_pdf_report(
     application: Application = Depends(
         get_application,
     ),
-) -> FileResponse:
+) -> Response:
     """
     Export and stream the latest PDF report artifact.
     """
@@ -271,19 +286,7 @@ def export_latest_pdf_report(
             detail=result.get("message", "No generated report was found to export as PDF."),
         )
 
-    file_path = Path(result["path"])
-    if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exported PDF report file not found on disk.",
-        )
-
-    return FileResponse(
-        path=str(file_path),
-        media_type="application/pdf",
-        filename=result.get("filename", file_path.name),
-        background=_discard_after_send(result, file_path),
-    )
+    return _serve_export(result, "application/pdf", context)
 
 
 @router.get(
@@ -308,7 +311,7 @@ def export_pdf_report_by_id(
     application: Application = Depends(
         get_application,
     ),
-) -> FileResponse:
+) -> Response:
     """
     Export and stream a PDF report artifact for an identified report.
     """
@@ -326,16 +329,4 @@ def export_pdf_report_by_id(
             detail=result.get("message", "Report not found or access denied."),
         )
 
-    file_path = Path(result["path"])
-    if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exported PDF report file not found on disk.",
-        )
-
-    return FileResponse(
-        path=str(file_path),
-        media_type="application/pdf",
-        filename=result.get("filename", file_path.name),
-        background=_discard_after_send(result, file_path),
-    )
+    return _serve_export(result, "application/pdf", context)

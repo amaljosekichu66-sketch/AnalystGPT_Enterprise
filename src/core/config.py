@@ -163,6 +163,20 @@ FRONTEND_PORT = int(
 
 _DEFAULT_CORS_ORIGINS = f"http://localhost:{FRONTEND_PORT}," f"http://127.0.0.1:{FRONTEND_PORT}," f"{API_BASE_URL}"
 
+# Host header allow-list (L14). "*" disables the check; development defaults
+# to it. Deployed environments default to the compose topology: the API is
+# reached as `api` by the frontend and as localhost by health checks. Add
+# your public hostname when the API sits behind a reverse proxy.
+API_ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv("API_ALLOWED_HOSTS", "*" if IS_DEVELOPMENT else "api,localhost,127.0.0.1").split(",")
+    if host.strip()
+]
+
+# Strict-Transport-Security on API responses (L14). Enable only when the API
+# is served over HTTPS on a stable hostname.
+API_HSTS_ENABLED = _env_flag("API_HSTS_ENABLED", default=False)
+
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(

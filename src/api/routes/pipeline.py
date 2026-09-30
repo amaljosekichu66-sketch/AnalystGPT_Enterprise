@@ -32,7 +32,9 @@ from src.api.rate_limit import rate_limit
 from src.application.app import Application
 from src.core import config
 from src.core.redaction import public_artifact_name, redact_server_paths
+from src.identity.audit import get_audit_service
 from src.identity.context import UserContext
+from src.identity.models import AuditEventType
 from src.identity.permissions import Permission
 
 router = APIRouter(
@@ -46,7 +48,11 @@ router = APIRouter(
     status_code=status.HTTP_200_OK,
     summary="Execute Pipeline",
     description=("Execute the complete AnalystGPT Enterprise " "analytics pipeline."),
-    dependencies=[Depends(rate_limit("pipeline", lambda: config.PIPELINE_RATE_LIMIT))],
+    # Every run queues an AI insight job, so it also needs AI_GENERATE (I10).
+    dependencies=[
+        Depends(rate_limit("pipeline", lambda: config.PIPELINE_RATE_LIMIT)),
+        Depends(require_permission(Permission.AI_GENERATE)),
+    ],
 )
 def execute_pipeline(
     request: PipelineRequest,
@@ -67,6 +73,18 @@ def execute_pipeline(
     result = application.run_dataset_version(
         request.dataset_version_id,
         user_context=context,
+    )
+
+    # Defined since Sprint 13 but never emitted (L13).
+    get_audit_service().record_event(
+        event_type=AuditEventType.PIPELINE_EXECUTED,
+        action="PIPELINE_EXECUTE",
+        actor_id=context.user_id,
+        actor_username=context.username,
+        target_id=result.pipeline_run_id,
+        target_resource="PIPELINE_RUN",
+        outcome="SUCCESS" if result.success else "FAILED",
+        details={"dataset_version_id": request.dataset_version_id},
     )
 
     ai_response: AIReportResponse | None = None
