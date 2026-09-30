@@ -95,9 +95,10 @@ jobs:
           pip-audit --require-hashes --disable-pip -r requirements.lock
 
       - name: Static Security Analysis (bandit, fails on HIGH)
-        # 44 MEDIUM B608 findings were reviewed as false positives: only
-        # table-name constants / enum values are interpolated into SQL and
-        # all values are bound parameters. HIGH findings fail the build.
+        # 49 MEDIUM B608 findings were reviewed as false positives (last on
+        # 2026-09-30): only table-name constants, enum values and fixed column
+        # names are interpolated into SQL, and all values are bound
+        # parameters. HIGH findings fail the build.
         run: |
           bandit -r src scripts -q --severity-level high
 
@@ -173,6 +174,15 @@ jobs:
           load: true
           tags: analystgpt-cli:ci
 
+      - name: Container Image Scan (trivy, fails on fixable HIGH/CRITICAL)
+        # I12: the built images and the pinned PostgreSQL image, OS and Python
+        # packages. Trivy 0.74.0, pinned by digest like gitleaks above. Only
+        # vulnerabilities with a released fix fail the build.
+        run: |
+          for image in analystgpt-api:ci analystgpt-frontend:ci analystgpt-cli:ci               postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock               aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969               image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$image"
+          done
+
   # ==========================================================
   # Job 4: Docker Compose Configuration Validation
   # ==========================================================
@@ -189,10 +199,13 @@ jobs:
         run: |
           key=$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")
           pg=$(python3 -c "import secrets; print(secrets.token_urlsafe(24))")
+          app=$(python3 -c "import secrets; print(secrets.token_urlsafe(24))")
           echo "::add-mask::$key"
           echo "::add-mask::$pg"
+          echo "::add-mask::$app"
           echo "AUTH_SECRET_KEY=$key" >> "$GITHUB_ENV"
           echo "POSTGRES_PASSWORD=$pg" >> "$GITHUB_ENV"
+          echo "APP_DB_PASSWORD=$app" >> "$GITHUB_ENV"
 
       - name: Validate Docker Compose Schema & Configuration
         run: |
@@ -216,10 +229,13 @@ jobs:
         run: |
           key=$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")
           pg=$(python3 -c "import secrets; print(secrets.token_urlsafe(24))")
+          app=$(python3 -c "import secrets; print(secrets.token_urlsafe(24))")
           echo "::add-mask::$key"
           echo "::add-mask::$pg"
+          echo "::add-mask::$app"
           echo "AUTH_SECRET_KEY=$key" >> "$GITHUB_ENV"
           echo "POSTGRES_PASSWORD=$pg" >> "$GITHUB_ENV"
+          echo "APP_DB_PASSWORD=$app" >> "$GITHUB_ENV"
 
       - name: Start Full Multi-Service Stack
         run: |

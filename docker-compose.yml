@@ -13,15 +13,24 @@ services:
   # 1. PostgreSQL Database Service
   # --------------------------------------------------------
   postgres:
-    image: postgres:16-alpine
+    # Pinned by digest (L19): a tag can be re-pointed upstream. Resolved from
+    # Docker Hub on 2026-09-30 (multi-arch index of postgres:16-alpine).
+    # Refresh deliberately, the same way as the python base image.
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     container_name: analystgpt-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DATABASE:-analystgpt}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
+      # Least-privilege role the API connects as (L19), created on first init
+      # by docker/postgres/init-app-role.sh. The superuser above is for
+      # administration only and is not given to the API.
+      APP_DB_USER: ${APP_DB_USER:-analystgpt_app}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD must be set (see .env.example)}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-app-role.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
     networks:
       - analystgpt-network
     healthcheck:
@@ -64,8 +73,10 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DATABASE: ${POSTGRES_DATABASE:-analystgpt}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
+      # The application role, not the superuser (L19).
+      POSTGRES_USER: ${APP_DB_USER:-analystgpt_app}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD:?APP_DB_PASSWORD must be set (see .env.example)}
+      POSTGRES_SSLMODE: ${POSTGRES_SSLMODE:-prefer}
 
       # Logging Configuration
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
@@ -77,6 +88,9 @@ services:
       # AI / Ollama Configuration
       LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      # Plain HTTP to a non-local Ollama is refused unless acknowledged (L11).
+      OLLAMA_ALLOW_INSECURE: ${OLLAMA_ALLOW_INSECURE:-false}
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
       OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-30m}
       AI_TEMPERATURE: ${AI_TEMPERATURE:-0.2}

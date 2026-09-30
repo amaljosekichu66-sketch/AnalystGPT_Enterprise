@@ -8,6 +8,7 @@ a locally running Ollama server.
 from __future__ import annotations
 
 import time
+from urllib.parse import urlparse
 
 from ollama import Client, ResponseError
 
@@ -15,6 +16,26 @@ from src.core import config
 from src.core.logger import logger
 from src.llm.base_llm import BaseLLM
 from src.llm.response_parser import ResponseParser
+
+#: Hosts reached without leaving the machine: loopback, and the Docker host
+#: as seen from a container (the compose default).
+_LOCAL_OLLAMA_HOSTS = {"localhost", "127.0.0.1", "::1", "host.docker.internal"}
+
+
+def check_ollama_transport(host: str, allow_insecure: bool) -> None:
+    """
+    Refuse plain HTTP to a remote Ollama (L11).
+
+    Prompts carry dataset values; over plain HTTP to another machine they
+    travel in clear to a server with no authentication.
+    """
+    parsed = urlparse(host if "://" in host else f"http://{host}")
+    if parsed.scheme == "https" or (parsed.hostname or "") in _LOCAL_OLLAMA_HOSTS or allow_insecure:
+        return
+    raise RuntimeError(
+        f"OLLAMA_HOST '{host}' is a remote plain-HTTP endpoint. Put Ollama behind an HTTPS proxy "
+        "with authentication (and set OLLAMA_API_KEY), or set OLLAMA_ALLOW_INSECURE=true to accept the risk."
+    )
 
 
 class OllamaClient(BaseLLM):
@@ -27,6 +48,8 @@ class OllamaClient(BaseLLM):
     ) -> None:
 
         self._model = config.OLLAMA_MODEL
+
+        check_ollama_transport(config.OLLAMA_HOST, config.OLLAMA_ALLOW_INSECURE)
 
         self._client = Client(
             host=config.OLLAMA_HOST,

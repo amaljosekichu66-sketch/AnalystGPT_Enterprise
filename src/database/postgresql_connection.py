@@ -1,6 +1,7 @@
 import psycopg
 from psycopg.rows import dict_row
 
+from src.core import config
 from src.database.database_connection import DatabaseConnection
 
 
@@ -40,6 +41,10 @@ class PostgreSQLConnection(DatabaseConnection):
                 user=self._user,
                 password=self._password,
                 row_factory=dict_row,  # ← ensures rows are dict-like
+                # TLS and a bounded connect time (L11).
+                sslmode=config.POSTGRES_SSLMODE,
+                sslrootcert=config.POSTGRES_SSLROOTCERT,
+                connect_timeout=config.POSTGRES_CONNECT_TIMEOUT,
             )
 
     # ---------------------------------------------------------

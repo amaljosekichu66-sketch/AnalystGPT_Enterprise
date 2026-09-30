@@ -357,6 +357,13 @@ POSTGRES_PASSWORD = os.getenv(
 if DATABASE_ENGINE == "postgresql" and not POSTGRES_PASSWORD:
     raise RuntimeError("POSTGRES_PASSWORD environment variable is not set.")
 
+# TLS to PostgreSQL (L11). libpq's default, "prefer", encrypts when it can but
+# never verifies the server. Use "verify-full" (with POSTGRES_SSLROOTCERT) when
+# the database is not on the same host or compose network.
+POSTGRES_SSLMODE = os.getenv("POSTGRES_SSLMODE", "prefer").strip()
+POSTGRES_SSLROOTCERT = os.getenv("POSTGRES_SSLROOTCERT", "").strip() or None
+POSTGRES_CONNECT_TIMEOUT = int(os.getenv("POSTGRES_CONNECT_TIMEOUT", "10"))
+
 # ==========================================================
 # Frontend Configuration
 # ==========================================================
@@ -390,6 +397,12 @@ OLLAMA_HOST = os.getenv(
     "OLLAMA_HOST",
     "http://localhost:11434",
 )
+
+# Ollama has no authentication of its own and plain HTTP carries every prompt
+# (dataset values) in clear (L11). A non-local OLLAMA_HOST must be https -
+# typically an authenticating reverse proxy; set OLLAMA_API_KEY and the client
+# sends it as a bearer token - unless this is explicitly acknowledged.
+OLLAMA_ALLOW_INSECURE = _env_flag("OLLAMA_ALLOW_INSECURE", default=False)
 
 OLLAMA_MODEL = os.getenv(
     "OLLAMA_MODEL",

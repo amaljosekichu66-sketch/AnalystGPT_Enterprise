@@ -50,10 +50,13 @@ def _compose() -> dict:
 
 def test_compose_requires_the_database_password() -> None:
     compose = _compose()
-    for service in ("postgres", "api"):
+    # The superuser password for postgres itself; the API connects as the
+    # application role with its own required password (L19).
+    for service, variable in (("postgres", "POSTGRES_PASSWORD"), ("api", "APP_DB_PASSWORD")):
         value = compose["services"][service]["environment"]["POSTGRES_PASSWORD"]
-        assert value.startswith("${POSTGRES_PASSWORD:?"), (service, value)
-    assert "POSTGRES_PASSWORD:-" not in (REPO / "docker-compose.yml").read_text(encoding="utf-8")
+        assert value.startswith("${" + variable + ":?"), (service, value)
+    text = (REPO / "docker-compose.yml").read_text(encoding="utf-8")
+    assert "POSTGRES_PASSWORD:-" not in text and "APP_DB_PASSWORD:-" not in text
 
 
 # ==========================================================
