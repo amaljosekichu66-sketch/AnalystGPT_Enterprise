@@ -29,9 +29,11 @@ class CleaningConfigRepository(BaseRepository):
             custom_strategy_name,
             custom_params_json,
             config_version,
-            created_at
+            created_at,
+            proposal_id,
+            approved_by
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         return self.insert_and_return_id(
             query,
@@ -46,6 +48,8 @@ class CleaningConfigRepository(BaseRepository):
                 config.custom_params_json(),
                 config.config_version,
                 config.created_at,
+                config.proposal_id,
+                config.approved_by,
             ),
         )
 

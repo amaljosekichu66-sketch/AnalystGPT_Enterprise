@@ -110,6 +110,9 @@ class CleaningConfigResponse(BaseModel):
     custom_strategy_name: str | None = None
     custom_params_json: str | None = None
     created_at: str | None = None
+    #: Approval provenance (P2-04): the approved proposal and its approver.
+    proposal_id: str | None = None
+    approved_by: int | None = None
 
 
 class CleaningExecutionResponse(BaseModel):
@@ -169,3 +172,43 @@ class LineageResponse(BaseModel):
     cleaned_dataset_version: DatasetVersionResponse | None = None
     cleaning_config: CleaningConfigResponse | None = None
     cleaning_execution: CleaningExecutionResponse | None = None
+
+
+class PolicyProposalRequest(BaseModel):
+    """Propose a cleaning policy for one uploaded dataset (P2-04)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    dataset_version_id: str = Field(..., pattern=r"^[0-9a-fA-F-]{36}$")
+    missing_value_policy: str
+    null_threshold: float | None = Field(None, ge=0.0, le=1.0)
+    fill_value: str | None = Field(None, max_length=200)
+
+
+class PolicyModifyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    missing_value_policy: str
+    null_threshold: float | None = Field(None, ge=0.0, le=1.0)
+    fill_value: str | None = Field(None, max_length=200)
+
+
+class PolicyReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    note: str | None = Field(None, max_length=500)
+
+
+class PolicyProposalResponse(BaseModel):
+    proposal_id: str
+    dataset_version_id: str
+    missing_value_policy: str
+    null_threshold: float | None = None
+    fill_value: str | None = None
+    status: str
+    proposed_by: int | None = None
+    modified_by: int | None = None
+    reviewed_by: int | None = None
+    review_note: str | None = None
+    created_at: str | None = None
+    reviewed_at: str | None = None

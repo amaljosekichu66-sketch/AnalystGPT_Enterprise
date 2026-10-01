@@ -32,6 +32,7 @@ from src.api.rate_limit import rate_limit
 from src.application.app import Application
 from src.core import config
 from src.core.redaction import public_artifact_name, redact_server_paths
+from src.governance.policy_approval import PolicyApprovalService
 from src.identity.audit import get_audit_service
 from src.identity.context import UserContext
 from src.identity.models import AuditEventType
@@ -70,9 +71,19 @@ def execute_pipeline(
     ownership enforced; an unknown or foreign id is a 404.
     """
 
+    # Only an APPROVED proposal for this dataset changes the policy (P2-04).
+    cleaning_config = (
+        PolicyApprovalService().approved_config(
+            request.cleaning_policy_proposal_id, request.dataset_version_id, context
+        )
+        if request.cleaning_policy_proposal_id
+        else None
+    )
+
     result = application.run_dataset_version(
         request.dataset_version_id,
         user_context=context,
+        cleaning_config=cleaning_config,
     )
 
     # Defined since Sprint 13 but never emitted (L13).

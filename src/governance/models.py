@@ -163,6 +163,10 @@ class CleaningConfig:
     custom_params: dict[str, Any] | None = None
     user_id: int | None = None
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    #: The approved proposal this configuration came from, and its approver
+    #: (P2-04). None for the default policy, which needs no approval.
+    proposal_id: str | None = None
+    approved_by: int | None = None
 
     def affected_columns_json(self) -> str | None:
         return json.dumps(self.affected_columns) if self.affected_columns else None

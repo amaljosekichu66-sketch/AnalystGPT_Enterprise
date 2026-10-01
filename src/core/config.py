@@ -225,6 +225,10 @@ AI_RECOVER_ALL_ON_STARTUP = _env_flag("AI_RECOVER_ALL_ON_STARTUP", default=True)
 AI_JOB_LEASE_MARGIN_SECONDS = int(os.getenv("AI_JOB_LEASE_MARGIN_SECONDS", "120"))
 AI_JOB_PENDING_TTL_SECONDS = int(os.getenv("AI_JOB_PENDING_TTL_SECONDS", "7200"))
 
+# Cleaning policy approval (P2-04): when true, a proposer cannot approve their
+# own policy, so only an administrator approves.
+GOVERNANCE_REQUIRE_SEPARATE_APPROVER = _env_flag("GOVERNANCE_REQUIRE_SEPARATE_APPROVER", default=False)
+
 # Uploaded datasets older than this many days are deleted at startup (I7).
 # 0 keeps them until the owner deletes them or the account is purged.
 DATASET_RETENTION_DAYS = int(os.getenv("DATASET_RETENTION_DAYS", "0"))

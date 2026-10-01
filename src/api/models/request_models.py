@@ -49,3 +49,12 @@ class PipelineRequest(BaseModel):
             "0b7c1f2e-3d4a-4b5c-8d9e-0f1a2b3c4d5e",
         ],
     )
+
+    cleaning_policy_proposal_id: str | None = Field(
+        default=None,
+        pattern=DATASET_VERSION_ID_PATTERN,
+        description=(
+            "An APPROVED cleaning policy proposal for this dataset (POST /api/governance/policies). "
+            "Omit to apply the default policy."
+        ),
+    )

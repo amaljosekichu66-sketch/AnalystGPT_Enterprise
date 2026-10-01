@@ -429,6 +429,34 @@ class SchemaManager:
                 );
                 """)
 
+            # Cleaning policy proposals and approval provenance (P2-04)
+            cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS cleaning_policy_proposals(
+                    id {pk},
+                    proposal_id TEXT UNIQUE NOT NULL,
+                    dataset_version_id TEXT NOT NULL,
+                    user_id INTEGER,
+                    missing_value_policy TEXT NOT NULL,
+                    null_threshold {float_type},
+                    fill_value TEXT,
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    modified_by INTEGER,
+                    reviewed_by INTEGER,
+                    review_note TEXT,
+                    reviewed_at TEXT,
+                    FOREIGN KEY (user_id)
+                        REFERENCES users(id)
+                        ON DELETE CASCADE
+                );
+                """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_policy_proposals_dataset ON cleaning_policy_proposals(dataset_version_id);"
+            )
+            self._add_column_if_missing(cursor, "cleaning_configs", "proposal_id", "TEXT")
+            self._add_column_if_missing(cursor, "cleaning_configs", "approved_by", "INTEGER")
+
             # -------------------------------------------------
             # Revoked access tokens (pre-Sprint-15 hardening, SEC-09)
             # -------------------------------------------------

@@ -30,6 +30,10 @@ from src.api.models.governance_models import (
     CleaningPreviewResponse,
     DatasetVersionResponse,
     LineageResponse,
+    PolicyModifyRequest,
+    PolicyProposalRequest,
+    PolicyProposalResponse,
+    PolicyReviewRequest,
     QualityComparisonResponse,
 )
 from src.api.rate_limit import rate_limit
@@ -39,6 +43,7 @@ from src.core import config as core_config
 from src.core.exceptions import DatasetNotFoundError
 from src.core.logger import logger
 from src.governance.models import CleaningConfig, MissingValuePolicy
+from src.governance.policy_approval import PolicyApprovalService
 from src.identity.context import UserContext
 from src.identity.permissions import Permission
 
@@ -277,6 +282,8 @@ def _config_row_to_response(row: dict) -> CleaningConfigResponse:
         custom_strategy_name=row.get("custom_strategy_name"),
         custom_params_json=row.get("custom_params_json"),
         created_at=str(row.get("created_at", "")),
+        proposal_id=row.get("proposal_id"),
+        approved_by=row.get("approved_by"),
     )
 
 
@@ -303,3 +310,122 @@ def _execution_row_to_response(row: dict) -> CleaningExecutionResponse:
         execution_time_seconds=row.get("execution_time_seconds"),
         executed_at=str(row.get("executed_at", "")),
     )
+
+
+# ==========================================================
+# Cleaning policy proposals and approval (P2-04)
+# ==========================================================
+
+_policy_service = PolicyApprovalService()
+
+
+def _policy(value: str) -> MissingValuePolicy:
+    try:
+        return MissingValuePolicy(value)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unknown cleaning policy: {value}"
+        ) from exc
+
+
+def _proposal_response(row: dict) -> PolicyProposalResponse:
+    return PolicyProposalResponse(
+        proposal_id=row["proposal_id"],
+        dataset_version_id=row["dataset_version_id"],
+        missing_value_policy=row["missing_value_policy"],
+        null_threshold=row.get("null_threshold"),
+        fill_value=row.get("fill_value"),
+        status=row["status"],
+        proposed_by=row.get("user_id"),
+        modified_by=row.get("modified_by"),
+        reviewed_by=row.get("reviewed_by"),
+        review_note=row.get("review_note"),
+        created_at=row.get("created_at"),
+        reviewed_at=row.get("reviewed_at"),
+    )
+
+
+@router.post(
+    "/policies",
+    response_model=PolicyProposalResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Propose a Cleaning Policy",
+    description="Propose a cleaning policy for one of your datasets. It runs only once approved.",
+)
+def propose_policy(
+    request: PolicyProposalRequest,
+    context: UserContext = Depends(require_permission(Permission.PIPELINE_EXECUTE)),
+    application: Application = Depends(get_application),
+) -> PolicyProposalResponse:
+    # Ownership: an unknown or foreign dataset is a 404 (DatasetNotFoundError).
+    application.resolve_source_version(request.dataset_version_id, user_context=context)
+    row = _policy_service.propose(
+        request.dataset_version_id,
+        _policy(request.missing_value_policy),
+        context,
+        null_threshold=request.null_threshold,
+        fill_value=request.fill_value,
+    )
+    return _proposal_response(row)
+
+
+@router.get(
+    "/policies",
+    response_model=list[PolicyProposalResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List Cleaning Policy Proposals",
+)
+def list_policies(
+    dataset_version_id: str | None = None,
+    context: UserContext = Depends(require_permission(Permission.REPORT_VIEW)),
+) -> list[PolicyProposalResponse]:
+    return [_proposal_response(row) for row in _policy_service.list_for(context, dataset_version_id)]
+
+
+@router.patch(
+    "/policies/{proposal_id}",
+    response_model=PolicyProposalResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Modify a Proposed Cleaning Policy",
+)
+def modify_policy(
+    proposal_id: str,
+    request: PolicyModifyRequest,
+    context: UserContext = Depends(require_permission(Permission.PIPELINE_EXECUTE)),
+) -> PolicyProposalResponse:
+    row = _policy_service.modify(
+        proposal_id,
+        _policy(request.missing_value_policy),
+        context,
+        null_threshold=request.null_threshold,
+        fill_value=request.fill_value,
+    )
+    return _proposal_response(row)
+
+
+@router.post(
+    "/policies/{proposal_id}/approve",
+    response_model=PolicyProposalResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Approve a Cleaning Policy",
+)
+def approve_policy(
+    proposal_id: str,
+    request: PolicyReviewRequest | None = None,
+    context: UserContext = Depends(require_permission(Permission.PIPELINE_EXECUTE)),
+) -> PolicyProposalResponse:
+    return _proposal_response(_policy_service.approve(proposal_id, context, note=request.note if request else None))
+
+
+@router.post(
+    "/policies/{proposal_id}/reject",
+    response_model=PolicyProposalResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reject a Cleaning Policy",
+)
+def reject_policy(
+    proposal_id: str,
+    request: PolicyReviewRequest | None = None,
+    context: UserContext = Depends(require_permission(Permission.PIPELINE_EXECUTE)),
+) -> PolicyProposalResponse:
+    return _proposal_response(_policy_service.reject(proposal_id, context, note=request.note if request else None))

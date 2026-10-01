@@ -407,6 +407,7 @@ class Application:
         self,
         dataset_version_id: str,
         user_context: UserContext | None = None,
+        cleaning_config: Any | None = None,
     ) -> PipelineResult:
         """
         Execute the pipeline on a previously uploaded dataset.
@@ -426,6 +427,7 @@ class Application:
                 cache_key=self.dataset_cache_key(dataset_version_id),
                 input_label=f"dataset_version_id={dataset_version_id}",
                 load_source=lambda _owner_id: (source_version, self.load_source_dataframe(source_version)),
+                cleaning_config=cleaning_config,
             )
 
     def get_result_for_dataset(
@@ -542,6 +544,7 @@ class Application:
         cache_key: str,
         input_label: str,
         load_source: Callable[[int | None], tuple[DatasetVersion, DataFrame]],
+        cleaning_config: Any | None = None,
     ) -> PipelineResult:
         """
         Run every pipeline stage for one source dataset.
@@ -624,9 +627,11 @@ class Application:
             # Cleaning Configuration & Governed Execution (Sprint 14 Phase 3)
             # -------------------------------------------------
 
-            cleaning_config = self.governance_service.create_default_config(
-                user_id=eff_user_id,
-            )
+            # An approved proposal's policy (P2-04), or the default one.
+            if cleaning_config is None:
+                cleaning_config = self.governance_service.create_default_config(
+                    user_id=eff_user_id,
+                )
 
             governed_result = self._clean_dataset_governed(
                 raw_dataframe=raw_dataframe,

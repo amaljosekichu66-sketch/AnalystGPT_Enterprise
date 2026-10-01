@@ -102,6 +102,10 @@ def _isolate_persistence_roots() -> None:
     # per-user AI quota (M7) would refuse later pipeline runs. Tests of the
     # quota set it explicitly.
     os.environ.setdefault("MAX_ACTIVE_AI_JOBS_PER_USER", "1000")
+    # Every Application() built by a test would otherwise resume every
+    # unfinished job left in the shared test database (P2-02). Recovery tests
+    # pass ignore_lease explicitly.
+    os.environ.setdefault("AI_RECOVER_ALL_ON_STARTUP", "false")
     os.environ.setdefault("REPORT_OUTPUT_DIRECTORY", str(reports_dir))
     os.environ.setdefault("ARTIFACT_STORE_DIRECTORY", str(artifacts_dir))
 

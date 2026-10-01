@@ -11,6 +11,11 @@ from src.api.request_context import REQUEST_ID_HEADER, current_request_id
 from src.core.exceptions import DatasetNotFoundError, PipelineResultNotFoundError, TooManyConcurrentJobsError
 from src.core.logger import logger
 from src.core.redaction import redact_server_paths
+from src.governance.policy_approval import (
+    PolicyProposalNotFoundError,
+    PolicyProposalStateError,
+    PolicyReviewForbiddenError,
+)
 from src.identity.exceptions import (
     AccountLockedError,
     AdminOperationError,
@@ -172,6 +177,18 @@ def register_exception_handlers(app: FastAPI) -> None:
             "User already exists.",
             str(exc),
         )
+
+    @app.exception_handler(PolicyProposalNotFoundError)
+    async def policy_not_found_handler(_request: Request, exc: PolicyProposalNotFoundError) -> JSONResponse:
+        return _error_response(status.HTTP_404_NOT_FOUND, "Cleaning policy proposal not found.", str(exc))
+
+    @app.exception_handler(PolicyProposalStateError)
+    async def policy_state_handler(_request: Request, exc: PolicyProposalStateError) -> JSONResponse:
+        return _error_response(status.HTTP_409_CONFLICT, "Cleaning policy is not in a valid state.", str(exc))
+
+    @app.exception_handler(PolicyReviewForbiddenError)
+    async def policy_review_forbidden_handler(_request: Request, exc: PolicyReviewForbiddenError) -> JSONResponse:
+        return _error_response(status.HTTP_403_FORBIDDEN, "Permission denied.", str(exc))
 
     @app.exception_handler(DatasetNotFoundError)
     async def dataset_not_found_handler(
