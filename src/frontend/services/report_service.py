@@ -207,6 +207,7 @@ def get_report_data() -> dict[str, Any]:
 
         report_data.update(
             {
+                "report_id": payload.get("report_id"),
                 "report": payload.get(
                     "report",
                 ),
@@ -240,9 +241,11 @@ def get_report_data() -> dict[str, Any]:
         ConnectionError,
         TimeoutError,
         OSError,
+        RuntimeError,  # APIClient wraps every failure in RuntimeError (P2-08)
     ) as exc:
 
-        report_data["api_error"] = str(exc)
+        logger.warning("Report retrieval failed: %s", exc)
+        report_data["api_error"] = "The analytics service is unavailable. Try again shortly."
 
         return report_data
 

@@ -155,6 +155,10 @@ class ReportingOrchestrator:
                 result = self._application.get_result_by_report_id(report_id)
             except AttributeError:
                 result = None
+            if result is None:
+                # Never another report (P2-03): a by-id cache miss (after a
+                # restart, say) used to fall back to the user's LATEST result.
+                return self._rebuild_from_persistence(report_id, user_id)
 
         if result is None:
             try:
@@ -201,6 +205,42 @@ class ReportingOrchestrator:
     # Report Metadata
     # ==========================================================
 
+    def _rebuild_from_persistence(
+        self,
+        report_id: int,
+        user_id: int | None,
+    ) -> tuple[StructuredReport | None, Any | None, dict[str, Any] | None]:
+        """
+        Rebuild report `report_id` from its persisted rows (P2-03).
+
+        The AI job of a run stores the run's ReportingReport (P2-01), and the
+        AI report and its lineage are in `ai_reports`. Returns no report when
+        nothing was persisted for this id; the caller answers 404.
+        """
+        from src.database.repositories.ai_job_repository import AIJobRepository
+        from src.reporting.reporting_report import ReportingReport
+
+        service = self._application.ai_job_service
+        with service._session() as conn:
+            repo = AIJobRepository(conn)
+            job = repo.get_by_report_id(report_id, user_id=user_id)
+            payload = repo.get_report_payload(job.job_id) if job is not None else None
+        if job is None or not payload:
+            return None, None, None
+
+        structured_report = ReportingReport.from_payload(payload).report
+        job_data = service.get_job_with_report(job.job_id, user_id=user_id) or {}
+        ai_report = job_data.get("ai_report")
+        ai_dict = ai_report if isinstance(ai_report, dict) else {}
+        lineage = {
+            "pipeline_run_id": job.pipeline_run_id,
+            "source_version_id": ai_dict.get("source_version_id"),
+            "cleaned_version_id": ai_dict.get("cleaned_version_id"),
+            "cleaning_execution_id": ai_dict.get("cleaning_execution_id"),
+            "context_schema_version": "1.0",
+        }
+        return structured_report, ai_report, lineage
+
     def get_reports(
         self,
         user_id: int | None = None,
@@ -235,6 +275,7 @@ class ReportingOrchestrator:
         if result is None or not result.success or result.pipeline_report is None:
             return {
                 "reports": [],
+                "report_id": None,
                 "report": None,
                 "ai_report": None,
                 "execution_time": None,
@@ -263,6 +304,8 @@ class ReportingOrchestrator:
             "reports": self._build_report_list(
                 ai_report_dict is not None,
             ),
+            # The id the export-by-id routes take (P2-03).
+            "report_id": getattr(result, "report_id", None),
             "report": public_report_dict(reporting_report.to_dict()),
             "ai_report": ai_report_dict,
             "execution_time": result.execution_time,
@@ -328,8 +371,15 @@ class ReportingOrchestrator:
                     "success": False,
                     "message": "Report not found or access denied.",
                 }
-            # Only a file inside the report directory is served (I6): the path
-            # comes from the database and was trusted as-is.
+
+        structured_report, ai_report, lineage = self._resolve_context_and_report(
+            user_id=user_id,
+            report_id=report_id,
+        )
+
+        if structured_report is None and report_id is not None:
+            # A report from before job inputs were persisted: its own run file,
+            # if it is inside the report directory (I6). Never another report.
             disk_path = _contained_report_file(record.get("report_path"))
             if disk_path is not None:
                 return {
@@ -340,11 +390,6 @@ class ReportingOrchestrator:
                     "filename": disk_path.name,
                     "mime_type": "text/plain",
                 }
-
-        structured_report, ai_report, lineage = self._resolve_context_and_report(
-            user_id=user_id,
-            report_id=report_id,
-        )
 
         if structured_report is None:
             return {

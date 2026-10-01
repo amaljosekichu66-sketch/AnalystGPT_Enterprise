@@ -110,6 +110,8 @@ def execute_pipeline(
         execution_time=result.execution_time or 0.0,
         ai_job_id=result.ai_job_id,
         ai_job_status=result.ai_job_status,
+        pipeline_run_id=result.pipeline_run_id,
+        report_id=result.report_id,
         ai_report=ai_response,
         # The pipeline's exception text (already logged with its traceback)
         # is internal; the caller gets a reference id instead (SEC-11).

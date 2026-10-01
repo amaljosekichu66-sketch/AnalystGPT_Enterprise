@@ -244,6 +244,12 @@ class PipelineResponse(APIResponse):
 
     ai_job_id: str | None = None
 
+    #: Ids of this run and its report (P2-03, P2-06): export by id, and tie
+    #: AI status to the dataset on screen.
+    pipeline_run_id: int | None = None
+
+    report_id: int | None = None
+
     ai_job_status: str | None = None
 
     ai_report: AIReportResponse | None = None
@@ -288,6 +294,11 @@ class ReportDataResponse(BaseModel):
     reports: list[ReportSectionItem] = Field(
         default_factory=list,
         description="List of available report sections.",
+    )
+
+    report_id: int | None = Field(
+        default=None,
+        description="Id of this report, for GET /api/reports/{report_id}/export/(text|pdf).",
     )
 
     report: dict[str, Any] | None = Field(

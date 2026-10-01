@@ -6539,6 +6539,28 @@
             ],
             "title": "Ai Job Id"
           },
+          "pipeline_run_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Run Id"
+          },
+          "report_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Id"
+          },
           "ai_job_status": {
             "anyOf": [
               {
@@ -6692,6 +6714,18 @@
             "type": "array",
             "title": "Reports",
             "description": "List of available report sections."
+          },
+          "report_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Id",
+            "description": "Id of this report, for GET /api/reports/{report_id}/export/(text|pdf)."
           },
           "report": {
             "anyOf": [

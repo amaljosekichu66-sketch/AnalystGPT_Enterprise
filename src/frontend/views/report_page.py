@@ -145,8 +145,8 @@ def render() -> None:
         "Export requests are routed through the " "Application Layer to preserve the " "enterprise architecture."
     )
 
-    report_info = report_data.get("report")
-    report_id = report_info.get("id") or report_info.get("report_id") if isinstance(report_info, dict) else None
+    # The API returns the report's id (P2-03); exports are by id, never "latest".
+    report_id = report_data.get("report_id")
 
     col1, col2 = st.columns(
         2,

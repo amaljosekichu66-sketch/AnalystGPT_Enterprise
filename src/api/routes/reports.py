@@ -128,6 +128,7 @@ def get_reports(
         message=("Reports retrieved successfully."),
         data=ReportDataResponse(
             reports=report_data.get("reports", []),
+            report_id=report_data.get("report_id"),
             report=report_data.get("report"),
             ai_report=report_data.get("ai_report"),
             execution_time=report_data.get("execution_time"),
