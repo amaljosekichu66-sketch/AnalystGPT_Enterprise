@@ -195,6 +195,10 @@ class Application:
             self._apply_dataset_retention()
         except Exception as exc:
             logger.warning("Could not apply dataset retention: %s", exc)
+        try:
+            self._apply_audit_retention()
+        except Exception as exc:
+            logger.warning("Could not apply audit retention: %s", exc)
 
     # ==========================================================
     # Persistence sessions
@@ -299,6 +303,17 @@ class Application:
                 del self._dataset_results[key]
             self._analysis_results.pop(source_version.version_id, None)
 
+    @staticmethod
+    def _apply_audit_retention() -> None:
+        """Delete audit rows older than AUDIT_RETENTION_DAYS (P2-14)."""
+        from src.identity.audit_store import DatabaseAuditSink
+
+        removed = DatabaseAuditSink().prune(int(_core_config.AUDIT_RETENTION_DAYS))
+        if removed:
+            logger.info(
+                "Audit retention: deleted %d events older than %d days.", removed, _core_config.AUDIT_RETENTION_DAYS
+            )
+
     def _apply_dataset_retention(self) -> None:
         """Delete uploads older than DATASET_RETENTION_DAYS, if set (I7)."""
         days = int(_core_config.DATASET_RETENTION_DAYS)
@@ -313,13 +328,17 @@ class Application:
         if expired:
             logger.info("Dataset retention: deleted %d uploads older than %d days.", len(expired), days)
 
-    def purge_user_data(self, user_id: int, username: str) -> dict[str, int]:
+    def purge_user_data(self, user_id: int, username: str, delete_account: bool = False) -> dict[str, int]:
         """
         Delete everything the account owns (SEC-20) and forget its cached results.
+
+        `delete_account` also deletes the user row, in the same transaction (P2-14).
         """
         from src.persistence.user_data_purge import UserDataPurger
 
-        deleted = UserDataPurger(self.artifact_store).purge(user_id, expected_username=username)
+        deleted = UserDataPurger(self.artifact_store).purge(
+            user_id, expected_username=username, delete_account=delete_account
+        )
         with self._cache_lock:
             removed = self._user_pipeline_results.pop(user_id, None)
             self._user_cached_paths.pop(user_id, None)

@@ -176,4 +176,5 @@ class TestUserServiceAuditIntegration:
         self.user_service.delete_user_admin(user_id=target.id)
         del_events = self.audit_service.get_events(event_type=AuditEventType.USER_DELETED)
         assert len(del_events) == 1
-        assert del_events[0].details["deleted_username"] == "target_user"
+        # Pseudonymised (P2-14): the row outlives the account.
+        assert del_events[0].details["deleted_username"].startswith("deleted-user-")

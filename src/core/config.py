@@ -229,6 +229,10 @@ AI_JOB_PENDING_TTL_SECONDS = int(os.getenv("AI_JOB_PENDING_TTL_SECONDS", "7200")
 # own policy, so only an administrator approves.
 GOVERNANCE_REQUIRE_SEPARATE_APPROVER = _env_flag("GOVERNANCE_REQUIRE_SEPARATE_APPROVER", default=False)
 
+# Audit rows older than this many days are deleted at startup (P2-14).
+# 0 keeps them forever.
+AUDIT_RETENTION_DAYS = int(os.getenv("AUDIT_RETENTION_DAYS", "365"))
+
 # Uploaded datasets older than this many days are deleted at startup (I7).
 # 0 keeps them until the owner deletes them or the account is purged.
 DATASET_RETENTION_DAYS = int(os.getenv("DATASET_RETENTION_DAYS", "0"))

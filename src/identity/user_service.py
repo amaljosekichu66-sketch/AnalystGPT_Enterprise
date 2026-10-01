@@ -709,6 +709,7 @@ class UserService:
         user_id: int,
         actor_context: UserContext | None = None,
         before_delete: Callable[[User], object] | None = None,
+        delete_account: Callable[[User], object] | None = None,
     ) -> bool:
         """
         Delete a user entity with last-admin safeguards.
@@ -748,12 +749,21 @@ class UserService:
                     self._audit_blocked_admin_operation(actor_context, target_user, "DELETE")
                     raise AdminOperationError("Cannot delete the last active administrator.")
 
-            # SEC-20: remove the account's data first (callers supply the purge),
-            # so nothing is left behind ownerless if the delete succeeds.
-            if before_delete is not None:
-                before_delete(target_user)
-
-            result = self._user_repository.delete(user_id)
+            if delete_account is not None:
+                # P2-14: data and account go in ONE transaction (the caller's
+                # purge deletes the user row too): all or nothing.
+                delete_account(target_user)
+                # The purge removed the database row; a repository that is not
+                # that database (in-memory, tests) still holds the account.
+                if self._user_repository.get_by_id(user_id) is not None:
+                    self._user_repository.delete(user_id)
+                result = True
+            else:
+                # SEC-20: remove the account's data first (callers supply the
+                # purge), so nothing is left behind ownerless.
+                if before_delete is not None:
+                    before_delete(target_user)
+                result = self._user_repository.delete(user_id)
 
         actor_id = actor_context.user_id if actor_context else None
         actor_name = actor_context.username if actor_context else None
@@ -766,8 +776,9 @@ class UserService:
             target_id=target_user.id,
             target_resource="USER",
             outcome="SUCCESS",
+            # The pseudonym, not the name (P2-14): this row outlives the account.
             details={
-                "deleted_username": target_user.username,
+                "deleted_username": f"deleted-user-{target_user.id}",
                 "deleted_role": target_user.role.value,
             },
         )

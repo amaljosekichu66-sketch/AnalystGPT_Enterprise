@@ -189,7 +189,8 @@ def delete_user(
     user_service.delete_user_admin(
         user_id=user_id,
         actor_context=context,
-        before_delete=lambda target: application.purge_user_data(target.id, target.username),
+        # Data and account in one transaction (P2-14).
+        delete_account=lambda target: application.purge_user_data(target.id, target.username, delete_account=True),
     )
 
     return UserDeleteResponse(
@@ -221,3 +222,19 @@ async def list_audit_events(
         event_type.value if event_type else None,
         actor_id,
     )
+
+
+@admin_router.get(
+    "/audit-events/verify",
+    response_model=dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    summary="Verify the audit hash chain (Admin)",
+    description="Recompute the tamper-evident hash chain over the retained audit rows.",
+)
+def verify_audit_chain(
+    _context: UserContext = Depends(require_permission(Permission.AUDIT_READ)),
+) -> dict[str, Any]:
+    """P2-14: report whether any retained audit row was altered or removed."""
+    from src.identity.audit_store import DatabaseAuditSink
+
+    return DatabaseAuditSink().verify_chain()

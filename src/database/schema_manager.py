@@ -509,6 +509,10 @@ class SchemaManager:
                 );
                 """)
 
+            # Tamper-evident audit chain (P2-14)
+            self._add_column_if_missing(cursor, "audit_events", "prev_hash", "TEXT")
+            self._add_column_if_missing(cursor, "audit_events", "row_hash", "TEXT")
+
             # -------------------------------------------------
             # Performance Indexes (Sprint 13 & Sprint 14 Phase 2)
             # -------------------------------------------------

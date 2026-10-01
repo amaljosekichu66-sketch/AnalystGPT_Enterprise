@@ -14,6 +14,7 @@ only from the managed artifact store and report directory. The audit trail
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from src.core import config
@@ -30,12 +31,18 @@ class UserDataPurger:
     def __init__(self, artifact_store: LocalArtifactStore) -> None:
         self._artifact_store = artifact_store
 
-    def purge(self, user_id: int, expected_username: str) -> dict[str, int]:
+    def purge(self, user_id: int, expected_username: str, delete_account: bool = False) -> dict[str, int]:
         """
         Delete everything owned by `user_id`; return per-table row counts.
 
         `expected_username` must match the stored account, so a stale or
         mismatched id can never purge another user's data.
+
+        With `delete_account`, the `users` row is deleted in the SAME
+        transaction (P2-14): the purge used to commit on its own connection
+        before the user row was deleted on another, so a failure in between
+        left an account whose data was gone. The user's audit rows are
+        pseudonymised in that transaction too.
         """
         conn = ConnectionFactory.create_connection()
         conn.connect()
@@ -87,6 +94,16 @@ class UserDataPurger:
             delete_owned_or_run("reports")
             delete_owned_or_run("datasets")
             delete("pipeline_runs", "user_id = ?", (user_id,))
+            delete("cleaning_policy_proposals", "user_id = ?", (user_id,))
+
+            if delete_account:
+                deleted["audit_pseudonymised"] = self._pseudonymise_audit(cursor, q, user_id, expected_username)
+                account = f"user:{user_id}"
+                delete("login_failures", "scope = ? AND key = ?", ("account", account))
+                delete(
+                    "login_failures", "scope = ? AND SUBSTR(key, 1, ?) = ?", ("pair", len(account) + 1, account + "|")
+                )
+                delete("users", "id = ?", (user_id,))
 
             conn.commit()
             cursor.close()
@@ -101,6 +118,76 @@ class UserDataPurger:
         return deleted
 
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _pseudonymise_audit(cursor, q, user_id: int, username: str) -> int:
+        """
+        Replace the deleted user's name and email in the audit trail (P2-14).
+
+        Rows keep their ids, types, times and outcomes - and therefore their
+        hash chain - but no longer name the person.
+        """
+        pseudonym = f"deleted-user-{user_id}"
+        cursor.execute(
+            q("SELECT id, details_json FROM audit_events WHERE actor_id = ? OR target_id = ?;"), (user_id, user_id)
+        )
+        rows = cursor.fetchall()
+        cursor.execute(q("UPDATE audit_events SET actor_username = ? WHERE actor_id = ?;"), (pseudonym, user_id))
+        cursor.execute(q("UPDATE audit_events SET actor_username = ? WHERE actor_username = ?;"), (pseudonym, username))
+        for row in rows:
+            row_id = row["id"] if hasattr(row, "keys") else row[0]
+            raw = row["details_json"] if hasattr(row, "keys") else row[1]
+            try:
+                details = json.loads(raw or "{}")
+            except ValueError:
+                details = {}
+            if not isinstance(details, dict):
+                continue
+            changed = False
+            for key in ("username", "email", "deleted_username", "actor_username"):
+                if key in details:
+                    details[key] = pseudonym
+                    changed = True
+            if changed:
+                cursor.execute(
+                    q("UPDATE audit_events SET details_json = ? WHERE id = ?;"), (json.dumps(details), row_id)
+                )
+        return len(rows)
+
+    def purge_ownerless(self, dry_run: bool = True) -> dict[str, int]:
+        """
+        Rows with no owner at all (P2-14 policy).
+
+        They predate per-user ownership (Sprint 13 migration) and can never be
+        reached by an account purge. Policy: an administrator removes them
+        explicitly with `scripts/purge_ownerless_data.py`; `dry_run` counts.
+        """
+        tables = ("ai_reports", "ai_jobs", "cleaning_executions", "reports", "datasets", "pipeline_runs")
+        conn = ConnectionFactory.create_connection()
+        conn.connect()
+        try:
+            SchemaManager(conn).initialize_schema()
+            cursor = conn.get_connection().cursor()
+            counts: dict[str, int] = {}
+            versions_sql = "SELECT COUNT(*) FROM dataset_versions WHERE user_id IS NULL;"
+            for table in tables:
+                cursor.execute(f"SELECT COUNT(*) FROM {table} WHERE user_id IS NULL;")  # nosec B608 - constant names
+                counts[table] = int(self._first(cursor.fetchone()) or 0)
+            cursor.execute(versions_sql)
+            counts["dataset_versions"] = int(self._first(cursor.fetchone()) or 0)
+            if not dry_run:
+                for table in tables:
+                    cursor.execute(f"DELETE FROM {table} WHERE user_id IS NULL;")  # nosec B608 - constant names
+                cursor.execute("DELETE FROM dataset_versions WHERE user_id IS NULL AND parent_version_id IS NOT NULL;")
+                cursor.execute("DELETE FROM dataset_versions WHERE user_id IS NULL;")
+                conn.commit()
+            cursor.close()
+            return counts
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.disconnect()
 
     def _remove_files(self, artifact_paths: list[str], report_paths: list[str]) -> int:
         roots = [
