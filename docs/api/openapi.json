@@ -1902,12 +1902,12 @@
     "/api/powerbi/dashboard": {
       "get": {
         "tags": [
-          "Power BI",
-          "Power BI"
+          "Dashboard",
+          "Dashboard"
         ],
-        "summary": "Dashboard",
-        "description": "Return the complete dashboard response including analytics, reporting, and AI insights.",
-        "operationId": "dashboard_api_powerbi_dashboard_get",
+        "summary": "Get Dashboard",
+        "description": "Return the complete enterprise dashboard for an already-processed dataset. Read-only: never executes the pipeline (use POST /api/pipeline).",
+        "operationId": "get_dashboard_api_powerbi_dashboard_get",
         "parameters": [
           {
             "name": "dataset_version_id",
@@ -2009,26 +2009,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DashboardResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Permission denied",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }

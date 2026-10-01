@@ -96,8 +96,10 @@ services:
       AI_TEMPERATURE: ${AI_TEMPERATURE:-0.2}
       AI_TOP_P: ${AI_TOP_P:-0.90}
       AI_MAX_TOKENS: ${AI_MAX_TOKENS:-1024}
-      AI_CONTEXT_WINDOW: ${AI_CONTEXT_WINDOW:-4096}
-      AI_TIMEOUT: ${AI_TIMEOUT:-120}
+      # Same defaults as src/core/config.py (P2-17): 4096 overflows the prompt,
+      # and CPU-only generation measured 178-340 s.
+      AI_CONTEXT_WINDOW: ${AI_CONTEXT_WINDOW:-8192}
+      AI_TIMEOUT: ${AI_TIMEOUT:-600}
       AI_MAX_RETRIES: ${AI_MAX_RETRIES:-3}
     extra_hosts:
       - "host.docker.internal:host-gateway"

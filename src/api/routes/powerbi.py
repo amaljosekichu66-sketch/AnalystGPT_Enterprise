@@ -108,44 +108,9 @@ def _load_result(
     return result
 
 
-# ==========================================================
-# Dashboard
-# ==========================================================
-
-
-@router.get(
-    "/dashboard",
-    response_model=DashboardResponse,
-    status_code=status.HTTP_200_OK,
-    responses={
-        401: {"model": ErrorResponse, "description": "Authentication required"},
-        403: {"model": ErrorResponse, "description": "Permission denied"},
-    },
-    summary="Dashboard",
-    description="Return the complete dashboard response including analytics, reporting, and AI insights.",
-)
-def dashboard(
-    dataset_version_id: str = Query(..., pattern=DATASET_VERSION_ID_PATTERN, description=_DATASET_QUERY_HELP),
-    context: UserContext = Depends(
-        require_permission(Permission.DASHBOARD_VIEW),
-    ),
-    application: Application = Depends(
-        get_application,
-    ),
-) -> DashboardResponse:
-    """
-    Return the complete dashboard response.
-    """
-
-    result = _load_result(
-        dataset_version_id,
-        application,
-        context=context,
-    )
-
-    return _dashboard_service.build_dashboard_response(
-        result,
-    )
+# GET /powerbi/dashboard is served by src/api/routes/dashboard.py, which is
+# mounted first. This router used to declare the same path too; that handler
+# could never run (P3-01) and was removed.
 
 
 # ==========================================================

@@ -42,6 +42,9 @@ pyarrow>=21.0.0
 # Web API
 # ==========================================================
 fastapi>=0.116.1
+# Multipart form parsing for POST /api/datasets (P2-19). Starlette needs it at
+# runtime but does not declare it; it was only present via streamlit.
+python-multipart>=0.0.32
 uvicorn[standard]>=0.35.0
 # Imported directly by the API test-suite (starlette.testclient.TestClient) as
 # well as being FastAPI's ASGI foundation.

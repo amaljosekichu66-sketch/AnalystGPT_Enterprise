@@ -185,23 +185,19 @@ def test_viewer_cannot_execute_or_upload(client: TestClient, tokens, executions:
     assert _pipeline_run_count() == runs_before
 
 
-def test_shadowed_powerbi_dashboard_handler_is_read_only_too(tokens, executions: list[str]) -> None:
+def test_powerbi_dashboard_is_declared_once() -> None:
     """
-    `dashboard.py` and `powerbi.py` both declare `/powerbi/dashboard`; the
-    first-mounted one wins in the real app. Mount the Power BI router alone so
-    its own handler is exercised as well.
+    `dashboard.py` and `powerbi.py` both declared `/powerbi/dashboard`; the
+    second handler could never run (P3-01). Only one declaration remains.
     """
-    isolated = FastAPI()
-    register_exception_handlers(isolated)
-    isolated.include_router(powerbi_router, prefix="/api")
+    from src.api.routes.dashboard import router as dashboard_router
 
-    client = TestClient(isolated)
-    dataset_id = upload_dataset(TestClient(app), SAMPLE_CSV, tokens["analyst"])
+    def declares(router) -> bool:
+        return any(getattr(route, "path", "") == "/powerbi/dashboard" for route in router.routes)
 
-    res = client.get("/api/powerbi/dashboard", params={"dataset_version_id": dataset_id}, headers=tokens["viewer"])
-
-    assert res.status_code in (401, 404)
-    assert executions == []
+    assert declares(dashboard_router)
+    assert not declares(powerbi_router)
+    assert "get" in app.openapi()["paths"]["/api/powerbi/dashboard"]
 
 
 # ==========================================================

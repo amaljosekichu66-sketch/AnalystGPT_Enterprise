@@ -202,3 +202,73 @@ def test_padded_token_is_rejected(client: TestClient) -> None:
     padded = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}=="})
     assert ok.status_code == 200
     assert padded.status_code == 401
+
+
+def test_health_stays_fast_while_logins_hash_in_parallel(monkeypatch: pytest.MonkeyPatch) -> None:
+    """P2-10: PBKDF2 used to run on the event loop and stall every other request."""
+    import threading
+    import time
+
+    monkeypatch.setattr(config, "AUTH_ALLOW_HEADER_IDENTITY", False)
+    slow = UserService(
+        user_repository=InMemoryUserRepository(),
+        password_hasher=PBKDF2PasswordHasher(iterations=400_000),
+        token_service=TokenService(secret_key=SECRET),
+        revocation_service=TokenRevocationService(),
+        audit_service=AuditService(),
+    )
+    set_user_service_instance(slow)
+    try:
+        client = TestClient(app)
+        single = time.perf_counter()
+        client.post("/api/auth/login", json={"username": "nobody", "password": "x"})
+        login_seconds = time.perf_counter() - single
+
+        threads = [
+            threading.Thread(
+                target=client.post, args=("/api/auth/login",), kwargs={"json": {"username": f"u{i}", "password": "x"}}
+            )
+            for i in range(4)
+        ]
+        for thread in threads:
+            thread.start()
+        time.sleep(0.05)
+        started = time.perf_counter()
+        assert client.get("/api/health").status_code == 200
+        health_seconds = time.perf_counter() - started
+        for thread in threads:
+            thread.join()
+    finally:
+        set_user_service_instance(None)
+
+    assert health_seconds < login_seconds / 2, (health_seconds, login_seconds)
+
+
+def test_unknown_and_wrong_password_logins_take_comparable_time() -> None:
+    """P2-09: an unknown user answered in ~0 s, a wrong password in ~0.85 s."""
+    import statistics
+    import time
+
+    from src.identity.exceptions import InvalidCredentialsError
+    from src.identity.models import UserCreate
+
+    svc = UserService(
+        user_repository=InMemoryUserRepository(),
+        password_hasher=PBKDF2PasswordHasher(iterations=200_000),
+        token_service=TokenService(secret_key=SECRET),
+        revocation_service=TokenRevocationService(),
+        audit_service=AuditService(),
+    )
+    svc.register_user(UserCreate(username="timed_user", email="timed@example.com", password=STRONG))
+
+    def duration(identifier: str) -> float:
+        samples = []
+        for _ in range(3):
+            started = time.perf_counter()
+            with pytest.raises(InvalidCredentialsError):
+                svc.authenticate_user(identifier, "Wr0ng-Passw0rd!")
+            samples.append(time.perf_counter() - started)
+        return statistics.median(samples)
+
+    known, unknown = duration("timed_user"), duration("nobody_at_all")
+    assert 0.5 < unknown / known < 2.0, (unknown, known)

@@ -178,9 +178,11 @@ def export_latest_text_report(
     user_id = context.user_id if context.is_authenticated else None
     orchestrator = ReportingOrchestrator(application)
 
-    result = orchestrator.export_text_report(
-        user_id=user_id,
-    )
+    # Rendering an export (PDF especially) is heavy: hold a job slot (P2-12).
+    with application.job_slot(context):
+        result = orchestrator.export_text_report(
+            user_id=user_id,
+        )
 
     if not result.get("success") or not result.get("path"):
         raise HTTPException(
@@ -220,10 +222,12 @@ def export_text_report_by_id(
     user_id = context.user_id if context.is_authenticated else None
     orchestrator = ReportingOrchestrator(application)
 
-    result = orchestrator.export_text_report(
-        user_id=user_id,
-        report_id=report_id,
-    )
+    # Rendering an export (PDF especially) is heavy: hold a job slot (P2-12).
+    with application.job_slot(context):
+        result = orchestrator.export_text_report(
+            user_id=user_id,
+            report_id=report_id,
+        )
 
     if not result.get("success") or not result.get("path"):
         raise HTTPException(
@@ -276,9 +280,11 @@ def export_latest_pdf_report(
     user_id = context.user_id if context.is_authenticated else None
     orchestrator = ReportingOrchestrator(application)
 
-    result = orchestrator.export_pdf_report(
-        user_id=user_id,
-    )
+    # Rendering an export (PDF especially) is heavy: hold a job slot (P2-12).
+    with application.job_slot(context):
+        result = orchestrator.export_pdf_report(
+            user_id=user_id,
+        )
 
     if not result.get("success") or not result.get("path"):
         raise HTTPException(
@@ -318,10 +324,12 @@ def export_pdf_report_by_id(
     user_id = context.user_id if context.is_authenticated else None
     orchestrator = ReportingOrchestrator(application)
 
-    result = orchestrator.export_pdf_report(
-        user_id=user_id,
-        report_id=report_id,
-    )
+    # Rendering an export (PDF especially) is heavy: hold a job slot (P2-12).
+    with application.job_slot(context):
+        result = orchestrator.export_pdf_report(
+            user_id=user_id,
+            report_id=report_id,
+        )
 
     if not result.get("success") or not result.get("path"):
         raise HTTPException(
