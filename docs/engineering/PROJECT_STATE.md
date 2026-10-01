@@ -164,6 +164,67 @@ login/registration can return **429** (`Retry-After`); weak passwords → 400; u
 serves no `/docs` or `/openapi.json`; new `GET /api/admin/audit-events` (35 paths); install dev
 tools from `requirements-dev.txt`.
 
+## Third pass — pre-Sprint-15 audit register (2026-09-29 audit, fixed 2026-09-30)
+
+A read-only go/no-go audit at `44965fc` found 0 critical, 0 high, 12 medium, 19 low and 17
+informational items (plus one cleanup task). Every item was fixed, or closed with a recorded
+reason, in 14 commits `20154f3` … `742f7d0`. Live per-item status, notes and commit hashes are
+kept in the audit checklist artifact. Final state: **1144 passed, 1 skipped, 15 deselected, 0 failed** (was 959); flake8 / black / isort / mypy
+clean; bandit 0 HIGH (49 MEDIUM B608 reviewed: constants only); pip-audit of the lock: no known
+vulnerabilities; gitleaks over the 14 new commits: no leaks.
+
+| ID | Finding | Status | Commit | Regression tests |
+|----|---------|--------|--------|------------------|
+| M1 | Unknown-user login skipped PBKDF2 (0.0003 s vs 0.70 s) | **VERIFIED** — 0.711 s vs 0.724 s | `20154f3` | `tests/api/test_login_path_hardening.py` |
+| M2 | PBKDF2 and DB calls on the event loop | **VERIFIED** — sync routes / threadpool | `20154f3` | same |
+| M3 | Chunked uploads skipped the size limit; body held twice | **VERIFIED** — ASGI body limit (413), 411 without Content-Length, slot before read | `3b19f63` | `tests/api/test_upload_limits_hardening.py` |
+| M4 | `.xls` rename skipped the zip-bomb check | **VERIFIED** — check by content, `.xls` dropped, engine pinned | `3b19f63` | same |
+| M5 | Shape caps only after a full parse | **VERIFIED** — header-first width check, `nrows` cap, JSON 50 MB, limits lowered | `34f1bf1` | `tests/api/test_parse_limits_hardening.py` |
+| M6 | Governance preview outside the job slot | **VERIFIED** — slot + rate limit | `ee10bfd` | `tests/api/test_quota_hardening.py` |
+| M7 | No AI job quota; unbounded AI queue | **VERIFIED** — 2 active jobs/user, queue 32, rate limits | `ee10bfd` | same |
+| M8 | Frontend parsed uploads unguarded | **VERIFIED** — API first, same guards, bounded cache | `34f1bf1` | `tests/api/test_parse_limits_hardening.py` |
+| M9 | AI output as raw markdown on the Reports page | **VERIFIED** at render level — escaping, prompt value flattening, delimiter neutralising | `66dcd4b` | `tests/frontend/test_report_preview_escaping.py` |
+| M10 | Self-registration granted ANALYST | **VERIFIED** — VIEWER + `AUTH_SELF_REGISTRATION_ENABLED` | `ce00d0a` | `tests/api/test_registration_hardening.py` |
+| M11 | One rate-limit bucket for every frontend user | **VERIFIED** — trusted `X-Forwarded-For` from `TRUSTED_PROXY_IPS` | `5d63318` | `tests/api/test_lockout_hardening.py` |
+| M12 | Anyone could keep an account locked | **VERIFIED** — per (account, source) lockout, short account back-off, admin unlock | `5d63318` | same |
+| L1 | Disabled account answered 403 to the right password | **VERIFIED** — uniform 401 | `20154f3` | `tests/api/test_login_path_hardening.py` |
+| L2 | Unbounded login identifier logged verbatim | **VERIFIED** | `20154f3` | same |
+| L3 | 409 reveals that a username or email exists | **ACCEPTED RISK** — kept for usability; rate-limited; messages generic | `ce00d0a` | `tests/api/test_registration_hardening.py` |
+| L4 | Development mode used the published key silently | **VERIFIED** — refused off loopback, SECURITY_ALERT | `1b93b11` | `tests/api/test_session_lifecycle.py` |
+| L5 | Password spraying never tripped lockout | **VERIFIED** — per-source counter, 2,087-entry denylist | `5d63318` | `tests/api/test_lockout_hardening.py` |
+| L6 | Case-sensitive uniqueness | **VERIFIED** — `LOWER()` unique indexes | `ce00d0a` | `tests/api/test_registration_hardening.py` |
+| L7 | Exception text and tracebacks to users | **VERIFIED** | `3bc3562` | `tests/api/test_error_disclosure_audit.py` |
+| L8 | Column names rendered as markdown in charts | **VERIFIED** | `66dcd4b` | `tests/frontend/test_report_preview_escaping.py` |
+| L9 | Raw LLM responses, reports and data previews logged | **VERIFIED** — sizes, digests and shapes only | `de66547` | `tests/ai/test_log_content_hardening.py` |
+| L10 | Result caches never evicted | **VERIFIED** — bounded LRU + TTL | `ee10bfd` | `tests/api/test_quota_hardening.py` |
+| L11 | No TLS to Postgres; plain HTTP to any Ollama | **IMPLEMENTED, TESTED** — sslmode options; remote plain HTTP refused | `742f7d0` | `tests/core/test_infra_hardening.py` |
+| L12 | AI job lifecycle races, stuck PENDING jobs | **VERIFIED** — leases, conditional transitions, interrupted jobs fail visibly | `275d479` | `tests/ai/test_ai_job_lease.py` |
+| L13 | Security events missing from the audit trail | **VERIFIED** — 7 new event types; attacker-triggerable ones throttled | `6a7ef78` | `tests/api/test_api_hygiene_hardening.py` |
+| L14 | No security headers, Host allow-list or body limit | **VERIFIED** | `6a7ef78`, `3b19f63` | same, `tests/core/test_deployment_hardening.py` |
+| L15 | Export temp files left behind | **VERIFIED** — deleted in-request | `6a7ef78` | `tests/api/test_api_hygiene_hardening.py` |
+| L16 | Shared report copies survived account deletion | **VERIFIED** | `0938f89` | `tests/api/test_file_hygiene_hardening.py` |
+| L17 | Mathtext in column names broke PDF export | **VERIFIED** | `66dcd4b` | `tests/frontend/test_report_preview_escaping.py` |
+| L18 | Frontend export fallback skipped RBAC | **VERIFIED** — fallback removed | `0938f89` | `tests/api/test_file_hygiene_hardening.py` |
+| L19 | Postgres image unpinned; API used the superuser | **IMPLEMENTED, TESTED (config only)** — digest pin, app-role script; **not run against a live container** | `742f7d0` | `tests/core/test_infra_hardening.py` |
+| I1–I17 | Informational items | Fixed in `20154f3` (I1, I4), `1b93b11` (I2), `5d63318` (I3, partly), `3b19f63` (I5), `0938f89` (I6, I7, I14), `34f1bf1` (I8), `ee10bfd` (I9), `3bc3562` + `6a7ef78` (I10), `742f7d0` (I12), `66dcd4b` (I15), `275d479` (I16). I11 and I13 are operator actions (below). I17 was a misattribution: test isolation was already in place | | see the checklist |
+
+Contract changes from this pass:
+
+- **Accounts:** self-registered accounts are VIEWER; login refuses unknown fields and overlong values (422); a disabled account gets 401; new `POST /api/auth/password`, `POST /api/auth/logout-all` and `POST /api/admin/users/{id}/unlock`; tokens carry `ver` and are capped at `AUTH_TOKEN_MAX_LIFETIME_MINUTES`.
+- **Uploads:** require `Content-Length` (411); `.xls` is no longer accepted; size, shape and archive limits answer 413 (not 422); new `DELETE /api/datasets/{id}`.
+- **Quotas:** the pipeline and AI retry can answer 429 (AI quota, rate limits); an AI retry whose pipeline result is gone answers 400.
+- **Responses:** 422 bodies omit `input`; exports are served from memory with `Content-Disposition`.
+- **Deployment:** the deployed API checks `Host` against `API_ALLOWED_HOSTS`; compose requires `APP_DB_PASSWORD`.
+
+### Deployment notes from this pass
+
+- **One API worker.** Lockout state is now in the database (`login_failures`), but the per-client rate limiter and the last-admin lock are still per process (I3 remainder). Run a single uvicorn worker, or move them to a shared store first.
+- **Reverse proxy.** Cap request bodies there as well, send `Content-Security-Policy: img-src 'self' data:` on the Streamlit site (defence in depth for M9), list the proxy in `TRUSTED_PROXY_IPS` and its hostname in `API_ALLOWED_HOSTS`, and enable `API_HSTS_ENABLED` once HTTPS is in place.
+- **Existing PostgreSQL volumes.** Init scripts run only on a fresh volume: run `docker/postgres/init-app-role.sh` once before upgrading, or the API cannot log in as `APP_DB_USER`.
+- **I11, rotation.** Any deployment that ran revisions before `94c5a02` / `34554f1` with their defaults (the `postgres` database password, the published signing key) must rotate the database password and `AUTH_SECRET_KEY`. Rotating the key signs every user out.
+- **I13, local data.** The git-ignored `analystgpt.db` (224 users with emails and password hashes) and `data/artifacts/` (738 uploaded-data files) on the development machine are real data: keep them out of shared drives and backups, and prefer synthetic data for local work.
+- **Not verified here:** the Docker daemon was unavailable, so no image was built, Trivy was not run against the images, and the app-role script and `docker compose up` were not exercised; the CI workflow has not run (not pushed); browser rendering and live-model behaviour (M9) were not tested.
+
 ## Remaining work / not verified
 
 - **Sprint 15 scope (unchanged):** governance policy selection end-to-end (selection → API →
@@ -179,11 +240,10 @@ tools from `requirements-dev.txt`.
   shared store such as the database or Redis); SEC-07 is verified at render level, not in a
   live browser; only the `api` image target was built (frontend/cli share the same install
   stage); the new CI `security` job has not run on GitHub (its three commands were run locally).
-  Lockout counts per identifier, so an account's username and email are counted separately.
+  *(Third pass: lockout is now per account and source, stored in the database, and username
+  and email share one counter; rate limits and the last-admin lock remain per process.)*
 - **Not changed, observed:** test coverage is not tracked in CI; `AIJobService` opens a
-  connection per call without closing it; the pipeline's convenience copy
-  `reports/analystgpt_report.txt` is still written on every run (never served by the API);
-  both `dashboard.py` and `powerbi.py` declare `/powerbi/dashboard` (first mount wins; both are
+  connection per call without closing it; both `dashboard.py` and `powerbi.py` declare `/powerbi/dashboard` (first mount wins; both are
   read-only now).
 
 ---
