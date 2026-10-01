@@ -137,7 +137,10 @@ class Application:
         self.ai_job_executor = AIJobExecutor(ai_manager=self.ai_manager)
         self.ai_job_service = AIJobService(job_executor=self.ai_job_executor)
         try:
-            self.ai_job_service.recover_stale_jobs()
+            # Single-worker deployments (the shipped topology): at startup no
+            # other process can be running a job, so every unfinished one is
+            # interrupted and is resumed or failed now (P2-02).
+            self.ai_job_service.recover_stale_jobs(ignore_lease=_core_config.AI_RECOVER_ALL_ON_STARTUP)
         except Exception as exc:
             logger.warning("Could not run stale AI job recovery: %s", exc)
 

@@ -117,7 +117,7 @@ def login(
     status_code=status.HTTP_200_OK,
     summary="Get current authenticated user profile",
 )
-async def get_current_user_profile(
+def get_current_user_profile(
     context: UserContext = Depends(get_current_active_user),
     user_service: UserService = Depends(get_user_service),
 ) -> UserResponse:

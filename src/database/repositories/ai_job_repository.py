@@ -38,6 +38,8 @@ class AIJobRepository(BaseRepository):
 
     def __init__(self, connection: DatabaseConnection) -> None:
         super().__init__(connection)
+        #: Set by `recover_stale_jobs`: the jobs it put back to PENDING.
+        self.requeued_job_ids: list[str] = []
 
     # ==========================================================
     # Create / Idempotent Create
@@ -52,6 +54,7 @@ class AIJobRepository(BaseRepository):
         provider: str = "ollama",
         model: str = "gemma3:4b",
         max_attempts: int = 3,
+        report_payload: str | None = None,
     ) -> AIJob:
         """
         Create a new AI job idempotently.
@@ -78,9 +81,10 @@ class AIJobRepository(BaseRepository):
             max_attempts,
             created_at,
             updated_at,
-            lease_expires_at
+            lease_expires_at,
+            report_payload
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
 
         try:
@@ -99,6 +103,7 @@ class AIJobRepository(BaseRepository):
                     now,
                     now,
                     pending_lease(),
+                    report_payload,
                 ),
             )
 
@@ -393,7 +398,7 @@ class AIJobRepository(BaseRepository):
         failure_category: AIFailureCategory | str | None = None,
     ) -> bool:
         """
-        Transition a GENERATING (automatic) or FAILED (manual) job back to PENDING.
+        Transition a GENERATING (automatic) or FAILED / CANCELLED (manual) job back to PENDING.
 
         Conditional (L12): READY and already-PENDING jobs are not touched.
         """
@@ -410,7 +415,7 @@ class AIJobRepository(BaseRepository):
             failure_category = ?,
             updated_at = ?,
             lease_expires_at = ?
-        WHERE job_id = ? AND status IN (?, ?);
+        WHERE job_id = ? AND status IN (?, ?, ?);
         """
         cursor = self.execute(
             query,
@@ -423,6 +428,7 @@ class AIJobRepository(BaseRepository):
                 job_id,
                 AIJobStatus.GENERATING.value,
                 AIJobStatus.FAILED.value,
+                AIJobStatus.CANCELLED.value,
             ),
         )
         return cursor.rowcount > 0
@@ -455,42 +461,97 @@ class AIJobRepository(BaseRepository):
 
         return [AIJob.from_dict(row) for row in rows]
 
-    def recover_stale_jobs(self) -> int:
-        """
-        Fail unfinished jobs whose lease has expired (L12).
+    def get_report_payload(self, job_id: str) -> str | None:
+        """The persisted ReportingReport JSON the job runs from (P2-01), if any."""
+        row = self.fetch_one(f"SELECT report_payload FROM {self.TABLE_NAME} WHERE job_id = ?;", (job_id,))
+        return None if row is None else row.get("report_payload")
 
-        A job runs from an in-memory ReportingReport that does not survive the
-        process, so an interrupted job can never resume: it used to be reset
-        to PENDING and stay there forever. Every start also reset ALL
-        GENERATING jobs, including other processes' in-flight ones. Now only
-        jobs whose lease ran out (or that predate leases) are marked FAILED;
-        the user runs the pipeline again.
-
-        Returns the number of jobs failed.
-        """
-        now_iso = datetime.now(UTC).isoformat()
-        query = f"""
-        UPDATE {self.TABLE_NAME}
-        SET status = ?,
-            failure_category = ?,
-            error = ?,
-            completed_at = ?,
-            updated_at = ?,
-            lease_expires_at = NULL
-        WHERE status IN (?, ?)
-          AND (lease_expires_at IS NULL OR lease_expires_at < ?);
-        """
+    def cancel(self, job_id: str) -> bool:
+        """Cancel an unfinished job (P2-02). A worker's later result is discarded."""
+        now = datetime.now(UTC).isoformat()
         cursor = self.execute(
-            query,
+            f"""
+            UPDATE {self.TABLE_NAME}
+            SET status = ?, completed_at = ?, updated_at = ?, lease_expires_at = NULL
+            WHERE job_id = ? AND status IN (?, ?);
+            """,
+            (
+                AIJobStatus.CANCELLED.value,
+                now,
+                now,
+                job_id,
+                AIJobStatus.PENDING.value,
+                AIJobStatus.GENERATING.value,
+            ),
+        )
+        return cursor.rowcount > 0
+
+    def recover_stale_jobs(self, ignore_lease: bool = False) -> int:
+        """
+        Bring interrupted jobs back to a state that will finish (L12, P2-02).
+
+        "Interrupted" means unfinished with an expired lease, or - with
+        `ignore_lease`, used at startup of a single-worker deployment - every
+        unfinished job, since no other process can be running it.
+
+        - Jobs with attempts left and a persisted report payload go back to
+          PENDING with a fresh lease. Their ids are left in
+          `requeued_job_ids` for the caller to dispatch.
+        - Every other interrupted job (attempts exhausted, or created before
+          payloads were persisted) is marked FAILED with a retryable reason.
+
+        Returns the number of jobs requeued or failed.
+        """
+        now = time.time()
+        now_iso = datetime.now(UTC).isoformat()
+        lease_clause = "" if ignore_lease else "AND (lease_expires_at IS NULL OR lease_expires_at < ?)"
+        lease_args: tuple = () if ignore_lease else (now,)
+        unfinished = (AIJobStatus.PENDING.value, AIJobStatus.GENERATING.value)
+
+        rows = self.fetch_all(
+            f"""
+            SELECT job_id FROM {self.TABLE_NAME}
+            WHERE status IN (?, ?) {lease_clause}
+              AND attempt_count < max_attempts AND report_payload IS NOT NULL;
+            """,
+            (*unfinished, *lease_args),
+        )
+        requeued = [row["job_id"] for row in rows]
+        for job_id in requeued:
+            self.execute(
+                f"""
+                UPDATE {self.TABLE_NAME}
+                SET status = ?, error = ?, updated_at = ?, lease_expires_at = ?
+                WHERE job_id = ? AND status IN (?, ?);
+                """,
+                (
+                    AIJobStatus.PENDING.value,
+                    "Requeued after an interruption.",
+                    now_iso,
+                    pending_lease(),
+                    job_id,
+                    *unfinished,
+                ),
+            )
+
+        cursor = self.execute(
+            f"""
+            UPDATE {self.TABLE_NAME}
+            SET status = ?, failure_category = ?, error = ?, completed_at = ?, updated_at = ?,
+                lease_expires_at = NULL
+            WHERE status IN (?, ?) {lease_clause}
+              AND NOT (attempt_count < max_attempts AND report_payload IS NOT NULL);
+            """,
             (
                 AIJobStatus.FAILED.value,
                 AIFailureCategory.SYSTEM_ERROR.value,
                 INTERRUPTED_ERROR,
                 now_iso,
                 now_iso,
-                AIJobStatus.PENDING.value,
-                AIJobStatus.GENERATING.value,
-                time.time(),
+                *unfinished,
+                *lease_args,
             ),
         )
-        return (cursor.rowcount if cursor else 0) or 0
+        self.requeued_job_ids = requeued
+        failed = (cursor.rowcount if cursor else 0) or 0
+        return len(requeued) + failed

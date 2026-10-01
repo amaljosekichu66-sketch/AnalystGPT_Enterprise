@@ -222,7 +222,10 @@ class CleaningGovernanceService:
                 config_id=config.config_id,
                 execution_status=ExecutionStatus.FAILED,
                 source_row_count=src_snapshot.row_count,
-                error_message=str(exc),
+                # A fixed category (P2-13): exception text can quote paths and
+                # data values, and this field is returned by the governance API.
+                # The details are in the log line above.
+                error_message=f"Cleaning failed ({type(exc).__name__}).",
                 pipeline_run_id=pipeline_run_id,
                 user_id=user_id,
                 execution_time_seconds=round(elapsed, 4),

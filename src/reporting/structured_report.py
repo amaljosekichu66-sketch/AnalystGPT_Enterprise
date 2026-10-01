@@ -122,6 +122,20 @@ class StructuredReport:
             "metadata": self.metadata,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> StructuredReport:
+        """Rebuild a report from `to_dict()` output (used to persist AI job inputs, P2-01)."""
+        generated_at = data.get("generated_at")
+        return cls(
+            title=data.get("title", ""),
+            executive_summary=data.get("executive_summary", ""),
+            kpis=dict(data.get("kpis") or {}),
+            analytics=dict(data.get("analytics") or {}),
+            recommendations=list(data.get("recommendations") or []),
+            generated_at=datetime.fromisoformat(generated_at) if generated_at else datetime.now(UTC),
+            metadata=dict(data.get("metadata") or {}),
+        )
+
     def to_json(
         self,
         *,

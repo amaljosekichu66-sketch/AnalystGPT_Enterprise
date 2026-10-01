@@ -46,7 +46,7 @@ admin_router = APIRouter(
     summary="List all users (Admin)",
     description="List all registered user accounts with pagination.",
 )
-async def list_users(
+def list_users(
     limit: int = Query(100, ge=1, le=1000, description="Maximum users to return."),
     offset: int = Query(0, ge=0, description="Number of users to skip."),
     _context: UserContext = Depends(require_permission(Permission.USER_READ)),
@@ -84,7 +84,7 @@ async def list_users(
     summary="Get user details by ID (Admin)",
     description="Retrieve full safe profile details for a specific user.",
 )
-async def get_user(
+def get_user(
     user_id: int,
     _context: UserContext = Depends(require_permission(Permission.USER_READ)),
     user_service: UserService = Depends(get_user_service),
@@ -116,7 +116,7 @@ async def get_user(
     summary="Update user role, status, or email (Admin)",
     description="Update a user's role, lifecycle status, or email with administrative safeguards.",
 )
-async def update_user(
+def update_user(
     user_id: int,
     user_update: AdminUserUpdate,
     context: UserContext = Depends(require_permission(Permission.USER_MANAGE)),
@@ -177,7 +177,7 @@ def unlock_user(
     summary="Delete user account (Admin)",
     description="Delete a user entity with last active administrator protection.",
 )
-async def delete_user(
+def delete_user(
     user_id: int,
     context: UserContext = Depends(require_permission(Permission.USER_MANAGE)),
     user_service: UserService = Depends(get_user_service),

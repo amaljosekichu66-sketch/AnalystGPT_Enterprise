@@ -50,7 +50,10 @@ def test_valid_state_transitions() -> None:
     )
     assert job.can_transition_to(AIJobStatus.GENERATING) is True
     assert job.can_transition_to(AIJobStatus.READY) is False
-    assert job.can_transition_to(AIJobStatus.FAILED) is False
+    # A queued job can fail without running (full AI queue, missing input) or be
+    # cancelled by its owner (P2-02).
+    assert job.can_transition_to(AIJobStatus.FAILED) is True
+    assert job.can_transition_to(AIJobStatus.CANCELLED) is True
 
     job.transition_to(AIJobStatus.GENERATING)
     assert job.status == AIJobStatus.GENERATING

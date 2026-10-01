@@ -242,7 +242,7 @@ def retry_ai_job(
     except AIStateTransitionError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only a failed AI job can be retried.",
+            detail="Only a failed or cancelled AI job can be retried.",
         ) from exc
     except Exception as exc:
         # The exception text can quote internals (L7); it stays in the log,
@@ -252,3 +252,36 @@ def retry_ai_job(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to retry AI job.",
         ) from exc
+
+
+@router.post(
+    "/jobs/{job_id}/cancel",
+    response_model=AIJobRetryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cancel AI Job",
+    description="Cancel a PENDING or GENERATING AI insight job. A running generation's result is discarded.",
+)
+def cancel_ai_job(
+    job_id: str,
+    context: UserContext = Depends(
+        require_permission(Permission.AI_GENERATE),
+    ),
+    application: Application = Depends(
+        get_application,
+    ),
+) -> AIJobRetryResponse:
+    """
+    Cancel an unfinished AI generation job (owner, or an administrator).
+    """
+    is_admin = context.has_permission(Permission.USER_MANAGE)
+    scoped_user_id = None if is_admin else context.user_id
+    try:
+        job = application.ai_job_service.cancel_job(job_id, user_id=scoped_user_id)
+    except AIJobNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="AI job not found.") from exc
+    except AIStateTransitionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only a PENDING or GENERATING AI job can be cancelled.",
+        ) from exc
+    return AIJobRetryResponse(success=True, job_id=job.job_id, status=job.status.value, message="AI job cancelled.")

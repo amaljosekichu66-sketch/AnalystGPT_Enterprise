@@ -7,11 +7,25 @@ Reporting Module.
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from typing import Any
 
 from src.core.logger import logger
 from src.reporting.structured_report import StructuredReport
+
+
+def _json_default(value: Any) -> Any:
+    if hasattr(value, "item"):
+        try:
+            return value.item()
+        except (TypeError, ValueError):
+            pass
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    return str(value)
 
 
 class ReportingReport:
@@ -83,6 +97,28 @@ class ReportingReport:
             ),
             "generated_at": (self.generated_at.isoformat()),
         }
+
+    def to_payload(self) -> str:
+        """
+        JSON a later process can rebuild this report from (P2-01, P2-02).
+
+        An AI job runs from its pipeline's ReportingReport. It used to exist
+        only in memory, so a manual retry or a restart could never run the job
+        again. numpy scalars become plain numbers; anything else that JSON
+        cannot carry becomes its string form.
+        """
+        return json.dumps(self.to_dict(), default=_json_default)
+
+    @classmethod
+    def from_payload(cls, payload: str) -> ReportingReport:
+        data = json.loads(payload)
+        generated_at = data.get("generated_at")
+        return cls(
+            report=StructuredReport.from_dict(data["report"]),
+            export_path=data.get("export_path", ""),
+            execution_time=float(data.get("execution_time") or 0.0),
+            generated_at=datetime.fromisoformat(generated_at) if generated_at else None,
+        )
 
     # ==========================================================
     # Representation

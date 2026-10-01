@@ -323,6 +323,9 @@ class SchemaManager:
             for table_name in ["pipeline_runs", "datasets", "reports"]:
                 self._add_column_if_missing(cursor, table_name, "user_id", "INTEGER")
 
+            # What an AI job runs from, so retries and restarts can run it (P2-01)
+            self._add_column_if_missing(cursor, "ai_jobs", "report_payload", "TEXT")
+
             # AI job lease, epoch seconds (audit 2026-09-29, L12)
             self._add_column_if_missing(cursor, "ai_jobs", "lease_expires_at", self._float_sql())
 

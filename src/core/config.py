@@ -219,6 +219,9 @@ GOVERNANCE_PREVIEW_RATE_LIMIT = os.getenv("GOVERNANCE_PREVIEW_RATE_LIMIT", "30/6
 # (AI_TIMEOUT) plus this margin; a PENDING job's covers its wait for a worker.
 # Only jobs whose lease has expired are treated as interrupted, so one API
 # process starting up no longer resets another process's in-flight jobs.
+# At API startup, treat every unfinished AI job as interrupted (P2-02). Correct
+# for one API worker; with several, set false so only expired leases count.
+AI_RECOVER_ALL_ON_STARTUP = _env_flag("AI_RECOVER_ALL_ON_STARTUP", default=True)
 AI_JOB_LEASE_MARGIN_SECONDS = int(os.getenv("AI_JOB_LEASE_MARGIN_SECONDS", "120"))
 AI_JOB_PENDING_TTL_SECONDS = int(os.getenv("AI_JOB_PENDING_TTL_SECONDS", "7200"))
 

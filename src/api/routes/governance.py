@@ -298,7 +298,8 @@ def _execution_row_to_response(row: dict) -> CleaningExecutionResponse:
         cleaned_completeness_pct=row.get("cleaned_completeness_pct"),
         columns_removed=row.get("columns_removed"),
         affected_columns_detail=row.get("affected_columns_detail"),
-        error_message=row.get("error_message"),
+        # Rows written before P2-13 may hold raw exception text: never return it.
+        error_message="Cleaning failed." if row.get("error_message") else None,
         execution_time_seconds=row.get("execution_time_seconds"),
         executed_at=str(row.get("executed_at", "")),
     )

@@ -23,6 +23,8 @@ class AIJobStatus(str, Enum):
     GENERATING = "GENERATING"
     READY = "READY"
     FAILED = "FAILED"
+    #: Stopped by the owner (P2-02). Terminal, but can be retried like FAILED.
+    CANCELLED = "CANCELLED"
 
 
 class AIFailureCategory(str, Enum):
@@ -39,13 +41,15 @@ class AIFailureCategory(str, Enum):
 
 # Valid state transitions for the AI job state machine
 VALID_TRANSITIONS: dict[AIJobStatus, set[AIJobStatus]] = {
-    AIJobStatus.PENDING: {AIJobStatus.GENERATING},
+    AIJobStatus.PENDING: {AIJobStatus.GENERATING, AIJobStatus.CANCELLED, AIJobStatus.FAILED},
     AIJobStatus.GENERATING: {
         AIJobStatus.READY,
         AIJobStatus.FAILED,
         AIJobStatus.PENDING,
+        AIJobStatus.CANCELLED,
     },
     AIJobStatus.FAILED: {AIJobStatus.PENDING},
+    AIJobStatus.CANCELLED: {AIJobStatus.PENDING},
     AIJobStatus.READY: set(),  # Terminal state
 }
 

@@ -85,7 +85,7 @@ class TestRetryRoute:
     def test_job_in_wrong_state_is_400_with_a_clear_reason(self, client: TestClient, monkeypatch) -> None:
         res = self._retry(client, monkeypatch, AIStateTransitionError("x"))
         assert res.status_code == 400
-        assert "Only a failed AI job can be retried." in res.text
+        assert "Only a failed or cancelled AI job can be retried." in res.text
 
 
 def test_validation_errors_do_not_echo_input(client: TestClient) -> None:

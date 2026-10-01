@@ -85,7 +85,7 @@ def get_dashboard_orchestrator(
         "Read-only: never executes the pipeline (use POST /api/pipeline)."
     ),
 )
-async def get_dashboard(
+def get_dashboard(
     dataset_version_id: str = Query(
         ...,
         pattern=DATASET_VERSION_ID_PATTERN,
@@ -144,7 +144,7 @@ async def get_dashboard(
     summary="Dashboard Status",
     description="Return lightweight application and dashboard status.",
 )
-async def dashboard_status(
+def dashboard_status(
     orchestrator: DashboardOrchestrator = Depends(
         get_dashboard_orchestrator,
     ),

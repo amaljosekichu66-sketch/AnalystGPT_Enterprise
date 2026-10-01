@@ -21,7 +21,7 @@ from src.ai.models import AIFailureCategory, AIJob, AIJobStatus
 from src.core import config
 from src.core.logger import logger
 from src.database.connection_factory import ConnectionFactory
-from src.database.repositories.ai_job_repository import AIJobRepository, running_lease
+from src.database.repositories.ai_job_repository import INTERRUPTED_ERROR, AIJobRepository, running_lease
 from src.database.repositories.ai_report_repository import AIReportRepository
 from src.reporting.reporting_report import ReportingReport
 
@@ -155,7 +155,7 @@ class AIJobExecutor:
             if self._is_shutdown:
                 logger.warning(
                     "Executor is shut down; refusing to submit AI job '%s'. "
-                    "The job remains PENDING and will be picked up by stale-job "
+                    "The job remains PENDING and is resumed by stale-job "
                     "recovery on next startup.",
                     job_id,
                 )
@@ -194,7 +194,7 @@ class AIJobExecutor:
     def execute_job_sync(
         self,
         job_id: str,
-        reporting_report: ReportingReport,
+        reporting_report: ReportingReport | None,
         ai_manager_override: AIManager | None = None,
     ) -> bool:
         """
@@ -257,6 +257,16 @@ class AIJobExecutor:
                 job.max_attempts,
             )
 
+            # A job resumed after a restart runs from its persisted input (P2-02).
+            if reporting_report is None:
+                payload = job_repo.get_report_payload(job_id)
+                if not payload:
+                    job_repo.mark_failed(
+                        job_id, error=INTERRUPTED_ERROR, failure_category=AIFailureCategory.SYSTEM_ERROR
+                    )
+                    return False
+                reporting_report = ReportingReport.from_payload(payload)
+
             # Reconstruct authoritative AIDataContext across asynchronous worker boundary
             from src.ai.context_builder import AIDataContextBuilder
 
@@ -273,6 +283,12 @@ class AIJobExecutor:
                 data_context=data_context,
             )
             attempt_seconds = time.monotonic() - attempt_started
+
+            # A job cancelled while it was generating keeps no result (P2-02).
+            current = job_repo.get_by_job_id(job_id)
+            if current is None or current.status != AIJobStatus.GENERATING:
+                logger.info("AI job '%s' is no longer GENERATING; discarding its result.", job_id)
+                return False
 
             # 4. Handle Result
             if ai_result.success and ai_result.ai_report is not None:
