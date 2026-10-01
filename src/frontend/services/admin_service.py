@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.frontend.services.api_client import APIClient
+from src.frontend.services.errors import friendly_error
 
 
 class AdminService:
@@ -39,7 +40,7 @@ class AdminService:
             )
             return True, res, None
         except Exception as exc:
-            return False, None, str(exc)
+            return False, None, friendly_error(exc, "administration request")
 
     def get_user(
         self,
@@ -57,7 +58,7 @@ class AdminService:
             )
             return True, res, None
         except Exception as exc:
-            return False, None, str(exc)
+            return False, None, friendly_error(exc, "administration request")
 
     def update_user(
         self,
@@ -87,7 +88,7 @@ class AdminService:
             )
             return True, res, None
         except Exception as exc:
-            return False, None, str(exc)
+            return False, None, friendly_error(exc, "administration request")
 
     def delete_user(
         self,
@@ -105,4 +106,20 @@ class AdminService:
             )
             return True, res, None
         except Exception as exc:
-            return False, None, str(exc)
+            return False, None, friendly_error(exc, "administration request")
+
+    def audit_events(
+        self, limit: int = 100, event_type: str | None = None
+    ) -> tuple[bool, list[dict[str, Any]] | None, str | None]:
+        """Most recent durable audit events (GET /api/admin/audit-events)."""
+        try:
+            return True, self._api_client.admin_audit_events(limit=limit, event_type=event_type), None
+        except Exception as exc:
+            return False, None, friendly_error(exc, "audit log")
+
+    def unlock_user(self, user_id: int) -> tuple[bool, dict[str, Any] | None, str | None]:
+        """Clear a user's login lockout (POST /api/admin/users/{id}/unlock)."""
+        try:
+            return True, self._api_client.admin_unlock_user(user_id), None
+        except Exception as exc:
+            return False, None, friendly_error(exc, "unlock")

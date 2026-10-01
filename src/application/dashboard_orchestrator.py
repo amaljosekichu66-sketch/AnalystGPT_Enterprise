@@ -188,6 +188,8 @@ class DashboardOrchestrator:
                 "output_path": public_artifact_name(result.output_path),
                 "ai_job_id": getattr(result, "ai_job_id", None),
                 "ai_job_status": getattr(result, "ai_job_status", None),
+                "pipeline_run_id": getattr(result, "pipeline_run_id", None),
+                "report_id": getattr(result, "report_id", None),
             },
             "report": (public_report_dict(reporting_report.to_dict()) if reporting_report is not None else {}),
             "ai_report": self._build_ai_report(

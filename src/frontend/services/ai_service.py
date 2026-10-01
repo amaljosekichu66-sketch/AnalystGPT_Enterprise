@@ -14,6 +14,7 @@ from typing import Any
 
 from src.core.logger import logger
 from src.frontend.services.api_client import APIClient
+from src.frontend.services.errors import friendly_error
 from src.frontend.services.session_manager import get_ai_job_id, set_ai_job_id
 
 
@@ -21,15 +22,16 @@ def get_ai_job_status(job_id: str | None = None) -> dict[str, Any]:
     """
     Retrieve current AI job status and report data from backend API.
 
-    Uses specific job_id if provided or cached in session_state, falling back to latest.
+    Uses the job of the run on screen (`job_id`, or the one stored for the
+    active dataset). There is deliberately no fallback to the user's latest
+    job: it may belong to another dataset (P2-06).
     """
     target_job_id = job_id or get_ai_job_id()
+    if not target_job_id:
+        return {"success": False, "job_id": None, "status": "NOT_FOUND", "error": None, "is_auth_error": False}
     client = APIClient()
     try:
-        if target_job_id:
-            data = client.get_ai_job(target_job_id)
-        else:
-            data = client.get_latest_ai_job()
+        data = client.get_ai_job(target_job_id)
 
         eff_job_id = data.get("job_id") or target_job_id
         if eff_job_id:
@@ -71,7 +73,7 @@ def get_ai_job_status(job_id: str | None = None) -> dict[str, Any]:
             "success": False,
             "job_id": target_job_id,
             "status": status_val,
-            "error": err_str,
+            "error": friendly_error(exc, "AI status check"),
             "is_auth_error": is_auth_err,
             "ai_report": None,
         }
@@ -96,8 +98,18 @@ def retry_ai_job(job_id: str) -> dict[str, Any]:
         logger.error("Failed to retry AI job '%s': %s", job_id, exc)
         return {
             "success": False,
-            "message": f"Retry failed: {exc}",
+            "message": friendly_error(exc, "AI retry"),
             "job_id": job_id,
         }
     finally:
         client.close()
+
+
+def cancel_ai_job(job_id: str) -> dict[str, Any]:
+    """Cancel a queued or running AI job (P2-02)."""
+    try:
+        with APIClient() as client:
+            response = client.cancel_ai_job(job_id)
+        return {"success": True, "message": response.get("message", "AI job cancelled."), "job_id": job_id}
+    except Exception as exc:
+        return {"success": False, "message": friendly_error(exc, "AI cancel"), "job_id": job_id}

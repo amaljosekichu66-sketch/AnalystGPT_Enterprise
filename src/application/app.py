@@ -186,6 +186,11 @@ class Application:
             _core_config.RESULT_CACHE_MAX_ENTRIES, _core_config.RESULT_CACHE_TTL_SECONDS
         )
 
+        #: dataset_version_id -> analysis for the frontend (P2-05). Versions are immutable.
+        self._analysis_results: BoundedTTLCache[str, dict[str, Any]] = BoundedTTLCache(
+            _core_config.RESULT_CACHE_MAX_ENTRIES, _core_config.RESULT_CACHE_TTL_SECONDS
+        )
+
         try:
             self._apply_dataset_retention()
         except Exception as exc:
@@ -238,6 +243,46 @@ class Application:
                 else:
                     self._active_jobs.pop(user_id, None)
 
+    def analyse_dataset(self, dataset_version_id: str, user_context: UserContext | None = None) -> dict[str, Any]:
+        """
+        Profile, chart plan and cleaning-policy recommendation for an uploaded dataset (P2-05).
+
+        The Streamlit frontend used to import the profiler, the visualization
+        planner and the governance service and run them in its own process.
+        Ownership is enforced by `resolve_source_version`. Results are cached
+        per dataset version, which is immutable.
+        """
+        from src.analytics.visualization_planner import VisualizationPlanner
+        from src.core.jsonable import to_jsonable
+        from src.profiling.data_profiler import DataProfiler
+
+        source_version = self.resolve_source_version(dataset_version_id, user_context)
+        with self._cache_lock:
+            cached = self._analysis_results.get(source_version.version_id)
+        if cached is not None:
+            return cached
+
+        dataframe = self.load_source_dataframe(source_version)
+        profile = DataProfiler().profile_dataset(dataframe)
+        plan = VisualizationPlanner().plan_visualizations(dataframe, profile)
+        if profile.has_missing_values:
+            policy, reason = self.governance_service.recommend_dataset_policy(profile)
+        else:
+            policy, reason = MissingValuePolicy.PRESERVE_NULLS, "No missing values were detected."
+
+        analysis = to_jsonable(
+            {
+                "dataset_version_id": source_version.version_id,
+                "profile": profile.to_dict(),
+                "visualization_plan": plan.to_dict(),
+                "recommended_policy": policy.value,
+                "recommendation_reason": reason,
+            }
+        )
+        with self._cache_lock:
+            self._analysis_results[source_version.version_id] = analysis
+        return analysis
+
     def delete_dataset(self, dataset_version_id: str, user_context: UserContext | None = None) -> None:
         """
         Delete an uploaded dataset and its cleaned derivatives (I7).
@@ -252,6 +297,7 @@ class Application:
         with self._cache_lock:
             for key in [k for k in self._dataset_results if k[1] == source_version.version_id]:
                 del self._dataset_results[key]
+            self._analysis_results.pop(source_version.version_id, None)
 
     def _apply_dataset_retention(self) -> None:
         """Delete uploads older than DATASET_RETENTION_DAYS, if set (I7)."""

@@ -207,6 +207,16 @@ class AIReportResponse(BaseModel):
 # ==========================================================
 
 
+class DatasetAnalysisResponse(BaseModel):
+    """Profile, chart plan and policy recommendation for an uploaded dataset (P2-05)."""
+
+    dataset_version_id: str
+    profile: dict[str, Any]
+    visualization_plan: dict[str, Any]
+    recommended_policy: str
+    recommendation_reason: str
+
+
 class DatasetDeleteResponse(APIResponse):
     """Response returned after a dataset is deleted."""
 

@@ -38,7 +38,8 @@ def _forwarding_headers() -> dict[str, str]:
         upstream = st.context.headers.get("X-Forwarded-For")
     except Exception:
         return {}
-    chain = [hop for hop in (upstream, browser) if hop]
+    # Only real strings: test harnesses (and odd proxies) can hand back other objects.
+    chain = [hop for hop in (upstream, browser) if isinstance(hop, str) and hop]
     return {"X-Forwarded-For": ", ".join(chain)} if chain else {}
 
 
@@ -630,6 +631,64 @@ class APIClient:
             f"{self.AI_JOBS}/{job_id}/retry",
             token=token,
         )
+
+    def cancel_ai_job(self, job_id: str, token: str | None = None) -> dict[str, Any]:
+        """POST /api/ai/jobs/{job_id}/cancel (P2-02)."""
+        return self._post(f"{self.AI_JOBS}/{job_id}/cancel", token=token)
+
+    # ==========================================================
+    # Datasets, governance and policies (P2-04, P2-05)
+    # ==========================================================
+
+    def dataset_analysis(self, dataset_version_id: str) -> dict[str, Any]:
+        """GET /api/datasets/{id}/analysis: profile, chart plan, policy recommendation."""
+        return self._get(f"{self.DATASETS}/{dataset_version_id}/analysis")
+
+    def delete_dataset(self, dataset_version_id: str) -> dict[str, Any]:
+        return self._delete(f"{self.DATASETS}/{dataset_version_id}")
+
+    def governance_preview(self, dataset_version_id: str, missing_value_policy: str) -> dict[str, Any]:
+        return self._post(
+            "/api/governance/preview",
+            payload={
+                "dataset_version_id": dataset_version_id,
+                "cleaning_config": {"missing_value_policy": missing_value_policy},
+            },
+        )
+
+    def list_policies(self, dataset_version_id: str | None = None) -> list[dict[str, Any]]:
+        params = {"dataset_version_id": dataset_version_id} if dataset_version_id else None
+        return self._get("/api/governance/policies", params=params)  # type: ignore[return-value]
+
+    def propose_policy(self, dataset_version_id: str, missing_value_policy: str) -> dict[str, Any]:
+        return self._post(
+            "/api/governance/policies",
+            payload={"dataset_version_id": dataset_version_id, "missing_value_policy": missing_value_policy},
+        )
+
+    def review_policy(self, proposal_id: str, approve: bool, note: str | None = None) -> dict[str, Any]:
+        action = "approve" if approve else "reject"
+        return self._post(f"/api/governance/policies/{proposal_id}/{action}", payload={"note": note})
+
+    def run_pipeline_for(self, dataset_version_id: str, proposal_id: str | None = None) -> dict[str, Any]:
+        """POST /api/pipeline, optionally with an APPROVED cleaning policy proposal."""
+        payload: dict[str, Any] = {"dataset_version_id": dataset_version_id}
+        if proposal_id:
+            payload["cleaning_policy_proposal_id"] = proposal_id
+        return self._post(self.PIPELINE, payload)
+
+    # ==========================================================
+    # Administration extras (P2-25)
+    # ==========================================================
+
+    def admin_audit_events(self, limit: int = 100, event_type: str | None = None) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {"limit": limit}
+        if event_type:
+            params["event_type"] = event_type
+        return self._get("/api/admin/audit-events", params=params)  # type: ignore[return-value]
+
+    def admin_unlock_user(self, user_id: int) -> dict[str, Any]:
+        return self._post(f"{self.ADMIN_USERS}/{user_id}/unlock")
 
     # ==========================================================
     # Lifecycle

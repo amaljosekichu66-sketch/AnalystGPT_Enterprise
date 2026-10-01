@@ -25,6 +25,9 @@ from src.frontend.views import (
 def sample_dashboard_data():
     return {
         "dataset_loaded": True,
+        "analysed": True,
+        "ai_job_id": "job_1",
+        "analysis": {"visualization_plan": {}, "profile": {}},
         "filename": "test.csv",
         "rows": 100,
         "columns": 5,
@@ -71,6 +74,10 @@ def test_ai_insights_page_with_insights(sample_dashboard_data):
     """Verify AI Insights view renders insights when ai_report is present."""
     with (
         patch("src.frontend.views.ai_insights_page.get_dashboard_data", return_value=sample_dashboard_data),
+        patch(
+            "src.frontend.views.ai_insights_page.get_ai_job_status",
+            return_value={"job_id": "job_1", "status": "READY", "ai_report": sample_dashboard_data["ai_report"]},
+        ),
         patch("src.frontend.views.ai_insights_page.scroll_to_top") as mock_scroll,
         patch("src.frontend.views.ai_insights_page.render_ai_insights") as mock_render_insights,
     ):

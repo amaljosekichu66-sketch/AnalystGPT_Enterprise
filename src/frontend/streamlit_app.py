@@ -26,21 +26,13 @@ from src.core.logger import logger  # noqa: E402
 from src.frontend.components.footer import (  # noqa: E402
     render_footer,
 )
+from src.frontend.pages import DEFAULT_PAGE, PAGES  # noqa: E402
 from src.frontend.services.auth_service import AuthService  # noqa: E402
 from src.frontend.services.session_manager import (  # noqa: E402
     get_current_user,
     get_user_role,
     is_admin,
     is_authenticated,
-)
-from src.frontend.views import (  # noqa: E402
-    about_page,
-    admin_page,
-    ai_insights_page,
-    dashboard_page,
-    login_page,
-    report_page,
-    upload_page,
 )
 
 # ==========================================================
@@ -49,17 +41,6 @@ from src.frontend.views import (  # noqa: E402
 
 APP_TITLE = APP_NAME
 
-DEFAULT_PAGE = "Dashboard"
-
-PAGES = {
-    "Dashboard": dashboard_page.render,
-    "Upload": upload_page.render,
-    "Reports": report_page.render,
-    "AI Insights": ai_insights_page.render,
-    "Admin": admin_page.render,
-    "About": about_page.render,
-    "Sign In": login_page.render,
-}
 
 # ==========================================================
 # Page Configuration
@@ -79,8 +60,31 @@ st.set_page_config(
 if "current_page" not in st.session_state:
     st.session_state.current_page = DEFAULT_PAGE
 
-if "backend_connected" not in st.session_state:
-    st.session_state.backend_connected = True
+
+def _backend_connected(max_age_seconds: float = 30.0) -> bool:
+    """
+    Whether GET /api/health answers, re-checked at most every 30 s (P2-08).
+
+    The sidebar used to say "Backend Connected" unconditionally.
+    """
+    import time
+
+    from src.frontend.services.api_client import APIClient
+
+    now = time.monotonic()
+    checked_at = st.session_state.get("_backend_checked_at", 0.0)
+    if now - checked_at < max_age_seconds and "backend_connected" in st.session_state:
+        return bool(st.session_state.backend_connected)
+    try:
+        with APIClient(timeout=3.0) as client:
+            client.health()
+        connected = True
+    except Exception:
+        connected = False
+    st.session_state.backend_connected = connected
+    st.session_state["_backend_checked_at"] = now
+    return connected
+
 
 # ==========================================================
 # Sidebar
@@ -160,10 +164,10 @@ with st.sidebar:
 
     st.divider()
 
-    if st.session_state.backend_connected:
+    if _backend_connected():
         st.success("Backend Connected")
     else:
-        st.error("Backend Offline")
+        st.error("Backend Offline — pages show what is available and retry automatically.")
 
     st.caption(f"Version {APP_VERSION}")
 
@@ -175,7 +179,7 @@ page = st.session_state.current_page
 
 try:
     if not is_authenticated() and page != "About":
-        login_page.render()
+        PAGES["Sign In"]()
     else:
         if page not in PAGES:
             logger.warning("Unknown frontend page: %s", page)

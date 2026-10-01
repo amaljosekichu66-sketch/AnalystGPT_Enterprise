@@ -1,78 +1,58 @@
 """
 Column Profile Component for AnalystGPT Enterprise.
 
-Renders authoritative column semantic profiles, analytical roles,
-cardinality, missingness, and governance recommendations.
+Renders column semantic profiles, analytical roles, cardinality,
+missingness, and governance recommendations from the profile the API
+returns (GET /api/datasets/{id}/analysis). The profiler used to run inside
+the Streamlit process (P2-05).
 
 Sprint 14 Remediation — Data Profiling, Null Governance & Visual Analytics.
 """
 
 from __future__ import annotations
 
+from typing import Any
+
 import pandas as pd
 import streamlit as st
 
-from src.core.config import MAX_PROFILE_ROWS
-from src.profiling.data_profiler import DataProfiler
-from src.profiling.models import DatasetProfile
 
-
-def render_column_profile(
-    dataframe: pd.DataFrame,
-    profile: DatasetProfile | None = None,
-) -> None:
+def render_column_profile(profile: dict[str, Any] | None) -> None:
     """
-    Render comprehensive semantic column profile table.
+    Render the semantic column profile table.
     """
-    if dataframe.empty:
+    if not profile or not profile.get("columns"):
         st.info("No data available for profiling.")
         return
 
-    # 1. Resolve Profile
-    if profile is None:
-        profiler = DataProfiler()
-        profile = profiler.profile_dataset(dataframe)
+    roles = profile.get("role_counts") or {}
 
-    # 2. Semantic Distribution Summary Badges
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Total Columns", profile.column_count)
+        st.metric("Total Columns", profile.get("column_count", len(profile["columns"])))
     with col2:
-        measures_cnt = profile.role_counts.get("measure", 0) + profile.role_counts.get("demographic_measure", 0)
-        st.metric("Measures", measures_cnt)
+        st.metric("Measures", roles.get("measure", 0) + roles.get("demographic_measure", 0))
     with col3:
-        dims_cnt = profile.role_counts.get("categorical_dimension", 0) + profile.role_counts.get(
-            "geographic_dimension", 0
-        )
-        st.metric("Dimensions", dims_cnt)
+        st.metric("Dimensions", roles.get("categorical_dimension", 0) + roles.get("geographic_dimension", 0))
     with col4:
-        id_cnt = (
-            profile.role_counts.get("identifier", 0)
-            + profile.role_counts.get("contact_identifier", 0)
-            + profile.role_counts.get("constant_attribute", 0)
+        st.metric(
+            "Identifiers / Constants",
+            roles.get("identifier", 0) + roles.get("contact_identifier", 0) + roles.get("constant_attribute", 0),
         )
-        st.metric("Identifiers / Constants", id_cnt)
 
-    # 3. Comprehensive Column Table
-    profile_rows = []
-    for col_name, cp in profile.column_profiles.items():
-        profile_rows.append(
+    rows = []
+    for col_name, cp in profile["columns"].items():
+        rows.append(
             {
                 "Column": col_name,
-                "Physical Type": cp.physical_dtype,
-                "Semantic Type": cp.semantic_type.value,
-                "Analytical Role": cp.analytical_role.value,
-                "Missing": f"{cp.missing_count:,} ({cp.missing_percentage:.1f}%)",
-                "Unique": f"{cp.unique_count:,} ({cp.uniqueness_percentage:.1f}%)",
-                "Visualization": "Included" if cp.is_visualizable else "Excluded",
-                "Recommendation": cp.governance_recommendation.replace("_", " ").title(),
+                "Physical Type": cp.get("physical_dtype"),
+                "Semantic Type": cp.get("semantic_type"),
+                "Analytical Role": cp.get("analytical_role"),
+                "Missing": f"{cp.get('missing_count', 0):,} ({cp.get('missing_percentage', 0.0):.1f}%)",
+                "Unique": f"{cp.get('unique_count', 0):,} ({cp.get('uniqueness_percentage', 0.0):.1f}%)",
+                "Visualization": "Included" if cp.get("is_visualizable") else "Excluded",
+                "Recommendation": str(cp.get("governance_recommendation", "")).replace("_", " ").title(),
             }
         )
 
-    profile_table = pd.DataFrame(profile_rows)
-
-    st.dataframe(
-        profile_table,
-        hide_index=True,
-        width="stretch",
-    )
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")

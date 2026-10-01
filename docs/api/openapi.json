@@ -1774,6 +1774,140 @@
         }
       }
     },
+    "/api/datasets/{dataset_version_id}/analysis": {
+      "get": {
+        "tags": [
+          "Datasets",
+          "Datasets"
+        ],
+        "summary": "Dataset Analysis",
+        "description": "Semantic profile, planned charts and cleaning-policy recommendation for an uploaded dataset.",
+        "operationId": "dataset_analysis_api_datasets__dataset_version_id__analysis_get",
+        "parameters": [
+          {
+            "name": "dataset_version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Version Id"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-User-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Id"
+            }
+          },
+          {
+            "name": "X-User-Name",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Name"
+            }
+          },
+          {
+            "name": "X-User-Email",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Email"
+            }
+          },
+          {
+            "name": "X-User-Role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-User-Role"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetAnalysisResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dataset not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pipeline": {
       "post": {
         "tags": [
@@ -6673,6 +6807,28 @@
             ],
             "title": "Ai Job Id"
           },
+          "pipeline_run_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Run Id"
+          },
+          "report_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Id"
+          },
           "generated_at": {
             "anyOf": [
               {
@@ -6783,6 +6939,42 @@
         ],
         "title": "DashboardSummary",
         "description": "Executive dashboard summary."
+      },
+      "DatasetAnalysisResponse": {
+        "properties": {
+          "dataset_version_id": {
+            "type": "string",
+            "title": "Dataset Version Id"
+          },
+          "profile": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Profile"
+          },
+          "visualization_plan": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Visualization Plan"
+          },
+          "recommended_policy": {
+            "type": "string",
+            "title": "Recommended Policy"
+          },
+          "recommendation_reason": {
+            "type": "string",
+            "title": "Recommendation Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dataset_version_id",
+          "profile",
+          "visualization_plan",
+          "recommended_policy",
+          "recommendation_reason"
+        ],
+        "title": "DatasetAnalysisResponse",
+        "description": "Profile, chart plan and policy recommendation for an uploaded dataset (P2-05)."
       },
       "DatasetDeleteResponse": {
         "properties": {

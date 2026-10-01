@@ -48,7 +48,22 @@ def render() -> None:
         )
         return
 
+    if dashboard_data.get("api_error"):
+        st.error(dashboard_data["api_error"])
+
+    if not dashboard_data.get("analysed"):
+        # Viewing never runs the pipeline (P2-06).
+        render_empty_state(
+            title="Dataset Not Analysed Yet",
+            message="Run the analysis from the Upload page; the dashboard then shows its results.",
+            icon="▶️",
+            button_label="Go to Upload",
+            target_page="Upload",
+        )
+        return
+
     df = dashboard_data["dataframe"]
+    analysis = dashboard_data.get("analysis") or {}
 
     # ==========================================================
     # 2. Dataset Context Banner
@@ -80,7 +95,7 @@ def render() -> None:
     # ==========================================================
     st.subheader("📈 Visual Analytics")
     st.caption("Selective high-value charts planned from semantic column profiles and distributions.")
-    render_charts(df)
+    render_charts(analysis.get("visualization_plan"))
 
     st.divider()
 
@@ -96,7 +111,7 @@ def render() -> None:
         st.dataframe(df.head(DATAFRAME_PREVIEW_ROWS), width="stretch")
 
     with tab_schema:
-        render_column_profile(df)
+        render_column_profile(analysis.get("profile"))
 
     st.divider()
 

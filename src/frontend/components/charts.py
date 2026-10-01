@@ -2,27 +2,25 @@
 Chart Component for AnalystGPT Enterprise.
 
 Renders high-value visual analytics cards arranged in a responsive
-2x2 / 3x3 dashboard grid, powered by the authoritative VisualizationPlanner.
+2x2 / 3x3 dashboard grid from the visualization plan the API returns
+(GET /api/datasets/{id}/analysis).
+
+The plan used to be computed here, by importing the profiler and planner into
+the Streamlit process (P2-05). Every chart carries its own data in
+`chart_payload`, so no DataFrame is needed to draw it.
 
 Sprint 14 Remediation — Data Profiling, Null Governance & Visual Analytics.
 """
 
 from __future__ import annotations
 
+from typing import Any
+
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import streamlit as st
 
-from src.analytics.visualization_planner import (
-    PlannedChart,
-    VisualizationPlan,
-    VisualizationPlanner,
-)
-from src.core.config import MAX_CHART_ROWS
 from src.frontend.components.safe_text import markdown_text
-from src.profiling.data_profiler import DataProfiler
-from src.profiling.models import DatasetProfile
 
 
 def _style_axes(ax: plt.Axes, title: str, subtitle: str = "") -> None:
@@ -38,42 +36,33 @@ def _style_axes(ax: plt.Axes, title: str, subtitle: str = "") -> None:
         ax.set_title(title, fontsize=10, fontweight="bold", color="#F7FAFC", pad=10)
 
 
-def _render_single_chart(chart: PlannedChart, dataframe: pd.DataFrame) -> None:
+def _render_single_chart(chart: dict[str, Any]) -> None:
     """Render a single planned chart card."""
     # Column names and category values become axis text: no mathtext (L17).
     with st.container(border=True), plt.rc_context({"text.parse_math": False}):
-        st.markdown(f"**{markdown_text(chart.title)}**")
-        if chart.subtitle:
-            st.caption(markdown_text(chart.subtitle))
+        st.markdown(f"**{markdown_text(chart.get('title', ''))}**")
+        if chart.get("subtitle"):
+            st.caption(markdown_text(chart["subtitle"]))
 
         fig, ax = plt.subplots(figsize=(5.5, 3.2), facecolor="#14171F")
         _style_axes(ax, "")
 
-        payload = chart.chart_payload
+        payload = chart.get("chart_payload") or {}
+        chart_type = chart.get("chart_type")
 
-        if chart.chart_type == "histogram":
+        if chart_type == "histogram":
             data = payload.get("series_data", [])
             if data:
-                n, bins, patches = ax.hist(
-                    data,
-                    bins=payload.get("bins", 20),
-                    color="#3182CE",
-                    edgecolor="#2B6CB0",
-                    alpha=0.85,
-                )
+                ax.hist(data, bins=payload.get("bins", 20), color="#3182CE", edgecolor="#2B6CB0", alpha=0.85)
                 median_val = payload.get("median")
                 if median_val is not None:
                     ax.axvline(
-                        median_val,
-                        color="#ECC94B",
-                        linestyle="--",
-                        linewidth=1.5,
-                        label=f"Median: {median_val:,.1f}",
+                        median_val, color="#ECC94B", linestyle="--", linewidth=1.5, label=f"Median: {median_val:,.1f}"
                     )
                     ax.legend(fontsize=7, facecolor="#1E222A", edgecolor="#4A5568", labelcolor="#F7FAFC")
                 ax.set_ylabel("Frequency", color="#A0AEC0", fontsize=8)
 
-        elif chart.chart_type == "horizontal_bar":
+        elif chart_type == "horizontal_bar":
             categories = payload.get("categories", [])
             counts = payload.get("counts", [])
             if categories and counts:
@@ -84,7 +73,7 @@ def _render_single_chart(chart: PlannedChart, dataframe: pd.DataFrame) -> None:
                 ax.invert_yaxis()
                 ax.set_xlabel("Count / Value", color="#A0AEC0", fontsize=8)
 
-        elif chart.chart_type == "missingness_bar":
+        elif chart_type == "missingness_bar":
             missing_dict = payload.get("missing_counts", {})
             if missing_dict:
                 cols = list(missing_dict.keys())
@@ -96,15 +85,19 @@ def _render_single_chart(chart: PlannedChart, dataframe: pd.DataFrame) -> None:
                 ax.invert_yaxis()
                 ax.set_xlabel("Missing Cells", color="#A0AEC0", fontsize=8)
 
-        elif chart.chart_type == "scatter":
+        elif chart_type == "scatter":
             x_data = payload.get("x_data", [])
             y_data = payload.get("y_data", [])
             if x_data and y_data:
                 ax.scatter(x_data, y_data, color="#805AD5", alpha=0.6, edgecolors="none", s=25)
-                ax.set_xlabel(str(chart.primary_column).replace("_", " ").title(), color="#A0AEC0", fontsize=8)
-                ax.set_ylabel(str(chart.secondary_column).replace("_", " ").title(), color="#A0AEC0", fontsize=8)
+                ax.set_xlabel(
+                    str(chart.get("primary_column", "")).replace("_", " ").title(), color="#A0AEC0", fontsize=8
+                )
+                ax.set_ylabel(
+                    str(chart.get("secondary_column", "")).replace("_", " ").title(), color="#A0AEC0", fontsize=8
+                )
 
-        elif chart.chart_type == "line":
+        elif chart_type == "line":
             dates = payload.get("dates", [])
             values = payload.get("values", [])
             if dates and values:
@@ -116,7 +109,7 @@ def _render_single_chart(chart: PlannedChart, dataframe: pd.DataFrame) -> None:
                 )
                 ax.set_ylabel("Value", color="#A0AEC0", fontsize=8)
 
-        elif chart.chart_type == "correlation_heatmap":
+        elif chart_type == "correlation_heatmap":
             cols = payload.get("columns", [])
             matrix = np.array(payload.get("matrix", []))
             if len(cols) >= 2 and matrix.size > 0:
@@ -135,51 +128,37 @@ def _render_single_chart(chart: PlannedChart, dataframe: pd.DataFrame) -> None:
         plt.close(fig)
 
 
-def render_charts(
-    dataframe: pd.DataFrame,
-    profile: DatasetProfile | None = None,
-    plan: VisualizationPlan | None = None,
-) -> None:
+def render_charts(plan: dict[str, Any] | None) -> None:
     """
-    Render visual analytics cards arranged in a responsive 2x2 or 3x3 grid.
+    Render visual analytics cards arranged in a 2-column grid from an API plan.
     """
-    if dataframe.empty:
+    if not plan:
         st.info("No data available for visualization.")
         return
 
-    # 1. Resolve Profile and Plan
-    if profile is None:
-        profiler = DataProfiler()
-        profile = profiler.profile_dataset(dataframe)
+    charts = plan.get("charts") or []
+    excluded = plan.get("excluded_columns") or []
 
-    if plan is None:
-        planner = VisualizationPlanner()
-        plan = planner.plan_visualizations(dataframe, profile)
-
-    if not plan.charts:
+    if not charts:
         st.info("No meaningful visual analytics available for this dataset structure.")
-        if plan.excluded_columns:
+        if excluded:
             with st.expander("ℹ️ Why were some columns excluded from charts?"):
-                for exc in plan.excluded_columns:
+                for exc in excluded:
                     st.markdown(f"- {markdown_text(exc)}")
         return
 
-    # 2. Render Grid Layout (2x2 or 3x3)
-    charts = plan.charts
-    num_cols = 2  # Default clean 2-column grid
+    num_cols = 2
     rows = [charts[i : i + num_cols] for i in range(0, len(charts), num_cols)]
-
     for row in rows:
         cols = st.columns(num_cols)
         for idx, chart in enumerate(row):
             with cols[idx]:
-                _render_single_chart(chart, dataframe)
+                _render_single_chart(chart)
 
-    # 3. Excluded Columns Summary Expander
-    if plan.excluded_columns:
-        with st.expander(f"ℹ️ Excluded Columns ({len(plan.excluded_columns)} low-information / identifier fields)"):
+    if excluded:
+        with st.expander(f"ℹ️ Excluded Columns ({len(excluded)} low-information / identifier fields)"):
             st.caption(
                 "To maintain dashboard focus, constant columns, unique keys, and contact fields are omitted from default charts."
             )
-            for exc in plan.excluded_columns:
+            for exc in excluded:
                 st.markdown(f"- {markdown_text(exc)}")

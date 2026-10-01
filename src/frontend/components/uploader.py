@@ -6,6 +6,7 @@ Sprint 11
 
 from __future__ import annotations
 
+import hashlib
 from io import BytesIO
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from src.core.config import MAX_FILE_SIZE_MB
 from src.core.logger import logger
 from src.frontend.services.session_manager import (
     DATASET_VERSION_ID_KEY,
+    UPLOAD_HASH_KEY,
 )
 from src.frontend.services.upload_service import UploadService
 from src.upload.bounded_parse import read_csv_bounded, read_excel_bounded, read_json_bounded
@@ -157,13 +159,20 @@ def render_uploader():
 
     try:
 
-        # The API validates first (size, type, archive, shape); only an
-        # accepted file is parsed here (M8).
-        dataset_version_id = upload_to_backend(
-            uploaded_file,
-        )
-
-        st.session_state[DATASET_VERSION_ID_KEY] = dataset_version_id
+        # Every Streamlit rerun (any widget change) used to upload the file
+        # again and create a new dataset version (P2-07). The same bytes now
+        # reuse the version already created for them.
+        file_hash = hashlib.sha256(uploaded_file.getvalue()).hexdigest()
+        if st.session_state.get(UPLOAD_HASH_KEY) == file_hash and st.session_state.get(DATASET_VERSION_ID_KEY):
+            dataset_version_id = st.session_state[DATASET_VERSION_ID_KEY]
+        else:
+            # The API validates first (size, type, archive, shape); only an
+            # accepted file is parsed here (M8).
+            dataset_version_id = upload_to_backend(
+                uploaded_file,
+            )
+            st.session_state[DATASET_VERSION_ID_KEY] = dataset_version_id
+            st.session_state[UPLOAD_HASH_KEY] = file_hash
 
         dataframe = load_dataframe(
             file_bytes=uploaded_file.getvalue(),

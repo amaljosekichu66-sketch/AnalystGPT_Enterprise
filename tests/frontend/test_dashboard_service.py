@@ -4,7 +4,6 @@ Unit tests for the Dashboard Service.
 
 from unittest.mock import MagicMock, patch
 
-import httpx
 import pandas as pd
 import pytest
 import streamlit as st  # <-- Added this import
@@ -74,176 +73,74 @@ def test_local_dashboard_with_dataset(mock_get_dataset, uploaded_file, sample_da
 
 
 # ==========================================================
-# Cache Tests
+# Read-only API tests (P2-06)
 # ==========================================================
 
-
-def test_clear_dashboard_cache():
-    """Test clearing the dashboard cache."""
-    with patch("streamlit.session_state", {"dashboard_cache": "data", "dashboard_dataset": "path"}):
-        clear_dashboard_cache()
-        assert "dashboard_cache" not in st.session_state
-        assert "dashboard_dataset" not in st.session_state
+DATASET = "0b7c1f2e-3d4a-4b5c-8d9e-0f1a2b3c4d5e"
 
 
-# ==========================================================
-# API Integration Tests
-# ==========================================================
+@pytest.fixture(autouse=True)
+def clean_state():
+    st.session_state.clear()
+    yield
+    st.session_state.clear()
 
 
-@patch("src.frontend.services.dashboard_service.get_dataset")
-@patch("src.frontend.services.dashboard_service.get_dataset_version_id")
-@patch("src.frontend.services.dashboard_service._get_cached_dashboard")
-@patch("src.frontend.services.dashboard_service.APIClient")
-def test_dashboard_api_success(
-    mock_client_cls,
-    mock_cache,
-    mock_get_path,
-    mock_get_dataset,
-    uploaded_file,
-    sample_dataframe,
-):
-    """
-    Dashboard uses API successfully when dataset is loaded locally and no cache exists.
-    """
-    # Arrange
-    dataset_version_id = "/fake/path/dataset.csv"
-    mock_get_path.return_value = dataset_version_id
-    mock_cache.return_value = None  # No cached data
-
-    # Mock get_dataset to return a real dataset so _local_dashboard_data loads it
-    mock_get_dataset.return_value = (uploaded_file, sample_dataframe)
-
-    # Mock the API client
-    client = MagicMock()
-    client.powerbi_dashboard.return_value = {
-        "success": True,
-        "execution_time": 1.23,
-        "output_path": "reports/report.txt",
-        "report": {"some": "data"},
-        "ai_report": {"summary": "AI summary"},
-    }
-    mock_client_cls.return_value.__enter__.return_value = client
-
-    # Act
-    with patch("streamlit.session_state", {}):
-        result = get_dashboard_data()
-
-    # Assert
-    assert result["source"] == "api"
-    assert result["api_status"] is not None
-    assert result["api_status"]["success"] is True
-    assert result["execution_time"] == 1.23
-    assert result["output_path"] == "reports/report.txt"
-    assert result["ai_report"] == {"summary": "AI summary"}
-    assert result["backend_report"] == {"some": "data"}
-
-    client.powerbi_dashboard.assert_called_once_with(dataset_version_id)
-    mock_client_cls.return_value.__enter__.assert_called_once()
-    mock_client_cls.return_value.__exit__.assert_called_once()
+@pytest.fixture
+def api(uploaded_file, sample_dataframe):
+    with (
+        patch("src.frontend.services.dashboard_service.get_dataset", return_value=(uploaded_file, sample_dataframe)),
+        patch("src.frontend.services.dashboard_service.get_dataset_version_id", return_value=DATASET),
+        patch("src.frontend.services.dashboard_service.APIClient") as client_cls,
+    ):
+        client = MagicMock()
+        client_cls.return_value.__enter__.return_value = client
+        client.dataset_analysis.return_value = {"dataset_version_id": DATASET, "visualization_plan": {}, "profile": {}}
+        client.powerbi_dashboard.return_value = {
+            "success": True,
+            "report": {"title": "r"},
+            "ai_job_id": "job_42",
+            "pipeline_run_id": 7,
+            "report_id": 9,
+        }
+        yield client
 
 
-@patch("src.frontend.services.dashboard_service.get_dataset")
-@patch("src.frontend.services.dashboard_service.get_dataset_version_id")
-@patch("src.frontend.services.dashboard_service._get_cached_dashboard")
-@patch("src.frontend.services.dashboard_service.APIClient")
-def test_dashboard_api_failure(
-    mock_client_cls,
-    mock_cache,
-    mock_get_path,
-    mock_get_dataset,
-    uploaded_file,
-    sample_dataframe,
-):
-    """Dashboard falls back to session when API raises OSError."""
-    dataset_version_id = "/fake/path/dataset.csv"
-    mock_get_path.return_value = dataset_version_id
-    mock_cache.return_value = None
+def test_viewing_the_dashboard_never_runs_the_pipeline(api) -> None:
+    data = get_dashboard_data()
 
-    mock_get_dataset.return_value = (uploaded_file, sample_dataframe)
-
-    client = MagicMock()
-    client.powerbi_dashboard.side_effect = OSError("API down")
-    mock_client_cls.return_value.__enter__.return_value = client
-
-    with patch("streamlit.session_state", {}):
-        result = get_dashboard_data()
-
-    # Should return local session data (since API failed)
-    assert result["source"] == "session"
-    assert result["dataset_loaded"] is True
-    assert "api_error" in result
-    assert "API down" in str(result["api_error"])
-    mock_client_cls.return_value.__enter__.assert_called_once()
-    mock_client_cls.return_value.__exit__.assert_called_once()
+    api.run_pipeline.assert_not_called()
+    api.run_pipeline_for.assert_not_called()
+    assert data["analysed"] is True
+    assert data["ai_job_id"] == "job_42" and data["report_id"] == 9
+    assert st.session_state["ai_job_id"] == "job_42"
 
 
-@patch("src.frontend.services.dashboard_service.get_dataset")
-@patch("src.frontend.services.dashboard_service.get_dataset_version_id")
-@patch("src.frontend.services.dashboard_service._get_cached_dashboard")
-@patch("src.frontend.services.dashboard_service.APIClient")
-def test_dashboard_http_error(
-    mock_client_cls,
-    mock_cache,
-    mock_get_path,
-    mock_get_dataset,
-    uploaded_file,
-    sample_dataframe,
-):
-    """HTTP errors fall back to session."""
-    dataset_version_id = "/fake/path/dataset.csv"
-    mock_get_path.return_value = dataset_version_id
-    mock_cache.return_value = None
+def test_not_yet_analysed_dataset_is_reported_as_such(api) -> None:
+    api.powerbi_dashboard.side_effect = RuntimeError("Backend returned HTTP 404: No pipeline result")
 
-    mock_get_dataset.return_value = (uploaded_file, sample_dataframe)
+    data = get_dashboard_data()
 
-    client = MagicMock()
-    client.powerbi_dashboard.side_effect = httpx.HTTPError("API unavailable")
-    mock_client_cls.return_value.__enter__.return_value = client
-
-    with patch("streamlit.session_state", {}):
-        result = get_dashboard_data()
-
-    assert result["source"] == "session"
-    assert result["dataset_loaded"] is True
-    assert "api_error" in result
-    assert "API unavailable" in str(result["api_error"])
-    mock_client_cls.return_value.__enter__.assert_called_once()
-    mock_client_cls.return_value.__exit__.assert_called_once()
+    assert data["analysed"] is False and data["api_error"] is None
+    api.run_pipeline.assert_not_called()
 
 
-@patch("src.frontend.services.dashboard_service.get_dataset_version_id")
-@patch("src.frontend.services.dashboard_service._get_cached_dashboard")
-def test_dashboard_uses_cache(mock_cache, mock_get_path):
-    """Dashboard returns cached data if available."""
-    dataset_version_id = "/fake/path/dataset.csv"
-    mock_get_path.return_value = dataset_version_id
+def test_api_down_gives_a_readable_message(api) -> None:
+    api.powerbi_dashboard.side_effect = RuntimeError("Unable to connect to backend: refused")
 
-    cached_data = {
-        "dataset_loaded": True,
-        "source": "api",
-        "rows": 100,
-        "columns": 10,
-        "api_status": {"success": True},
-        "backend_report": {"foo": "bar"},
-        "ai_report": {"baz": "qux"},
-        "execution_time": 0.5,
-        "output_path": "cached_report.txt",
-        "dataframe": pd.DataFrame({"x": [1, 2, 3]}),
-    }
-    mock_cache.return_value = cached_data
+    data = get_dashboard_data()
 
-    with patch("streamlit.session_state", {}):
-        result = get_dashboard_data()
+    assert data["api_error"] == "The analytics service is not reachable right now. Please try again shortly."
 
-    # Should return the cached data (with metadata deep-copied)
-    assert result["source"] == "api"
-    assert result["rows"] == 100
-    assert result["columns"] == 10
-    assert result["execution_time"] == 0.5
-    assert result["output_path"] == "cached_report.txt"
-    assert result["api_status"] == {"success": True}
-    assert result["backend_report"] == {"foo": "bar"}
-    assert result["ai_report"] == {"baz": "qux"}
-    assert result["dataframe"] is not None
-    mock_cache.assert_called_once_with(dataset_version_id)
+
+def test_successful_dashboard_is_cached(api) -> None:
+    get_dashboard_data()
+    get_dashboard_data()
+    assert api.powerbi_dashboard.call_count == 1
+
+
+def test_clear_dashboard_cache(api) -> None:
+    get_dashboard_data()
+    clear_dashboard_cache()
+    get_dashboard_data()
+    assert api.powerbi_dashboard.call_count == 2

@@ -72,6 +72,11 @@ class DashboardResponse(BaseModel):
 
     ai_job_id: str | None = None
 
+    #: The run and report on screen (P2-06): AI status and exports tie to them.
+    pipeline_run_id: int | None = None
+
+    report_id: int | None = None
+
     generated_at: datetime | None = None  # changed from str | None
 
 

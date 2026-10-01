@@ -16,8 +16,6 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from src.application.pipeline_result import PipelineResult
-
 # ==========================================================
 # Keys
 # ==========================================================
@@ -28,6 +26,10 @@ DATASET_VERSION_ID_KEY = "dataset_version_id"
 PIPELINE_RESULT_KEY = "pipeline_result"
 AI_JOB_ID_KEY = "ai_job_id"
 AI_REPORT_KEY = "ai_report"
+#: GET /api/datasets/{id}/analysis for the active dataset (P2-05).
+ANALYSIS_KEY = "dataset_analysis"
+#: sha256 of the uploaded file's bytes, so a rerun does not upload it again (P2-07).
+UPLOAD_HASH_KEY = "uploaded_file_sha256"
 
 # Sprint 13 Authentication session keys
 AUTH_TOKEN_KEY = "auth_token"
@@ -121,6 +123,8 @@ def store_dataset(
         "exported_pdf_result",
         AI_REPORT_KEY,
         AI_JOB_ID_KEY,
+        ANALYSIS_KEY,
+        PIPELINE_RESULT_KEY,
     ):
         st.session_state.pop(cache_key, None)
 
@@ -130,8 +134,14 @@ def store_dataset(
 
 
 def store_pipeline_result(
-    pipeline_result: PipelineResult,
+    pipeline_result: dict[str, Any],
 ) -> None:
+    """
+    Remember the POST /api/pipeline response for the active dataset.
+
+    A plain dict from the API: the frontend no longer imports the backend's
+    PipelineResult (P2-05). It carries pipeline_run_id, report_id, ai_job_id.
+    """
     for cache_key in (
         "dashboard_cache",
         "dashboard_dataset",
@@ -143,11 +153,11 @@ def store_pipeline_result(
         st.session_state.pop(cache_key, None)
 
     st.session_state[PIPELINE_RESULT_KEY] = pipeline_result
-    if getattr(pipeline_result, "ai_job_id", None):
-        st.session_state[AI_JOB_ID_KEY] = pipeline_result.ai_job_id
-    if pipeline_result.pipeline_report and pipeline_result.pipeline_report.ai_report is not None:
-        report_val = pipeline_result.pipeline_report.ai_report
-        st.session_state[AI_REPORT_KEY] = report_val.to_dict() if hasattr(report_val, "to_dict") else report_val
+    st.session_state.pop(AI_REPORT_KEY, None)
+    if pipeline_result.get("ai_job_id"):
+        st.session_state[AI_JOB_ID_KEY] = pipeline_result["ai_job_id"]
+    if pipeline_result.get("ai_report"):
+        st.session_state[AI_REPORT_KEY] = pipeline_result["ai_report"]
 
 
 def set_ai_job_id(job_id: str | None) -> None:
@@ -188,7 +198,7 @@ def get_dataset():
     )
 
 
-def get_pipeline_result() -> PipelineResult | None:
+def get_pipeline_result() -> dict[str, Any] | None:
     if not has_pipeline_result():
         return None
     return st.session_state[PIPELINE_RESULT_KEY]
@@ -198,9 +208,7 @@ def get_ai_job_id() -> str | None:
     if AI_JOB_ID_KEY in st.session_state and st.session_state[AI_JOB_ID_KEY]:
         return st.session_state[AI_JOB_ID_KEY]
     res = get_pipeline_result()
-    if res and getattr(res, "ai_job_id", None):
-        return res.ai_job_id
-    return None
+    return res.get("ai_job_id") if isinstance(res, dict) else None
 
 
 def get_ai_report() -> dict[str, Any] | None:
@@ -239,5 +247,7 @@ def clear_dataset() -> None:
         "reports_dataset",
         "exported_text_result",
         "exported_pdf_result",
+        ANALYSIS_KEY,
+        UPLOAD_HASH_KEY,
     ):
         st.session_state.pop(key, None)

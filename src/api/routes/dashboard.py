@@ -117,6 +117,11 @@ def get_dashboard(
             report=dashboard["report"],
             output_path=pipeline["output_path"],
             ai_report=dashboard["ai_report"],
+            # Used to be dropped, so the UI fell back to the user's latest job,
+            # which may belong to another dataset (P2-06).
+            ai_job_id=pipeline.get("ai_job_id"),
+            pipeline_run_id=pipeline.get("pipeline_run_id"),
+            report_id=pipeline.get("report_id"),
         )
 
     except (DatasetNotFoundError, PipelineResultNotFoundError, IdentityError):

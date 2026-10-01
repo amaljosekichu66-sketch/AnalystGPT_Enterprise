@@ -22,7 +22,7 @@ from src.frontend.config.settings import (
     SIGN_IN_PAGE,
     UPLOAD_PAGE,
 )
-from src.frontend.streamlit_app import PAGES
+from src.frontend.pages import PAGES
 
 
 def test_pages_router_contains_all_views():

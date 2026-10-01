@@ -14,6 +14,7 @@ from typing import Any
 
 from src.core.logger import logger
 from src.frontend.services.api_client import APIClient
+from src.frontend.services.errors import friendly_error, http_status
 from src.frontend.services.session_manager import (
     clear_authenticated_session,
     get_auth_token,
@@ -55,7 +56,12 @@ class AuthService:
             error_msg = str(exc)
             if "already exists" in error_msg.lower() or "409" in error_msg:
                 return False, "A user with this username or email already exists."
-            return False, error_msg
+            if http_status(exc) == 422:
+                return False, (
+                    "Check your details: the username needs 3–50 letters, digits, '_' or '-', "
+                    "and the password 8–128 characters."
+                )
+            return False, friendly_error(exc, "registration")
         except Exception as exc:
             logger.error("Unexpected error during registration: %s", exc)
             return False, "An unexpected error occurred during registration."
@@ -103,7 +109,9 @@ class AuthService:
                 return False, "Your account has been deactivated or suspended. Please contact an administrator."
             if "Unable to connect" in error_msg:
                 return False, "Unable to connect to AnalystGPT backend server."
-            return False, error_msg
+            if http_status(exc) == 422:
+                return False, "Enter a username or email (up to 254 characters) and a password."
+            return False, friendly_error(exc, "sign-in")
 
         except Exception as exc:
             logger.error("Unexpected error during login: %s", exc)
@@ -200,63 +208,3 @@ class AuthService:
             return False, None, error_msg
         except Exception as exc:
             return False, None, str(exc)
-
-    def admin_list_users(
-        self,
-        limit: int = 100,
-        offset: int = 0,
-    ) -> tuple[bool, dict[str, Any] | None, str | None]:
-        """
-        Retrieve paginated list of users for administration.
-        """
-        token = get_auth_token()
-        try:
-            data = self._client.admin_list_users(limit=limit, offset=offset, token=token)
-            return True, data, None
-        except RuntimeError as exc:
-            return False, None, str(exc)
-        except Exception as exc:
-            return False, None, str(exc)
-
-    def admin_update_user(
-        self,
-        user_id: int,
-        role: str | None = None,
-        status: str | None = None,
-        email: str | None = None,
-    ) -> tuple[bool, dict[str, Any] | None, str | None]:
-        """
-        Update user account status, role, or email as administrator.
-        """
-        token = get_auth_token()
-        payload: dict[str, Any] = {}
-        if role is not None:
-            payload["role"] = role
-        if status is not None:
-            payload["status"] = status
-        if email is not None:
-            payload["email"] = email
-
-        try:
-            data = self._client.admin_update_user(user_id=user_id, payload=payload, token=token)
-            return True, data, None
-        except RuntimeError as exc:
-            return False, None, str(exc)
-        except Exception as exc:
-            return False, None, str(exc)
-
-    def admin_delete_user(
-        self,
-        user_id: int,
-    ) -> tuple[bool, str | None]:
-        """
-        Delete a user account as administrator.
-        """
-        token = get_auth_token()
-        try:
-            self._client.admin_delete_user(user_id=user_id, token=token)
-            return True, None
-        except RuntimeError as exc:
-            return False, str(exc)
-        except Exception as exc:
-            return False, str(exc)

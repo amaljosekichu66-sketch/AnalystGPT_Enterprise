@@ -65,6 +65,8 @@ RUN mkdir -p /app/logs /app/reports /app/sample_data /app/data/artifacts && \
 
 # Copy application source files
 COPY --chown=appuser:appuser src/ /app/src/
+# Streamlit's server/client settings (upload limit, no error details) - P2-07.
+COPY --chown=appuser:appuser .streamlit/config.toml /app/.streamlit/config.toml
 COPY --chown=appuser:appuser sample_data/ /app/sample_data/
 COPY --chown=appuser:appuser main.py /app/main.py
 COPY --chown=appuser:appuser scripts/create_admin.py /app/scripts/create_admin.py

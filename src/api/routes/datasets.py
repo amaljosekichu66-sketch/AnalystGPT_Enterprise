@@ -21,7 +21,12 @@ from starlette.datastructures import UploadFile
 from src.api.body_limit import MULTIPART_OVERHEAD_BYTES
 from src.api.dependencies.application_dependency import get_application
 from src.api.dependencies.auth_dependencies import require_permission
-from src.api.models.response_models import DatasetDeleteResponse, DatasetUploadResponse, ErrorResponse
+from src.api.models.response_models import (
+    DatasetAnalysisResponse,
+    DatasetDeleteResponse,
+    DatasetUploadResponse,
+    ErrorResponse,
+)
 from src.application.app import Application
 from src.identity.audit import get_audit_service
 from src.identity.context import UserContext
@@ -181,3 +186,24 @@ def delete_dataset(
     )
 
     return DatasetDeleteResponse(success=True, message="Dataset deleted.", dataset_version_id=dataset_version_id)
+
+
+@router.get(
+    "/{dataset_version_id}/analysis",
+    response_model=DatasetAnalysisResponse,
+    status_code=status.HTTP_200_OK,
+    responses={404: {"model": ErrorResponse, "description": "Dataset not found"}},
+    summary="Dataset Analysis",
+    description="Semantic profile, planned charts and cleaning-policy recommendation for an uploaded dataset.",
+)
+def dataset_analysis(
+    dataset_version_id: str,
+    context: UserContext = Depends(require_permission(Permission.REPORT_VIEW)),
+    application: Application = Depends(get_application),
+) -> DatasetAnalysisResponse:
+    """
+    Profile the dataset server-side (P2-05). Holds a job slot: profiling
+    parses the whole dataset.
+    """
+    with application.job_slot(context):
+        return DatasetAnalysisResponse(**application.analyse_dataset(dataset_version_id, user_context=context))

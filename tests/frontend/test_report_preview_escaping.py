@@ -102,11 +102,8 @@ def test_unparseable_ai_report_is_plain_text() -> None:
 
 @pytest.mark.parametrize("header", [PAYLOADS["md_image"], "a`b` ![x](https://attacker.example/y)"])
 def test_chart_column_names_are_escaped(header: str) -> None:
-    frame = pd.DataFrame({header: ["x"] * 50, "id": range(50)})
-    plan = MagicMock()
-    plan.charts = []
-    plan.excluded_columns = [header]
-    calls = _capture(charts, lambda: charts.render_charts(frame, plan=plan))
+    plan = {"charts": [], "excluded_columns": [header]}
+    calls = _capture(charts, lambda: charts.render_charts(plan))
     excluded = [c for c in calls if header[:3] in c or "\\" in c]
     _assert_inert(excluded)
 
