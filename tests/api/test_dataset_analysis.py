@@ -78,3 +78,15 @@ def test_dashboard_returns_the_runs_ids(client: TestClient, tokens) -> None:
     assert body["ai_job_id"] == run["ai_job_id"]
     assert body["pipeline_run_id"] == run["pipeline_run_id"]
     assert body["report_id"] == run["report_id"]
+
+
+def test_analysis_flags_and_charts_no_personal_data(client: TestClient, tokens) -> None:
+    """P2-15: no chart of a personal-data column; the profile says which columns are PII."""
+    dataset_id = upload_dataset(client, SAMPLE, tokens["owner"])
+    body = client.get(f"/api/datasets/{dataset_id}/analysis", headers=tokens["owner"]).json()
+
+    pii = {name for name, col in body["profile"]["columns"].items() if col.get("is_pii")}
+    assert {"Customer Name", "Phone Number", "Email"} <= pii and "City" not in pii
+    for chart in body["visualization_plan"]["charts"]:
+        assert chart.get("primary_column") not in pii and chart.get("secondary_column") not in pii
+    assert any("(personal data)" in c for c in body["visualization_plan"]["excluded_columns"])

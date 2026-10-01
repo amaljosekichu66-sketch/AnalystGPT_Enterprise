@@ -24,6 +24,7 @@ from src.frontend.components.charts import render_charts
 from src.frontend.components.column_profile import render_column_profile
 from src.frontend.components.dataset_info import render_dataset_info
 from src.frontend.components.dataset_quality import render_dataset_quality
+from src.frontend.components.pii_preview import masked_preview
 from src.frontend.components.safe_text import markdown_text
 from src.frontend.components.scroll_to_top import scroll_to_top
 from src.frontend.components.uploader import render_uploader
@@ -265,4 +266,5 @@ def render() -> None:
             render_column_profile(analysis.get("profile"))
 
     st.subheader("🔍 Dataset Preview")
-    st.dataframe(dataframe.head(20), width="stretch")
+    st.caption("Columns holding personal data are masked in this preview.")
+    st.dataframe(masked_preview(dataframe, 20), width="stretch")

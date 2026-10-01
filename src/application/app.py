@@ -258,6 +258,7 @@ class Application:
         """
         from src.analytics.visualization_planner import VisualizationPlanner
         from src.core.jsonable import to_jsonable
+        from src.core.pii import is_pii_column
         from src.profiling.data_profiler import DataProfiler
 
         source_version = self.resolve_source_version(dataset_version_id, user_context)
@@ -269,6 +270,24 @@ class Application:
         dataframe = self.load_source_dataframe(source_version)
         profile = DataProfiler().profile_dataset(dataframe)
         plan = VisualizationPlanner().plan_visualizations(dataframe, profile)
+
+        # No chart of personal data leaves the API (P2-15): by name or by values.
+        pii_columns = {
+            str(col) for col in dataframe.columns if is_pii_column(str(col), dataframe[col].dropna().head(200).tolist())
+        }
+        plan_dict = plan.to_dict()
+        kept = [
+            chart
+            for chart in plan_dict["charts"]
+            if chart.get("primary_column") not in pii_columns and chart.get("secondary_column") not in pii_columns
+        ]
+        plan_dict["excluded_columns"] = list(plan_dict.get("excluded_columns") or []) + [
+            f"{col} (personal data)" for col in sorted(pii_columns)
+        ]
+        plan_dict["charts"], plan_dict["total_charts"] = kept, len(kept)
+        profile_dict = profile.to_dict()
+        for name, column in profile_dict.get("columns", {}).items():
+            column["is_pii"] = name in pii_columns
         if profile.has_missing_values:
             policy, reason = self.governance_service.recommend_dataset_policy(profile)
         else:
@@ -277,8 +296,8 @@ class Application:
         analysis = to_jsonable(
             {
                 "dataset_version_id": source_version.version_id,
-                "profile": profile.to_dict(),
-                "visualization_plan": plan.to_dict(),
+                "profile": profile_dict,
+                "visualization_plan": plan_dict,
                 "recommended_policy": policy.value,
                 "recommendation_reason": reason,
             }

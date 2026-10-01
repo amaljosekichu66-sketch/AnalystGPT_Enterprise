@@ -8,6 +8,7 @@ from AnalystGPT Enterprise PipelineResult objects.
 from __future__ import annotations
 
 from src.application.pipeline_result import PipelineResult
+from src.core.pii import mask_pii_columns
 from src.core.redaction import public_artifact_name, public_report_dict
 from src.integrations.powerbi.dashboard_categorical import (
     DashboardCategorical,
@@ -137,9 +138,12 @@ class DashboardService:
         ):
             return {}
 
-        return analytics.get(
-            section,
-            {},
+        # Personal-data columns masked (P2-15).
+        return mask_pii_columns(
+            analytics.get(
+                section,
+                {},
+            )
         )
 
     def _report_dict(

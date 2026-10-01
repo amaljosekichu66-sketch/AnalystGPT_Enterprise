@@ -17,6 +17,7 @@ from src.frontend.components.dashboard_summary import render_dashboard_summary
 from src.frontend.components.empty_state import render_empty_state
 from src.frontend.components.kpi_cards import render_kpi_cards
 from src.frontend.components.loading_state import loading
+from src.frontend.components.pii_preview import masked_preview
 from src.frontend.components.pipeline_status import render_pipeline_status
 from src.frontend.components.quick_actions import render_quick_actions
 from src.frontend.components.scroll_to_top import scroll_to_top
@@ -108,7 +109,7 @@ def render() -> None:
 
     with tab_preview:
         st.caption(f"Displaying first {DATAFRAME_PREVIEW_ROWS} rows of dataset.")
-        st.dataframe(df.head(DATAFRAME_PREVIEW_ROWS), width="stretch")
+        st.dataframe(masked_preview(df, DATAFRAME_PREVIEW_ROWS), width="stretch")
 
     with tab_schema:
         render_column_profile(analysis.get("profile"))

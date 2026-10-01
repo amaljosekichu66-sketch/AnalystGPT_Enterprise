@@ -40,8 +40,21 @@ def public_artifact_name(path: str | None) -> str | None:
 
 
 def public_report_dict(report: dict | None) -> dict:
-    """Copy a `ReportingReport.to_dict()` payload with its export path reduced to a file name."""
+    """
+    Copy a `ReportingReport.to_dict()` payload for an API response.
+
+    The export path is reduced to a file name, and the analytics of columns
+    that hold personal data (names, contact details, dates of birth...) are
+    masked (P2-15): top values and distributions used to be returned as-is.
+    """
+    from src.core.pii import mask_pii_columns
+
     public = dict(report or {})
     if "export_path" in public:
         public["export_path"] = public_artifact_name(public["export_path"])
+    inner = public.get("report")
+    if isinstance(inner, dict) and "analytics" in inner:
+        public["report"] = {**inner, "analytics": mask_pii_columns(inner["analytics"])}
+    if "analytics" in public:
+        public["analytics"] = mask_pii_columns(public["analytics"])
     return public
