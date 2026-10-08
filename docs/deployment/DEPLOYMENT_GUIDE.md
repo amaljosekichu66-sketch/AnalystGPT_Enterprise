@@ -226,7 +226,8 @@ executes automatically on pushes and pull requests targeting `main`:
 cp .env.example .env
 
 # 2. Configure POSTGRES_PASSWORD AND AUTH_SECRET_KEY in .env
-#    (compose refuses to start without either)
+#    (compose refuses to start without either, and the API refuses the
+#    template's CHANGE_ME placeholder key)
 # nano .env
 
 # 3. Build and launch services in detached mode

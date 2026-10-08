@@ -564,6 +564,11 @@ CLAUDE_API_KEY = os.getenv(
 #: APP_ENVIRONMENT=development is set explicitly.
 INSECURE_DEFAULT_AUTH_SECRET_KEY = "analystgpt-enterprise-insecure-dev-secret-key-change-in-production"
 
+#: The value `.env.example` ships (P2-18). It is long enough to pass the
+#: length check, so it is refused explicitly, in every environment: a copied
+#: template must never start an API.
+AUTH_SECRET_KEY_PLACEHOLDER_MARKER = "CHANGE_ME"
+
 #: Minimum signing-key length in bytes. Tokens are HMAC-SHA256 (HS256), and
 #: RFC 7518 section 3.2 requires an HS256 key of at least the hash output size:
 #: 256 bits = 32 bytes. `secrets.token_urlsafe(48)` yields 64 characters.
@@ -585,6 +590,13 @@ def validate_auth_secret_key(environment: str, raw_key: str | None, api_host: st
     """
     is_development = environment == "development"
     key = (raw_key or "").strip()
+
+    if AUTH_SECRET_KEY_PLACEHOLDER_MARKER in key:
+        raise RuntimeError(
+            "AUTH_SECRET_KEY is still the .env.example placeholder. Generate a private key with: "
+            'python -c "import secrets; print(secrets.token_urlsafe(48))" '
+            "(local development: see .env.development.example)."
+        )
 
     if is_development and key in ("", INSECURE_DEFAULT_AUTH_SECRET_KEY) and api_host not in _LOOPBACK_HOSTS:
         raise RuntimeError(

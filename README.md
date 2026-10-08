@@ -85,7 +85,7 @@ cd AnalystGPT_Enterprise
 python -m venv venv
 source venv/bin/activate        # Windows: .\venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-cp .env.example .env            # defaults to SQLite + development mode
+cp .env.development.example .env   # SQLite + development mode (.env.example is for deployments)
 
 uvicorn src.api.server:app --reload            # API  → http://127.0.0.1:8000/docs
 streamlit run src/frontend/streamlit_app.py    # UI   → http://localhost:8501

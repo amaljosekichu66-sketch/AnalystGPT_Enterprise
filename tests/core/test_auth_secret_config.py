@@ -280,7 +280,55 @@ def test_compose_does_not_hand_the_key_to_the_frontend() -> None:
 def test_env_example_ships_no_key_and_documents_the_rules() -> None:
     content = (REPO_ROOT / ".env.example").read_text(encoding="utf-8")
 
-    assert "\nAUTH_SECRET_KEY=\n" in content
+    assert "\nAPP_ENVIRONMENT=production\n" in content
+    assert "\nAUTH_SECRET_KEY=CHANGE_ME" in content
     assert "32 bytes" in content
     assert "REFUSES TO START" in content
     assert "treats itself as 'production'" in content
+
+
+# ==========================================================
+# P2-18: the templates
+# ==========================================================
+
+
+def _template_env(name: str) -> dict[str, str]:
+    from dotenv import dotenv_values
+
+    return {k: v for k, v in dotenv_values(REPO_ROOT / name).items() if v is not None}
+
+
+@pytest.mark.parametrize("environment", ["production", "development", "staging"])
+def test_the_template_placeholder_is_refused_everywhere(environment: str) -> None:
+    placeholder = _template_env(".env.example")["AUTH_SECRET_KEY"]
+    with pytest.raises(RuntimeError, match="placeholder"):
+        config.validate_auth_secret_key(environment, placeholder)
+
+
+def test_a_copied_env_example_cannot_start_the_api(tmp_path: Path) -> None:
+    template = _template_env(".env.example")
+    proc = _run(
+        "import src.api.server",
+        tmp_path,
+        APP_ENVIRONMENT=template["APP_ENVIRONMENT"],
+        AUTH_SECRET_KEY=template["AUTH_SECRET_KEY"],
+    )
+
+    assert template["APP_ENVIRONMENT"] == "production"
+    assert proc.returncode != 0
+    assert "placeholder" in proc.stderr
+
+
+def test_the_development_template_starts_on_loopback(tmp_path: Path) -> None:
+    template = _template_env(".env.development.example")
+    proc = _run(
+        "import src.api.server; print('API_STARTED')",
+        tmp_path,
+        APP_ENVIRONMENT=template["APP_ENVIRONMENT"],
+        AUTH_SECRET_KEY=template["AUTH_SECRET_KEY"],
+        API_HOST=template["API_HOST"],
+    )
+
+    assert template["APP_ENVIRONMENT"] == "development"
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    assert "API_STARTED" in proc.stdout
