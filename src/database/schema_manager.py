@@ -1,10 +1,34 @@
 from src.database.database_connection import DatabaseConnection
 
+#: Version of the schema `_create_schema` produces. BUMP IT whenever that
+#: method changes (a table, column or index added): databases recorded at
+#: this version skip the DDL entirely (P2-16).
+SCHEMA_VERSION = 15
+
+#: PostgreSQL advisory lock key serialising schema migrations across processes.
+_MIGRATION_LOCK_KEY = 1415_2016
+
+
+def _scalar(row):
+    """First column of a row: tuples on SQLite, dicts on PostgreSQL (dict_row)."""
+    if row is None:
+        return None
+    if isinstance(row, dict):
+        return next(iter(row.values()), None)
+    return row[0]
+
 
 class SchemaManager:
     """
     Creates and manages the AnalystGPT Enterprise database schema.
     Uses dialect-specific helpers to generate SQL for SQLite or PostgreSQL.
+
+    P2-16: every persistence session used to run the whole DDL, including
+    ALTER TABLE on PostgreSQL (ACCESS EXCLUSIVE locks) on every request. The
+    `schema_version` table records the version applied; `initialize_schema`
+    is now a single SELECT once the database is current, and migrations run
+    once, under an advisory lock on PostgreSQL so concurrent starts do not
+    race each other's DDL.
     """
 
     def __init__(self, database_connection: DatabaseConnection):
@@ -13,9 +37,11 @@ class SchemaManager:
 
     # ---------------------------------------------------------
 
-    def initialize_schema(self):
+    def initialize_schema(self, force: bool = False):
         """
-        Create all required database tables.
+        Bring the schema to `SCHEMA_VERSION`; a no-op (one SELECT) when it already is.
+
+        `force` re-runs the idempotent DDL regardless of the recorded version.
         """
 
         supported = {
@@ -26,7 +52,45 @@ class SchemaManager:
         if self._database_type not in supported:
             raise ValueError(f"Unsupported database type: {self._database_type}")
 
+        if not force and self.current_version() == SCHEMA_VERSION:
+            return
+
         self._create_schema()
+
+    # ---------------------------------------------------------
+
+    def current_version(self) -> int | None:
+        """The recorded schema version, or None for a database never migrated."""
+        connection = self._database_connection.get_connection()
+        cursor = connection.cursor()
+        try:
+            if self._database_type == "sqlite":
+                cursor.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'schema_version';")
+            else:
+                cursor.execute("SELECT to_regclass('schema_version');")
+            if _scalar(cursor.fetchone()) is None:
+                return None
+            cursor.execute("SELECT MAX(version) FROM schema_version;")
+            version = _scalar(cursor.fetchone())
+            return int(version) if version is not None else None
+        finally:
+            cursor.close()
+            if self._database_type == "postgresql":
+                # Leave no transaction open from the read.
+                self._database_connection.commit()
+
+    def _record_version(self, cursor) -> None:
+        cursor.execute(
+            "CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL, applied_at TEXT NOT NULL);"
+        )
+        cursor.execute("DELETE FROM schema_version;")
+        placeholder = "?" if self._database_type == "sqlite" else "%s"
+        from datetime import UTC, datetime
+
+        cursor.execute(
+            f"INSERT INTO schema_version (version, applied_at) VALUES ({placeholder}, {placeholder});",
+            (SCHEMA_VERSION, datetime.now(UTC).isoformat()),
+        )
 
     # ---------------------------------------------------------
 
@@ -72,6 +136,15 @@ class SchemaManager:
         `table`, `column` and `definition` are internal constants, never input.
         """
         if self._database_type == "postgresql":
+            # Look first: ALTER TABLE takes an ACCESS EXCLUSIVE lock even when
+            # IF NOT EXISTS makes it a no-op (P2-16).
+            cursor.execute(
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_schema = current_schema() AND table_name = %s AND column_name = %s;",
+                (table, column),
+            )
+            if cursor.fetchone():
+                return
             cursor.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {definition};")
             return
 
@@ -128,6 +201,15 @@ class SchemaManager:
 
             if self._database_type == "sqlite":
                 cursor.execute("PRAGMA foreign_keys = ON;")
+            else:
+                # One migrator at a time; the loser finds the work done.
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", (_MIGRATION_LOCK_KEY,))
+                cursor.execute("SELECT to_regclass('schema_version');")
+                if _scalar(cursor.fetchone()) is not None:
+                    cursor.execute("SELECT MAX(version) FROM schema_version;")
+                    if _scalar(cursor.fetchone()) == SCHEMA_VERSION:
+                        self._database_connection.commit()
+                        return
 
             # -------------------------------------------------
             # Users (Sprint 13 Identity Foundation)
@@ -587,6 +669,8 @@ class SchemaManager:
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_ai_reports_cleaning_exec ON ai_reports(cleaning_execution_id);"
             )
+
+            self._record_version(cursor)
 
             self._database_connection.commit()
 

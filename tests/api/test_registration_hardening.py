@@ -133,6 +133,7 @@ class TestCaseInsensitiveUniqueness:
         SchemaManager(conn).initialize_schema()
         raw = conn.get_connection()
         raw.execute("DROP INDEX uq_users_username_lower;")
+        raw.execute("DELETE FROM schema_version;")  # a database from before the index
         for name, email in (("Bob", "bob1@example.com"), ("bob", "bob2@example.com")):
             raw.execute(
                 "INSERT INTO users(username, email, hashed_password, role, status, created_at, updated_at) "

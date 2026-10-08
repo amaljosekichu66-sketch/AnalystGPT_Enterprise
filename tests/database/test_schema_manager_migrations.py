@@ -52,6 +52,9 @@ class _RecordingPostgresConnection:
     def fetchall(self):
         raise AssertionError("PostgreSQL path must not need introspection round-trips")
 
+    def fetchone(self):
+        return None  # an empty database: no schema_version, no columns yet
+
     def close(self) -> None:
         pass
 
@@ -61,8 +64,11 @@ def test_postgresql_schema_is_one_transaction_with_no_expected_failures() -> Non
 
     SchemaManager(conn).initialize_schema()
 
-    assert conn.commits == 1
+    # One commit closes the version read (P2-16), one commits the whole schema.
+    assert conn.commits == 2
     assert conn.rollbacks == 0
+    assert any("pg_advisory_xact_lock" in s for s in conn.statements)
+    assert any(s.startswith("INSERT INTO schema_version") for s in conn.statements)
     alters = [s for s in conn.statements if s.upper().startswith("ALTER TABLE")]
     assert alters, "expected column migrations"
     assert all("ADD COLUMN IF NOT EXISTS" in s for s in alters), alters
@@ -103,3 +109,57 @@ def test_sqlite_legacy_tables_get_missing_columns(tmp_path: Path) -> None:
     db.close()
     assert "user_id" in runs_cols
     assert {"source_version_id", "cleaned_version_id", "structured_payload", "confidence"} <= ai_cols
+
+
+def test_a_current_database_runs_no_ddl(tmp_path: Path) -> None:
+    """P2-16: once migrated, initialisation is one read, with no DDL at all."""
+    path = str(tmp_path / "versioned.db")
+    conn = SQLiteConnection(path)
+    conn.connect()
+    SchemaManager(conn).initialize_schema()
+    conn.disconnect()
+
+    statements: list[str] = []
+    conn = SQLiteConnection(path)
+    conn.connect()
+    conn.get_connection().set_trace_callback(statements.append)
+    manager = SchemaManager(conn)
+    manager.initialize_schema()
+    conn.disconnect()
+
+    ddl = [s for s in statements if s.split()[0].upper() in {"CREATE", "ALTER", "DROP", "PRAGMA"}]
+    assert ddl == []
+
+
+def test_version_is_recorded_and_force_reruns(tmp_path: Path) -> None:
+    from src.database.schema_manager import SCHEMA_VERSION
+
+    conn = SQLiteConnection(str(tmp_path / "v.db"))
+    conn.connect()
+    manager = SchemaManager(conn)
+    assert manager.current_version() is None
+    manager.initialize_schema()
+    assert manager.current_version() == SCHEMA_VERSION
+    manager.initialize_schema(force=True)
+    assert manager.current_version() == SCHEMA_VERSION
+    conn.disconnect()
+
+
+def test_schema_version_is_bumped_with_the_ddl() -> None:
+    """
+    P2-16: a current database skips the DDL, so a DDL change that keeps
+    SCHEMA_VERSION would never reach existing databases. Changed the DDL?
+    Bump SCHEMA_VERSION and record the new fingerprint here.
+    """
+    import hashlib
+    import inspect
+
+    from src.database.schema_manager import SCHEMA_VERSION
+
+    methods = (
+        SchemaManager._create_schema,
+        SchemaManager._ensure_case_insensitive_user_uniqueness,
+        SchemaManager._add_column_if_missing,
+    )
+    fingerprint = hashlib.sha256("".join(inspect.getsource(m) for m in methods).encode()).hexdigest()[:16]
+    assert (SCHEMA_VERSION, fingerprint) == (15, "5311cc7334a43a47")
