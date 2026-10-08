@@ -103,3 +103,5 @@ CMD ["streamlit", "run", "src/frontend/streamlit_app.py", "--server.port=8501", 
 FROM runtime-base AS cli
 
 ENTRYPOINT ["python", "main.py"]
+# No arguments prints usage (P2-26): a run needs a dataset and --owner/--ownerless.
+CMD ["--help"]

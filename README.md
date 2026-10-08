@@ -89,7 +89,7 @@ cp .env.development.example .env   # SQLite + development mode (.env.example is 
 
 uvicorn src.api.server:app --reload            # API  → http://127.0.0.1:8000/docs
 streamlit run src/frontend/streamlit_app.py    # UI   → http://localhost:8501
-python main.py                                 # CLI  → runs the pipeline on sample_data/customer_data.csv
+python main.py --owner <user> sample_data/customer_data.csv   # CLI (python main.py --help)
 ```
 
 For AI insights, run Ollama locally and pull the default model:
