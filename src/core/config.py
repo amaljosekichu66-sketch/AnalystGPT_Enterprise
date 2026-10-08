@@ -381,12 +381,6 @@ POSTGRES_CONNECT_TIMEOUT = int(os.getenv("POSTGRES_CONNECT_TIMEOUT", "10"))
 
 DATAFRAME_PREVIEW_ROWS = 100
 
-MAX_CHART_ROWS = 100_000
-
-MAX_PROFILE_ROWS = 100_000
-
-MAX_CORRELATION_ROWS = 100_000
-
 # ==========================================================
 # AI Configuration
 # ==========================================================
@@ -532,27 +526,6 @@ AI_RETRY_BASE_DELAY = float(
         "AI_RETRY_BASE_DELAY",
         "2.0",
     )
-)
-
-# ==========================================================
-# Future Providers - not implemented
-# ==========================================================
-#
-# Read here so a deployment can supply them ahead of time, but no provider
-# consumes them yet: `LLMFactory._PROVIDERS` registers only "ollama" and
-# raises `ValueError: Unsupported LLM Provider` for anything else. Setting one
-# of these keys does NOT enable the corresponding provider.
-
-OPENAI_API_KEY = os.getenv(
-    "OPENAI_API_KEY",
-)
-
-GEMINI_API_KEY = os.getenv(
-    "GEMINI_API_KEY",
-)
-
-CLAUDE_API_KEY = os.getenv(
-    "CLAUDE_API_KEY",
 )
 
 # ==========================================================
@@ -753,13 +726,3 @@ AUTH_PASSWORD_MIN_LENGTH = int(
         "8",
     )
 )
-
-AUTH_DEFAULT_ADMIN_USERNAME = os.getenv(
-    "AUTH_DEFAULT_ADMIN_USERNAME",
-    "admin",
-).strip()
-
-AUTH_DEFAULT_ADMIN_EMAIL = os.getenv(
-    "AUTH_DEFAULT_ADMIN_EMAIL",
-    "admin@analystgpt.enterprise",
-).strip()

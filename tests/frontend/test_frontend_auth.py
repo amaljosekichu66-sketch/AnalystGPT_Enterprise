@@ -171,17 +171,6 @@ class TestAPIClientAuth:
         mock_get.assert_called_once_with("/api/auth/me", token="token123")
         assert res["username"] == "alice"
 
-    @patch.object(APIClient, "_get")
-    def test_admin_list_users(self, mock_get, client) -> None:
-        """Verify admin_list_users calls /api/admin/users."""
-        mock_get.return_value = {"items": [], "total": 0}
-        client.admin_list_users(limit=50, offset=10, token="admin_tok")
-        mock_get.assert_called_once_with(
-            "/api/admin/users",
-            params={"limit": 50, "offset": 10},
-            token="admin_tok",
-        )
-
 
 class TestAuthService:
     """

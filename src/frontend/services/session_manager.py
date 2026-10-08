@@ -46,17 +46,6 @@ def get_auth_token() -> str | None:
     return st.session_state.get(AUTH_TOKEN_KEY)
 
 
-def set_auth_token(token: str | None) -> None:
-    if token is None:
-        st.session_state.pop(AUTH_TOKEN_KEY, None)
-    else:
-        st.session_state[AUTH_TOKEN_KEY] = token
-
-
-def get_auth_user() -> dict[str, Any] | None:
-    return st.session_state.get(AUTH_USER_KEY)
-
-
 def get_current_user() -> dict[str, Any] | None:
     return st.session_state.get(AUTH_USER_KEY)
 
@@ -71,12 +60,6 @@ def set_auth_user(user: dict[str, Any] | None) -> None:
 def is_authenticated() -> bool:
     status = st.session_state.get(AUTH_STATUS_KEY)
     return bool((status is True or status == "AUTHENTICATED") and get_auth_token())
-
-
-def set_authenticated(authenticated: bool) -> None:
-    st.session_state[AUTH_STATUS_KEY] = "AUTHENTICATED" if authenticated else None
-    if not authenticated:
-        st.session_state.pop(AUTH_STATUS_KEY, None)
 
 
 def set_authenticated_session(token: str, user_data: dict[str, Any]) -> None:

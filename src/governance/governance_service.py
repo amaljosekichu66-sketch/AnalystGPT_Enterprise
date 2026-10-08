@@ -243,31 +243,6 @@ class CleaningGovernanceService:
             user_id=user_id,
         )
 
-    def recommend_policy_for_column(self, column_profile: ColumnProfile) -> MissingValuePolicy:
-        """
-        Recommend semantically appropriate missing value policy for an individual column.
-        Never recommends numeric mean/median on phones, postal codes, or identifiers.
-        """
-        if column_profile.missing_count == 0:
-            return MissingValuePolicy.PRESERVE_NULLS
-
-        sem = column_profile.semantic_type
-
-        if sem in {SemanticType.PHONE, SemanticType.EMAIL, SemanticType.POSTAL_CODE, SemanticType.IDENTIFIER}:
-            return (
-                MissingValuePolicy.PRESERVE_NULLS
-                if column_profile.missing_percentage < 20.0
-                else MissingValuePolicy.DROP_ROWS
-            )
-
-        if sem in {SemanticType.NUMERIC_MEASURE, SemanticType.NUMERIC_DISCRETE}:
-            return MissingValuePolicy.FILL_NUMERIC_MEDIAN
-
-        if sem in {SemanticType.CATEGORICAL, SemanticType.CITY, SemanticType.STATE_REGION, SemanticType.COUNTRY}:
-            return MissingValuePolicy.FILL_CATEGORICAL_MODE
-
-        return MissingValuePolicy.DROP_ROWS
-
     def recommend_dataset_policy(self, profile: DatasetProfile) -> tuple[MissingValuePolicy, str]:
         """
         Recommend a dataset-level missing value policy and return an explanation.

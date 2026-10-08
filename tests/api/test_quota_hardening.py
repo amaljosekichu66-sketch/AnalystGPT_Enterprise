@@ -192,12 +192,25 @@ class TestBoundedTTLCache:
 def test_purge_drops_every_cached_report_of_the_user(monkeypatch) -> None:
     from src.persistence import user_data_purge
 
-    monkeypatch.setattr(user_data_purge.UserDataPurger, "purge", lambda self, user_id, expected_username=None: {})
+    monkeypatch.setattr(
+        user_data_purge.UserDataPurger, "purge", lambda self, user_id, expected_username=None, **_kw: {}
+    )
+    from src.identity.context import UserContext
+    from src.identity.models import UserRole, UserStatus
+
     application = get_application()
     older, latest, other = MagicMock(), MagicMock(), MagicMock()
-    application.set_result_for_user(9001, older, report_id=90011)
-    application.set_result_for_user(9001, latest, report_id=90012)
-    application.set_result_for_user(9002, other, report_id=90021)
+    for user_id, result, report_id in ((9001, older, 90011), (9001, latest, 90012), (9002, other, 90021)):
+        result.success, result.dataset_version_id = True, None
+        context = UserContext(
+            user_id=user_id,
+            username=f"u{user_id}",
+            email=f"u{user_id}@example.com",
+            role=UserRole.ANALYST,
+            status=UserStatus.ACTIVE,
+            is_authenticated=True,
+        )
+        application._cache_pipeline_result(result, "seed", user_context=context, report_id=report_id)
 
     application.purge_user_data(9001, "gone")
 

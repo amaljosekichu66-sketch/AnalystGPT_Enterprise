@@ -301,11 +301,6 @@ class TestApplicationCacheIsolation:
         assert app_instance.get_result_for_user(user_id=uid_2) is not None
         assert app_instance.get_result_for_user(user_id=99999) is None
 
-        # Clear cache for User 1 only
-        app_instance.clear_cache(user_id=uid_1)
-        assert app_instance.get_result_for_user(user_id=uid_1) is None
-        assert app_instance.get_result_for_user(user_id=uid_2) is not None
-
 
 class TestAPIDataIsolation:
     """Test API endpoint data isolation and token-driven UserContext."""

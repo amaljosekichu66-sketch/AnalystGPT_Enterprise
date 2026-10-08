@@ -66,10 +66,6 @@ class APIClient:
 
     DASHBOARD = "/api/powerbi/dashboard"
 
-    POWERBI_SUMMARY = "/api/powerbi/summary"
-
-    POWERBI_PIPELINE = "/api/powerbi/pipeline"
-
     AUTH_LOGIN = "/api/auth/login"
 
     AUTH_REGISTER = "/api/auth/register"
@@ -205,23 +201,6 @@ class APIClient:
 
         return self._request(
             "POST",
-            endpoint,
-            json=payload,
-            token=token,
-        )
-
-    def _patch(
-        self,
-        endpoint: str,
-        payload: dict[str, Any] | None = None,
-        token: str | None = None,
-    ) -> dict[str, Any]:
-        """
-        Execute a PATCH request.
-        """
-
-        return self._request(
-            "PATCH",
             endpoint,
             json=payload,
             token=token,
@@ -391,36 +370,6 @@ class APIClient:
     # Power BI
     # ==========================================================
 
-    def powerbi_summary(
-        self,
-        dataset_version_id: str,
-    ) -> dict[str, Any]:
-        """
-        Retrieve Power BI summary data.
-        """
-
-        return self._get(
-            self.POWERBI_SUMMARY,
-            params={
-                "dataset_version_id": dataset_version_id,
-            },
-        )
-
-    def powerbi_pipeline(
-        self,
-        dataset_version_id: str,
-    ) -> dict[str, Any]:
-        """
-        Retrieve pipeline summary.
-        """
-
-        return self._get(
-            self.POWERBI_PIPELINE,
-            params={
-                "dataset_version_id": dataset_version_id,
-            },
-        )
-
     # ==========================================================
     # Datasets
     # ==========================================================
@@ -445,19 +394,6 @@ class APIClient:
     # ==========================================================
     # Pipeline
     # ==========================================================
-
-    def run_pipeline(
-        self,
-        payload: dict[str, Any],
-    ) -> dict[str, Any]:
-        """
-        Execute the complete analytics pipeline.
-        """
-
-        return self._post(
-            self.PIPELINE,
-            payload,
-        )
 
     # ==========================================================
     # Authentication & Profile
@@ -534,62 +470,6 @@ class APIClient:
     # Administration
     # ==========================================================
 
-    def admin_list_users(
-        self,
-        limit: int = 100,
-        offset: int = 0,
-        token: str | None = None,
-    ) -> dict[str, Any]:
-        """
-        List all users with pagination (Admin only).
-        """
-        return self._get(
-            self.ADMIN_USERS,
-            params={"limit": limit, "offset": offset},
-            token=token,
-        )
-
-    def admin_get_user(
-        self,
-        user_id: int,
-        token: str | None = None,
-    ) -> dict[str, Any]:
-        """
-        Get user details by ID (Admin only).
-        """
-        return self._get(
-            f"{self.ADMIN_USERS}/{user_id}",
-            token=token,
-        )
-
-    def admin_update_user(
-        self,
-        user_id: int,
-        payload: dict[str, Any],
-        token: str | None = None,
-    ) -> dict[str, Any]:
-        """
-        Update user role or status (Admin only).
-        """
-        return self._patch(
-            f"{self.ADMIN_USERS}/{user_id}",
-            payload=payload,
-            token=token,
-        )
-
-    def admin_delete_user(
-        self,
-        user_id: int,
-        token: str | None = None,
-    ) -> dict[str, Any]:
-        """
-        Delete user account (Admin only).
-        """
-        return self._delete(
-            f"{self.ADMIN_USERS}/{user_id}",
-            token=token,
-        )
-
     # ==========================================================
     # AI Insight Jobs (Sprint 14 Phase 2)
     # ==========================================================
@@ -604,18 +484,6 @@ class APIClient:
         """
         return self._get(
             f"{self.AI_JOBS}/{job_id}",
-            token=token,
-        )
-
-    def get_latest_ai_job(
-        self,
-        token: str | None = None,
-    ) -> dict[str, Any]:
-        """
-        GET /api/ai/jobs/latest/status
-        """
-        return self._get(
-            f"{self.AI_JOBS}/latest/status",
             token=token,
         )
 
@@ -718,9 +586,9 @@ class APIClient:
 
     def __exit__(
         self,
-        exc_type,
-        exc,
-        traceback,
+        _exc_type,
+        _exc,
+        _traceback,
     ) -> None:
         """
         Exit the client context.

@@ -73,20 +73,6 @@ class PipelineResult:
     # Convenience Properties
     # ==========================================================
 
-    @property
-    def has_ai_report(
-        self,
-    ) -> bool:
-
-        return self.pipeline_report is not None and self.pipeline_report.ai_report is not None
-
-    @property
-    def has_reporting_report(
-        self,
-    ) -> bool:
-
-        return self.pipeline_report is not None
-
     # ==========================================================
     # Serialization
     # ==========================================================

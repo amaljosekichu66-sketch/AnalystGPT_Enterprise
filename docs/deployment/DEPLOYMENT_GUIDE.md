@@ -134,10 +134,6 @@ AUTH_ALGORITHM=HS256
 AUTH_ACCESS_TOKEN_EXPIRE_MINUTES=60
 AUTH_PASSWORD_MIN_LENGTH=8
 
-# Bootstrap administrator identity
-AUTH_DEFAULT_ADMIN_USERNAME=admin
-AUTH_DEFAULT_ADMIN_EMAIL=admin@analystgpt.enterprise
-
 # Unauthenticated X-User-Id / X-User-Name / X-User-Role headers are a COMPLETE
 # authentication bypass. Defaults to false and CANNOT be enabled unless
 # APP_ENVIRONMENT=development - startup refuses the combination.

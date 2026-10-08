@@ -37,31 +37,6 @@ def test_validate_file_size():
     assert "exceeds maximum allowable limit" in msg
 
 
-def test_preview_cleaning_delegation():
-    mock_client = MagicMock()
-    mock_client._request.return_value = {"preview": {"quality_score": 95}}
-
-    service = UploadService(api_client=mock_client)
-    success, data, err = service.preview_cleaning(dataset_version_id="dsv_123")
-
-    assert success is True
-    assert data == {"preview": {"quality_score": 95}}
-    assert err is None
-
-
-def test_execute_pipeline_delegation():
-    mock_client = MagicMock()
-    mock_client._request.return_value = {"success": True, "output_path": "report.txt"}
-
-    service = UploadService(api_client=mock_client)
-    success, data, err = service.execute_pipeline(dataset_version_id="dsv-1")
-
-    assert success is True
-    assert data["output_path"] == "report.txt"
-    assert err is None
-    assert mock_client._request.call_args.kwargs["json"] == {"dataset_version_id": "dsv-1"}
-
-
 def test_upload_dataset_sends_bytes_not_paths():
     mock_client = MagicMock()
     mock_client.upload_dataset.return_value = {"dataset_version_id": "dsv-9"}

@@ -48,33 +48,6 @@ class UploadService:
 
         return True, "File validation passed."
 
-    def preview_cleaning(
-        self,
-        dataset_version_id: str,
-        missing_value_policy: str = "DROP_ROWS",
-        outlier_policy: str = "FLAG_ONLY",
-        token: str | None = None,
-    ) -> tuple[bool, dict[str, Any] | None, str | None]:
-        """
-        Simulate data cleaning transformations non-destructively.
-        """
-        try:
-            res = self._api_client._request(
-                "POST",
-                "/api/governance/preview",
-                json={
-                    "dataset_version_id": dataset_version_id,
-                    "cleaning_config": {
-                        "missing_value_policy": missing_value_policy,
-                        "outlier_policy": outlier_policy,
-                    },
-                },
-                token=token,
-            )
-            return True, res, None
-        except Exception as exc:
-            return False, None, str(exc)
-
     def upload_dataset(
         self,
         filename: str,
@@ -89,26 +62,5 @@ class UploadService:
             return False, None, message
         try:
             return True, self._api_client.upload_dataset(filename=filename, content=content, token=token), None
-        except Exception as exc:
-            return False, None, str(exc)
-
-    def execute_pipeline(
-        self,
-        dataset_version_id: str,
-        token: str | None = None,
-    ) -> tuple[bool, dict[str, Any] | None, str | None]:
-        """
-        Trigger analytics pipeline execution on an uploaded dataset.
-        """
-        try:
-            res = self._api_client._request(
-                "POST",
-                "/api/pipeline",
-                json={"dataset_version_id": dataset_version_id},
-                token=token,
-            )
-            if res.get("success"):
-                return True, res, None
-            return False, None, res.get("message") or res.get("error", "Pipeline execution failed.")
         except Exception as exc:
             return False, None, str(exc)

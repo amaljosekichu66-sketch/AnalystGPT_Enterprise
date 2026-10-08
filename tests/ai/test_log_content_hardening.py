@@ -84,10 +84,11 @@ def test_dataset_previews_log_shape_only(log_lines, tmp_path) -> None:
     path = tmp_path / "people.csv"
     pd.DataFrame({"name": [SECRET_CELL] * 3, "n": [1, 2, 3]}).to_csv(path, index=False)
     application = Application.__new__(Application)
-    application.upload_manager = MagicMock(upload=lambda _path: pd.read_csv(path))
+    frame = pd.read_csv(path)
+    application.governance_service = MagicMock(execute_governed_cleaning=lambda **_kwargs: MagicMock(cleaned_df=frame))
 
-    frame = application._upload_dataset(str(path))
+    result = application._clean_dataset_governed(frame, MagicMock(), MagicMock(), pipeline_run_id=1)
 
-    assert len(frame) == 3
+    assert len(result.cleaned_df) == 3
     assert not any(SECRET_CELL in text for _, text in log_lines)
     assert any("3 rows x 2 columns" in text for _, text in log_lines)

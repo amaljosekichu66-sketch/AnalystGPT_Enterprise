@@ -21,18 +21,6 @@ def test_admin_list_users():
     assert err is None
 
 
-def test_admin_get_user():
-    mock_client = MagicMock()
-    mock_client._request.return_value = {"id": 2, "username": "analyst"}
-
-    service = AdminService(api_client=mock_client)
-    success, data, err = service.get_user(user_id=2)
-
-    assert success is True
-    assert data["username"] == "analyst"
-    assert err is None
-
-
 def test_admin_update_user():
     mock_client = MagicMock()
     mock_client._request.return_value = {"id": 2, "role": "ADMIN"}

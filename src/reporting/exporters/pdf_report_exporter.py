@@ -57,8 +57,6 @@ class PdfReportExporter:
     COLOR_TEXT_MUTED = "#64748B"  # Slate 500
     COLOR_BG_CARD = "#F8FAFC"  # Slate 50
     COLOR_BORDER = "#E2E8F0"  # Slate 200
-    COLOR_SUCCESS = "#059669"  # Emerald 600
-    COLOR_WARNING = "#D97706"  # Amber 600
     COLOR_AI_PURPLE = "#7C3AED"  # Violet 600
     COLOR_AI_BG = "#F5F3FF"  # Violet 50
 
@@ -131,15 +129,15 @@ class PdfReportExporter:
         dist_data = analytics.get("distribution_analysis", {})
 
         # Page 1: Executive Cover & Brief
-        pages.append(lambda fig, p_num, p_tot: self._render_page_executive_brief(fig, report, ai_report, lineage))
+        pages.append(lambda fig, _num, _tot: self._render_page_executive_brief(fig, report, ai_report, lineage))
 
         # Page 2: Dataset Profile & Governance Table
-        pages.append(lambda fig, p_num, p_tot: self._render_page_dataset_governance(fig, report, cols_profile, lineage))
+        pages.append(lambda fig, _num, _tot: self._render_page_dataset_governance(fig, report, cols_profile, lineage))
 
         # If columns exceed standard table size, add continuation table pages
         if len(cols_profile) > 14:
             pages.append(
-                lambda fig, p_num, p_tot: self._render_page_governance_continuation(
+                lambda fig, _num, _tot: self._render_page_governance_continuation(
                     fig, report, cols_profile, start_idx=14
                 )
             )
@@ -148,18 +146,18 @@ class PdfReportExporter:
         has_visuals = bool(cat_data or num_data or corr_data or dataset_profile)
         if has_visuals:
             pages.append(
-                lambda fig, p_num, p_tot: self._render_page_visual_analytics(
+                lambda fig, _num, _tot: self._render_page_visual_analytics(
                     fig, report, cat_data, num_data, corr_data, dist_data, dataset_profile
                 )
             )
 
         # Page 4: AI Insights (if available)
         if ai_report is not None:
-            pages.append(lambda fig, p_num, p_tot: self._render_page_ai_insights(fig, report, ai_report))
+            pages.append(lambda fig, _num, _tot: self._render_page_ai_insights(fig, report, ai_report))
 
         # Page 5: Recommendations, Governance Limitations & Provenance
         pages.append(
-            lambda fig, p_num, p_tot: self._render_page_recommendations_and_lineage(fig, report, ai_report, lineage)
+            lambda fig, _num, _tot: self._render_page_recommendations_and_lineage(fig, report, ai_report, lineage)
         )
 
         return pages

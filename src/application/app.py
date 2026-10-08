@@ -172,7 +172,6 @@ class Application:
         #: user_id -> heavy jobs in progress (SEC-10).
         self._active_jobs: dict[int | None, int] = {}
 
-        self._cached_dataset_path: str | None = None
         self._user_pipeline_results: dict[int | None, PipelineResult] = {}
         self._user_cached_paths: dict[int | None, str] = {}
         # Bounded (L10): these grew by one full PipelineResult per run. Report
@@ -863,18 +862,6 @@ class Application:
             return result
 
         except Exception as error:
-
-            import traceback
-
-            print("\n" + "=" * 80)
-            print("APPLICATION EXCEPTION")
-            print("=" * 80)
-
-            traceback.print_exc()
-
-            print(f"Exception Type : {type(error).__name__}")
-            print(f"Exception      : {error}")
-
             logger.exception("Pipeline execution failed.")
 
             try:
@@ -893,100 +880,6 @@ class Application:
         finally:
 
             persistence.shutdown()
-
-    def _upload_dataset(
-        self,
-        input_path: str,
-    ) -> DataFrame:
-        """
-
-        Upload the input dataset.
-
-
-
-        Parameters
-
-        ----------
-
-        input_path:
-
-            Dataset location.
-
-
-
-        Returns
-
-        -------
-
-        DataFrame
-
-            Uploaded dataset.
-
-        """
-
-        logger.info("-" * 60)
-
-        logger.info("UPLOAD STAGE")
-
-        logger.info("-" * 60)
-
-        dataframe = self.upload_manager.upload(input_path)
-
-        logger.info("Dataset before cleaning:")
-
-        logger.info(
-            "Shape: %d rows x %d columns (values are not logged)",
-            *dataframe.shape,
-        )
-
-        return dataframe
-
-    def _clean_dataset(
-        self,
-        dataframe: DataFrame,
-    ) -> DataFrame:
-        """
-
-        Execute the cleaning stage.
-
-
-
-        Parameters
-
-        ----------
-
-        dataframe:
-
-            Raw dataset.
-
-
-
-        Returns
-
-        -------
-
-        DataFrame
-
-            Cleaned dataset.
-
-        """
-
-        logger.info("-" * 60)
-
-        logger.info("CLEANING STAGE")
-
-        logger.info("-" * 60)
-
-        cleaned_dataframe = self.cleaning_manager.clean(dataframe)
-
-        logger.info("Dataset after cleaning:")
-
-        logger.info(
-            "Shape: %d rows x %d columns (values are not logged)",
-            *cleaned_dataframe.shape,
-        )
-
-        return cleaned_dataframe
 
     def _clean_dataset_governed(
         self,
@@ -1157,61 +1050,6 @@ class Application:
         )
 
         return reporting_report
-
-    def _generate_ai(
-        self,
-        reporting_report: ReportingReport,
-    ) -> AIResult:
-        """
-
-        Execute the AI Insight Engine stage.
-
-
-
-        Parameters
-
-        ----------
-
-        reporting_report:
-
-            Final reporting result.
-
-
-
-        Returns
-
-        -------
-
-        AIResult
-
-            Result containing generated AI insights.
-
-        """
-
-        logger.info("-" * 60)
-
-        logger.info("AI STAGE")
-
-        logger.info("-" * 60)
-
-        ai_result = self.ai_manager.generate_ai_report(reporting_report)
-
-        if ai_result.success:
-
-            logger.info("AI report generated successfully.")
-
-        else:
-
-            logger.warning("AI Insight Engine unavailable. " "Pipeline completed without AI enrichment.")
-
-            if ai_result.error is not None:
-
-                logger.warning(
-                    "AI Error: %s",
-                    ai_result.error,
-                )
-
-        return ai_result
 
     def _log_pipeline_summary(
         self,
@@ -1460,7 +1298,6 @@ class Application:
                     self._report_pipeline_results[report_id] = (user_id, result)
 
                 self._last_pipeline_result = result
-                self._cached_dataset_path = dataset_path
 
             logger.info(
                 "PipelineResult cached successfully for dataset: %s (user_id=%s)",
@@ -1472,91 +1309,6 @@ class Application:
 
             logger.warning("Pipeline failed. Cache not updated.")
 
-    def clear_cache(
-        self,
-        user_id: int | None = None,
-    ) -> None:
-        """
-
-        Clear the cached PipelineResult.
-
-        This should be called whenever a new dataset
-
-        is uploaded so that stale dashboard data
-
-        is never returned.
-
-        """
-
-        logger.info("=" * 80)
-
-        logger.info("CLEARING PIPELINE CACHE")
-
-        logger.info("=" * 80)
-
-        if user_id is not None and user_id in self._user_pipeline_results:
-            del self._user_pipeline_results[user_id]
-            self._user_cached_paths.pop(user_id, None)
-
-        if self._cached_dataset_path is not None:
-
-            logger.info(
-                "Clearing cached data for dataset: %s",
-                self._cached_dataset_path,
-            )
-
-        else:
-
-            logger.info("No cached dataset to clear.")
-
-        self._last_pipeline_result = None
-
-        self._cached_dataset_path = None
-
-    def get_or_run(
-        self,
-        input_path: str,
-        user_context: UserContext | None = None,
-    ) -> PipelineResult:
-        """
-
-        Return the cached PipelineResult if it exists and matches the requested dataset.
-
-        If no cached result exists for this dataset, execute the pipeline and cache the result.
-
-        """
-        active_context = user_context or get_current_user_context()
-        user_id = active_context.user_id if active_context.is_authenticated else None
-
-        if user_id in self._user_pipeline_results and self._user_cached_paths.get(user_id) == input_path:
-            logger.info("=" * 80)
-            logger.info("USING CACHED PIPELINE RESULT FOR USER: %s", active_context.username)
-            logger.info("=" * 80)
-            return self._user_pipeline_results[user_id]
-
-        if user_id is None and self._last_pipeline_result is not None and self._cached_dataset_path == input_path:
-
-            logger.info("=" * 80)
-
-            logger.info("USING CACHED PIPELINE RESULT")
-
-            logger.info("=" * 80)
-
-            return self._last_pipeline_result
-
-        logger.info("=" * 80)
-
-        logger.info("NO CACHED PIPELINE RESULT FOR THIS DATASET")
-
-        logger.info("RUNNING PIPELINE")
-
-        logger.info("=" * 80)
-
-        return self.run(
-            input_path=input_path,
-            user_context=active_context,
-        )
-
     def get_result_for_user(self, user_id: int | None = None) -> PipelineResult | None:
         """
         Retrieve cached pipeline result for a specific user ID.
@@ -1564,22 +1316,6 @@ class Application:
         if user_id is not None:
             return self._user_pipeline_results.get(user_id)
         return self._last_pipeline_result
-
-    def set_result_for_user(
-        self,
-        user_id: int | None,
-        result: PipelineResult,
-        report_id: int | None = None,
-    ) -> None:
-        """
-        Register a pipeline result for a specific user ID and optional report ID.
-        """
-        with self._cache_lock:
-            if user_id is not None:
-                self._user_pipeline_results[user_id] = result
-            self._last_pipeline_result = result
-            if report_id is not None:
-                self._report_pipeline_results[report_id] = (user_id, result)
 
     def reporting_report_for(self, report_id: int | None) -> ReportingReport | None:
         """The cached ReportingReport an AI job for `report_id` runs from, if still cached."""
@@ -1608,16 +1344,6 @@ class Application:
         """
 
         return self._last_pipeline_result
-
-    @property
-    def cached_dataset_path(self) -> str | None:
-        """
-
-        Return the dataset path associated with the cached result.
-
-        """
-
-        return self._cached_dataset_path
 
     def get_last_result(
         self,

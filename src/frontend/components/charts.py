@@ -23,7 +23,7 @@ import streamlit as st
 from src.frontend.components.safe_text import markdown_text
 
 
-def _style_axes(ax: plt.Axes, title: str, subtitle: str = "") -> None:
+def _style_axes(ax: plt.Axes, title: str) -> None:
     """Apply clean enterprise styling to matplotlib axes."""
     ax.set_facecolor("#1E222A")
     ax.grid(True, linestyle="--", alpha=0.2, color="#718096")

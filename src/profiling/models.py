@@ -111,14 +111,6 @@ class DatasetProfile:
         """Get all columns matching an analytical role."""
         return [cp for cp in self.column_profiles.values() if cp.analytical_role == role]
 
-    def get_columns_by_semantic_type(self, sem_type: SemanticType) -> list[ColumnProfile]:
-        """Get all columns matching a semantic type."""
-        return [cp for cp in self.column_profiles.values() if cp.semantic_type == sem_type]
-
-    def get_visualizable_columns(self) -> list[ColumnProfile]:
-        """Get all columns suitable for visualization."""
-        return [cp for cp in self.column_profiles.values() if cp.is_visualizable]
-
     def get_columns_with_missing(self) -> list[ColumnProfile]:
         """Get all columns containing at least one missing value."""
         return [cp for cp in self.column_profiles.values() if cp.missing_count > 0]

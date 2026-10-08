@@ -74,7 +74,6 @@ class PersistenceManager:
         self._quality_report_id = None
         self._analytics_report_id = None
         self._report_id = None
-        self._source_version_id = None
         self._cleaned_version_id = None
         self._cleaning_execution_id = None
 
@@ -311,23 +310,8 @@ class PersistenceManager:
         # 4. Persist execution record
         self._cleaning_execution_repository.create(governed_result.execution)
 
-        self._source_version_id = governed_result.source_version.version_id
         self._cleaned_version_id = governed_result.cleaned_version.version_id
         self._cleaning_execution_id = governed_result.execution.execution_id
-
-    def save_failed_governance_execution(
-        self,
-        execution: Any,
-    ) -> None:
-        """
-        Persist a FAILED CleaningExecution record for auditability.
-        """
-        if self._cleaning_execution_repository is None:
-            return
-        try:
-            self._cleaning_execution_repository.create(execution)
-        except Exception:
-            logger.exception("Could not persist failed cleaning execution.")
 
     @property
     def dataset_version_repository(self) -> DatasetVersionRepository | None:

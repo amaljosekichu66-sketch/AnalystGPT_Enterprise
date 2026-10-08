@@ -170,7 +170,5 @@ def test_api_client_targets_canonical_paths() -> None:
     for endpoint in (
         APIClient.REPORTS,
         APIClient.DASHBOARD,
-        APIClient.POWERBI_SUMMARY,
-        APIClient.POWERBI_PIPELINE,
     ):
         assert endpoint.startswith("/api/"), endpoint

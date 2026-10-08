@@ -42,24 +42,6 @@ class AdminService:
         except Exception as exc:
             return False, None, friendly_error(exc, "administration request")
 
-    def get_user(
-        self,
-        user_id: int,
-        token: str | None = None,
-    ) -> tuple[bool, dict[str, Any] | None, str | None]:
-        """
-        Retrieve profile details for a specific user.
-        """
-        try:
-            res = self._api_client._request(
-                "GET",
-                f"/api/admin/users/{user_id}",
-                token=token,
-            )
-            return True, res, None
-        except Exception as exc:
-            return False, None, friendly_error(exc, "administration request")
-
     def update_user(
         self,
         user_id: int,

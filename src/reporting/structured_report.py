@@ -64,42 +64,6 @@ class StructuredReport:
     # Convenience Properties
     # ==========================================================
 
-    @property
-    def has_kpis(
-        self,
-    ) -> bool:
-        """
-        Return True when KPI information exists.
-        """
-
-        return bool(
-            self.kpis,
-        )
-
-    @property
-    def has_analytics(
-        self,
-    ) -> bool:
-        """
-        Return True when analytics are available.
-        """
-
-        return bool(
-            self.analytics,
-        )
-
-    @property
-    def has_recommendations(
-        self,
-    ) -> bool:
-        """
-        Return True when recommendations exist.
-        """
-
-        return bool(
-            self.recommendations,
-        )
-
     # ==========================================================
     # Serialization
     # ==========================================================
@@ -134,21 +98,6 @@ class StructuredReport:
             recommendations=list(data.get("recommendations") or []),
             generated_at=datetime.fromisoformat(generated_at) if generated_at else datetime.now(UTC),
             metadata=dict(data.get("metadata") or {}),
-        )
-
-    def to_json(
-        self,
-        *,
-        indent: int = 2,
-    ) -> str:
-        """
-        Convert the report into formatted JSON.
-        """
-
-        return json.dumps(
-            self.to_dict(),
-            indent=indent,
-            default=str,
         )
 
     # ==========================================================

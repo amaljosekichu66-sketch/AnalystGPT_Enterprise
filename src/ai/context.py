@@ -52,21 +52,6 @@ class CleaningContext:
     custom_strategy_name: str | None = None
     transformations_applied: list[str] = field(default_factory=list)
 
-    @property
-    def has_row_reduction(self) -> bool:
-        """Return True if any rows were eliminated during cleaning."""
-        return bool(self.rows_removed and self.rows_removed > 0)
-
-    @property
-    def has_column_reduction(self) -> bool:
-        """Return True if any columns were dropped during cleaning."""
-        return len(self.columns_removed) > 0
-
-    @property
-    def has_imputation(self) -> bool:
-        """Return True if values were imputed/substituted."""
-        return bool(self.values_imputed and self.values_imputed > 0)
-
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 

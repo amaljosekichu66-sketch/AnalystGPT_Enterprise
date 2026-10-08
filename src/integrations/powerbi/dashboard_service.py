@@ -231,36 +231,6 @@ class DashboardService:
     # Dashboard
     # ==========================================================
 
-    def build_dashboard_response(
-        self,
-        pipeline_result: PipelineResult,
-    ) -> DashboardResponse:
-
-        report = self._report_dict(
-            pipeline_result,
-        )
-
-        ai_model = self._build_ai_model(
-            pipeline_result,
-        )
-
-        if ai_model is not None:
-            report["ai"] = ai_model.model_dump()
-
-        job_id = getattr(pipeline_result, "ai_job_id", None)
-
-        return DashboardResponse(
-            success=pipeline_result.success,
-            execution_time=pipeline_result.execution_time,
-            report=report,
-            ai_report=ai_model,
-            output_path=public_artifact_name(pipeline_result.output_path),
-            ai_job_id=job_id,
-            generated_at=self._generated_at(
-                pipeline_result,
-            ),
-        )
-
     # ==========================================================
     # Pipeline Summary
     # ==========================================================

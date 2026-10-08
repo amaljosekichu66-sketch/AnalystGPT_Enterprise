@@ -57,8 +57,3 @@ class LLMFactory:
             provider,
         )
         raise ValueError(f"Unsupported LLM Provider: {provider}")
-
-    @classmethod
-    def create_llm(cls) -> BaseLLM:
-        """Alias for create() for backwards compatibility."""
-        return cls.create()

@@ -144,15 +144,6 @@ def test_reports(mock_get, client):
 # ==========================================================
 
 
-@patch.object(APIClient, "_post")
-def test_run_pipeline(mock_post, client):
-    """Test pipeline endpoint."""
-    payload = {"input_path": "sample.csv"}
-    mock_post.return_value = {}
-    client.run_pipeline(payload)
-    mock_post.assert_called_once_with("/api/pipeline", payload)
-
-
 # ==========================================================
 # Context Manager
 # ==========================================================

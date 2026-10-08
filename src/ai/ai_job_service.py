@@ -181,14 +181,6 @@ class AIJobService:
                 return None
             return self._with_report(job, AIReportRepository(conn), user_id)
 
-    def get_job_for_pipeline_run(self, pipeline_run_id: int, user_id: int | None = None) -> dict[str, Any] | None:
-        """The AI job of one pipeline run, so a view shows the insights of the dataset on screen (P2-06)."""
-        with self._session() as conn:
-            job = AIJobRepository(conn).get_by_pipeline_run_id(pipeline_run_id, user_id=user_id)
-            if job is None:
-                return None
-            return self._with_report(job, AIReportRepository(conn), user_id)
-
     @staticmethod
     def _with_report(job: AIJob, report_repo: AIReportRepository, user_id: int | None) -> dict[str, Any]:
         job_dict = job.to_dict()
