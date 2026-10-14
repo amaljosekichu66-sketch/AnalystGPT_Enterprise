@@ -72,3 +72,14 @@ filterwarnings = [
     "error::DeprecationWarning:starlette.*",
     "error::DeprecationWarning:fastapi.*",
 ]
+
+# P2-21: coverage gate. Measured 88% of src/ + main.py (11,009 statements)
+# on 2026-10-14; the floor sits a little below so a real drop fails CI.
+[tool.coverage.run]
+source = ["src", "main"]
+branch = false
+
+[tool.coverage.report]
+fail_under = 85
+skip_covered = true
+show_missing = true

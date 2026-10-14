@@ -26,13 +26,16 @@ from src.core import config
 from src.database.connection_factory import ConnectionFactory
 from src.database.repositories.user_repository import UserRepository
 from src.database.schema_manager import SchemaManager
+from src.frontend.pages import PAGES as PAGE_REGISTRY
 from src.frontend.services.api_client import APIClient
 from src.identity.models import UserCreate, UserLogin, UserRole
 from src.identity.user_service import UserService
 
 APP = str(Path(__file__).resolve().parents[2] / "src" / "frontend" / "streamlit_app.py")
 SAMPLE = Path(__file__).resolve().parents[2] / "sample_data" / "customer_data.csv"
-PAGES = ["Dashboard", "Upload", "Reports", "AI Insights", "Admin", "About"]
+# Every registered page except Sign In (which has its own test), taken from
+# the registry so a page added later is smoke-tested without editing this.
+PAGES = [name for name in PAGE_REGISTRY if name != "Sign In"]
 _PASSWORD = "Password123!"
 
 

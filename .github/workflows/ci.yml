@@ -140,7 +140,7 @@ jobs:
           DATABASE_ENGINE: sqlite
           LOG_TO_FILE: "false"
         run: |
-          pytest tests/ -v
+          pytest tests/ -v --cov --cov-report=term
 
   # ==========================================================
   # Job 2b: PostgreSQL engine (P2-16, P2-21)

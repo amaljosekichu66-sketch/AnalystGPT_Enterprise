@@ -96,9 +96,43 @@ def test_exported_openapi_file_matches_live_schema():
     with open(schema_file, encoding="utf-8") as f:
         file_schema = json.load(f)
 
-    live_schema = app.openapi()
-    assert file_schema.get("openapi") == live_schema.get("openapi")
-    assert len(file_schema.get("paths", {})) == len(live_schema.get("paths", {}))
+    # P2-21: the whole document, not just the number of paths. A changed
+    # field, parameter, status code or response model fails here and names
+    # what moved; regenerate with `python scripts/export_openapi.py`.
+    live_schema = json.loads(json.dumps(app.openapi()))
+    differences = _schema_diff(file_schema, live_schema)
+    header = "docs/api/openapi.json is out of date (python scripts/export_openapi.py):"
+    assert not differences, "\n".join([header, *differences[:40]])
+
+
+def _schema_diff(committed, live, where: str = "$") -> list[str]:
+    """Every location where two JSON documents differ, as readable paths."""
+    if isinstance(committed, dict) and isinstance(live, dict):
+        out: list[str] = []
+        for key in sorted(set(committed) | set(live)):
+            here = f"{where}/{key}"
+            if key not in live:
+                out.append(f"removed  {here}")
+            elif key not in committed:
+                out.append(f"added    {here}")
+            else:
+                out.extend(_schema_diff(committed[key], live[key], here))
+        return out
+    if isinstance(committed, list) and isinstance(live, list) and len(committed) == len(live):
+        return [d for i, (a, b) in enumerate(zip(committed, live)) for d in _schema_diff(a, b, f"{where}[{i}]")]
+    return [] if committed == live else [f"changed  {where}"]
+
+
+def test_schema_diff_names_what_changed() -> None:
+    committed = {"paths": {"/a": {"get": {"responses": {"200": {}}}}, "/gone": {}}}
+    live = {"paths": {"/a": {"get": {"responses": {"201": {}}}}, "/new": {}}}
+
+    assert _schema_diff(committed, live) == [
+        "removed  $/paths//a/get/responses/200",
+        "added    $/paths//a/get/responses/201",
+        "removed  $/paths//gone",
+        "added    $/paths//new",
+    ]
 
 
 # ==========================================================
