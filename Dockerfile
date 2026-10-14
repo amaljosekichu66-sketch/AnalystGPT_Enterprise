@@ -22,8 +22,12 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     PATH="/home/appuser/.local/bin:$PATH"
 
-# Install curl for container healthchecks
+# Install curl for container healthchecks, and apply Debian security updates
+# on top of the pinned base. Trivy (CI) found fixable HIGH vulnerabilities in
+# the base image's own packages (e.g. libpcre2-8-0, fixed in deb13u3); the
+# digest pins the starting point, the upgrade picks up released fixes.
 RUN apt-get update && \
+    apt-get upgrade -y --no-install-recommends && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
@@ -55,6 +59,12 @@ RUN pip install --no-cache-dir --user --require-hashes -r requirements.lock
 # Stage 3: Runtime Base (Shared Application Layer)
 # ----------------------------------------------------------
 FROM base AS runtime-base
+
+# The base image's own setuptools/wheel in /usr/local vendor jaraco.context
+# 5.3.0 and wheel 0.45.1 (fixable HIGH CVEs, Trivy). Nothing at runtime uses
+# them: the hash-locked setuptools from requirements.lock is installed in the
+# user site below. Remove them from every runtime image.
+RUN python -m pip uninstall -y setuptools wheel
 
 # Copy installed Python packages from builder stage
 COPY --from=builder --chown=appuser:appuser /home/appuser/.local /home/appuser/.local

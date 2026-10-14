@@ -137,6 +137,13 @@ artifact; release notes are in CHANGELOG.md under 14.1.0.
   rows the audit probe wrote were deleted (X1).
 - **I11, rotation.** Deployments that ran v14.0.0 or earlier with their defaults must rotate
   `AUTH_SECRET_KEY` and the database password (ADR-030).
+- **Container scan exception (2026-10-14).** The first CI run of the Trivy gate found fixable
+  HIGH CVEs in the base image's Debian packages and its own setuptools/wheel; the Dockerfile now
+  applies Debian security updates and removes the unused system setuptools/wheel (our images:
+  0 fixable HIGH/CRITICAL). The official `postgres:16-alpine` image (newest tag = pinned digest)
+  ships `gosu` built with Go 1.24.6 (25 Go-stdlib CVEs in TLS/URL/x509 code paths gosu never
+  runs: it only drops root at container start). That one file is skipped in the scan, everything
+  else is gated; re-check when upstream rebuilds the image.
 - **Live Ollama is not run in CI** (the model does not fit a hosted runner); the live evidence
   is the recorded run above, reproducible from a clean clone.
 

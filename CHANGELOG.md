@@ -1979,3 +1979,8 @@ hold real data. Never copy or ship them.
 - PostgreSQL 16: schema tests 4/4 passed locally against a throwaway container. The schema and
   concurrency tests run in the `postgres` CI job of the release PR.
 - Live gemma3:4b: 16 passed (19m41s; end-to-end job READY after 374 s).
+- Container images (Trivy, first CI run): the base image's Debian packages and its bundled
+  setuptools/wheel carried fixable HIGH CVEs. The Dockerfile now applies Debian security updates
+  and removes the unused system setuptools/wheel, and our images have 0 fixable HIGH/CRITICAL.
+  `gosu` in the official `postgres:16-alpine` image (Go 1.24.6 stdlib CVEs, no fixed upstream
+  image yet) is the one documented scan exception; see the CI step comment.

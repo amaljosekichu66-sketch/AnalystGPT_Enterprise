@@ -257,11 +257,31 @@ jobs:
       - name: Container Image Scan (trivy, fails on fixable HIGH/CRITICAL)
         # I12: the built images and the pinned PostgreSQL image, OS and Python
         # packages. Trivy 0.74.0, pinned by digest like gitleaks above. Only
-        # vulnerabilities with a released fix fail the build.
+        # vulnerabilities with a released fix fail the build. Every image is
+        # scanned before the step fails, so one run shows all findings.
+        #
+        # One documented exception: usr/local/bin/gosu in the official
+        # postgres:16-alpine image (the newest tag is the pinned digest) embeds
+        # Go 1.24.6, whose crypto/tls, net/url and crypto/x509 CVEs Trivy
+        # reports. gosu only drops root to the postgres user at container start
+        # and then execs postgres; it does no TLS, URL or certificate handling,
+        # and the database port is not published outside the compose network.
+        # Everything else in that image is still gated. Re-check when upstream
+        # rebuilds the image (accepted risk recorded in PROJECT_STATE.md).
+        env:
+          TRIVY: aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+          POSTGRES_IMAGE: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
         run: |
-          for image in analystgpt-api:ci analystgpt-frontend:ci analystgpt-cli:ci               postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea; do
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock               aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969               image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$image"
+          failed=0
+          scan() {
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY" \
+              image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$@" || failed=1
+          }
+          for image in analystgpt-api:ci analystgpt-frontend:ci analystgpt-cli:ci; do
+            scan "$image"
           done
+          scan --skip-files usr/local/bin/gosu "$POSTGRES_IMAGE"
+          exit "$failed"
 
   # ==========================================================
   # Job 4: Docker Compose Configuration Validation
