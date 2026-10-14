@@ -10,6 +10,18 @@
 > **Sprint 17 — React Migration & Modern Presentation Layer** (React + TypeScript implemented).
 > The decision recorded here is unchanged and remains in force for the Streamlit
 > presentation layer; the React-side design is decided in the Sprint 16 architecture ADR.
+>
+> **Note (2026-10-14).** Re-checked against ROADMAP.md: Sprint 15 is *Enterprise
+> Stabilization, Governance Completion & Product/UX Remediation* and has **not started**; React
+> work is Sprint 17 only. The latest release is v14.0.0, and v14.1.0 (the pre-Sprint-15
+> hardening) is being released. The decision below is unchanged.
+>
+> Since this ADR: `src/frontend/theme/` held only empty modules and was deleted in the
+> pre-Sprint-15 hardening (commit `7fcd1e5`), together with the unused `card.py`, `metrics.py`,
+> `section.py` and `sidebar.py` components; Streamlit styling now comes from
+> `.streamlit/config.toml` and the components themselves. The frontend now imports nothing
+> from `src/application`, `src/persistence` or `src/profiling` (enforced by
+> `tests/frontend/test_frontend_boundaries.py`).
 
 **Date:** 2026-07-25
 

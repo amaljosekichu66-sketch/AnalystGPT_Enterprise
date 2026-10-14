@@ -1,5 +1,7 @@
 # ADR-021 — LLM Provider Abstraction
 
+> **Note (2026-10-14, v14.1.0).** The per-section engines listed below (`executive_summary_engine.py`, `recommendation_engine.py`, `explanation_engine.py`, `narrative_engine.py`, and `insight_engine.py`) were never reached at runtime and were deleted in `7fcd1e5` (P2-22). Generation goes through `AIManager` → `UnifiedReportEngine` → the provider from `LLMFactory`. The decision itself is unchanged.
+
 ## Status
 
 Accepted

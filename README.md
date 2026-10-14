@@ -17,9 +17,9 @@
   <img src="https://img.shields.io/badge/Ollama-gemma3%3A4b-000000" alt="Ollama gemma3:4b">
   <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose">
   <br>
-  <img src="https://img.shields.io/badge/tests-714%20passed-brightgreen" alt="714 tests passed">
-  <img src="https://img.shields.io/badge/lint-flake8%20%C2%B7%20black%20%C2%B7%20isort%20%C2%B7%20mypy-brightgreen" alt="Quality gates">
-  <img src="https://img.shields.io/badge/release-v14.0.0-blue" alt="Release v14.0.0">
+  <img src="https://img.shields.io/badge/tests-1%2C242%20in%20default%20suite-blue" alt="1,242 tests in the default suite">
+  <img src="https://img.shields.io/badge/lint-flake8%20%C2%B7%20black%20%C2%B7%20isort%20%C2%B7%20mypy%20%C2%B7%20vulture-brightgreen" alt="Quality gates">
+  <img src="https://img.shields.io/badge/release-v14.1.0-blue" alt="Release v14.1.0">
   <img src="https://img.shields.io/badge/license-MIT-yellow" alt="MIT License">
 </p>
 
@@ -47,8 +47,8 @@ its output is checked against them.
 | 🧮 **Deterministic first** | Upload → Cleaning → Quality → Analytics → Reporting runs and persists before any AI is involved. An AI failure never fails a pipeline run. |
 | 🛡️ **Governed data** | Immutable raw dataset versions (SHA-256), explicit cleaning policies, a non-destructive preview, before/after quality metrics and end-to-end lineage. |
 | 🤖 **Grounded AI** | Privacy-safe aggregated context (never raw rows), deterministic statistical wording, and a validator that flags contradicted or unsupported claims. |
-| ⚡ **Asynchronous AI** | AI generation runs as a persisted background job — `PENDING → GENERATING → READY / FAILED` — with retry and polling. Results appear immediately; insights follow. |
-| 🔐 **Multi-user by design** | PBKDF2-HMAC-SHA256 passwords, signed bearer tokens with revocation, `ADMIN` / `ANALYST` / `VIEWER` roles, and server-side ownership scoping on every query. |
+| ⚡ **Asynchronous AI** | AI generation runs as a persisted background job — `PENDING → GENERATING → READY / FAILED / CANCELLED` — with polling, cancel and retry; a job keeps its input and resumes after a restart. Results appear immediately; insights follow. |
+| 🔐 **Multi-user by design** | PBKDF2-HMAC-SHA256 passwords, signed bearer tokens with revocation, `ADMIN` / `ANALYST` / `VIEWER` roles, login lockout, a hash-chained audit log, and per-user isolation enforced and tested on every resource route. |
 | 📄 **Publication-grade output** | Multi-page PDF and text reports with charts, KPI summaries, governance tables and lineage cards; Power BI-ready endpoints. |
 
 ---
@@ -116,15 +116,16 @@ Full, platform-specific commands (including Windows PowerShell) are in the
              (PII-aware)   versioning                   metrics      distribution  Power BI       lineage
                                                                                          │
                                                         background AI job ◄──────────────┘
-                                          PENDING → GENERATING → READY / FAILED   (polled by the UI)
+                              PENDING → GENERATING → READY / FAILED / CANCELLED   (polled by the UI)
 ```
 
 1. **Upload & profile** — files are ingested and stored as an immutable dataset version; the
    semantic profiler separates domain meaning (identifier, postal code, contact field, measure,
    dimension…) from pandas dtypes, so a postal code is never charted as a number.
 2. **Govern & clean** — cleaning policies are explicit and versioned; a non-destructive preview
-   shows the effect before execution, and every execution records rows removed, columns changed
-   and quality before vs. after.
+   shows the effect before execution; a non-default policy is proposed, reviewed and approved
+   before a run may use it; and every execution records rows removed, columns changed and
+   quality before vs. after.
 3. **Analyse & report** — descriptive, numerical, categorical, correlation and distribution
    analysis feed a report with a planned, bounded chart set (4–8 charts).
 4. **Interpret** — an asynchronous job builds a privacy-safe `AIDataContext`, serializes the
@@ -144,7 +145,7 @@ Full, platform-specific commands (including Windows PowerShell) are in the
 | Wording | `statistical_interpretation.py` | Skewness and kurtosis described deterministically and correctly; identifier-like columns flagged. |
 | Serialization | `ReportSerializer`, `PromptBuilder` | Category cardinality kept distinct from frequency; explicit anti-hallucination rules. |
 | Provider | `BaseLLM` → `LLMFactory` → `OllamaClient` | Engines depend only on the interface; the provider is configuration-driven (`LLM_PROVIDER`). |
-| Engines | `AIManager` | Executive summary, recommendations, explanations, narrative. |
+| Engines | `AIManager` → `UnifiedReportEngine` | One LLM request returns the executive summary, recommendations, explanations and narrative. |
 | Validation | `insight_validator.py` | Contradictions and unsupported conclusions recorded on the report's `limitations`, never silently dropped. |
 | Lifecycle | `AIJobService`, `AIJobExecutor` | Persisted state machine, atomic claim, retry, stale-job recovery. |
 
@@ -158,18 +159,25 @@ further adapters such as Groq.
 
 The API is the single contract for every client — Streamlit today, React later, Power BI
 alongside. All functional routes live under `/api`; the contract is frozen in
-[`docs/api/openapi.json`](docs/api/openapi.json) (OpenAPI 3.1, 33 paths).
+[`docs/api/openapi.json`](docs/api/openapi.json) (OpenAPI 3.1 — 46 paths, 49 operations, 51 component schemas; regenerated by
+`python scripts/export_openapi.py` and diff-checked in CI).
 
 | Area | Endpoints |
 |---|---|
 | **System** | `GET /` · `GET /api/health` · `GET /api/version` |
-| **Authentication** | `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me` · `POST /api/auth/logout` |
-| **Pipeline** | `POST /api/pipeline` |
+| **Authentication** | `POST /api/auth/register` (creates a `VIEWER`) · `POST /api/auth/login` · `GET /api/auth/me` · `POST /api/auth/logout` · `POST /api/auth/logout-all` · `POST /api/auth/password` |
+| **Datasets** | `POST /api/datasets` (multipart upload → `dataset_version_id`) · `GET /api/datasets/{dataset_version_id}/analysis` · `DELETE /api/datasets/{dataset_version_id}` |
+| **Pipeline** | `POST /api/pipeline` (takes a `dataset_version_id` and an optional APPROVED `cleaning_policy_proposal_id`) |
 | **Governance** | `POST /api/governance/preview` · `GET /api/governance/dataset-versions` · `GET /api/governance/dataset-versions/{version_id}` · `GET /api/governance/lineage/run/{pipeline_run_id}` |
-| **AI Insights** | `GET /api/ai/jobs/{job_id}` · `GET /api/ai/jobs/latest/status` · `POST /api/ai/jobs/{job_id}/retry` |
-| **Reports** | `GET /api/reports` · `GET /api/reports/{report_id}/export/{text\|pdf}` · `GET /api/reports/export/{text\|pdf}` (latest) |
-| **Power BI** | `GET /api/powerbi/{dashboard,status,summary,statistics,correlation,distribution,categorical,report,pipeline}` |
-| **Administration** (`ADMIN`) | `GET /api/admin/users` · `GET` / `PATCH` / `DELETE /api/admin/users/{user_id}` |
+| **Cleaning policies** | `POST` / `GET /api/governance/policies` · `PATCH /api/governance/policies/{proposal_id}` · `POST /api/governance/policies/{proposal_id}/approve` · `POST /api/governance/policies/{proposal_id}/reject` |
+| **AI Insights** | `GET /api/ai/jobs/{job_id}` · `GET /api/ai/jobs/latest/status` · `POST /api/ai/jobs/{job_id}/retry` (FAILED / CANCELLED) · `POST /api/ai/jobs/{job_id}/cancel` |
+| **Reports** | `GET /api/reports` · `GET /api/reports/{report_id}/export/{text\|pdf}` · `GET /api/reports/export/{text\|pdf}` and `GET /api/reports/latest/export/{text\|pdf}` (latest) |
+| **Power BI** | `GET /api/powerbi/{dashboard,status,summary,statistics,correlation,distribution,categorical,report,pipeline}` — all authenticated |
+| **Administration** (`ADMIN`) | `GET /api/admin/users` · `GET` / `PATCH` / `DELETE /api/admin/users/{user_id}` · `POST /api/admin/users/{user_id}/unlock` · `GET /api/admin/audit-events` · `GET /api/admin/audit-events/verify` (hash-chain check) |
+
+No endpoint accepts a server file path: datasets arrive as uploaded bytes and are addressed by the
+server-issued `dataset_version_id`. Self-registered accounts are `VIEWER`s; an admin promotes
+them with `PATCH /api/admin/users/{user_id}`.
 
 ### Example
 
@@ -207,20 +215,22 @@ Interactive docs: **Swagger** `/docs` · **ReDoc** `/redoc` · full reference in
 
 | Layer | Responsibility | Where |
 |---|---|---|
-| **Presentation** | Streamlit views and components; presentation logic only | `src/frontend/` |
+| **Presentation** | Streamlit views and components; talks to the backend only over HTTP | `src/frontend/` |
 | **API** | Routing, validation, auth dependencies, error handling | `src/api/` |
-| **Application** | Orchestration — `Application.run()`, AI / dashboard / reporting orchestrators | `src/application/` |
+| **Application** | Orchestration — `Application.run()`, dashboard and reporting orchestrators | `src/application/` |
 | **Business** | Upload, cleaning, quality, analytics, reporting, profiling, governance | `src/upload/` … `src/governance/` |
-| **AI** | Insight engines, job lifecycle, context, provider abstraction | `src/ai/`, `src/llm/` |
+| **AI** | Unified report engine, job lifecycle, context, validation, provider abstraction | `src/ai/`, `src/llm/` |
 | **Identity** | Users, hashing, tokens, RBAC, audit | `src/identity/` |
 | **Persistence** | Repositories over a database abstraction (SQLite / PostgreSQL) | `src/persistence/`, `src/database/` |
 | **Integrations** | Power BI dashboard service | `src/integrations/` |
 | **Core** | Configuration, constants, logging, exceptions — imported by all, imports none | `src/core/` |
 
-**Rules the codebase enforces:** dependencies point inward; views hold no business logic;
-frontend services talk to the backend only over REST; every repository query is scoped to the
-authenticated user; architectural changes are recorded as ADRs
-([28 so far](docs/adr/)).
+**Rules the codebase enforces:** dependencies point inward; `src/frontend` imports nothing from
+`src/application`, `src/persistence`, `src/profiling` or any other backend package except
+`src/core` and the upload guards (an AST test, `tests/frontend/test_frontend_boundaries.py`,
+enforces it), so the Streamlit client talks to the backend only over HTTP; per-user isolation is
+enforced and tested on every resource route; architectural changes are recorded as
+[ADRs](docs/adr/).
 
 <details>
 <summary><strong>Project structure</strong></summary>
@@ -238,14 +248,17 @@ AnalystGPT_Enterprise/
 │   ├── identity/       # Authentication, RBAC, user service
 │   ├── persistence/  database/
 │   ├── integrations/   # Power BI
-│   ├── frontend/       # Streamlit: views, components, services, theme
+│   ├── frontend/       # Streamlit: views, components, services, config
 │   └── core/           # Config, constants, logging, exceptions, PII rule
-├── tests/              # pytest suite mirroring src/; live-LLM tests marked `integration`
+├── tests/              # pytest suite mirroring src/; live Ollama / PostgreSQL tests marked `integration`
 ├── docs/               # adr/ api/ deployment/ development/ engineering/ project/ sprints/
 ├── performance/        # Benchmarks and performance reports
-├── scripts/            # lint.ps1, run_tests.ps1, benchmarks
+├── scripts/            # create_admin, export_openapi, make_live_sample, purge_ownerless_data,
+│                       # build_requirements_lock, gemma_benchmark, lint.ps1, run_tests.ps1
 ├── sample_data/        # Example datasets
-├── Dockerfile  docker-compose.yml  pyproject.toml  requirements.txt  .env.example
+├── Dockerfile  docker-compose.yml  pyproject.toml  requirements*.txt  requirements.lock
+├── .env.development.example   # local development (cp to .env)
+├── .env.example                # production template; its CHANGE_ME key is refused
 ├── main.py             # CLI entry point
 └── LICENSE
 ```
@@ -258,19 +271,30 @@ AnalystGPT_Enterprise/
 
 | Gate | Command | Result |
 |---|---|---|
-| Test suite | `pytest -q` | **714 passed**, 0 failed, 15 deselected |
-| Lint | `flake8 src tests` | 0 violations |
-| Format | `black --check src tests` | clean |
-| Imports | `isort --check src tests` | clean |
-| Types | `mypy src` | no issues (210 files) |
+| Test suite | `pytest -q` | 1,242 tests in the default suite; coverage gate `fail_under = 85` |
+| Lint | `flake8 src tests main.py` | blocking in CI |
+| Format | `black --check src tests main.py` | blocking in CI |
+| Imports | `isort --check src tests main.py` | blocking in CI |
+| Types | `mypy src main.py` | blocking in CI |
+| Dead code | `vulture src main.py scripts vulture_whitelist.py --min-confidence 60` | blocking in CI |
 
-The 15 deselected tests are marked `integration` and need a live Ollama server with
-`gemma3:4b` — run them with `pytest -m integration`. CI (GitHub Actions) runs quality, tests,
-Docker image builds and a full Compose integration check on `main`.
+16 further tests are marked `integration` and deselected by default; they need a live Ollama
+server with `gemma3:4b` — run them with `pytest -m integration`. Six PostgreSQL 16 tests
+(schema 4, concurrency 2) are also `integration`-marked; they are skipped unless the
+`TEST_POSTGRES_*` variables point at a throwaway database, and CI runs them in its `postgres` job.
+A recorded live-Ollama run against the synthetic `sample_data/support_tickets.xlsx` (generated
+by `scripts/make_live_sample.py`) is in
+[docs/verification/live_ollama_run_2026-10-14.log](docs/verification/live_ollama_run_2026-10-14.log).
+
+CI (GitHub Actions, on pushes and pull requests to `main`) runs 7 jobs: **quality** (flake8,
+black, isort, mypy, vulture), **security** (gitleaks, pip-audit, bandit HIGH gate, reviewed-B608
+count gate), **test** (pytest with the 85% coverage gate), **postgres** (PostgreSQL 16 schema and
+concurrency integration tests), **docker-build** (API / frontend / CLI images + Trivy scan),
+**compose-validation** and **compose-integration**.
 
 Coverage spans unit, API contract, RBAC and cross-tenant isolation, concurrency, AI job
 idempotency and failure isolation, export, and grounding-regression suites. The authoritative,
-executed figures live in [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md#executed-validation--authoritative).
+measured figures live in [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md) (*Headline numbers*).
 
 ---
 
@@ -278,8 +302,9 @@ executed figures live in [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md#ex
 
 | Sprint | Release | Focus | Status |
 |---|---|---|---|
-| 0 – 13 | v0.5.0 – v13.0.0 | Foundation → pipeline → persistence → REST API → Power BI → Streamlit → AI engine → Docker/CI → identity & multi-user | ✅ Released |
-| **14** | v14.0.0 | Stabilization, data governance & grounded reporting | ✅ Released |
+| 0 – 13 | v0.75.0 – v13.0.0 | Foundation → pipeline → persistence → REST API → Power BI → Streamlit → AI engine → Docker/CI → identity & multi-user | ✅ Released (Sprints 0 and 0.5 were not tagged; the first tag is `v0.75.0`) |
+| **14** | v14.0.0 | Enterprise Stabilization, Data Governance & Grounded Reporting | ✅ Released |
+| — | v14.1.0 | Pre-Sprint-15 hardening (security, ownership, governance workflow, CI gates) | ✅ Released |
 | 15 | v15.0.0 | Enterprise stabilization, governance completion & product/UX remediation | 📋 Planned |
 | 16 | v16.0.0 | AI provider abstraction (Ollama + Gemini) & complete React readiness | 📋 Planned |
 | 17 | v17.0.0 | React + TypeScript migration & modern presentation layer | 📋 Planned |
@@ -287,10 +312,12 @@ executed figures live in [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md#ex
 Each sprint starts only after the previous one is released; React work does not begin before
 Sprint 17. Scope and Definitions of Done: [ROADMAP.md](docs/project/ROADMAP.md).
 
-**Known limitations** (Sprint 15 scope): the governance workflow is not yet verified end-to-end
-through the UI; the Dashboard overlaps the pipeline result view; user deletion exists in the API
-but not in the Admin UI. See [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md) for the full
-technical-debt list.
+Sprint 15 has not started.
+
+**Known limitations** (Sprint 15 scope): the full Upload → governance → AI workflow has not yet
+been verified end-to-end through the Streamlit UI; the Dashboard overlaps the pipeline result
+view. See [PROJECT_STATE.md](docs/engineering/PROJECT_STATE.md) for the full technical-debt
+list.
 
 ---
 
@@ -304,7 +331,7 @@ technical-debt list.
 | [API_REFERENCE.md](docs/api/API_REFERENCE.md) · [openapi.json](docs/api/openapi.json) | REST contract |
 | [DEVELOPER_COMMANDS.md](docs/development/DEVELOPER_COMMANDS.md) | Setup, run, test and quality-gate commands |
 | [DEPLOYMENT_GUIDE.md](docs/deployment/DEPLOYMENT_GUIDE.md) | Docker, configuration, CI |
-| [ADRs](docs/adr/) | 28 Architecture Decision Records |
+| [ADRs](docs/adr/) | Architecture Decision Records |
 | [CHANGELOG.md](CHANGELOG.md) · [PROJECT_JOURNAL.md](docs/project/PROJECT_JOURNAL.md) | Release history and engineering journal |
 
 ---
@@ -316,7 +343,7 @@ Contributions follow the project's [Definition of Done](docs/project/DEFINITION_
 
 1. Branch from `main` (`feature/<name>`).
 2. Keep business logic out of the presentation layer and every query user-scoped.
-3. Add tests; run `pytest -q` and the four quality gates before opening a pull request.
+3. Add tests; run `pytest -q` and the five static gates (flake8, black, isort, mypy, vulture) before opening a pull request.
 4. Record architectural decisions as an ADR.
 
 ---

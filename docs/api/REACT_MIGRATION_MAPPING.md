@@ -70,10 +70,10 @@ This document establishes the authoritative contract mapping and component decom
 | Streamlit View | React Route Path | Navigation Label | Access Control | Purpose |
 |---|---|---|---|---|
 | `dashboard_page.py` | `/dashboard` | Dashboard | Authenticated (`ANALYST`, `ADMIN`, `VIEWER`) | Primary analytical overview, KPIs, dataset exploration, pipeline health. |
-| `upload_page.py` | `/upload` | Upload Dataset | Authenticated (`ANALYST`, `ADMIN`) | Ingest raw datasets, non-destructive cleaning preview, pipeline execution dispatch. |
+| `upload_page.py` | `/upload` | Upload Dataset | Authenticated (`ANALYST`, `ADMIN`) | Upload bytes (`POST /api/datasets`), non-destructive cleaning preview, cleaning-policy proposal and approval/rejection, pipeline execution with an approved policy. |
 | `report_page.py` | `/reports` | Reports | Authenticated (`ANALYST`, `ADMIN`, `VIEWER`) | Interactive structured analytics, KPI cards, download triggers (Plain Text, Vector PDF). |
-| `ai_insights_page.py` | `/ai-insights` | AI Insights | Authenticated (`ANALYST`, `ADMIN`, `VIEWER`) | Asynchronous AI job lifecycle monitoring, retry button, executive synthesis, recommendations. |
-| `admin_page.py` | `/admin/users` | Administration | Restricted (`ADMIN` only) | User directory, role assignment, status toggling, account deletion, audit trail. |
+| `ai_insights_page.py` | `/ai-insights` | AI Insights | Authenticated (`ANALYST`, `ADMIN`, `VIEWER`) | Asynchronous AI job lifecycle monitoring, cancel and retry buttons, executive synthesis, recommendations. |
+| `admin_page.py` | `/admin/users` | Administration | Restricted (`ADMIN` only) | User directory, role assignment, status toggling, login-lockout unlock, account deletion, audit trail. |
 | `about_page.py` | `/about` | About | Public (No Auth Required) | System architecture overview, capabilities, compliance, documentation links. |
 | *Sign In Dialog* | `/login` | Sign In | Public | Credential authentication, token issuance, session establishment. |
 | *Register Dialog* | `/register` | Register | Public | User self-registration and credential provisioning. |
@@ -100,6 +100,7 @@ This document establishes the authoritative contract mapping and component decom
         │     ├── <DropzoneUploader />
         │     ├── <CleaningPolicyConfigurator />
         │     ├── <CleaningPreviewModal />
+        │     ├── <PolicyProposalReview />   (propose / approve / reject)
         │     └── <ExecutePipelineButton />
         │
         ├── [Route: /reports]
@@ -111,23 +112,28 @@ This document establishes the authoritative contract mapping and component decom
         │     └── <LineageProvenanceCard />
         │
         ├── [Route: /ai-insights]
-        │     ├── <AIJobStatusBanner (PENDING | GENERATING | READY | FAILED) />
+        │     ├── <AIJobStatusBanner (PENDING | GENERATING | READY | FAILED | CANCELLED) />
         │     ├── <AIExecutiveSynthesis />
         │     ├── <AIRecommendationsList />
         │     ├── <AIDiagnosticExplanations />
+        │     ├── <CancelJobButton />
         │     └── <RetryJobButton />
         │
         └── [Route: /admin/users]
               ├── <UserDirectoryTable />
               ├── <UserEditModal />
-              └── <UserDeleteConfirmDialog />
+              ├── <UserUnlockButton />
+              ├── <UserDeleteConfirmDialog />
+              └── <AuditEventLog />
 ```
 
 ---
 
 ## 5. Frontend Service Layer Mapping
 
-The Python frontend service layer in `src/frontend/services/` maps 1:1 to TypeScript API client modules in React:
+The Python frontend service layer in `src/frontend/services/` (`APIClient`, `AuthService`,
+`UploadService`, `AdminService` classes; `dashboard_service`, `report_service`, `ai_service` and
+`session_manager` function modules) maps to TypeScript API client modules in React:
 
 ```typescript
 // Example React TypeScript Service Architecture
@@ -177,16 +183,39 @@ export class AIService {
     return apiClient.get<AIJobResponse>('/api/ai/jobs/latest/status');
   }
   static async retryJob(jobId: string): Promise<AIJobRetryResponse> {
-    return apiClient.post<AIJobRetryResponse>(`/api/ai/jobs/${jobId}/retry`);
+    return apiClient.post<AIJobRetryResponse>(`/api/ai/jobs/${jobId}/retry`);  // FAILED or CANCELLED
+  }
+  static async cancelJob(jobId: string): Promise<AIJobRetryResponse> {
+    return apiClient.post<AIJobRetryResponse>(`/api/ai/jobs/${jobId}/cancel`);  // PENDING or GENERATING
   }
 }
 
 // src/services/upload.service.ts
 export class UploadService {
+  static async uploadDataset(file: File): Promise<DatasetUploadResponse> {
+    const form = new FormData();
+    form.append('file', file);                      // bytes only; no server paths
+    return apiClient.postForm<DatasetUploadResponse>('/api/datasets', form);  // -> dataset_version_id
+  }
+  static async getAnalysis(datasetVersionId: string): Promise<DatasetAnalysisResponse> {
+    return apiClient.get<DatasetAnalysisResponse>(`/api/datasets/${datasetVersionId}/analysis`);
+  }
+  static async deleteDataset(datasetVersionId: string): Promise<DatasetDeleteResponse> {
+    return apiClient.delete<DatasetDeleteResponse>(`/api/datasets/${datasetVersionId}`);
+  }
   static async previewCleaning(req: CleaningPreviewRequest): Promise<CleaningPreviewResponse> {
     return apiClient.post<CleaningPreviewResponse>('/api/governance/preview', req);
   }
+  static async proposePolicy(req: PolicyProposalRequest): Promise<PolicyProposalResponse> {
+    return apiClient.post<PolicyProposalResponse>('/api/governance/policies', req);
+  }
+  static async reviewPolicy(proposalId: string, approve: boolean): Promise<PolicyProposalResponse> {
+    return apiClient.post<PolicyProposalResponse>(
+      `/api/governance/policies/${proposalId}/${approve ? 'approve' : 'reject'}`, {}
+    );
+  }
   static async executePipeline(req: PipelineRequest): Promise<PipelineResponse> {
+    // req: { dataset_version_id, cleaning_policy_proposal_id? (must be APPROVED) }
     return apiClient.post<PipelineResponse>('/api/pipeline', req);
   }
 }
@@ -202,6 +231,15 @@ export class AdminService {
   static async deleteUser(userId: number): Promise<void> {
     return apiClient.delete(`/api/admin/users/${userId}`);
   }
+  static async unlockUser(userId: number): Promise<UserResponse> {
+    return apiClient.post<UserResponse>(`/api/admin/users/${userId}/unlock`);
+  }
+  static async auditEvents(limit = 100): Promise<Record<string, unknown>[]> {  // untyped in the contract
+    return apiClient.get<Record<string, unknown>[]>(`/api/admin/audit-events?limit=${limit}`);
+  }
+  static async verifyAuditChain(): Promise<Record<string, unknown>> {  // untyped in the contract
+    return apiClient.get<Record<string, unknown>>('/api/admin/audit-events/verify');
+  }
 }
 ```
 
@@ -215,7 +253,7 @@ export class AdminService {
    - On HTTP 401 response, the client clears local session state and redirects to `/login`.
 2. **Global React Contexts:**
    - `AuthContext`: Tracks `user: UserResponse | null`, `isAuthenticated: boolean`, `role: UserRole`, `login()`, `logout()`.
-   - `DatasetContext`: Tracks `activeDatasetPath: string | null`, `datasetMetadata: DatasetVersionResponse | null`, `datasetSummary: DashboardSummary | null`.
+   - `DatasetContext`: Tracks `activeDatasetVersionId: string | null` (server-issued by `POST /api/datasets`; clients never hold server paths), `datasetMetadata: DatasetVersionResponse | null`, `datasetSummary: DashboardSummary | null`.
    - `JobPollingContext`: Manages background polling intervals for pending AI jobs without blocking navigation.
 
 ---
@@ -237,18 +275,22 @@ npx openapi-generator-cli generate -i docs/api/openapi.json -g typescript-axios 
 ## 8. Summary Checklist for Frontend Engineers
 
 - [x] OpenAPI 3.1 contract frozen and exported at `docs/api/openapi.json`.
-- [x] All **33** paths expose explicit request/response schemas in `components.schemas`
-      (42 schemas). The blueprint originally said 40; that count included the duplicate
+- [x] All **46** paths (49 operations) expose explicit request/response schemas in
+      `components.schemas` (51 schemas), as of 2026-10-14. v14.0.0 had 33 paths / 42 schemas;
+      the blueprint originally said 40 paths, a count that included the duplicate
       registrations of `reports_router`, removed later in Sprint 14.
 - [x] Every functional route is mounted under `/api`. The unprefixed `/reports/*` and
       `/powerbi/*` aliases were removed in v14.0.0 — prepend `/api`.
-- [ ] Streamlit views presentation-only — **not true** (was ticked). `views/upload_page.py`
-      runs `DataProfiler`, `CleaningGovernanceService.recommend_dataset_policy` and
-      `CleaningPreviewService.preview` in the frontend process; this logic must move behind
-      the API before a React client can reproduce the page. Corrected during the
-      pre-Sprint-15 hardening.
-- [ ] Sprint 15 remediation complete (governance workflow, Dashboard information architecture,
-      Admin user lifecycle) — the React migration must not reproduce known Sprint 15 defects.
+- [x] Streamlit views talk to the backend only over HTTP. *Fixed in the pre-Sprint-15
+      hardening (P2-05):* `views/upload_page.py` used to run `DataProfiler`,
+      `CleaningGovernanceService.recommend_dataset_policy` and `CleaningPreviewService.preview`
+      in the frontend process; it now calls `GET /api/datasets/{id}/analysis`,
+      `POST /api/governance/preview` and the `/api/governance/policies` routes.
+      `src/frontend` imports nothing from `src/application`, `src/persistence`, `src/profiling`
+      or the other backend packages (`tests/frontend/test_frontend_boundaries.py`, an AST test).
+- [ ] Sprint 15 remediation complete (end-to-end governance workflow verification, Dashboard
+      information architecture) — the React migration must not reproduce known Sprint 15
+      defects. Sprint 15 has not started (2026-10-14).
 - [ ] Sprint 16 final React-readiness audit passed and React architecture ADR accepted.
-- [x] Multi-tenant isolation backend-enforced via JWT headers.
+- [x] Per-user isolation enforced server-side (Bearer token identity) and tested on every resource route.
 - [x] Export streams available via direct HTTP endpoints.

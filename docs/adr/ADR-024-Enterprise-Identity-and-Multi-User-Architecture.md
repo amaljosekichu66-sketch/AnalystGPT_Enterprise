@@ -1,5 +1,7 @@
 # ADR-024 — Enterprise Identity and Multi-User Architecture
 
+> **Note (2026-10-14, v14.1.0).** `Application.run(input_path, ...)` in the diagram below is now a local entry point for the CLI and tests only. HTTP clients upload bytes and run `run_dataset_version(dataset_version_id, ...)` (ADR-029). Token revocation, the audit trail and user deletion were revised in ADR-031, ADR-032 and ADR-033. Self-registration creates VIEWER accounts.
+
 ## Status
 
 Accepted

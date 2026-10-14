@@ -25,12 +25,12 @@
 
 | | |
 |---|---|
-| **Current version** | **v14.0.0** — released 2026-09-28 (tag `v14.0.0`, `main`) |
-| **Previous version** | v13.0.0 (tag `v13.0.0` = `c5ddf06`) |
-| **Current sprint** | **Sprint 14 — Stabilization / Production Hardening** |
-| **Sprint 14 status** | ✅ **Released as v14.0.0** |
-| **Next sprint** | **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (planned, not started) |
-| **Current work** | **Pre-Sprint-15 security & stability hardening** on branch `pre-sprint-15-hardening` (not merged, not released) — status **READY FOR RE-AUDIT**; see the section below |
+| **Current version** | **v14.1.0** — the pre-Sprint-15 hardening release (tag `v14.1.0` on `main`) |
+| **Previous version** | v14.0.0 (tag `v14.0.0` = `39681c4`), released 2026-09-28 |
+| **Last completed sprint** | **Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting** (v14.0.0) |
+| **Readiness gate** | All 40 items of the Sprint 15 Readiness Gate are closed (P1 4/4, P2 26/26, P3 10/10) — see the next section |
+| **Next sprint** | **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (not started) |
+| **Start condition** | Sprint 15 may start once every P1 item of the Sprint 15 Readiness Gate (2026-09-29 audit) is closed, which happens with the v14.1.0 release (the hardening merged to `main` through a green CI run and tagged `v14.1.0`), and a readiness re-audit of `v14.1.0` confirms it. |
 | **Sequence** | Sprint 15 (Stabilization) → Sprint 16 (AI Provider Abstraction & React Readiness) → Sprint 17 (React Migration) — see ROADMAP.md |
 
 AnalystGPT Enterprise is an enterprise-grade analytics pipeline (Upload →
@@ -39,7 +39,7 @@ Streamlit Frontend → **Enterprise Identity & Multi-User Platform**), built as 
 software engineering exercise to develop production-level architecture, testing, and
 delivery skills.
 
-Sprint 14 delivered the **Enterprise Stabilization & Governance Platform**:
+Sprint 14 (**Enterprise Stabilization, Data Governance & Grounded Reporting**, v14.0.0) delivered:
 
 - Asynchronous AI job lifecycle (`PENDING` → `GENERATING` → `READY` / `FAILED`) with non-blocking background workers and a database-backed state machine (`ai_jobs`, `ai_reports`)
 - Transparent data cleaning governance (`src/governance/`, `DatasetVersionRepository`, `CleaningExecutionRepository`) over an immutable artifact store (`src/storage/`)
@@ -47,7 +47,7 @@ Sprint 14 delivered the **Enterprise Stabilization & Governance Platform**:
 - Publication-grade reporting (`PdfReportExporter`, `TextReportExporter`) with empirical distribution charts, executive KPI summaries, and data lineage cards
 - Evidence-grounded AI serialization in `ReportSerializer` and `PromptBuilder`, strictly distinguishing distinct category cardinality from percentage frequencies
 - A single `/api` route convention — the unprefixed `/reports/*` and `/powerbi/*` aliases were removed (**breaking**; see CHANGELOG.md)
-- Frozen OpenAPI 3.1 contract (`docs/api/openapi.json`, 33 paths at v14.0.0; **34** after the pre-Sprint-15 hardening) and a technology-neutral frontend service layer preparing for the React migration (`docs/api/REACT_MIGRATION_MAPPING.md`)
+- Frozen OpenAPI 3.1 contract (`docs/api/openapi.json`, 33 paths at v14.0.0; **46** at v14.1.0, diff-checked in CI) and a technology-neutral frontend service layer preparing for the React migration (`docs/api/REACT_MIGRATION_MAPPING.md`)
 - Full formatter coverage: `black` and `isort` now check all of `src/` and `tests/`
 
 All backend and frontend contracts other than the removed unprefixed aliases remain
@@ -56,11 +56,99 @@ deliberately (see below).
 
 ---
 
-# Pre-Sprint-15 Hardening — Status (branch `pre-sprint-15-hardening`)
+# Sprint 15 Readiness Gate — Status at v14.1.0 (authoritative)
 
-> Branched from `sprint-15-stabilization` @ `b841b52` (the v14.0.0 baseline). **Not merged,
-> not released, not pushed.** Outcome: **READY FOR RE-AUDIT** — this is not a declaration
-> that Sprint 15 may start; a fresh security/readiness audit decides that.
+> This section is the current state. The *History* sections after it record how the branch
+> got here; the counts inside them are dated and are not current.
+
+**Start condition (identical in ROADMAP.md and PROJECT_JOURNAL.md):** Sprint 15 may start once every P1 item of the Sprint 15 Readiness Gate (2026-09-29 audit) is closed, which happens with the v14.1.0 release (the hardening merged to `main` through a green CI run and tagged `v14.1.0`), and a readiness re-audit of `v14.1.0` confirms it.
+
+## Headline numbers (measured 2026-10-14)
+
+| Measure | Value |
+|---|---|
+| Default test suite | **1,242 collected; 1,241 passed, 1 skipped, 0 failed**; 16 live-Ollama `integration` tests deselected (`pytest -m integration`); the 6 PostgreSQL `integration` tests also need `TEST_POSTGRES_*` |
+| Coverage | **88.4%** of `src/` + `main.py`; CI fails below 85% |
+| Live Ollama (`pytest -m integration`, gemma3:4b) | 16 passed (19m41s; end-to-end job READY after 374 s) — `docs/verification/live_ollama_run_2026-10-14.log` |
+| PostgreSQL 16 integration | schema (4) and concurrency (2) tests; run by the `postgres` CI job |
+| API contract | **46 paths, 49 operations, 51 schemas** (`docs/api/openapi.json`; CI diffs the whole document) |
+| Database | **16 tables**, `SCHEMA_VERSION` 15 (ADR-035) |
+| CI | **7 jobs**: quality, security, test, postgres, docker-build, compose-validation, compose-integration |
+| Static gates | flake8 0 · black / isort clean · mypy clean · vulture (dead code) clean · bandit 0 HIGH, **57** MEDIUM B608 reviewed as false positives (count gated in CI) · pip-audit of the lock: no known vulnerabilities |
+
+## Register (40 items)
+
+Per-item notes, evidence and commit links are kept in the Sprint 15 Readiness Gate checklist
+artifact; release notes are in CHANGELOG.md under 14.1.0.
+
+| ID | Finding | Closed by |
+|----|---------|-----------|
+| P1-01 | Integrate the hardening baseline into main | release (see CHANGELOG 14.1.0) |
+| P1-02 | Rate limiting treats every Streamlit user as one client | `5d63318` |
+| P1-03 | Gate documents disagree on whether Sprint 15 may start | docs (this release) |
+| P1-04 | Write ADRs for the hardening's architectural decisions | ADR-029 – ADR-035 |
+| P2-01 | Manual AI retry never runs the job again | `4df68e2` |
+| P2-02 | Interrupted AI jobs are never resumed, and there is no cancel | `4df68e2` |
+| P2-03 | Export by id can return a different report | `770e616` |
+| P2-04 | Cleaning policy selection is ignored; approval is missing | `a0ebe17` |
+| P2-05 | Backend logic in Streamlit; export fallback skips API authorization | `920dac6` |
+| P2-06 | Opening the dashboard runs the pipeline | `920dac6` |
+| P2-07 | The file is re-uploaded on every rerun, and the limits disagree | `920dac6` |
+| P2-08 | Error handling and copy in the Streamlit UI | `920dac6` |
+| P2-09 | Login timing reveals which usernames exist | `c0e1b16` |
+| P2-10 | Synchronous work blocks the event loop | `c0e1b16` |
+| P2-11 | Anyone can lock any account, and limits are per process | `5d63318` |
+| P2-12 | Chunked uploads bypass the size check | `3b19f63`, `c0e1b16` |
+| P2-13 | Raw exception text still reaches clients | `4df68e2` |
+| P2-14 | Gaps in user-data purge, audit and erasure | `7442dd8` |
+| P2-15 | PII detection looks at column names only | `4bc3cfa` |
+| P2-16 | PostgreSQL: DDL on every session, no migrations, concurrency untested | `4240552` |
+| P2-17 | Compose AI settings are too low | `c0e1b16` |
+| P2-18 | .env.example ships the published development key | `a71cc7f` |
+| P2-19 | python-multipart is not declared | `c0e1b16` |
+| P2-20 | AIJobService leaks database connections | `4df68e2` |
+| P2-21 | Blind spots in the test suite | `f1abcb7` |
+| P2-22 | Remove dead code | `7fcd1e5` |
+| P2-23 | Full documentation reconciliation | docs (this release) |
+| P2-24 | Live Ollama generation is unverified | live run log (this release) |
+| P2-25 | Gaps in the Admin UI | `920dac6` |
+| P2-26 | The CLI entry point needs argument handling | `f774de5` |
+| P3-01 | /api/powerbi/dashboard is declared twice | `c0e1b16` |
+| P3-02 | Stale remote branch sprint-15-stabilization | branch deleted |
+| P3-03 | Docs refer to files that don't exist | docs (this release) |
+| P3-04 | bandit B608 count drifted from 44 to 47 | CI B608 count gate (this release) |
+| P3-05 | Unauthenticated status endpoint; nbf/iat not checked | `2e1561c` |
+| P3-06 | Login usernames can inject log lines | `20154f3` |
+| P3-07 | The local analystgpt.db holds personal data | operator note (below) |
+| P3-08 | Stale governance documents | docs (this release) |
+| P3-09 | Leftover export and report files | `0938f89` |
+| P3-10 | Starlette TestClient deprecation warning | `ab47f55` |
+
+## Accepted risks and operator actions (carried into Sprint 15)
+
+- **One API worker.** Lockout counters are in the database (`login_failures`), but the
+  per-client rate limiter and the last-admin lock are per process. Run one uvicorn worker
+  (the image does) until they move to a shared store.
+- **L3:** the registration 409 still lets a caller learn that an account exists (generic
+  message, rate-limited); kept for usability.
+- **P3-07 / I13, local data.** The git-ignored `analystgpt.db` and `data/artifacts/` on the
+  development machine hold real user data: never copy or ship them; use
+  `sample_data/` and `.env.development.example` for local work. The five synthetic audit
+  rows the audit probe wrote were deleted (X1).
+- **I11, rotation.** Deployments that ran v14.0.0 or earlier with their defaults must rotate
+  `AUTH_SECRET_KEY` and the database password (ADR-030).
+- **Live Ollama is not run in CI** (the model does not fit a hosted runner); the live evidence
+  is the recorded run above, reproducible from a clean clone.
+
+---
+
+# History — Pre-Sprint-15 hardening passes (dated; superseded by the section above)
+
+## First pass — blocker fixes (branch `pre-sprint-15-hardening`)
+
+> Branched from `sprint-15-stabilization` @ `b841b52` (the v14.0.0 baseline). *(Dated
+> 2026-09-28. At the time: not merged, not pushed, "ready for re-audit". The branch was
+> released as v14.1.0; the start condition is the one stated above.)*
 >
 > **Evidence vocabulary (used below and for all new claims):**
 > **IMPLEMENTED** (code exists) · **TESTED** (automated tests exercise it) · **VERIFIED**
@@ -68,7 +156,7 @@ deliberately (see below).
 > **RELEASED** (tagged and merged) · **PLANNED** · **PARTIALLY IMPLEMENTED** · **BROKEN** ·
 > **UNKNOWN** (not verified; no claim is made).
 
-## Blockers
+### Blockers
 
 Every row below was first **reproduced** on `b841b52`, then fixed, then re-probed.
 
@@ -82,7 +170,7 @@ Every row below was first **reproduced** on `b841b52`, then fixed, then re-probe
 | B-03 / SEC-06 | Concurrent pipeline requests shared one `PersistenceManager` + SQLite connection: FK/UNIQUE violations, cross-run ids, API process crashed with `0xC0000005` | **VERIFIED (SQLite)** — 4 fresh server processes × 3 rounds (8–16 concurrent, 2 users): all PASS, integrity/FK/ownership clean | `tests/application/test_concurrent_pipeline_isolation.py` |
 | B-06 | PostgreSQL schema init: fresh DB → `relation "users" does not exist`, 0 of 11 tables, never recovers | **VERIFIED** against real PostgreSQL 16.15 (throwaway container): fresh init, idempotent re-run, injected mid-way failure → zero tables → clean retry, legacy migration; full API flow (upload → pipeline → dashboard) succeeded | `tests/database/test_schema_manager_migrations.py`, `tests/integration/test_postgresql_schema.py` (`-m integration`, needs `TEST_POSTGRES_*`) |
 
-## Contract changes (breaking for API clients)
+### Contract changes (breaking for API clients)
 
 - **New** `POST /api/datasets` (multipart, field `file`) → `dataset_version_id`. Type allow-list
   (`.csv .xlsx .xls .json`) and size limit (`MAX_FILE_SIZE_MB`, default 500) are enforced
@@ -94,25 +182,27 @@ Every row below was first **reproduced** on `b841b52`, then fixed, then re-probe
 - `DatasetVersionResponse.storage_path` **removed**; `output_path` / `export_path` are bare
   file names.
 - `POST /api/auth/register` rejects `role` (and any unknown field) with 422; self-registered
-  accounts are ANALYST. The first ADMIN is created with `scripts/create_admin.py`.
+  accounts are ANALYST *(VIEWER since the third pass, M10)*. The first ADMIN is created with
+  `scripts/create_admin.py`.
 - Unset `APP_ENVIRONMENT` now means **production**. Local development must set
-  `APP_ENVIRONMENT=development` explicitly (`.env.example` does).
-- OpenAPI contract: **34 paths, 43 schemas** (`docs/api/openapi.json`).
+  `APP_ENVIRONMENT=development` explicitly *(since v14.1.0: `.env.development.example`;
+  `.env.example` is a production template, P2-18)*.
+- OpenAPI contract at the time: 34 paths, 43 schemas *(46 / 51 at v14.1.0)*.
 
-## Corrections to earlier claims in this repository
+### Corrections to earlier claims in this repository
 
 | Earlier claim | Evidence | Corrected status |
 |---------------|----------|------------------|
-| "Selected [cleaning] policy is persisted with the pipeline run" | The Streamlit policy selector writes `st.session_state.selected_cleaning_policy` only; `Application` always uses `create_default_config()` (DROP_ROWS). The selection never reaches the backend. | **BROKEN** (selection) / **PARTIALLY IMPLEMENTED** (config *is* persisted, but it is always the default) — Sprint 15 |
-| "Streamlit views are presentation-only" | `views/upload_page.py` runs `DataProfiler`, `CleaningGovernanceService.recommend_dataset_policy` and `CleaningPreviewService.preview` in the frontend process | **Not true** — backend logic remains in the frontend; Sprint 15 |
+| "Selected [cleaning] policy is persisted with the pipeline run" | The Streamlit policy selector writes `st.session_state.selected_cleaning_policy` only; `Application` always uses `create_default_config()` (DROP_ROWS). The selection never reaches the backend. | Was **BROKEN**; **VERIFIED fixed** in v14.1.0 (P2-04, ADR-034) |
+| "Streamlit views are presentation-only" | `views/upload_page.py` runs `DataProfiler`, `CleaningGovernanceService.recommend_dataset_policy` and `CleaningPreviewService.preview` in the frontend process | Was **not true**; **true since v14.1.0** (P2-05: the frontend calls only the API, enforced by an import test) |
 | "Cross-user data isolation / IDOR prevention verified" (Sprint 13) | B-02 (arbitrary file read) and B-03 (cross-run/user ids under concurrency) contradicted it | Fixed here for the paths above; **UNKNOWN** beyond them until re-audit |
 | Maturity table "Production Ready" (Backend, Database, REST API, Deployment, Identity, AI, Async AI) | Each was contradicted by at least one blocker above | Replaced with evidence-based ratings (below) |
 | "Deployment … Production Ready (Docker & CI)" | CI's compose job checked health endpoints only; PostgreSQL schema init could never succeed (B-06) | Schema init **VERIFIED** on PostgreSQL; full `docker compose up` stack **UNKNOWN** (not executed in this phase) |
 | "Performance Validation ✅ Completed" | Benchmarks in `performance/` are single-request; concurrent execution crashed the process until B-03 | **PARTIALLY IMPLEMENTED** — no concurrency/load validation exists |
-| "100% test coverage" (one CHANGELOG entry) | CI does not measure coverage. One measurement during the hardening (`coverage run --source=src -m pytest`): **81%** of `src/` statements (9,321 / 1,815 missed); several frontend components and `src/ai/insight_engine.py` are at 0% | **Not true** — 81% measured once; not tracked in CI |
+| "100% test coverage" (one CHANGELOG entry) | CI does not measure coverage. One measurement during the hardening (`coverage run --source=src -m pytest`): **81%** of `src/` statements (9,321 / 1,815 missed); several frontend components and `src/ai/insight_engine.py` are at 0% | Was **not true**; coverage is now measured and gated in CI (P2-21) |
 | "Sprint 14 … release (tag + merge) is pending" (Current Focus) | Tag `v14.0.0` exists and `main` = `39681c4` | **RELEASED** (v14.0.0); the "pending" line was stale |
 
-## Verification record (final code on `pre-sprint-15-hardening`)
+### Verification record (first pass, 2026-09-28)
 
 - Full suite: **870 passed, 1 skipped, 15 deselected, 0 failed** (baseline `b841b52`: 714
   passed, 15 deselected). The skip is the PostgreSQL integration module without
@@ -120,7 +210,7 @@ Every row below was first **reproduced** on `b841b52`, then fixed, then re-probe
   not evidence on its own — each blocker was reproduced first and re-probed after the fix.
 - Static gates: flake8 (fatal + full) 0, black and isort clean (352 files), mypy clean (213
   source files). `docker compose config` refuses to render without `AUTH_SECRET_KEY`.
-- Security tooling: bandit 1.9.4 — 0 HIGH; 44 MEDIUM B608 reviewed as false positives (only
+- Security tooling: bandit 1.9.4 — 0 HIGH; 44 MEDIUM B608 reviewed at the time (57 at v14.1.0) as false positives (only
   table-name constants / enum values are interpolated, values are bound parameters); B104
   (`API_HOST` default `0.0.0.0`, intended for containers). pip-audit 2.10.1 — only the venv's
   bundled `setuptools 65.5.0` (4 advisories, fixed ≥ 83.0.0; not a `requirements.txt`
@@ -170,7 +260,7 @@ A read-only go/no-go audit at `44965fc` found 0 critical, 0 high, 12 medium, 19 
 informational items (plus one cleanup task). Every item was fixed, or closed with a recorded
 reason, in 14 commits `20154f3` … `742f7d0`. Live per-item status, notes and commit hashes are
 kept in the audit checklist artifact. Final state: **1144 passed, 1 skipped, 15 deselected, 0 failed** (was 959); flake8 / black / isort / mypy
-clean; bandit 0 HIGH (49 MEDIUM B608 reviewed: constants only); pip-audit of the lock: no known
+clean; bandit 0 HIGH (49 MEDIUM B608 reviewed at the time: constants only); pip-audit of the lock: no known
 vulnerabilities; gitleaks over the 14 new commits: no leaks.
 
 | ID | Finding | Status | Commit | Regression tests |
@@ -225,7 +315,7 @@ Contract changes from this pass:
 - **I13, local data.** The git-ignored `analystgpt.db` (224 users with emails and password hashes) and `data/artifacts/` (738 uploaded-data files) on the development machine are real data: keep them out of shared drives and backups, and prefer synthetic data for local work.
 - **Not verified here:** the Docker daemon was unavailable, so no image was built, Trivy was not run against the images, and the app-role script and `docker compose up` were not exercised; the CI workflow has not run (not pushed); browser rendering and live-model behaviour (M9) were not tested.
 
-## Remaining work / not verified
+## Remaining work / not verified *(as of 2026-09-30 — every item below is closed by the Readiness Gate register above)*
 
 - **Sprint 15 scope (unchanged):** governance policy selection end-to-end (selection → API →
   execution → provenance), moving profiling/preview out of Streamlit, dashboard IA, admin UI
@@ -269,10 +359,10 @@ repository.**
 
 ---
 
-## Executed Validation — authoritative
+## Executed Validation at v14.0.0 (historical)
 
-This is the single authoritative figure for the current baseline. Every other total in this
-repository is historical and is scoped as such below.
+These were the authoritative figures for the **v14.0.0** baseline. The current figures are in
+*Sprint 15 Readiness Gate — Status at v14.1.0* at the top of this document.
 
 **Command:** `pytest -q` (project virtualenv, Python 3.11, Windows)
 
@@ -323,7 +413,7 @@ These figures appear in older documents. None of them describes the current base
 
 | Number | Scope |
 |---|---|
-| **714** | **Current.** Passing tests at v14.0.0. |
+| **714** | Passing tests at v14.0.0. |
 | **535 / 529** | Historical Sprint 14 in-flight totals, recorded before the suite was completed and before the `integration` marker existed. |
 | **531** | Historical claim from the Sprint 14 closure entry. Never reconciled; superseded. |
 | **329** | Historical **Sprint 13** total. |
@@ -350,8 +440,11 @@ several documents in this repository referred to them as outstanding.
 
 ## Known Technical Debt
 
-Verified against the current repository. None of these blocks the v14.0.0 release; all are
-in scope for Sprint 15 (or Sprint 16 where noted), per ROADMAP.md.
+Recorded at v14.0.0. **Status at v14.1.0:** the OpenAPI freeze is now enforced by a full
+schema diff (P2-21); the compose AI defaults match `config.py` (P2-17); the Admin UI covers the
+admin API (P2-25); the governance workflow is proven end to end (P2-04); the Dashboard is
+read-only and tied to its dataset (P2-06). The remaining items stand and are Sprint 15 (or
+Sprint 16 where noted) scope.
 
 - **Relaxed lint and type configuration.** `.flake8` sets `extend-ignore = E203, W503, E302,
   E303, E304, E305, W292, W293, W391, E501, F401, F541`; `[tool.mypy]` sets
@@ -397,12 +490,12 @@ in scope for Sprint 15 (or Sprint 16 where noted), per ROADMAP.md.
 | Area | Status |
 |------|--------|
 | Project | AnalystGPT Enterprise |
-| Version | **v14.0.0** (released 2026-09-28) |
-| Repository Status | ✅ Sprint 14 released — all 7 phases, 714 / 714 tests passing, all four static gates passing |
-| Current Sprint | ✅ **Sprint 14 — Stabilization / Production Hardening (released as v14.0.0)**; Sprint 15 next |
+| Version | **v14.1.0** (pre-Sprint-15 hardening release) |
+| Repository Status | ✅ Readiness gate closed (40/40) — 1,241 tests passing, 0 failed; all static gates passing |
+| Current Sprint | Between sprints: Sprint 14 released (v14.0.0); hardening released (v14.1.0); Sprint 15 next |
 | Current Focus | **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** |
 | Architecture | ✅ Enterprise Layered Architecture + REST API + Streamlit Frontend + AI Insight Engine + Docker Containerization + GitHub Actions CI + Enterprise Identity & Authentication Engine + Resource Ownership & Data Isolation + Declarative RBAC & Admin Management + Frontend Authentication & Session Isolation + Stabilized Frontend UX + Asynchronous AI Job Lifecycle & Persistent Background Worker + Semantic Data Profiling & Visual Analytics + Data Cleaning Governance + Publication-Grade PDF/TXT Exporters |
-| Documentation | 🟡 Reconciled with ROADMAP.md; ARCHITECTURE.md, ADR-028 and REACT_MIGRATION_MAPPING.md pending Sprint 15 Phase 8 |
+| Documentation | ✅ Reconciled with the code at v14.1.0 (P1-03, P2-23); ADR-029 – ADR-035 record the hardening decisions |
 | Frontend UX Stabilization | ✅ Implemented (Sprint 14 Phase 1 Accepted) |
 | Scroll Reset & Layout Hierarchy | ✅ Implemented (Sprint 14 Phase 1 Accepted) |
 | Dedicated AI Insights Page | ✅ Implemented (Sprint 14 Phase 1 Accepted) |
@@ -413,7 +506,7 @@ in scope for Sprint 15 (or Sprint 16 where noted), per ROADMAP.md.
 | Background AI Worker & Retry Isolation | ✅ Implemented (Sprint 14 Phase 2 Accepted) |
 | Database Repositories (ai_jobs, ai_reports)| ✅ Implemented (Sprint 14 Phase 2 Accepted) |
 | AI REST Endpoints & Status Polling | ✅ Implemented (Sprint 14 Phase 2 Accepted) |
-| Data Cleaning Governance & Lineage | 🟡 Implemented & tested (Sprint 14 Phase 3); end-to-end workflow needs remediation — Sprint 15 |
+| Data Cleaning Governance & Lineage | ✅ Implemented, tested; policy proposal → approval → execution → lineage verified end to end (v14.1.0) |
 | AI Data Context & Grounding Integrity | ✅ Implemented (Sprint 14 Phase 4 Accepted) |
 | Reporting & PDF/TXT Exporter Redesign | ✅ Implemented (Sprint 14 Phase 5 Accepted) |
 | OpenAPI 3.1 & React Migration Readiness| ✅ Initial foundation implemented (Sprint 14 Phase 6); final readiness gate is Sprint 16 |
@@ -433,11 +526,11 @@ in scope for Sprint 15 (or Sprint 16 where noted), per ROADMAP.md.
 | IDOR Prevention & Query Scoping | ✅ Complete (Sprint 13 Phase 3) |
 | Multi-User Application Caching | ✅ Complete (Sprint 13 Phase 3) |
 | Declarative RBAC Dependencies | ✅ Complete (Sprint 13 Phase 4) |
-| Admin User Management API | ✅ Implemented & tested (Sprint 13 Phase 4); delete endpoint not exposed in UI — Sprint 15 |
-| Structured Security Audit Trail | ✅ Complete (Sprint 13 Phase 4) |
+| Admin User Management API | ✅ Implemented & tested; atomic hard delete (ADR-033), unlock, audit log and chain verify |
+| Structured Security Audit Trail | ✅ Durable, hash-chained, with retention (ADR-032) |
 | Frontend Authentication UI | ✅ Complete (Sprint 13 Phase 5) |
 | Frontend Session & Tenant Isolation | ✅ Complete (Sprint 13 Phase 5) |
-| Role-Aware Navigation & Admin UI | 🟡 Implemented (Sprint 13 Phase 5); Admin UI lacks user deletion — Sprint 15 |
+| Role-Aware Navigation & Admin UI | ✅ Implemented; Admin UI covers roles, status, delete, unlock and the audit log (P2-25) |
 | Upload Module | ✅ Complete |
 | Cleaning Module | ✅ Complete |
 | Quality Module | ✅ Complete |
@@ -446,7 +539,7 @@ in scope for Sprint 15 (or Sprint 16 where noted), per ROADMAP.md.
 | Application Layer | ✅ Complete |
 | Database Abstraction Layer | ✅ Complete |
 | SQLite Support | ✅ Complete |
-| PostgreSQL Integration | ✅ Implemented |
+| PostgreSQL Integration | ✅ Implemented; schema and concurrency tested against PostgreSQL 16 in CI |
 | Repository Layer | ✅ Complete |
 | API Layer | ✅ Complete |
 | REST API | ✅ Complete |
@@ -455,7 +548,7 @@ in scope for Sprint 15 (or Sprint 16 where noted), per ROADMAP.md.
 | Power BI Integration | ✅ Complete |
 | Dashboard Service | ✅ Complete |
 | Dashboard Models | ✅ Complete |
-| Streamlit Frontend | 🟡 Implemented & tested; defect/UX remediation pending Sprint 15 |
+| Streamlit Frontend | ✅ API-only, AppTest-covered per page; product/UX remediation is Sprint 15 scope |
 | Dashboard View | 🟡 Implemented; product value/information architecture needs remediation — Sprint 15 |
 | Upload Interface | ✅ Complete |
 | Reports Centre | ✅ Complete (Session Cached) |
@@ -471,15 +564,15 @@ in scope for Sprint 15 (or Sprint 16 where noted), per ROADMAP.md.
 | Docker Compose Topology | ✅ Complete (Sprint 12 Phase 4) |
 | GitHub Actions CI Pipeline | ✅ Complete (Sprint 12 Phase 5) |
 | Deployment Architecture & ADRs | ✅ Complete (Sprint 12 Phase 6) |
-| Automated Testing | ✅ **714 / 714 passing.** 729 collected, 714 passed, 0 failed, 15 deselected (`integration`), 0 errors — see *Executed Validation* |
-| Static Analysis | ✅ flake8 0 · black clean (341 files) · isort clean · mypy clean (210 files) |
+| Automated Testing | ✅ **1,241 passed, 1 skipped, 0 failed** of 1,242 collected; 16 `integration` deselected; coverage 88.4% (gate 85%) |
+| Static Analysis | ✅ flake8 0 · black / isort clean · mypy clean · vulture clean · bandit 0 HIGH (57 B608 reviewed) |
 | Integration Testing | ✅ Passed |
 | Frontend Validation | ✅ Passed |
 | Large Dataset Validation | ✅ Passed |
 | Stress Testing | ✅ Passed |
-| AI Pipeline Validation | ✅ Passed (Ollama gemma3:4b verified) |
+| AI Pipeline Validation | ✅ Live run recorded 2026-10-14 (gemma3:4b): `docs/verification/live_ollama_run_2026-10-14.log` |
 | Technical Debt | 🟡 Not verified as low — itemised under *Known Technical Debt*; audit in Sprint 15 |
-| Next Sprint | **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (planned, not started) |
+| Next Sprint | **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (not started; start condition at the top) |
 
 ---
 
@@ -710,14 +803,13 @@ src/
 │
 ├── governance/                  # Cleaning governance, policies, lineage
 │   ├── governance_service.py, preview_service.py, policies.py,
+│   ├── policy_approval.py       # proposals: propose / modify / approve / reject (ADR-034)
 │   └── custom_registry.py, models.py
 ├── storage/                     # Immutable artifact store (raw bytes + cleaned parquet)
 │
 ├── ai/                          # AI Insight Engine + asynchronous job lifecycle
 │   ├── ai_manager.py, ai_report.py, ai_result.py, unified_report_engine.py
-│   ├── executive_summary_engine.py, recommendation_engine.py,
-│   ├── explanation_engine.py, narrative_engine.py
-│   ├── confidence_evaluator.py, insight_engine.py, insight_validator.py
+│   ├── confidence_evaluator.py, insight_validator.py
 │   ├── models.py                # AIJob, AIJobStatus, AIFailureCategory
 │   ├── job_executor.py          # AIJobExecutor (ThreadPoolExecutor worker)
 │   ├── ai_job_service.py
@@ -733,7 +825,8 @@ src/
 │   ├── permissions.py           # Permission enum + ROLE_PERMISSIONS matrix
 │   ├── password_hasher.py       # PBKDF2-HMAC-SHA256, 600,000 iterations
 │   ├── token_service.py         # HMAC-SHA256 signed tokens (HS256)
-│   ├── token_revocation.py, user_service.py, audit.py
+│   ├── token_revocation.py, user_service.py, audit.py, audit_store.py (hash chain)
+│   ├── login_throttle.py, login_throttle_store.py, common_passwords
 │   ├── interfaces.py, in_memory_user_repository.py
 │   ├── context.py               # UserContext
 │   └── exceptions.py
@@ -747,7 +840,7 @@ src/
 │   ├── dependencies/            # application_dependency, auth_dependencies
 │   └── exceptions/              # exception_handlers
 │
-├── persistence/                 # PersistenceManager + result/report contracts
+├── persistence/                 # PersistenceManager, user_data_purge, dataset_delete
 ├── database/                    # Database Abstraction Layer
 │   ├── database_connection.py, sqlite_connection.py, postgresql_connection.py
 │   ├── connection_factory.py, database_manager.py, schema_manager.py
@@ -764,37 +857,43 @@ src/
     ├── streamlit_app.py
     ├── views/                   # dashboard, upload, report, ai_insights,
     │                            # admin, about, login
-    ├── components/              # 22 components (views are NOT all presentation-only:
-    │                            #   upload_page runs profiling/governance in-process)
+    ├── components/              # presentation components; the frontend calls the
+    │                            #   backend only over HTTP (P2-05, import-guarded)
     ├── services/                # api_client, auth, dashboard, report, ai,
     │                            # upload, admin, session_manager
-    ├── config/settings.py
-    └── theme/                   # colours, icons, shadows, spacing, typography
+    ├── pages.py                 # page registry
+    └── config/settings.py
 ```
 
 ## Database schema
 
-`src/database/schema_manager.py` creates 11 tables across both SQLite and PostgreSQL:
+`src/database/schema_manager.py` creates 16 tables across both SQLite and PostgreSQL, and
+records the applied version in `schema_version` (ADR-035):
 
 `users` · `pipeline_runs` · `datasets` · `quality_reports` · `analytics_reports` ·
 `reports` · `ai_jobs` · `ai_reports` · `dataset_versions` · `cleaning_configs` ·
-`cleaning_executions`
+`cleaning_executions` · `cleaning_policy_proposals` · `revoked_tokens` · `audit_events` ·
+`login_failures` · `schema_version`
 
 Ownership indexes on `user_id` back the server-side scoping that prevents IDOR.
 
 ## Repository root
 
 ```
-main.py                  CLI entry point (batch pipeline execution)
-requirements.txt         Runtime + tooling dependencies
+main.py                  CLI: python main.py --owner <user> <dataset> (see --help)
+requirements.txt         Runtime dependencies (requirements.lock: hashed pins)
+requirements-dev.txt     Test and lint tooling
 pyproject.toml           black / isort / mypy / pytest configuration
 Dockerfile               Multi-stage: base, builder, runtime-base, api, frontend, cli
 docker-compose.yml       postgres + api + frontend on analystgpt_network
-.env.example             Environment template
+.env.example             Deployment template (production; the API refuses its placeholder key)
+.env.development.example Local development overrides
 .flake8                  Lint configuration
-.github/workflows/ci.yml 5-job CI pipeline
-scripts/                 lint.ps1, run_tests.ps1, gemma_benchmark.py
-tests/                   118 test modules
+vulture_whitelist.py     Names only frameworks reach (dead-code gate)
+.github/workflows/ci.yml 7-job CI pipeline
+scripts/                 export_openapi.py, build_requirements_lock.py, make_live_sample.py,
+                         purge_ownerless_data.py, create_admin.py, lint.ps1, run_tests.ps1, ...
+tests/                   unit, API, AppTest, integration (live Ollama, PostgreSQL) suites
 performance/             Benchmarks and stress tests
 docs/                    ADRs, API, deployment, engineering, project, sprints
 ```
@@ -807,9 +906,9 @@ docs/                    ADRs, API, deployment, engineering, project, sprints
 
 All modules and layers are covered by an automated test suite.
 
-**Status:** ✅ **714 / 714 passing** across **118 test modules**, plus 15 `integration`-marked
-tests deselected by default and run with `pytest -m integration`. See *Executed Validation*
-for the full accounting.
+**Status:** ✅ **1,241 passed, 1 skipped, 0 failed** (1,242 collected), plus
+16 `integration`-marked tests deselected by default and run with
+`pytest -m integration`. Coverage 88.4%, gated at 85% in CI.
 The figure of *180 tests* shown in ARCHITECTURE.md is the Sprint 11 total and is scoped as
 such there.
 (Per‑component breakdown: see ARCHITECTURE.md → Testing Strategy)
@@ -865,8 +964,11 @@ REST API
 - All AI engines integrate with the reporting pipeline
 - End‑to‑end AI enrichment executes without errors
 - LLM client (Ollama) responds within acceptable latency
+- **Live end to end (v14.1.0):** upload → pipeline → background AI job → gemma3:4b → READY →
+  PDF export through the real API, on the tracked synthetic dataset
+  `sample_data/support_tickets.xlsx` (`tests/integration/test_live_ollama_pipeline.py`)
 
-**Status:** ✅ Passed
+**Status:** ✅ Passed — 16 passed (19m41s; end-to-end job READY after 374 s) (`docs/verification/live_ollama_run_2026-10-14.log`)
 
 ---
 
@@ -928,7 +1030,8 @@ Quick‑scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 | 11 | AI Insight Engine, Local LLM Architecture, Ollama Integration, LLM Abstraction, Executive Summary, Recommendation, Explanation and Narrative Engines, PipelineReport, AIResult, Prompt Builder, Response Parser |
 | 12 | Production Deployment, Multi-Stage Dockerfile (`api`, `frontend`, `cli`), Docker Compose Topology, Bounded Rotating File Logging, GitHub Actions 5-Job CI Pipeline, ADR-022, ADR-023, Deployment Guide |
 | 13 | Enterprise Identity & Multi-User Platform, Domain Models, PBKDF2 Password Hasher, Signed TokenService, TokenRevocationService, UserService, UserRepository, Server-Side Data Isolation & IDOR Defense, Declarative RBAC, Admin Management API & UI, Streamlit Auth & Session Isolation, Audit Trail, ADR-024, 329 Automated Tests |
-| 14 | Stabilization / Production Hardening: Asynchronous AI Job Lifecycle (`ai_jobs`, `ai_reports`, `AIJobExecutor`), Data Cleaning Governance & Lineage (`src/governance/`, `src/storage/`, `dataset_versions`, `cleaning_configs`, `cleaning_executions`), Semantic Profiling (`src/profiling/`) & VisualizationPlanner, Publication-Grade PDF/TXT Exporters, AI Grounding & Cardinality Remediation, OpenAPI 3.1 Contract Freeze (33 paths) & React Migration Blueprint, single `/api` route convention (breaking), full formatter coverage, ADR-025 – ADR-028, 714 Automated Tests |
+| 14 | Enterprise Stabilization, Data Governance & Grounded Reporting: Asynchronous AI Job Lifecycle (`ai_jobs`, `ai_reports`, `AIJobExecutor`), Data Cleaning Governance & Lineage (`src/governance/`, `src/storage/`, `dataset_versions`, `cleaning_configs`, `cleaning_executions`), Semantic Profiling (`src/profiling/`) & VisualizationPlanner, Publication-Grade PDF/TXT Exporters, AI Grounding & Cardinality Remediation, OpenAPI 3.1 Contract Freeze (33 paths) & React Migration Blueprint, single `/api` route convention (breaking), full formatter coverage, ADR-025 – ADR-028, 714 Automated Tests |
+| 14.1 (hardening) | Pre-Sprint-15 security, stability and readiness-gate fixes (three audit passes plus the 40-item gate): managed upload API, fail-closed configuration, token revocation, durable hash-chained audit, atomic user deletion, policy approval, PII masking, schema versioning, API-only frontend, PostgreSQL and coverage CI gates, ADR-029 – ADR-035 |
 
 ---
 
@@ -945,7 +1048,6 @@ Quick‑scan history — full detail in PROJECT_JOURNAL.md and CHANGELOG.md.
 - PostgreSQL
 - psycopg 3
 - Streamlit
-- Plotly
 - **Ollama**
 - **`gemma3:4b`** — the configured default (`src/core/config.py` `OLLAMA_MODEL`,
   `.env.example`), and the model used for Sprint 14 live E2E validation. Earlier revisions of
@@ -972,7 +1074,7 @@ The following documents define repository standards and engineering policies:
 | CODE_REVIEW_CHECKLIST.md | Review standards |
 | DEFINITION_OF_DONE.md | Completion criteria |
 | DOCUMENTATION_STANDARDS.md | Documentation conventions |
-| ADR/ | Architecture decision history |
+| docs/adr/ | Architecture decision history |
 
 ---
 
@@ -985,7 +1087,7 @@ The following documents define repository standards and engineering policies:
 | ROADMAP.md | Future development |
 | PROJECT_JOURNAL.md | Engineering history |
 | CHANGELOG.md | Version history |
-| ADR/ | Architecture decisions |
+| docs/adr/ | Architecture decisions |
 
 ---
 
@@ -1001,20 +1103,20 @@ The following documents define repository standards and engineering policies:
 | Area | Status |
 |------|--------|
 | Architecture | IMPLEMENTED — layered; per-request persistence introduced in hardening (B-03) |
-| Backend pipeline | IMPLEMENTED, TESTED; concurrent execution VERIFIED on SQLite only |
-| Frontend | PARTIALLY IMPLEMENTED (Streamlit MVP) — not presentation-only; remediation Sprint 15 |
+| Backend pipeline | IMPLEMENTED, TESTED; concurrent execution VERIFIED on SQLite and tested on PostgreSQL 16 (CI) |
+| Frontend | IMPLEMENTED, TESTED (Streamlit MVP) — presentation-only, AppTest per page; UX remediation Sprint 15 |
 | Database — SQLite | IMPLEMENTED, TESTED, VERIFIED under concurrency |
-| Database — PostgreSQL | Was BROKEN (schema init); fix VERIFIED against PostgreSQL 16; concurrency UNKNOWN |
+| Database — PostgreSQL | IMPLEMENTED, TESTED — schema, versioned migration and concurrency tests run on PostgreSQL 16 in CI |
 | REST API | IMPLEMENTED, TESTED; security boundary re-probed for B-01/B-02/B-04 |
 | Power BI Integration | IMPLEMENTED, TESTED; read-only views VERIFIED |
-| AI Layer (Local LLM) | IMPLEMENTED, TESTED; live-Ollama generation UNKNOWN in this phase |
+| AI Layer (Local LLM) | IMPLEMENTED, TESTED; live gemma3:4b run recorded (2026-10-14) |
 | Deployment (Docker & CI) | PARTIALLY IMPLEMENTED — compose config VERIFIED to require a key and set production; full stack run UNKNOWN |
 | Enterprise Identity & Multi-User | IMPLEMENTED, TESTED; B-01, B-05, SEC-04 VERIFIED fixed |
-| Data Governance & Lineage | PARTIALLY IMPLEMENTED — policy selection is not persisted (BROKEN); managed dataset ids VERIFIED |
+| Data Governance & Lineage | IMPLEMENTED, TESTED — policy proposal/approval applied and recorded in lineage (end-to-end test) |
 | Asynchronous AI Job Lifecycle | IMPLEMENTED, TESTED; not load-verified |
 | Semantic Profiling & Visual Analytics | IMPLEMENTED, TESTED |
 | Performance validation | PARTIALLY IMPLEMENTED — single-request benchmarks only |
-| Test coverage | 81% of `src/` statements, measured once during hardening; not measured in CI |
+| Test coverage | 88.4% of `src/` + `main.py`, gated at 85% in CI |
 | AI Provider Abstraction | PLANNED (Sprint 16 — Ollama + Gemini; not started) |
 | React Presentation Layer | PLANNED (Sprint 17; not started) |
 
@@ -1024,12 +1126,12 @@ The following documents define repository standards and engineering policies:
 
 Sprint 13 was completed and released as **v13.0.0**.
 
-**Sprint 14 — Stabilization / Production Hardening — is RELEASED as v14.0.0** (tag
+**Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting — is RELEASED as v14.0.0** (tag
 `v14.0.0`, `main` = `39681c4`). An earlier revision of this line still said the release was
 pending.
 
-**Pre-Sprint-15 hardening** (branch `pre-sprint-15-hardening`) closed the audit blockers
-B-01…B-06 and SEC-04 and is **READY FOR RE-AUDIT**. Sprint 15 has not started.
+**Pre-Sprint-15 hardening** closed three audit passes and all 40 items of the Sprint 15
+Readiness Gate, and is released as **v14.1.0**. Sprint 15 has not started; sprint 15 may start once every P1 item of the Sprint 15 Readiness Gate (2026-09-29 audit) is closed, which happens with the v14.1.0 release (the hardening merged to `main` through a green CI run and tagged `v14.1.0`), and a readiness re-audit of `v14.1.0` confirms it.
 
 ## Sprint 14 — delivered phases
 
@@ -1066,32 +1168,25 @@ nothing in this repository should be read as their delivery.
 | **16** | v16.0.0 | AI Provider Abstraction (Ollama + Gemini, configuration-driven) & final React-readiness audit; React architecture defined, not built. | 📋 Planned |
 | **17** | v17.0.0 | React + TypeScript migration of the presentation layer; Streamlit coexistence/deprecation. | 📋 Planned |
 
-Dependency chain: Sprint 14 release → Sprint 15 → Sprint 16 → Sprint 17.
+Dependency chain: Sprint 14 release → v14.1.0 hardening release + readiness re-audit → Sprint 15 → Sprint 16 → Sprint 17.
 
 ---
 
 # Current Blockers
 
-**None.** v14.0.0 is released. Known product defects are Sprint 15 scope.
+**No open gate item.** All 40 items of the Sprint 15 Readiness Gate are closed (see the
+register at the top). Before Sprint 15 starts, the one remaining step is the readiness
+re-audit of `v14.1.0` named in the start condition.
 
 Current repository status:
 
-- ✅ Stable Architecture
-- ✅ Stable Application Layer
-- ✅ Stable Module Contracts
-- ✅ **714 / 714 automated tests passing**, 0 failed, 15 `integration`-marked tests deselected by default
-- ✅ All four static gates passing (flake8, black, isort, mypy)
-- ✅ Stable Performance
-- ✅ Stable REST API — 33 paths, single `/api` convention, OpenAPI 3.1 contract in sync
-- ✅ Stable Power BI Integration
-- 🟡 Streamlit Frontend implemented & tested; remediation pending Sprint 15
-- ✅ Stable AI Insight Engine with asynchronous job lifecycle
-- ✅ Stable Production Deployment & Docker Topology
-- ✅ Stable Enterprise Identity & Multi-User Platform
-- 🟡 Data Cleaning Governance & Lineage implemented & tested; end-to-end remediation pending Sprint 15
-- 🟡 PROJECT_STATE reconciled with ROADMAP.md; remaining documents pending Sprint 15
-- ✅ Sprint 13 complete (v13.0.0)
-- ✅ **Sprint 14 released (v14.0.0)**
+- ✅ **1,241 automated tests passing**, 0 failed; 16 `integration` tests run separately (live Ollama recorded, PostgreSQL in CI)
+- ✅ Static gates passing: flake8, black, isort, mypy, vulture, bandit (0 HIGH), pip-audit
+- ✅ REST API — 46 paths, single `/api` convention, OpenAPI 3.1 contract diff-checked in CI
+- ✅ Streamlit frontend API-only, AppTest-covered; product/UX remediation is Sprint 15 scope
+- ✅ Data Cleaning Governance & Lineage verified end to end (policy approval)
+- ✅ Documentation reconciled with the code at v14.1.0; ADR-029 – ADR-035 added
+- ✅ Sprint 14 released (v14.0.0); hardening released (v14.1.0)
 - 📋 Sprint 15 → Sprint 16 → Sprint 17 planned, not started
 
 Items that remain open are recorded under *Known Technical Debt* near the top of this
@@ -1107,6 +1202,7 @@ the live FastAPI schema. Historical statements were **scoped, not deleted**.
 
 | Area | Correction |
 |---|---|
+| **v14.1.0 (2026-10-14)** | Gate lines and headline counts reconciled across PROJECT_STATE, ROADMAP and PROJECT_JOURNAL (P1-03); full documentation reconciliation (P2-23); broken document references (P3-03) and stale governance documents (P3-08) fixed; bandit B608 count re-reviewed (57) and gated (P3-04). |
 | Release | v14.0.0 released 2026-09-28 (release commit + tag `v14.0.0`, `main` fast-forwarded). |
 | Version and sprint status | *Superseded by the roadmap reconciliation (pre-release):* an earlier revision recorded v14.0.0 as the current baseline. Git evidence (no `v14.0.0` tag; `main` at `c5ddf06`) shows it is prepared, not released; this document now says so, matching ROADMAP.md. |
 | Sprint 15–17 sequence | Sprint 15 renamed from *Refactoring & Architectural Evolution* to *Enterprise Stabilization, Governance Completion & Product/UX Remediation*; Sprint 16 (AI Provider Abstraction & React Readiness) and Sprint 17 (React Migration) added, matching ROADMAP.md. |
@@ -1183,12 +1279,12 @@ The project succeeds when I can independently:
 
 ---
 
-**Current version:** **v14.0.0** — Enterprise Stabilization, Data Governance & Grounded Reporting (released 2026-09-28)
+**Current version:** **v14.1.0** — Pre-Sprint-15 hardening release
 
-**Previous version:** **v13.0.0** — Enterprise Identity & Multi-User Platform
+**Previous version:** **v14.0.0** — Enterprise Stabilization, Data Governance & Grounded Reporting (released 2026-09-28)
 
-**Last completed sprint:** **Sprint 14 — Stabilization / Production Hardening (released)**
+**Last completed sprint:** **Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting (released)**
 
-**Next sprint:** **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (planned, not started)
+**Next sprint:** **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (not started; see the start condition at the top)
 
 ---

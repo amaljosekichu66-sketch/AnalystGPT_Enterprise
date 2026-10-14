@@ -6,9 +6,13 @@
 > It describes the system structure, module responsibilities,
 > dependency rules, data flow, and architectural principles.
 >
-> This document reflects the implementation as of **v14.0.0** (Sprint 14 — Stabilization /
-> Production Hardening, released 2026-09-28). Future sequencing (Sprints 15–17) is defined in
-> ROADMAP.md.
+> This document reflects the code on `pre-sprint-15-hardening` as of **2026-10-14**, which is
+> released as **v14.1.0** (Sprint 14 — Enterprise Stabilization, Data Governance & Grounded
+> Reporting, released as v14.0.0 on 2026-09-28, plus the pre-Sprint-15 hardening). Sprint 15
+> has not started. Future sequencing (Sprints 15–17) is defined in ROADMAP.md.
+>
+> The per-sprint sections near the end (*Sprint 6* … *Sprint 14*) are historical records of
+> what each sprint delivered; where later work changed the picture they carry a dated note.
 
 ---
 
@@ -36,9 +40,11 @@ Sprint 9 introduced a dedicated Business Intelligence Integration Layer that exp
 
 Sprint 10 introduced a dedicated Enterprise Streamlit Frontend Layer that provides an interactive web interface for the analytics pipeline. The Frontend Layer is built using Streamlit with a React-ready architecture, consuming the REST API as its sole backend interface. It contains zero business logic and communicates exclusively through the established REST API, preserving the integrity of the enterprise layered architecture and enabling future migration to React without backend changes.
 
-Sprint 11 introduced an AI Insight Engine that enriches the reporting output with intelligent narratives, executive summaries, recommendations, and explanations. The AI layer is built on a local LLM (Ollama with Qwen3:8B) and follows a pluggable architecture via `BaseLLM` and `LLMFactory`. It consumes the `ReportingReport` and produces an `AIResult`, which is then attached to the `PipelineReport`. The AI layer is completely isolated from business logic, uses only stable contracts, and preserves the existing layered architecture.
+Sprint 11 introduced an AI Insight Engine that enriches the reporting output with intelligent narratives, executive summaries, recommendations, and explanations. The AI layer is built on a local LLM (Ollama; Qwen3:8B at the time, `gemma3:4b` today) and follows a pluggable architecture via `BaseLLM` and `LLMFactory`. It consumes the `ReportingReport` and produces an `AIResult`, which is then attached to the `PipelineReport`. The AI layer is completely isolated from business logic, uses only stable contracts, and preserves the existing layered architecture.
 
 Sprint 12 introduced Production Deployment Infrastructure, including multi-stage Docker containerization (`Dockerfile`), multi-service Docker Compose topology (`docker-compose.yml`), bounded rotating file logging (`RotatingFileHandler`), centralized environment configuration, and automated GitHub Actions CI/CD (`.github/workflows/ci.yml`). The deployment architecture provides service isolation (`postgres`, `api`, `frontend`), internal networking, non-root execution, and strict blocking quality gates without altering application contracts or business logic.
+
+Sprint 14 (Enterprise Stabilization, Data Governance & Grounded Reporting) made AI generation an asynchronous, persisted job, added data-cleaning governance and lineage, semantic profiling and grounded AI serialization. The pre-Sprint-15 hardening (v14.1.0) then removed every client-supplied server path (datasets are uploaded as bytes and addressed by `dataset_version_id`), moved profiling and governance out of the Streamlit process behind the API, added the cleaning-policy proposal/approval workflow, persistent token revocation, durable login lockout and a hash-chained audit trail, and enforced and tested per-user isolation on every resource route.
 
 Sprint 13 delivered the Enterprise Identity & Multi-User Platform subsystem (`src/identity/`), establishing domain user models (`User`, `UserRole`, `UserStatus`), cryptographic password hashing (PBKDF2-HMAC-SHA256, 600,000 iterations), granular Role-Based Access Control (RBAC) permission matrices, request security context (`UserContext`), user persistence repositories (`UserRepository`), domain service orchestration (`UserService`), stateless HMAC-SHA256 token issuance/validation (`TokenService`), server-side token revocation tracking (`TokenRevocationService`), and FastAPI authentication endpoints (`POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`) with dependency injection hooks, server-side resource ownership/data isolation across all repositories, and Streamlit session authentication gating, while preserving 100% backward compatibility for all business modules.
 
@@ -123,12 +129,10 @@ Persistence
 PipelineReport
    │
    ▼
-AI Insight Engine
+AI Insight Engine (background job: AIJobService → AIJobExecutor → AIManager)
    │
-   ├── Executive Summary Engine
-   ├── Recommendation Engine
-   ├── Explanation Engine
-   └── Narrative Engine
+   └── UnifiedReportEngine — one LLM request returns the executive summary,
+       recommendations, explanations and narrative
    │
    ▼
 BaseLLM
@@ -174,7 +178,7 @@ Current components:
 - Views
 - Components
 - Frontend Services
-- Theme
+- Configuration (`src/frontend/config/settings.py`)
 - Session Management
 
 Responsibilities:
@@ -191,7 +195,11 @@ Architectural constraints:
 - Views contain no business logic.
 - Components are presentation-only.
 - Frontend Services communicate only with the REST API.
-- Views never access persistence.
+- Views never access persistence. `src/frontend` imports only `src/frontend`, `src/core` and
+  the upload guards (`src/upload/bounded_parse.py`, `src/upload/upload_policy.py`, used to
+  reject a bad file before it is sent); `tests/frontend/test_frontend_boundaries.py` (an AST
+  test) fails if it imports `src/application`, `src/persistence`, `src/profiling` or any other
+  backend package.
 - Frontend remains backend-independent.
 - React migration must not require backend changes.
 - Business logic remains outside Streamlit.
@@ -245,12 +253,12 @@ Responsible for generating intelligent narratives, executive summaries, recommen
 Current components:
 
 - AIManager
+- UnifiedReportEngine (one prompt → one response → four sections)
 - AIReport
 - AIResult
-- ExecutiveSummaryEngine
-- RecommendationEngine
-- ExplanationEngine
-- NarrativeEngine
+- AIJobService, AIJobExecutor (persisted background job lifecycle)
+- AIDataContext / `context_builder.py` (privacy-safe, tenant-scoped context)
+- `insight_validator.py`, `confidence_evaluator.py`
 - PromptBuilder
 - ReportSerializer
 - ResponseParser
@@ -260,7 +268,7 @@ Current components:
 - BaseLLM (abstract interface)
 - LLMFactory
 - OllamaClient
-- (future) OpenAIClient, etc.
+- (Sprint 16) further providers behind the same interface
 
 Responsibilities:
 
@@ -276,13 +284,15 @@ Responsibilities:
 
 Architectural constraints:
 
-- AI layer consumes only ReportingReport (via PipelineReport).
-- AI layer never accesses raw data, persistence, or business modules.
-- AI engines are isolated and single-responsibility.
+- AI generation consumes the `ReportingReport` plus an `AIDataContext` of aggregated,
+  privacy-safe statistics; it never sends raw rows to the model.
+- The job layer (`ai_job_service.py`, `job_executor.py`) and `context_builder.py` read and
+  write their own tables (`ai_jobs`, `ai_reports`) and read the run's lineage, scoped to the
+  job's owner; AI never calls business managers or mutates business data.
 - LLM clients are pluggable via LLMFactory.
 - Prompt engineering is abstracted in PromptBuilder.
-- All AI outputs are validated and parsed into strongly typed objects.
-- AI never mutates business data or persists state.
+- All AI outputs are parsed into strongly typed objects and validated against the computed
+  statistics (`insight_validator.py`).
 
 ## Application Layer
 
@@ -291,6 +301,8 @@ Responsible for orchestration only.
 ### Current Components
 
 - Application
+- DashboardOrchestrator
+- ReportingOrchestrator
 - PipelineResult
 - PipelineReport
 
@@ -300,7 +312,7 @@ The Application layer:
 
 - may call any business manager.
 - may call PersistenceManager.
-- may call AIManager.
+- may dispatch AI jobs (AIJobService → AIJobExecutor → AIManager).
 - may build PipelineReport and PipelineResult.
 - may log pipeline summaries.
 - may coordinate execution order.
@@ -312,9 +324,9 @@ The Application layer must not implement business logic belonging to individual 
 Contains independent business modules.
 
 - Upload
-- Cleaning
+- Cleaning (governed by `src/governance/`)
 - Quality
-- Analytics
+- Analytics (with semantic profiling from `src/profiling/`)
 - Reporting
 
 ## Persistence Layer
@@ -325,6 +337,7 @@ Current components:
 
 - PersistenceManager
 - PersistenceResult
+- `dataset_delete.py`, `user_data_purge.py` (dataset and user deletion)
 
 Responsibilities:
 
@@ -368,10 +381,13 @@ entire application.
 
 The REST API Layer:
 
-- may communicate only with the Application Layer.
-- must never implement business logic.
-- must never communicate directly with business modules.
-- must remain stateless.
+- calls the Application Layer for datasets, pipeline runs, dashboards, reports and AI jobs,
+  and the identity services (`UserService`, audit) and the cleaning-policy approval service
+  (`src/governance/policy_approval.py`) for accounts and reviews.
+- must never implement business logic or execute SQL.
+- must never call the business managers (Upload, Cleaning, Quality, Analytics, Reporting).
+- keeps no request state between calls, except the per-process rate limiter
+  (`src/api/rate_limit.py`).
 
 ---
 
@@ -389,12 +405,13 @@ The REST API Layer:
 
 ### Components
 
-- Streamlit Application
-- Views (Dashboard, Upload, Reports, About)
-- Reusable Components (charts, metrics, tables, navigation, uploader)
-- Frontend Services (API client, session manager)
+- Streamlit Application (`streamlit_app.py`, page registry `pages.py`)
+- Views (Login, Dashboard, Upload, Reports, AI Insights, Admin, About)
+- Reusable Components (`src/frontend/components/`: charts, KPI cards, uploader, report list and
+  preview, AI insights, pipeline status, PII preview, empty/loading states, …)
+- Frontend Services (`APIClient`, `AuthService`, `UploadService`, `AdminService`, and the
+  `dashboard_service`, `report_service`, `ai_service`, `session_manager` modules)
 - Configuration (settings)
-- Theme (styles)
 
 ### Architectural Constraints
 
@@ -412,10 +429,10 @@ The Frontend Layer:
 
 ### Responsibilities
 
-- Generate executive summary from reporting data
-- Produce actionable recommendations
-- Provide explanations for key metrics
-- Create coherent narratives
+- Generate executive summary, recommendations, explanations and narrative from reporting
+  data in a single LLM request (`UnifiedReportEngine`)
+- Run generation as a persisted background job (`PENDING → GENERATING → READY / FAILED /
+  CANCELLED`), with cancel, retry and resume after restart
 - Manage prompt construction and response parsing
 - Interface with local LLM via Ollama
 - Support pluggable LLM providers
@@ -423,12 +440,10 @@ The Frontend Layer:
 ### Components
 
 - AIManager
+- UnifiedReportEngine
+- AIJobService, AIJobExecutor
 - AIReport
 - AIResult
-- ExecutiveSummaryEngine
-- RecommendationEngine
-- ExplanationEngine
-- NarrativeEngine
 - PromptBuilder
 - ReportSerializer
 - ResponseParser
@@ -440,9 +455,9 @@ The Frontend Layer:
 
 The AI Layer:
 
-- consumes only PipelineReport (via ReportingReport).
-- must never access raw datasets or business logic.
-- must never persist state.
+- consumes the ReportingReport and an aggregated `AIDataContext`, never raw rows.
+- must never call business managers or mutate business data.
+- persists only its own job and report state (`ai_jobs`, `ai_reports`), scoped to the owner.
 - must remain pluggable for different LLM providers.
 - must validate and parse all LLM responses.
 - must use stable contracts (AIResult, AIReport).
@@ -458,8 +473,9 @@ the layer beneath it; nothing calls upward.
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ PRESENTATION                                              src/frontend/  │
 │   streamlit_app.py → views/ → components/ → services/                    │
-│   Target: views hold no business logic. NOT yet true for upload_page     │
-│   (profiling / governance preview run in-process) — Sprint 15.           │
+│   Views hold no business logic: profiling, governance preview and policy │
+│   review run behind the API (pre-Sprint-15 hardening, P2-05). An AST     │
+│   test forbids imports of src/application, src/persistence, src/profiling│
 │   Frontend services speak HTTP only — never to src/application/ direct.  │
 └────────────────────────────────┬─────────────────────────────────────────┘
                                  │  HTTP / JSON  (the only channel)
@@ -474,7 +490,7 @@ the layer beneath it; nothing calls upward.
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ APPLICATION                                            src/application/  │
 │   Application.run()  — sole owner of end-to-end orchestration            │
-│   ai_orchestrator · dashboard_orchestrator · reporting_orchestrator      │
+│   dashboard_orchestrator · reporting_orchestrator · AI job dispatch      │
 │   PipelineResult · PipelineReport                                        │
 └────────────────────────────────┬─────────────────────────────────────────┘
                                  │  calls each Manager; Managers never
@@ -503,7 +519,7 @@ the layer beneath it; nothing calls upward.
 │   DatabaseManager → ConnectionFactory → DatabaseConnection               │
 │                        ├── SQLiteConnection                              │
 │                        └── PostgreSQLConnection   (psycopg 3)            │
-│   SchemaManager emits DDL for both dialects (11 tables)                  │
+│   SchemaManager emits versioned DDL for both dialects (16 tables)        │
 └────────────────────────────────┬─────────────────────────────────────────┘
                                  ▼
                         SQLite file  /  PostgreSQL 16
@@ -525,10 +541,12 @@ A domain package consumed by the **API layer**, not by business modules.
 | Domain models (`User`, `UserRole`, `UserStatus`) | `src/identity/models.py` | — |
 | Password hashing (PBKDF2-HMAC-SHA256, 600,000 iterations, 16-byte salt) | `src/identity/password_hasher.py` | `UserService` |
 | Token issue/verify (HMAC-SHA256, `HS256`, standard JWT claims — no third-party JWT library) | `src/identity/token_service.py` | `UserService` |
-| Server-side revocation on logout | `src/identity/token_revocation.py` | `UserService` |
+| Server-side revocation on logout / logout-all, persisted in `revoked_tokens` | `src/identity/token_revocation.py` (`DatabaseTokenRevocationService`) | `UserService` |
+| Login lockout, persisted in `login_failures` | `src/identity/login_throttle.py`, `login_throttle_store.py` | `UserService` |
+| Password policy | `src/identity/password_policy.py` | `UserService` |
 | Permission matrix (`Permission` × `ROLE_PERMISSIONS`) | `src/identity/permissions.py` | route dependencies |
 | Per-request identity | `src/identity/context.py` (`UserContext`) | route dependencies |
-| Security audit trail | `src/identity/audit.py` | `UserService`, routes |
+| Security audit trail (durable, hash-chained `audit_events`) | `src/identity/audit.py`, `audit_store.py` | `UserService`, routes |
 | Persistence | `src/database/repositories/user_repository.py` | Database layer |
 | Enforcement | `src/api/dependencies/auth_dependencies.py` — `get_current_active_user`, `require_permission`, `require_role` | **API layer** |
 
@@ -538,7 +556,11 @@ bearer token, loads the user, and checks the matrix before the handler runs.
 
 **Data isolation is enforced below the API, not at it.** Repository queries are scoped by
 `user_id` in `src/database/repositories/`, so a handler cannot accidentally widen a query.
-This is what makes IDOR structurally hard rather than a per-route discipline.
+Per-user isolation is enforced and tested on every resource route
+(`tests/identity/test_resource_ownership.py`, `tests/api/test_report_export_ownership.py`,
+`tests/api/test_export_isolation.py`, `tests/test_persistence_isolation.py`); another user's
+resource answers 404. Self-registration creates a `VIEWER`; only an administrator grants
+`ANALYST` or `ADMIN` (`PATCH /api/admin/users/{user_id}`).
 
 ### AI Insight Engine — `src/ai/` + `src/llm/`
 
@@ -548,16 +570,17 @@ failure never fails a pipeline run.
 ```text
 Application.run()  ──► deterministic pipeline completes and persists
         │
-        └──► AIJobService.create()        ai_jobs row, status PENDING
+        └──► AIJobService.create_and_dispatch_job()   ai_jobs row, PENDING
                    │
                    ▼
              AIJobExecutor                ThreadPoolExecutor, background
                    │                      atomic claim, retry, error class
                    ▼
-             PENDING → GENERATING → READY | FAILED
-                   │
-                   ├── AIManager ── engines: executive summary, recommendation,
-                   │                explanation, narrative, unified report
+             PENDING → GENERATING → READY | FAILED | CANCELLED
+                   │      (input persisted; resumes after restart;
+                   │       cancel / retry via /api/ai/jobs/{id}/…)
+                   ├── AIManager ── UnifiedReportEngine: one request → executive
+                   │                summary, recommendations, explanations, narrative
                    ├── context_builder.py → AIDataContext (repository-backed,
                    │                        tenant-scoped, privacy-safe)
                    └── src/llm/: PromptBuilder → ReportSerializer → LLMFactory
@@ -596,14 +619,19 @@ Attaches at the **business-module boundary**, around Cleaning.
 - `src/governance/policies.py` — configurable missing-value and outlier policies.
 - `src/governance/preview_service.py` — non-destructive impact preview before any write.
 - `src/governance/governance_service.py` — records provenance.
-- Persisted through `dataset_versions`, `cleaning_configs`, `cleaning_executions`.
+- `src/governance/policy_approval.py` — the cleaning-policy proposal workflow: the owner
+  proposes, modifies while `PROPOSED`, a reviewer approves or rejects
+  (`/api/governance/policies…`); `POST /api/pipeline` runs only an APPROVED proposal.
+- Persisted through `dataset_versions`, `cleaning_configs`, `cleaning_executions`,
+  `cleaning_policy_proposals`.
 
 Lineage is therefore end-to-end: raw version + policy version → cleaned version → report →
 AI report.
 
 ### Semantic Profiling — `src/profiling/`
 
-A pure analytical service consumed by Analytics and the frontend. `SemanticClassifier`
+A pure analytical service consumed by Analytics, governance and the Application layer. The
+frontend reaches it only through `GET /api/datasets/{dataset_version_id}/analysis`. `SemanticClassifier`
 separates domain semantics (`SemanticType`, `AnalyticalRole`) from pandas dtypes, so a
 postal code is not charted as a number. `src/analytics/visualization_planner.py` consumes
 it to plan a bounded 4–8 chart set.
@@ -614,17 +642,20 @@ The only package every layer may import, and it imports none of them.
 
 | Module | Responsibility |
 |---|---|
-| `config.py` | Every environment-driven setting, read once at import. Enforces the deployment guards: a non-development `APP_ENVIRONMENT` refuses the built-in `AUTH_SECRET_KEY` and refuses `AUTH_ALLOW_HEADER_IDENTITY`. |
+| `config.py` | Every environment-driven setting, read once at import. Enforces the deployment guards: a non-development `APP_ENVIRONMENT` refuses a missing, short (< 32 bytes), `CHANGE_ME` placeholder or built-in `AUTH_SECRET_KEY` and refuses `AUTH_ALLOW_HEADER_IDENTITY`; development refuses the built-in key unless the API binds loopback. |
 | `constants.py` | `APP_NAME`, `APP_VERSION`, API prefixes, AI section names, frontend chrome. |
 | `logger.py` | One configured logger; stdout always, optional bounded `RotatingFileHandler`. Handlers are torn down on reconfiguration so reloads cannot duplicate output. |
 | `exceptions.py` | `AnalystGPTError` hierarchy, including the identity errors. |
 | `pii.py` | Shared token-level rule for deciding whether a column name denotes contact PII. |
+| `redaction.py`, `bounded_cache.py`, `jsonable.py` | Log/error redaction, bounded in-memory caches, JSON-safe conversion. |
 
 ### Where the frontend services stop — `src/frontend/services/`
 
-`APIClient` is the single HTTP boundary; `AuthService`, `DashboardService`,
-`ReportService`, `AIService`, `UploadService` and `AdminService` are built on it, and
-`SessionManager` holds presentation state only. This is the seam a future React client
+`APIClient` is the single HTTP boundary. The `AuthService`, `UploadService` and
+`AdminService` classes and the `dashboard_service`, `report_service` and `ai_service`
+function modules are built on it, and the `session_manager` module holds presentation state
+only (there are no `DashboardService` / `ReportService` / `AIService` / `SessionManager`
+classes in `src/frontend`). This is the seam a future React client
 replaces: it consumes the same REST contract, so nothing below the API layer changes.
 
 ---
@@ -670,8 +701,9 @@ Streamlit Application
 
 Responsibilities
 
-- Start application (CLI)
-- Parse input
+- Start application (CLI): `python main.py --owner <user> <dataset>` or
+  `python main.py --ownerless <dataset>`; `python main.py --help`
+- Parse input (argparse; an owner or an explicit `--ownerless` is required)
 - Invoke `Application.run()`
 
 Must never contain business logic or orchestrate business modules directly.
@@ -743,19 +775,17 @@ AIManager
 ### Components
 
 - AIManager
+- UnifiedReportEngine
+- AIJobService, AIJobExecutor
 - AIReport
 - AIResult
-- ExecutiveSummaryEngine
-- RecommendationEngine
-- ExplanationEngine
-- NarrativeEngine
 - PromptBuilder
 - ReportSerializer
 - ResponseParser
 
 ### Input
 
-PipelineReport (containing ReportingReport)
+ReportingReport plus an aggregated `AIDataContext`
 
 ### Output
 
@@ -811,7 +841,7 @@ Responsibilities
 - Workflow sequencing
 - Stage coordination
 - Persistence lifecycle
-- AI orchestration
+- AI job dispatch
 - Execution timing
 - Error handling
 - Pipeline summary logging
@@ -824,7 +854,7 @@ The Application layer is also responsible for:
 - Initializing persistence
 - Starting pipeline execution records
 - Persisting pipeline outputs
-- Calling AIManager with PipelineReport
+- Dispatching the AI job (AIJobService → AIJobExecutor → AIManager) after persistence
 - Building final PipelineResult
 - Marking successful execution
 - Recording failed executions
@@ -847,7 +877,8 @@ UploadManager
 
 ### Input
 
-Dataset Path
+A file path inside the server's immutable artifact store (written by `POST /api/datasets`), or
+a local file given to the CLI. The API never accepts a client-supplied path.
 
 ### Supported Formats
 
@@ -1046,6 +1077,7 @@ ReportingManager
 - StructuredReport
 - ReportingReport
 - TextReportExporter
+- PdfReportExporter
 
 ### Input
 
@@ -1069,16 +1101,16 @@ TextReportExporter
 ReportingReport
 ```
 
-### Current Export Format
+### Current Export Formats
 
 - Plain Text (.txt)
+- PDF (multi-page, with charts)
 
 ### Planned Export Formats
 
 - JSON
 - HTML
 - Excel
-- PDF
 
 ### Features
 
@@ -1128,9 +1160,15 @@ PersistenceManager
 - BaseRepository
 - PipelineRunRepository
 - DatasetRepository
+- DatasetVersionRepository
+- CleaningConfigRepository
+- CleaningExecutionRepository
 - QualityRepository
 - AnalyticsRepository
 - ReportRepository
+- AIJobRepository
+- AIReportRepository
+- UserRepository
 
 ### Input
 
@@ -1163,6 +1201,10 @@ config.py
 constants.py
 logger.py
 exceptions.py
+pii.py
+redaction.py
+bounded_cache.py
+jsonable.py
 ```
 
 Database infrastructure now includes:
@@ -1172,13 +1214,11 @@ Database infrastructure now includes:
 - PostgreSQLConnection
 - ConnectionFactory
 - DatabaseManager
-- SchemaManager
-- BaseRepository
-- PipelineRunRepository
-- DatasetRepository
-- QualityRepository
-- AnalyticsRepository
-- ReportRepository
+- SchemaManager (versioned; 16 tables: `ai_jobs`, `ai_reports`, `analytics_reports`,
+  `audit_events`, `cleaning_configs`, `cleaning_executions`, `cleaning_policy_proposals`,
+  `dataset_versions`, `datasets`, `login_failures`, `pipeline_runs`, `quality_reports`,
+  `reports`, `revoked_tokens`, `schema_version`, `users`)
+- The 12 repository modules under `src/database/repositories/`
 
 REST infrastructure now includes:
 
@@ -1196,6 +1236,7 @@ Business Intelligence infrastructure includes:
 
 AI infrastructure includes:
 
+- AIManager, UnifiedReportEngine, AIJobService, AIJobExecutor
 - BaseLLM
 - LLMFactory
 - OllamaClient
@@ -1280,9 +1321,9 @@ Application
    │   ▼
    │   core
    │
-   └── AI Insight Engine
+   └── AI Insight Engine (background job)
         │
-        ├── Engines
+        ├── UnifiedReportEngine
         ├── PromptBuilder
         ├── ReportSerializer
         ├── ResponseParser
@@ -1357,13 +1398,6 @@ Business Modules (directly)
 ```
 
 ```text
-AI Layer
-   │
-   ▼
-Persistence
-```
-
-```text
 core
    │
    ▼
@@ -1379,17 +1413,21 @@ Application
 
 Business modules remain completely unaware of persistence, HTTP, AI, and UI concerns.
 
-Only the Application layer communicates with the Persistence layer and the AI layer.
+Only the Application layer coordinates the Persistence layer and dispatches AI jobs. The AI
+job layer and `context_builder.py` read and write their own tables (`ai_jobs`, `ai_reports`)
+and the run's lineage directly; that is the one exception, and it is owner-scoped.
 
 Repositories are the only components permitted to execute SQL, and they operate through the DatabaseConnection abstraction.
 
-The REST API Layer communicates only with the Application Layer through dependency injection.
+The REST API Layer reaches the Application Layer through dependency injection, and the
+identity services and cleaning-policy approval service directly; it never calls business
+managers or executes SQL.
 
 The Business Intelligence Layer communicates only with the Application Layer and must never access business modules or persistence components directly.
 
-The AI Layer communicates only with the Application Layer and consumes only `PipelineReport` (via `ReportingReport`). It never accesses business modules or persistence.
+The AI Layer is dispatched by the Application Layer and consumes the `ReportingReport` plus an aggregated `AIDataContext`. It never calls business managers.
 
-The Frontend Layer communicates only with the REST API Layer.
+The Frontend Layer communicates only with the REST API Layer (enforced by `tests/frontend/test_frontend_boundaries.py`).
 
 This separation allows future frontend technologies, database technologies, LLM providers, and API changes to be introduced without requiring changes to business logic.
 
@@ -1406,10 +1444,8 @@ This separation allows future frontend technologies, database technologies, LLM 
 | Reporting | ReportingReport |
 | Persistence | PersistenceResult |
 | AI Manager | AIResult |
-| Executive Summary Engine | str |
-| Recommendation Engine | list[str] |
-| Explanation Engine | list[str] |
-| Narrative Engine | str |
+| UnifiedReportEngine | AISections (executive summary, recommendations, explanations, narrative) |
+| AIJobService | AI job record (`PENDING` / `GENERATING` / `READY` / `FAILED` / `CANCELLED`) |
 | LLMFactory | BaseLLM |
 | OllamaClient | str |
 | Application | PipelineResult (with PipelineReport) |
@@ -1451,15 +1487,21 @@ Frontend View
 Frontend Service (API Client)
       │
       ▼
-REST API Endpoint
+POST /api/datasets (bytes) ──► immutable dataset version (dataset_version_id)
+      │
+      ▼
+GET /api/datasets/{id}/analysis · cleaning policy propose / approve
+      │
+      ▼
+POST /api/pipeline (dataset_version_id [+ approved proposal])
       │
       ▼
 Application.run()
       │
       ▼
-Upload
+Upload (from the artifact store)
       ▼
-Cleaning
+Cleaning (approved or default policy)
       ▼
 Quality
       ▼
@@ -1470,24 +1512,14 @@ Reporting
 Persistence
       │
       ▼
-PipelineReport
+PipelineResult ──► REST response returned immediately (with ai_job_id)
+      │
+      └──► AI job (background) ──► UnifiedReportEngine ──► AIResult
+                                     (executive summary, recommendations,
+                                      explanations, narrative) ──► polled
       │
       ▼
-AI Insight Engine
-      │
-      ├── Executive Summary
-      ├── Recommendations
-      ├── Explanations
-      └── Narrative
-      │
-      ▼
-AIResult
-      │
-      ▼
-PipelineResult
-      │
-      ▼
-Dashboard Models (via DashboardService)
+Dashboard Models (via DashboardService, read-only GET /api/powerbi/*)
       │
       ▼
 REST Response
@@ -1690,17 +1722,15 @@ Current coverage includes:
 ### AI Insight Engine
 
 - AIManager
+- UnifiedReportEngine
+- AIJobService / AIJobExecutor (lifecycle, cancel, retry, resume)
 - AIReport
 - AIResult
-- ExecutiveSummaryEngine
-- RecommendationEngine
-- ExplanationEngine
-- NarrativeEngine
 - PromptBuilder
 - ReportSerializer
 - ResponseParser
 - LLMFactory
-- OllamaClient (mocked)
+- OllamaClient (mocked; live tests are `integration`-marked)
 
 ### Frontend
 
@@ -1732,10 +1762,14 @@ Validated through:
 
 Current results:
 
-**714 automated tests passing** at v14.0.0 (729 collected, 714 passed, 0 failed,
-15 `integration`-marked tests deselected by default) across 118 test modules. The executed
-accounting, including the four static gates, is recorded once in PROJECT_STATE.md, section
-*Executed Validation*.
+**1,242 tests in the default suite** (measured 2026-10-14 on `pre-sprint-15-hardening`), plus
+16 `integration`-marked live-Ollama tests that are deselected by default and run with
+`pytest -m integration`; 6 more `integration` tests need a PostgreSQL 16 database and run in
+CI's `postgres` job. CI gates coverage at `fail_under = 85`.
+`tests/integration/test_pipeline.py` drives the full API journey a user reaches through the
+frontend. The executed accounting is recorded in PROJECT_STATE.md (*Headline numbers*, measured 2026-10-14).
+
+> At v14.0.0 the figure was 729 collected / 714 passed / 15 deselected; it is historical.
 
 > The figure of **180 automated tests** shown in earlier revisions of this section was the
 > **Sprint 11** total and is retained here only as historical scope.
@@ -1797,158 +1831,47 @@ The platform successfully completed:
 
 # Repository Structure
 
+As of 2026-10-14 (top two levels, abridged):
+
 ```text
 AnalystGPT_Enterprise/
-
-docs/
-├── adr/
-├── engineering/
-├── project/
-└── sprints/
-
-performance/
-├── datasets/
-├── benchmark_results.md
-└── README.md
-
-reports/
-
-sample_data/
-
-src/
-├── api/
-│   ├── server.py
-│   ├── routes/
-│   │   ├── root.py
-│   │   ├── health.py
-│   │   ├── version.py
-│   │   ├── pipeline.py
-│   │   └── __init__.py
-│   ├── models/
-│   │   ├── request_models.py
-│   │   ├── response_models.py
-│   │   └── __init__.py
-│   ├── dependencies/
-│   │   ├── app_dependency.py
-│   │   └── __init__.py
-│   ├── exceptions/
-│   │   ├── exception_handlers.py
-│   │   └── __init__.py
-│   └── __init__.py
-├── application/
-│   ├── app.py
-│   ├── pipeline_result.py
-│   ├── pipeline_report.py
-│   └── __init__.py
-├── upload/
-├── cleaning/
-├── quality/
-├── analytics/
-├── reporting/
-│   └── exporters/
-├── ai/
-│   ├── __init__.py
-│   ├── ai_manager.py
-│   ├── ai_report.py
-│   ├── ai_result.py
-│   ├── executive_summary_engine.py
-│   ├── recommendation_engine.py
-│   ├── explanation_engine.py
-│   ├── narrative_engine.py
-│   └── exceptions.py  (optional)
-├── llm/
-│   ├── __init__.py
-│   ├── base_llm.py
-│   ├── llm_factory.py
-│   ├── ollama_client.py
-│   ├── prompt_builder.py
-│   ├── report_serializer.py
-│   └── response_parser.py
-├── persistence/
-│   ├── persistence_manager.py
-│   ├── persistence_result.py
-│   ├── persistence_report.py
-│   └── __init__.py
-├── database/
-│   ├── database_connection.py
-│   ├── sqlite_connection.py
-│   ├── postgresql_connection.py
-│   ├── connection_factory.py
-│   ├── database_manager.py
-│   ├── schema_manager.py
-│   ├── __init__.py
-│   └── repositories/
-│       ├── base_repository.py
-│       ├── pipeline_run_repository.py
-│       ├── dataset_repository.py
-│       ├── quality_repository.py
-│       ├── analytics_repository.py
-│       ├── report_repository.py
-│       └── __init__.py
-├── integrations/
-│   ├── __init__.py
-│   └── powerbi/
-│       ├── __init__.py
-│       ├── dashboard_service.py
-│       └── powerbi_models.py
-├── frontend/
-│   ├── streamlit_app.py
-│   ├── views/
-│   │   ├── dashboard_page.py
-│   │   ├── upload_page.py
-│   │   ├── report_page.py
-│   │   └── about_page.py
-│   ├── components/
-│   │   ├── charts.py
-│   │   ├── metrics.py
-│   │   ├── tables.py
-│   │   ├── navigation.py
-│   │   └── uploader.py
-│   ├── services/
-│   │   ├── api_client.py
-│   │   └── session_manager.py
-│   ├── config/
-│   │   └── settings.py
-│   ├── theme/
-│   │   └── styles.py
-│   ├── assets/
-│   └── static/
-└── core/
-
-tests/
-├── analytics/
-├── application/
-├── cleaning/
-├── quality/
-├── reporting/
-├── persistence/
-├── api/
-│   ├── test_root.py
-│   ├── test_health.py
-│   ├── test_version.py
-│   ├── test_pipeline.py
-│   ├── test_powerbi.py
-│   └── __init__.py
-├── ai/
-│   ├── test_ai_manager.py
-│   ├── test_ai_result.py
-│   ├── test_engines.py
-│   ├── test_prompt_builder.py
-│   ├── test_report_serializer.py
-│   ├── test_response_parser.py
-│   ├── test_llm_factory.py
-│   └── __init__.py
-├── frontend/
-│   ├── test_views.py
-│   ├── test_services.py
-│   └── __init__.py
-├── integration/
-└── fixtures/
-
-main.py
-README.md
-CHANGELOG.md
-requirements.txt
+├── src/
+│   ├── api/            server.py, routes/ (root, health, version, auth, admin, datasets,
+│   │                   pipeline, governance, ai, reports, dashboard, powerbi), models/,
+│   │                   dependencies/, exceptions/, rate_limit.py, body_limit.py,
+│   │                   request_context.py, security_headers.py
+│   ├── application/    app.py, dashboard_orchestrator.py, reporting_orchestrator.py,
+│   │                   pipeline_result.py, pipeline_report.py
+│   ├── upload/ cleaning/ quality/ analytics/ reporting/ (exporters/: text, pdf)
+│   ├── profiling/      data_profiler.py, semantic_classifier.py
+│   ├── governance/     policies, preview, governance service, policy_approval, custom registry
+│   ├── storage/        artifact_store.py
+│   ├── ai/             ai_manager.py, unified_report_engine.py, ai_job_service.py,
+│   │                   job_executor.py, context.py, context_builder.py,
+│   │                   insight_validator.py, confidence_evaluator.py, models.py, …
+│   ├── llm/            base_llm, llm_factory, ollama_client, prompt_builder,
+│   │                   report_serializer, response_parser
+│   ├── identity/       users, hashing, tokens, revocation, permissions, audit (+ store),
+│   │                   login throttle (+ store), password policy
+│   ├── persistence/    persistence_manager, dataset_delete, user_data_purge, …
+│   ├── database/       connections, ConnectionFactory, DatabaseManager, SchemaManager,
+│   │                   repositories/ (12 modules)
+│   ├── integrations/powerbi/
+│   ├── frontend/       streamlit_app.py, pages.py, views/, components/, services/, config/
+│   └── core/           config, constants, logger, exceptions, pii, redaction, …
+├── tests/              ai/ analytics/ api/ application/ cleaning/ core/ database/ fixtures/
+│                       frontend/ governance/ identity/ integration/ profiling/ quality/
+│                       reporting/ storage/ (+ top-level test modules)
+├── docs/               adr/ api/ deployment/ development/ engineering/ image/ project/
+│                       sprints/ verification/
+├── performance/        benchmark.py, stress_test.py, phase2_benchmark.py, results, datasets/
+├── scripts/            create_admin.py, export_openapi.py, make_live_sample.py,
+│                       purge_ownerless_data.py, build_requirements_lock.py,
+│                       gemma_benchmark.py, lint.ps1, run_tests.ps1
+├── sample_data/        customer_data.csv, employees.*, support_tickets.xlsx (synthetic)
+├── main.py             CLI (`--owner <user>` | `--ownerless`)
+├── Dockerfile  docker-compose.yml  pyproject.toml  requirements*.txt  requirements.lock
+└── .env.development.example  .env.example
 ```
 
 ---
@@ -1991,7 +1914,7 @@ The architecture follows:
 
 | Layer | Status |
 |--------|--------|
-| Frontend | ✅ MVP Complete |
+| Frontend | 🟡 MVP; talks to the backend only over HTTP (AST-tested); end-to-end UI verification and Dashboard redesign are Sprint 15 |
 | Presentation | ✅ Stable |
 | REST API Layer | ✅ Stable |
 | Business Intelligence Layer | ✅ Stable |
@@ -2005,14 +1928,15 @@ The architecture follows:
 | Persistence | ✅ Stable |
 | Database Abstraction Layer | ✅ Stable |
 | Core Infrastructure | ✅ Stable |
-| OpenAPI | ✅ Stable (3.1, 33 paths, contract in sync) |
+| OpenAPI | ✅ Stable (3.1 — 46 paths, 49 operations, 51 component schemas; CI diff-checks `docs/api/openapi.json`) |
 | Swagger | ✅ Stable |
-| Identity / Authentication / Authorization | ✅ Stable (`src/identity/`, Sprint 13) |
-| Data Governance & Lineage | 🟡 Implemented & tested (`src/governance/`, `src/storage/`, Sprint 14); end-to-end workflow verification/remediation pending Sprint 15 |
+| Identity / Authentication / Authorization | ✅ Stable (`src/identity/`, Sprint 13; persistent revocation, lockout, hash-chained audit added by the pre-Sprint-15 hardening) |
+| Resource Ownership & Isolation | Per-user isolation enforced and tested on every resource route |
+| Data Governance & Lineage | 🟡 Implemented & tested, including the policy propose → approve/reject → run workflow (`src/governance/`, `src/storage/`); end-to-end verification through the UI is Sprint 15 |
 | Semantic Profiling & Visual Analytics | ✅ Stable (`src/profiling/`, `VisualizationPlanner`, Sprint 14) |
-| Asynchronous AI Job Lifecycle | ✅ Stable (`ai_jobs` / `ai_reports`, `AIJobExecutor`, Sprint 14) |
+| Asynchronous AI Job Lifecycle | ✅ Stable (`ai_jobs` / `ai_reports`, `AIJobExecutor`; cancel, retry, resume after restart) |
 | Report Exporters (PDF / TXT) | ✅ Stable (`src/reporting/exporters/`, Sprint 14) |
-| Containerization & CI | ✅ Stable (Docker multi-stage, Compose, 5-job GitHub Actions) |
+| Containerization & CI | ✅ Stable (Docker multi-stage, Compose, 7-job GitHub Actions: quality, security, test, postgres, docker-build, compose-validation, compose-integration) |
 
 ---
 
@@ -2139,6 +2063,12 @@ Major improvements:
 - Ensured pluggable LLM provider architecture.
 - Maintained separation of concerns: AI layer never accesses raw data or persistence.
 
+> **Note (2026-10-14).** Historical record. The four separate engines were later consolidated
+> into `UnifiedReportEngine` (one request, four sections) and the unused engine modules,
+> `src/ai/insight_engine.py` and `src/application/ai_orchestrator.py` were deleted in the
+> pre-Sprint-15 hardening (commit `7fcd1e5`). Since Sprint 14 the AI layer also persists its
+> own job state; see *AI Insight Engine* under *Layered Architecture* for the current design.
+
 ---
 
 # React Migration Constraint
@@ -2177,6 +2107,10 @@ Sprint 13 transforms AnalystGPT Enterprise into a multi-tenant, secure enterpris
 2. **Business Module Isolation**: Data processing engines (Upload, Cleaning, Quality, Analytics, Reporting, AI) remain completely decoupled from authentication and identity logic.
 3. **Multi-User Cache Isolation**: In-memory analytical result caching in the Application layer is strictly partitioned per user (`_user_pipeline_results: dict[int | None, PipelineResult]`), preventing cross-tenant leakage.
 4. **Data Isolation & IDOR Immunity**: Repositories enforce user scoping (`WHERE user_id = ?`) preventing unauthorized horizontal privilege escalation.
+   *Note (2026-10-14):* the pre-Sprint-15 hardening audit contradicted the "immunity" claim
+   (client-supplied server paths allowed arbitrary file reads; concurrent runs could write
+   rows under another user's ids). Both were fixed; per-user isolation is now enforced and
+   tested on every resource route.
 5. **Pluggable & Extensible**: Pluggable interfaces for password hashing, user storage, token validation, and revocation enable seamless enterprise SSO/OAuth2 evolution.
 
 ```
@@ -2209,7 +2143,7 @@ Sprint 13 transforms AnalystGPT Enterprise into a multi-tenant, secure enterpris
                     └─────────────────────────┘
 ```
 
-# Sprint 14 — Stabilization & Governance Architecture (Delivered)
+# Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting (Delivered)
 
 > **Status: DELIVERED — released in v14.0.0.** Earlier
 > revisions of this section were headed *Target Architecture* and marked
@@ -2265,12 +2199,23 @@ Pipeline Execution (Deterministic) ───────────► Dashboar
   - `UploadService`
   - `AdminService`
 - **Zero Backend Logic in Streamlit**: Streamlit views operate strictly as presentation components consuming the REST API via services.
+
+> **Note (2026-10-14).** The two bullets above are the Sprint 14 claim, kept as written. They
+> were not accurate at the time: there was never an `AIInsightService`, and today only
+> `AuthService`, `UploadService` and `AdminService` (plus `APIClient`) are classes — dashboard,
+> report and AI access are the `dashboard_service`, `report_service` and `ai_service` function
+> modules in `src/frontend/services/`. And `views/upload_page.py` ran the profiler and the
+> governance preview in the Streamlit process. The pre-Sprint-15 hardening (P2-05) moved that
+> work behind `GET /api/datasets/{id}/analysis`, `POST /api/governance/preview` and the
+> `/api/governance/policies` routes, so "no backend logic in Streamlit" is now true and is
+> enforced by `tests/frontend/test_frontend_boundaries.py`.
 - **OpenAPI 3.1 Contract Freeze**: Authoritative backend API contract forming the initial React-readiness foundation. The final readiness audit is a Sprint 16 gate; the React presentation layer itself is Sprint 17.
 
-> **Known gaps carried into Sprint 15** (see ROADMAP.md): the governance workflow is not yet
-> verified end-to-end through the real API/frontend path; the Dashboard largely duplicates the
-> pipeline result; and `DELETE /api/admin/users/{user_id}` exists but is not exposed in
-> `src/frontend/views/admin_page.py`.
+> **Known gaps carried into Sprint 15** (see ROADMAP.md; updated 2026-10-14): the full
+> workflow is not yet verified end-to-end through the Streamlit UI, and the Dashboard largely
+> duplicates the pipeline result. (User deletion, login-lockout unlock and the audit log are
+> now exposed in `src/frontend/views/admin_page.py`; the governance policy workflow is wired
+> through the API.)
 
 ---
 
@@ -2286,7 +2231,7 @@ The current architecture provides a stable foundation for continued, sequenced e
 - Phase 4: API Security & Role-Based Access Control (RBAC) ✅
 - Phase 5: Frontend Authentication & Sprint Closure ✅
 
-## Sprint 14 — Stabilization / Production Hardening (Released — v14.0.0)
+## Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting (Released — v14.0.0)
 
 > Released as **v14.0.0**. All seven phases are implemented,
 > test-covered, and passing the full quality gate set.
@@ -2299,10 +2244,18 @@ The current architecture provides a stable foundation for continued, sequenced e
 - Phase 6: React Migration Readiness — initial foundation (OpenAPI contract freeze, typed models, frontend-independent service interfaces); final gate in Sprint 16
 - Phase 7: Semantic Profiling, Visual Analytics & Quality Gates (`src/profiling/`, `VisualizationPlanner`, AI grounding remediation, 714 tests, multi-user isolation, CI quality gates)
 
+## Pre-Sprint-15 hardening (v14.1.0, being released)
+
+Security, ownership, governance-workflow and CI hardening on `pre-sprint-15-hardening`
+between v14.0.0 and Sprint 15: server-path removal and managed uploads, the cleaning-policy
+approval workflow, persistent revocation and lockout, hash-chained audit, profiling and
+governance moved behind the API, AI cancel/resume, versioned schema initialisation, and the
+security / PostgreSQL / coverage / dead-code CI gates. See PROJECT_STATE.md for the item list.
+
 ## Sprints 15–17 — Planned (not started)
 
-Scope and Definitions of Done are defined in ROADMAP.md. No work for these sprints exists in
-this repository. Dependency chain: Sprint 14 release → Sprint 15 → Sprint 16 → Sprint 17.
+Scope and Definitions of Done are defined in ROADMAP.md. No Sprint 15–17 work exists in this
+repository. Dependency chain: Sprint 14 release → Sprint 15 → Sprint 16 → Sprint 17.
 
 | Sprint | Release | Architectural impact |
 |---|---|---|
@@ -2314,8 +2267,8 @@ Every architectural change affecting module boundaries or dependency direction m
 
 ---
 
-**Current Architecture Version:** **v14.0.0** — Sprint 14, Stabilization / Production Hardening (released)
+**Current Architecture Version:** **v14.1.0** — pre-Sprint-15 hardening (being released; latest tag v14.0.0)
 
-**Previous Version:** **v13.0.0** — Enterprise Identity & Multi-User Platform
+**Previous Version:** **v14.0.0** — Sprint 14, Enterprise Stabilization, Data Governance & Grounded Reporting
 
 **Next Planned:** v15.0.0 (Sprint 15) → v16.0.0 (Sprint 16) → v17.0.0 (Sprint 17)

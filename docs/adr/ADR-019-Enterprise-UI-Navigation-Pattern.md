@@ -10,6 +10,15 @@
 > **Sprint 17 — React Migration & Modern Presentation Layer** (React + TypeScript implemented).
 > The decision recorded here is unchanged and remains in force for the Streamlit
 > presentation layer; the React-side design is decided in the Sprint 16 architecture ADR.
+>
+> **Note (2026-10-14).** Re-checked against ROADMAP.md: Sprint 15 is *Enterprise
+> Stabilization, Governance Completion & Product/UX Remediation* and has **not started**; React
+> work is Sprint 17 only. The latest release is v14.0.0, and v14.1.0 (the pre-Sprint-15
+> hardening) is being released. The decision below is unchanged.
+>
+> Pages are now registered in `src/frontend/pages.py` (Dashboard, Upload, Reports, AI Insights,
+> Admin, About; sign-in is `views/login_page.py`); `components/sidebar.py` was deleted as
+> unused in the pre-Sprint-15 hardening.
 
 **Date:** 2026-07-25
 

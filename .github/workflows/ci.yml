@@ -102,12 +102,25 @@ jobs:
           pip-audit --require-hashes --disable-pip -r requirements.lock
 
       - name: Static Security Analysis (bandit, fails on HIGH)
-        # 49 MEDIUM B608 findings were reviewed as false positives (last on
-        # 2026-09-30): only table-name constants, enum values and fixed column
-        # names are interpolated into SQL, and all values are bound
-        # parameters. HIGH findings fail the build.
+        # 57 MEDIUM B608 findings were reviewed as false positives (last on
+        # 2026-10-14): only table-name constants, enum values, fixed column
+        # lists, fixed WHERE fragments and the dialect placeholder are
+        # interpolated into SQL, and all values are bound parameters. HIGH
+        # findings fail the build.
         run: |
           bandit -r src scripts -q --severity-level high
+
+      - name: Reviewed B608 Count Gate (P3-04)
+        # The reviewed count drifted (44 -> 47 -> 57) without anyone noticing.
+        # A new or removed B608 finding now fails here until it is reviewed
+        # and this number, the comment above and PROJECT_STATE are updated.
+        env:
+          B608_REVIEWED: "57"
+        run: |
+          bandit -r src scripts -q -f json -o bandit.json || true
+          found=$(python -c "import json; print(sum(r['test_id'] == 'B608' for r in json.load(open('bandit.json'))['results']))")
+          echo "B608 findings: $found (reviewed: $B608_REVIEWED)"
+          test "$found" = "$B608_REVIEWED"
 
   # ==========================================================
   # Job 2: Automated Test Suite Execution

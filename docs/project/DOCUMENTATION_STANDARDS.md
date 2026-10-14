@@ -96,7 +96,7 @@ Record important architectural decisions.
 - Alternatives
 - Consequences
 
-Never duplicate Architecture.md.
+Never duplicate ARCHITECTURE.md.
 
 Architecture explains the current design.
 

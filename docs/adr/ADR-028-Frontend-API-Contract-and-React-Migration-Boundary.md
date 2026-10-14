@@ -20,6 +20,21 @@
 > Read every "Sprint 15" in the Context, Decision and diagram below as **Sprint 17**. The
 > boundary this ADR establishes is the *initial* React-readiness foundation; the Sprint 16
 > audit re-verifies it before any React implementation begins.
+>
+> **Note (2026-10-14).** Re-checked against ROADMAP.md: Sprint 15 is *Enterprise
+> Stabilization, Governance Completion & Product/UX Remediation* and has **not started**; React
+> work is Sprint 17 only. The latest release is v14.0.0, and v14.1.0 (the pre-Sprint-15
+> hardening) is being released. The decision below is unchanged.
+>
+> Current contract: `docs/api/openapi.json` has **46 paths, 49 operations, 51 component
+> schemas** (it had 33 paths at v14.0.0) and CI diff-checks it against the live schema. Of the
+> service interfaces named in the Decision, `AIInsightService`, `DashboardService` and
+> `ReportService` never existed as classes: AI, dashboard and report access are the
+> `ai_service`, `dashboard_service` and `report_service` function modules. The status note
+> under Decision 3 is resolved: `views/upload_page.py` now calls
+> `GET /api/datasets/{id}/analysis`, `POST /api/governance/preview` and the
+> `/api/governance/policies` routes instead of running profiling in-process, and an AST test
+> (`tests/frontend/test_frontend_boundaries.py`) keeps backend packages out of `src/frontend`.
 
 **Date:** 2026-08-15
 

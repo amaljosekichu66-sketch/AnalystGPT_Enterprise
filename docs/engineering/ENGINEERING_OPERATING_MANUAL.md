@@ -1,6 +1,12 @@
-# MASTER_PROMPT.md
-# AnalystGPT Enterprise Engineering Operating System
+# ENGINEERING_OPERATING_MANUAL.md
+# AnalystGPT Enterprise Engineering Operating Manual
 ## Version 2.0
+
+> **Note (2026-10-14).** This file used to call itself `MASTER_PROMPT.md` and the *Engineering
+> Operating System*; neither file exists. It is `docs/engineering/ENGINEERING_OPERATING_MANUAL.md`.
+> The original mentoring prompt it grew from is
+> [INITIAL_MASTER_PROMPT.md](INITIAL_MASTER_PROMPT.md); current project status is in
+> [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ---
 Every completed sprint must include
@@ -1959,7 +1965,7 @@ Only recommend architectural changes when they provide significant long-term val
 
 When I provide:
 
-MASTER_PROMPT.md
+ENGINEERING_OPERATING_MANUAL.md
 
 PROJECT_STATE.md
 
@@ -1969,7 +1975,7 @@ Your workflow should be:
 
 1.
 
-Read MASTER_PROMPT.md
+Read ENGINEERING_OPERATING_MANUAL.md
 
 Understand your permanent mentoring responsibilities.
 
@@ -2116,7 +2122,7 @@ Format:
 
 release(vX.Y.Z): <Sprint Deliverable>
 
-Examples:
+Examples (as originally written):
 
 release(v0.75.0): Enterprise Engineering Foundation
 
@@ -2143,6 +2149,35 @@ release(v10.0.0): Streamlit Application
 release(v11.0.0): AI Insights
 
 release(v12.0.0): Production Deployment
+
+The examples above stop at v12.0.0 because they were written then.
+
+Released versions — the Git tags that actually exist (checked 2026-10-14 with `git tag`).
+Sprints 0 and 0.5 were never tagged: there is no `v0.5.0`; the first tag is `v0.75.0`. Several
+early and mid releases did not follow the format above; the tagged commit subjects are listed
+as they are.
+
+| Tag | Date | Tagged commit |
+|---|---|---|
+| `v0.75.0` | 2026-07-14 | `release(v0.75.0): Enterprise Engineering Foundation` |
+| `v1.0.0` | 2026-07-14 | `release(v1.0.0): Upload Module` |
+| `v2.0.0` | 2026-07-15 | `release(v2.0.0): Cleaning Module` |
+| `v3.0.0` | 2026-07-15 | `release(v3.0.0): Quality Module` |
+| `v4.0.0` | 2026-07-15 | `release(v4.0.0): complete Analytics Module` |
+| `v5.0.0` | 2026-07-16 | `Release v5.0.0: Complete Sprint 5 Reporting Module` |
+| `v5.5.0` | 2026-07-18 | `refactor: complete Sprint 5.5 enterprise architecture refactor` |
+| `v6.0.0` | 2026-07-22 | `release(v6.0.0): SQLite persistence layer` |
+| `v7.0.0` | 2026-07-22 | `release(v7.0.0): PostgreSQL integration` |
+| `v8.0.0` | 2026-07-23 | `release(v8.0.0): REST API integration` |
+| `v9.0.0` | 2026-07-23 | `release(v9.0.0): Power BI integration` |
+| `v10.0.0` | 2026-07-25 | `release(v10.0.0): Enterprise Streamlit frontend` |
+| `v11.0.0` | 2026-07-30 | `release(v11.0.0): AI Insight Engine` |
+| `v12.0.0` | 2026-08-14 | `release: complete sprint 12 production deployment` |
+| `v13.0.0` | 2026-08-15 | `release(v13.0.0): Enterprise identity and multi-user platform` |
+| `v14.0.0` | 2026-09-28 | `release(v14.0.0): Enterprise stabilization, data governance and grounded reporting` |
+
+Next: **v14.1.0** — the pre-Sprint-15 hardening (being released; not a sprint). Sprint 15 has
+not started; it is planned as v15.0.0 (see ROADMAP.md).
 
 Rules:
 

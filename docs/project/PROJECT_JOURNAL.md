@@ -108,7 +108,7 @@ Implemented:
 
 Sprint 0.5 established the shared infrastructure used throughout the application.
 
-**Release Version:** v0.5.0
+**Release Version:** v0.5.0 *(never tagged; the first git tag is v0.75.0)*
 
 ---
 
@@ -2714,7 +2714,59 @@ Sprint 14 released as **v14.0.0**. The remaining uncommitted stabilization work 
 (`d7f9eb6`) and validated on the committed tree — `pytest -q` 714 passed, 15 deselected,
 0 failed; flake8, black, isort and mypy clean — followed by the documentation reconciliation
 (`30476c7`) and the release commit. `main` was fast-forwarded and tagged `v14.0.0`.
-Sprint 15 may now start.
+*(Superseded the same day: this entry said Sprint 15 could start now. The security audit that
+followed found blockers, so the start condition became the one recorded in the next entry.)*
+
+## 2026-09-28 → 2026-10-14 — Pre-Sprint-15 hardening (v14.1.0)
+
+### What happened
+
+A go/no-go security audit of v14.0.0 found a public ADMIN self-registration, an arbitrary
+server-file read, VIEWER-triggered pipeline runs, a forgeable signing key under Compose, a
+process crash under two concurrent users, and a PostgreSQL schema that could never be created.
+Sprint 15 was held. Four review rounds followed on `pre-sprint-15-hardening`, each one
+reproducing its findings before fixing them:
+
+| Round | Findings | Closed by |
+|---|---|---|
+| Blockers | B-01 … B-06, SEC-01 … SEC-06 | `0c4d9b2` … `8ffc77e` |
+| Second pass | SEC-07 … SEC-25 | `6fd60a5` … `44965fc` |
+| 2026-09-29 audit | 48 findings + 1 cleanup (M1 … M12, L1 … L19, I1 … I17, X1) | `20154f3` … `742f7d0` |
+| Sprint 15 Readiness Gate | 40 items: 4 P1, 26 P2, 10 P3 | `4df68e2` … this release |
+
+The readiness gate's P1 items were: integrate the branch into `main` with green CI (P1-01),
+per-user rate limiting behind the frontend (P1-02), consistent gate documents (P1-03), and ADRs
+for the hardening's decisions (P1-04, now ADR-029 – ADR-035).
+
+### Decisions
+
+- Clients upload bytes; the server never opens a client-named path (ADR-029).
+- An unset `APP_ENVIRONMENT` means production, and an unsafe signing key stops startup
+  (ADR-030).
+- Tokens carry `jti`, `iss`, `aud` and `ver`; revocation is persisted (ADR-031).
+- The audit trail is durable, hash-chained and retained (ADR-032).
+- Deleting a user is an atomic hard delete with audit pseudonymisation (ADR-033). This settles
+  the Sprint 15 Phase 4 question early.
+- Cleaning policies are proposed and approved before they run (ADR-034). This pulls Sprint 15
+  Phase 2 forward.
+- The schema is versioned instead of re-running DDL on every request (ADR-035).
+
+### Evidence
+
+- The test suite grew from 714 to the count recorded in PROJECT_STATE.md § *Sprint 15
+  Readiness Gate*.
+- Coverage is gated in CI.
+- A PostgreSQL 16 CI job runs the schema and concurrency tests.
+- A live gemma3:4b run is recorded in `docs/verification/live_ollama_run_2026-10-14.log`.
+- The OpenAPI contract is diff-checked, and dead code is gated with vulture.
+
+### Lessons
+
+- **A passing suite proved nothing about security.** 714 tests passed while anyone could
+  register as ADMIN. Every fix in this work started from a reproduced failure.
+- **Gate documents need one start condition, written once and quoted everywhere.** Three
+  documents disagreed about whether Sprint 15 could start. The condition now reads:
+  Sprint 15 may start once every P1 item of the Sprint 15 Readiness Gate (2026-09-29 audit) is closed, which happens with the v14.1.0 release (the hardening merged to `main` through a green CI run and tagged `v14.1.0`), and a readiness re-audit of `v14.1.0` confirms it.
 
 ---
 
@@ -2723,7 +2775,7 @@ Sprint 15 may now start.
 | Sprint | Version | Primary Achievement | Status |
 |---|---|---|---|
 | Sprint 0 | Foundation | Project Foundation | ✅ |
-| Sprint 0.5 | v0.5.0 | Core Infrastructure | ✅ |
+| Sprint 0.5 | v0.5.0 (untagged) | Core Infrastructure | ✅ |
 | Sprint 0.75 | v0.75.0 | Enterprise Engineering Foundation | ✅ |
 | Sprint 1 | v1.0.0 | Upload Module | ✅ |
 | Sprint 2 | v2.0.0 | Cleaning Module | ✅ |
@@ -2739,15 +2791,16 @@ Sprint 15 may now start.
 | Sprint 11 | v11.0.0 | AI Insight Engine | ✅ |
 | Sprint 12 | v12.0.0 | Production Deployment & Containerization | ✅ |
 | Sprint 13 | v13.0.0 | Enterprise Identity & Multi-User Platform | ✅ |
-| Sprint 14 | **v14.0.0** | **Stabilization / Production Hardening** — Async AI Lifecycle, Data Governance & Lineage, Semantic Profiling, Publication-Grade Reporting, Grounded AI, API Contract Freeze | ✅ **Released** |
+| Sprint 14 | **v14.0.0** | **Enterprise Stabilization, Data Governance & Grounded Reporting** — Async AI Lifecycle, Data Governance & Lineage, Semantic Profiling, Publication-Grade Reporting, Grounded AI, API Contract Freeze | ✅ **Released** |
+| Hardening | **v14.1.0** | **Pre-Sprint-15 Hardening** — security audits and the Sprint 15 Readiness Gate (40/40), ADR-029 – ADR-035 | ✅ **Released** |
 | Sprint 15 | Planned (v15.0.0) | Enterprise Stabilization, Governance Completion & Product/UX Remediation | 📋 Not started |
 | Sprint 16 | Planned (v16.0.0) | AI Provider Abstraction & Complete React Readiness | 📋 Not started |
 | Sprint 17 | Planned (v17.0.0) | React Migration & Modern Presentation Layer | 📋 Not started |
 
 ---
 
-**Journal covers through:** **Sprint 14 — Stabilization / Production Hardening (v14.0.0, released 2026-09-28)** and the 2026-09-28 roadmap re-baseline
+**Journal covers through:** **the pre-Sprint-15 hardening release (v14.1.0)**
 
-**Current version:** **v14.0.0**
+**Current version:** **v14.1.0**
 
-**Next sprint:** **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (planned, not started) → Sprint 16 → Sprint 17
+**Next sprint:** **Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation** (not started; sprint 15 may start once every P1 item of the Sprint 15 Readiness Gate (2026-09-29 audit) is closed, which happens with the v14.1.0 release (the hardening merged to `main` through a green CI run and tagged `v14.1.0`), and a readiness re-audit of `v14.1.0` confirms it) → Sprint 16 → Sprint 17

@@ -10,6 +10,15 @@
 > **Sprint 17 — React Migration & Modern Presentation Layer** (React + TypeScript implemented).
 > The decision recorded here is unchanged and remains in force for the Streamlit
 > presentation layer; the React-side design is decided in the Sprint 16 architecture ADR.
+>
+> **Note (2026-10-14).** Re-checked against ROADMAP.md: Sprint 15 is *Enterprise
+> Stabilization, Governance Completion & Product/UX Remediation* and has **not started**; React
+> work is Sprint 17 only. The latest release is v14.0.0, and v14.1.0 (the pre-Sprint-15
+> hardening) is being released. The decision below is unchanged.
+>
+> The session keys listed below are illustrative; the keys actually used are defined in
+> `src/frontend/services/session_manager.py` (there is no `theme_preference`). The
+> session now holds a server-issued `dataset_version_id`, never a server file path.
 
 **Date:** 2026-07-25
 

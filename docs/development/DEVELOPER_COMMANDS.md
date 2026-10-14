@@ -6,8 +6,8 @@ This guide provides the authoritative, exact copy-paste-ready commands required 
 
 ## 0. Platform Note & Path Convention
 
-> This guide was originally written for macOS only: every command hard-coded the absolute
-> path `/Users/amaljose/AnalystGPT_Enterprise` and activated the virtualenv with
+> This guide was originally written for macOS only: every command hard-coded an absolute
+> path under the original author's home directory and activated the virtualenv with
 > `source venv/bin/activate`. The repository is also worked on under Windows, where neither
 > runs. The commands below are therefore path-neutral, and Windows PowerShell equivalents
 > are given in section 11.
@@ -50,8 +50,14 @@ Activation differs by platform:
 # Navigate to project root
 cd "$PROJECT_ROOT"
 
-# Activate existing virtualenv
+# Create (first time only) and activate the virtualenv
+python -m venv venv
 source venv/bin/activate
+pip install -r requirements-dev.txt
+
+# Local configuration (first time only). .env.example is the PRODUCTION template:
+# its AUTH_SECRET_KEY is a CHANGE_ME placeholder that the API refuses.
+cp .env.development.example .env
 
 # Set canonical environment variables for development
 export PYTHONPATH="$(pwd)"
@@ -59,28 +65,39 @@ export DATABASE_ENGINE=sqlite
 export LOG_TO_FILE=false
 ```
 
+### 1.3 Command-Line Pipeline (no API, no frontend)
+
+```bash
+python main.py --help
+python main.py --owner <username> sample_data/customer_data.csv   # owner must be ACTIVE with pipeline-execute permission
+python main.py --ownerless sample_data/customer_data.csv          # explicitly unowned run (invisible in the UI and API)
+```
+
+Every CLI run needs an accountable owner: pass `--owner <user>` or, deliberately,
+`--ownerless`.
+
 ---
 
 ## 2. Multi-Terminal Operational Workflow
 
 ### Terminal 1 — Full Test Suite
 Executes the comprehensive automated test suite across unit, integration, and security layers.
-**695** test functions are defined across **118** modules, collecting to **729** cases.
 
-> **Expected result:** `714 passed, 15 deselected, 1 warning in ~119s`, 0 failures,
-> 0 collection errors.
+> **Size (measured 2026-10-14):** the default suite collects **1,242 tests**. CI runs it with
+> coverage (`pytest tests/ -v --cov`) and fails below `fail_under = 85`.
 >
-> The 15 deselected tests carry the `integration` marker and need a live Ollama server with
-> `gemma3:4b`. `pyproject.toml` sets `addopts = -ra -m "not integration"`, so the default run
-> is deterministic on any machine. Exercise the live LLM path with:
+> 16 further tests carry the `integration` marker and are deselected by default
+> (`pyproject.toml` sets `addopts = -ra -m "not integration"`), so the default run is
+> deterministic on any machine. They need a live Ollama server with `gemma3:4b`; six more
+> `integration` tests need a PostgreSQL 16 database (see 12.3):
 >
 > ```bash
 > ollama pull gemma3:4b
 > pytest -m integration
 > ```
 >
-> The single warning is a third-party `anyio` deprecation surfaced through
-> `starlette.testclient`.
+> A recorded live-Ollama run (synthetic `sample_data/support_tickets.xlsx`, regenerated with
+> `python scripts/make_live_sample.py`) is in `docs/verification/live_ollama_run_2026-10-14.log`.
 >
 > If you see a `matplotlib` import error, your virtualenv predates it being declared — run
 > `pip install -r requirements-dev.txt`.
@@ -163,6 +180,21 @@ curl -s -X POST http://127.0.0.1:8000/api/pipeline \
   -H "Content-Type: application/json" \
   -d "{\"dataset_version_id\": \"$DATASET_ID\"}" | jq .
 
+# 3b. Optional: run with a reviewed cleaning policy instead of the default
+PROPOSAL_ID=$(curl -s -X POST http://127.0.0.1:8000/api/governance/policies \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"dataset_version_id\": \"$DATASET_ID\", \"missing_value_policy\": \"PRESERVE_NULLS\"}" | jq -r '.proposal_id')
+curl -s -X POST http://127.0.0.1:8000/api/governance/policies/$PROPOSAL_ID/approve \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{}' | jq .
+curl -s -X POST http://127.0.0.1:8000/api/pipeline \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"dataset_version_id\": \"$DATASET_ID\", \"cleaning_policy_proposal_id\": \"$PROPOSAL_ID\"}" | jq .
+
+# 3c. Poll, cancel or retry the AI job returned by the pipeline (ai_job_id)
+curl -s http://127.0.0.1:8000/api/ai/jobs/<AI_JOB_ID> -H "Authorization: Bearer $TOKEN" | jq .
+curl -s -X POST http://127.0.0.1:8000/api/ai/jobs/<AI_JOB_ID>/cancel -H "Authorization: Bearer $TOKEN" | jq .
+curl -s -X POST http://127.0.0.1:8000/api/ai/jobs/<AI_JOB_ID>/retry -H "Authorization: Bearer $TOKEN" | jq .
+
 # 4. List User Reports
 curl -s http://127.0.0.1:8000/api/reports \
   -H "Authorization: Bearer $TOKEN" | jq .
@@ -198,25 +230,35 @@ source venv/bin/activate
 export PYTHONPATH="$(pwd)"
 
 # 1. Flake8 Linting (0 violations expected)
-flake8 src/ tests/
+flake8 src tests main.py
 
 # 2. Black Code Formatting Check
-black --check src/ tests/
+black --check src tests main.py
 
 # 3. Import Ordering Check
-isort --check src/ tests/
+isort --check src tests main.py
 
-# 4. Mypy Strict Type Checking
-mypy src/
+# 4. Mypy Type Checking
+mypy src main.py
 
-# 5. Git Diff Whitespace / Format Check
+# 5. Dead-code gate (names only frameworks reach are listed in vulture_whitelist.py)
+vulture src main.py scripts vulture_whitelist.py --min-confidence 60
+
+# 6. OpenAPI contract: regenerate, then check the diff (CI fails on any drift)
+python scripts/export_openapi.py
+git diff --stat docs/api/openapi.json
+
+# 7. Git Diff Whitespace / Format Check
 git diff --check
 ```
 
+These match CI's `quality` job. CI's `security` job additionally runs gitleaks, `pip-audit`
+against `requirements.lock`, bandit (fails on HIGH) and a reviewed-B608 count gate (57).
+
 ### Automatic Code Formatting (Fix Mode)
 ```bash
-black src/ tests/
-isort src/ tests/
+black src tests main.py
+isort src tests main.py
 ```
 
 ---
@@ -237,6 +279,12 @@ pytest tests/api/test_report_export_api.py -v
 # Identity, Authentication & RBAC Tests
 pytest tests/identity/ -v
 pytest tests/api/test_auth_routes.py tests/api/test_admin_routes.py -v
+
+# Ownership / cross-user isolation
+pytest tests/identity/test_resource_ownership.py tests/api/test_report_export_ownership.py -v
+
+# End-to-end API journey (register -> promote -> upload -> policy -> pipeline -> exports)
+pytest tests/integration/test_pipeline.py -v
 
 # Frontend & Session State Tests
 pytest tests/frontend/ -v
@@ -284,8 +332,14 @@ sqlite3 analystgpt.db "PRAGMA foreign_key_check;"
 ## 7. Docker & Containerized Deployment
 
 ```bash
+# Production-style configuration: set AUTH_SECRET_KEY (>= 32 bytes) and POSTGRES_PASSWORD
+cp .env.example .env
+
 # Build and start all services (API, Streamlit, PostgreSQL)
 docker compose up --build -d
+
+# Create the first administrator (password from ADMIN_BOOTSTRAP_PASSWORD or prompted)
+docker compose exec api python scripts/create_admin.py --username admin --email admin@example.com
 
 # View service health
 docker compose ps
@@ -338,14 +392,16 @@ python -m streamlit run src/frontend/streamlit_app.py
 ### 11.3 Quality Gates (equivalent to section 3)
 
 ```powershell
-flake8 src tests
-black --check src tests
-isort --check src tests
-mypy src
+flake8 src tests main.py
+black --check src tests main.py
+isort --check src tests main.py
+mypy src main.py
+vulture src main.py scripts vulture_whitelist.py --min-confidence 60
 ```
 
-> These four gates are exactly what CI's `quality` job runs, and all four pass at
-> v14.0.0: flake8 0, black 341 files unchanged, isort clean, mypy clean over 210 source files.
+> These five gates are what CI's `quality` job runs. (At v14.0.0 the job had four gates —
+> no vulture — and the recorded result was flake8 0, black 341 files unchanged, isort clean,
+> mypy clean over 210 source files; that figure is historical.)
 >
 > `black` and `isort` cover **all** of `src/` and `tests/`; only non-source trees are excluded.
 > (Until the Sprint 14 stabilization pass, `pyproject.toml` excluded `tests/` and 15 of 17
@@ -376,7 +432,7 @@ mypy src
 
 ```powershell
 .\scripts\run_tests.ps1                      # default suite -> test-results\pytest-<timestamp>.md
-.\scripts\run_tests.ps1 -Integration         # also run live-Ollama / live-API tests
+.\scripts\run_tests.ps1 -Integration         # also run the live-Ollama / PostgreSQL tests
 .\scripts\run_tests.ps1 -Verbose_            # -v instead of -q (test node ids in the log)
 ```
 
@@ -406,6 +462,13 @@ pytest -m integration          # only the live-infrastructure tests
 pytest -m "integration or not integration"   # everything
 ```
 
-`tests/ai/test_ollama_connection.py` is the current member of that group: it
-drives a live Ollama server, so its result depends on model warmth and machine
-load rather than on application code.
+The group spans five modules (2026-10-14):
+
+- `tests/ai/test_ollama_connection.py` (7), `tests/ai/test_ollama_production_path.py` (8) and
+  `tests/integration/test_live_ollama_pipeline.py` (1) — 16 tests — drive a live Ollama server, so their
+  result depends on model warmth and machine load rather than on application code.
+- `tests/integration/test_postgresql_schema.py` and
+  `tests/integration/test_postgresql_concurrency.py` need a PostgreSQL 16 database
+  (`TEST_POSTGRES_HOST`, `TEST_POSTGRES_PORT`, `TEST_POSTGRES_DB`, `TEST_POSTGRES_USER`,
+  `TEST_POSTGRES_PASSWORD`) — 6 tests, skipped at collection without one; CI runs them in
+  its `postgres` job.

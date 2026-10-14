@@ -10,9 +10,13 @@ Its purpose is to ensure every feature is designed, implemented, tested, documen
 
 # Last Updated
 
-**Version:** v8.0.0
+**Version:** written at v8.0.0 (23 July 2026); reviewed 2026-10-14 against v14.1.0 (the
+pre-Sprint-15 hardening; latest tag v14.0.0). The process below still applies; the version
+examples in it are historical. Real release tags are listed in
+[ENGINEERING_OPERATING_MANUAL.md](ENGINEERING_OPERATING_MANUAL.md) under *Release Commit
+Naming Standard*.
 
-**Date:** 23 July 2026
+**Date:** 2026-10-14 (review); 23 July 2026 (content)
 
 ---
 
@@ -290,6 +294,15 @@ Required for all REST endpoints:
 - OpenAPI generation
 - Swagger documentation
 - Error handling
+
+### Automated Gates (as of 2026-10-14)
+
+Every push and pull request to `main` runs the 7 CI jobs in `.github/workflows/ci.yml`:
+`quality` (flake8, black, isort, mypy, vulture), `security` (gitleaks, pip-audit, bandit HIGH
+gate, reviewed-B608 count gate), `test` (pytest with an 85% coverage gate), `postgres`
+(PostgreSQL 16 integration tests), `docker-build` (+ Trivy), `compose-validation` and
+`compose-integration`. The exact local commands are in
+[DEVELOPER_COMMANDS.md](../development/DEVELOPER_COMMANDS.md).
 
 ### Infrastructure Validation
 

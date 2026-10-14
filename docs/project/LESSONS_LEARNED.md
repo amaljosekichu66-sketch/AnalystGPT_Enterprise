@@ -10,9 +10,11 @@
 
 **Date:** August 2026 (Sprint 14 content)
 
-**Current version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
+**Current version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`); v14.1.0 being released
 
-**Current sprint:** Sprint 14 — Stabilization / Production Hardening (released as v14.0.0); next: Sprint 15
+**Current sprint:** Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting
+(released as v14.0.0), followed by the pre-Sprint-15 hardening (v14.1.0, being released).
+Sprint 15 has not started.
 
 > The Sprint 14 section near the end of this document was written *before* the sprint began
 > and records what was anticipated. The lessons drawn from actually executing Sprint 14 are

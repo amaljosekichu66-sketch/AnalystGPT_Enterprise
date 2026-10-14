@@ -102,7 +102,7 @@ Every Pull Request should be reviewed against these criteria before approval.
 
 - Is documentation updated if required?
 - Does the change require a new ADR?
-- Are Architecture.md and Project Journal updated if necessary?
+- Are ARCHITECTURE.md and PROJECT_JOURNAL.md updated if necessary?
 - Is README updated (if user-facing behavior changes)?
 - Is PROJECT_STATE synchronized?
 - Is CHANGELOG updated?

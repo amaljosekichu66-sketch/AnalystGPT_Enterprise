@@ -228,3 +228,4 @@ FULL_TEST_OUTPUT.md
 pytest_output*.md
 test_output*.md
 test-results/
+bandit.json

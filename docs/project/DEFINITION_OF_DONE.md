@@ -13,9 +13,11 @@ maintains production-quality engineering standards throughout its development.
 
 # Last Updated
 
-**Version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`)
+**Version:** **v14.0.0** (released 2026-09-28; tag `v14.0.0`); v14.1.0 being released
 
-**Current sprint:** Sprint 14 — Stabilization / Production Hardening (released as v14.0.0); next: Sprint 15
+**Current sprint:** Sprint 14 — Enterprise Stabilization, Data Governance & Grounded Reporting
+(released as v14.0.0), followed by the pre-Sprint-15 hardening (v14.1.0, being released).
+Sprint 15 has not started.
 
 **Date:** August 2026
 
@@ -242,7 +244,7 @@ Review and update when applicable:
 - Sprint Release Report
 - ADRs
 - API_REFERENCE.md
-- API_TESTING.md
+- API_testing.md (`docs/api/API_testing.md`)
 
 Documentation should describe the current implementation—not planned work.
 
@@ -314,6 +316,7 @@ The release must be:
 | Sprint 12 | ✅ Complete |
 | Sprint 13 | ✅ Complete (v13.0.0) |
 | Sprint 14 | ✅ Complete (v14.0.0) — Phases 1–7 delivered; **714 / 714 tests passing**, 15 `integration`-marked tests deselected by default; all four static gates passing; OpenAPI contract re-exported and in sync (33 paths) |
+| Pre-Sprint-15 hardening | ✅ Released as v14.1.0 (2026-10-14): 1,242 tests in the default suite plus 16 `integration` tests; OpenAPI 46 paths / 49 operations; 7 CI jobs incl. security, PostgreSQL, 85% coverage and dead-code gates. Not a sprint. |
 | Sprint 15 | 📋 Planned — Enterprise Stabilization, Governance Completion & Product/UX Remediation (v15.0.0). Not started. |
 | Sprint 16 | 📋 Planned — AI Provider Abstraction & Complete React Readiness (v16.0.0). Not started. |
 | Sprint 17 | 📋 Planned — React Migration & Modern Presentation Layer (v17.0.0). Not started. |

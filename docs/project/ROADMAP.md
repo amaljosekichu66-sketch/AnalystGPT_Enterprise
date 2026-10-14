@@ -26,11 +26,11 @@
 
 | Item | Status |
 |------|--------|
-| Last Released Version | **v14.0.0** (released 2026-09-28, tag `v14.0.0`) |
-| Previous Released Version | v13.0.0 |
-| Repository Status | ✅ Sprint 14 released as v14.0.0 (714 passed, 4 static gates — per PROJECT_STATE.md) |
-| Current Sprint | ✅ Sprint 14 released; 📋 Sprint 15 next (not started) |
-| Current Focus | **Pre-Sprint-15 hardening** (branch `pre-sprint-15-hardening`) — audit blockers B-01…B-06 + SEC-04 fixed and re-probed; **READY FOR RE-AUDIT**. Sprint 15 starts only after the re-audit. See PROJECT_STATE.md § *Pre-Sprint-15 Hardening*. |
+| Last Released Version | **v14.1.0** — pre-Sprint-15 hardening release (tag `v14.1.0`) |
+| Previous Released Version | v14.0.0 (released 2026-09-28) |
+| Repository Status | ✅ Sprint 15 Readiness Gate closed: 40/40 items (P1 4/4) — counts in PROJECT_STATE.md § *Sprint 15 Readiness Gate* |
+| Current Sprint | Between sprints: Sprint 14 released (v14.0.0), hardening released (v14.1.0); 📋 Sprint 15 next (not started) |
+| Current Focus | **Readiness re-audit of v14.1.0.** Sprint 15 may start once every P1 item of the Sprint 15 Readiness Gate (2026-09-29 audit) is closed, which happens with the v14.1.0 release (the hardening merged to `main` through a green CI run and tagged `v14.1.0`), and a readiness re-audit of `v14.1.0` confirms it. See PROJECT_STATE.md § *Sprint 15 Readiness Gate*. |
 | Next Planned Sprint | 📋 Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation (v15.0.0) |
 | Subsequent Sprints | 📋 Sprint 16 — AI Provider Abstraction & Complete React Readiness (v16.0.0) → 📋 Sprint 17 — React Migration & Modern Presentation Layer (v17.0.0) |
 | Architecture | Enterprise Layered Architecture + Presentation Layer + REST API + Business Intelligence + Database Abstraction + AI Insight Engine + Production Deployment + Enterprise Identity & RBAC Multi-User Platform + Governance & Stabilization Platform |
@@ -39,32 +39,31 @@
 | Database Abstraction Layer | ✅ Stable |
 | REST API Layer | ✅ Stable |
 | Business Intelligence Layer | ✅ Stable |
-| Frontend Layer | 🟡 Implemented & tested (Streamlit); defects, UX and state handling NEED REMEDIATION in Sprint 15 |
+| Frontend Layer | ✅ Streamlit, API-only, AppTest-covered per page (v14.1.0); product/UX remediation in Sprint 15 |
 | AI Layer | ✅ Stable |
 | Production Deployment & Docker | ✅ Stable |
 | Enterprise Identity & RBAC | ✅ Complete |
 | User Authentication & Sessions | ✅ Complete |
-| Resource Ownership & Isolation | ✅ Complete |
-| Admin User Management | 🟡 Backend implemented (incl. `DELETE /api/admin/users/{user_id}`); Streamlit Admin UI exposes status changes only — reconciliation in Sprint 15 |
-| Security Audit Trail | ✅ Complete |
+| Resource Ownership & Isolation | ✅ Enforced per user on every resource route and tested |
+| Admin User Management | ✅ API and Admin UI: roles, status, atomic hard delete (ADR-033), unlock, audit log (v14.1.0) |
+| Security Audit Trail | ✅ Durable, hash-chained, retained (ADR-032) |
 | Power BI Integration | ✅ Complete |
-| Enterprise Streamlit Frontend | 🟡 Released (v10.0.0), implemented & tested; known defects/UX issues — needs remediation (pending Sprint 15) |
-| Dashboard | 🟡 Implemented; product value NEEDS REMEDIATION — overlaps the pipeline result; information architecture redesign in Sprint 15 |
+| Enterprise Streamlit Frontend | ✅ Released (v10.0.0); read-only views and real error states since v14.1.0; UX remediation in Sprint 15 |
+| Dashboard | 🟡 Read-only and tied to its dataset (v14.1.0); product value / information architecture redesign in Sprint 15 |
 | Upload Interface | ✅ Complete |
 | Reports Centre | ✅ Complete |
 | About Page | ✅ Complete |
 | Frontend Components | ✅ Complete |
 | Frontend Services | ✅ Complete |
-| Theme System | ✅ Complete |
 | Session Management | ✅ Complete |
 | Enterprise Navigation | ✅ Complete |
 | OpenAPI | ✅ Operational |
 | Swagger | ✅ Operational |
 | Docker Multi-Stage Build | ✅ Operational |
 | Docker Compose Topology | ✅ Operational |
-| Automated Testing | 🟡 PROJECT_STATE.md records **714 passed, 0 failed, 15 deselected** (`integration`, 729 collected). Earlier roadmap figure (529 / 535, 6 live-LLM failures) is superseded; not re-executed for this roadmap update. Trustworthy regression baseline is a Sprint 15 deliverable |
+| Automated Testing | ✅ Counts in PROJECT_STATE.md § *Sprint 15 Readiness Gate*; coverage gated at 85% in CI; PostgreSQL tests in CI; live Ollama run recorded |
 | Performance Validation | 🟡 PARTIALLY IMPLEMENTED — single-request benchmarks only; concurrent execution crashed the API until the pre-Sprint-15 hardening (B-03) |
-| Technical Debt | 🟡 Not verified as low — known debt (quality-gate exclusions, duplication/dead code, UI/API mismatches) scheduled for Sprint 15 audit |
+| Technical Debt | 🟡 Dead code removed and gated (vulture); lint/type-check exclusions remain for the Sprint 15 audit |
 
 ---
 
@@ -866,7 +865,7 @@ Database Repositories (Isolated per Tenant)
 
 | Version | Release |
 |---------|---------|
-| v0.5.0 | Core Infrastructure |
+| v0.5.0 | Core Infrastructure *(never tagged; the first tag is v0.75.0)* |
 | v0.75.0 | Enterprise Engineering Foundation |
 | v1.0.0 | Upload Module |
 | v2.0.0 | Cleaning Module |
@@ -883,6 +882,7 @@ Database Repositories (Isolated per Tenant)
 | **v12.0.0** | **Production Deployment** ✅ |
 | **v13.0.0** | **Enterprise Identity & Multi-User Platform** ✅ |
 | **v14.0.0** | **Enterprise Stabilization, Data Governance & Grounded Reporting** ✅ |
+| **v14.1.0** | **Pre-Sprint-15 Hardening** (security, stability and readiness-gate fixes) ✅ |
 | *v15.0.0* | *Enterprise Stabilization, Governance Completion & Product/UX Remediation* 📋 |
 | *v16.0.0* | *AI Provider Abstraction & Complete React Readiness* 📋 |
 | *v17.0.0* | *React Migration & Modern Presentation Layer* 📋 |
@@ -1346,6 +1346,25 @@ Asynchronous execution uses a **replaceable background-job abstraction**; implem
 
 ---
 
+## Pre-Sprint-15 Hardening — v14.1.0 ✅
+
+Between Sprint 14 and Sprint 15, three security and readiness audits were run against the
+v14.0.0 baseline, and every finding was fixed on `pre-sprint-15-hardening`, released as v14.1.0:
+
+| Pass | Scope | Outcome |
+|---|---|---|
+| 1 | Blockers B-01 … B-06, SEC-01 … SEC-06 (admin self-registration, arbitrary file read, VIEWER execution, forgeable key, concurrency crash, PostgreSQL schema) | All verified fixed |
+| 2 | SEC-07 … SEC-25 (escaping, lockout and rate limits, revocation, upload limits, error disclosure, exports, supply chain, docs exposure, retention, audit trail) | All verified fixed |
+| 3 | 2026-09-29 audit: 12 medium, 19 low, 17 informational items | All fixed or closed with a recorded reason |
+| Gate | Sprint 15 Readiness Gate: 4 P1, 26 P2, 10 P3 | 40/40 closed |
+
+Decisions taken in this work are recorded in ADR-029 – ADR-035 (managed upload API,
+fail-closed configuration, token revocation, hash-chained audit, atomic hard delete, policy
+approval, versioned schema). Several Sprint 15 deliverables were pulled forward; they are
+marked in the Sprint 15 section below. Details: PROJECT_STATE.md and CHANGELOG.md (14.1.0).
+
+---
+
 ## Re-baselined Sequence (Sprints 15–17)
 
 The earlier plan defined Sprint 15 as the React migration. That plan is **obsolete**. Before
@@ -1362,6 +1381,9 @@ AI/provider architecture has to be proven frontend-independent.
 
 ```text
 Sprint 14 release (v14.0.0)
+      │
+      ▼
+Pre-Sprint-15 hardening (v14.1.0) + readiness re-audit
       │
       ▼
 Sprint 15 — Stabilization & Remediation (v15.0.0)
@@ -1387,7 +1409,14 @@ unit test on its own does not make a feature *Verified*.
 
 ## Sprint 15 — Enterprise Stabilization, Governance Completion & Product/UX Remediation 📋
 
-> **Status:** PLANNED / NOT STARTED. Starts after the v14.0.0 release is merged to `main`.
+> **Status:** PLANNED / NOT STARTED. **Start condition:** Sprint 15 may start once every P1 item of the Sprint 15 Readiness Gate (2026-09-29 audit) is closed, which happens with the v14.1.0 release (the hardening merged to `main` through a green CI run and tagged `v14.1.0`), and a readiness re-audit of `v14.1.0` confirms it.
+>
+> **Pulled forward into v14.1.0** (Sprint 15 verifies these rather than builds them):
+> Phase 2 policy proposal → approval → execution → lineage (P2-04, ADR-034); Phase 4 delete
+> decision (ADR-033) and Admin UI coverage (P2-25); Phase 5 read-only views, real error states,
+> upload rerun guard (P2-05 … P2-08); Phase 6 dead-code removal (P2-22); Phase 7 AppTest per
+> page, PostgreSQL CI job, coverage gate, OpenAPI schema diff (P2-21); Phase 8 documentation
+> reconciliation (P2-23).
 
 ### Objective
 
@@ -1446,10 +1475,11 @@ layer, but `src/frontend/views/admin_page.py` only exposes status changes
 (ACTIVE / INACTIVE / SUSPENDED). The endpoint is *Implemented*; it is not yet *Verified*
 end-to-end.
 
-Reconcile frontend and backend. Expose user deletion only if the architecture supports it
-safely, considering: ADMIN-only authorization, confirmation flow, audit logging, consequences
-for owned datasets/reports/jobs, last-admin safeguards, soft- vs hard-delete, API/UI
-consistency, and regression tests. Security and tenant isolation must not be weakened.
+Reconcile frontend and backend. *(v14.1.0: deletion is decided as an atomic **hard** delete,
+with audit pseudonymisation, a last-admin guard and a confirmed Admin UI action; see ADR-033.
+Phase 4 verifies that decision end to end and covers what remains: confirmation UX, consequences
+for owned datasets/reports/jobs as users experience them, and regression tests.)* Security and
+tenant isolation must not be weakened.
 
 ### Phase 5 — Functional Defect / UX Remediation
 
@@ -1849,9 +1879,9 @@ Current repository state:
 - ✅ Stable Enterprise Architecture
 - ✅ Stable Application Layer
 - ✅ Stable Module Contracts
-- 🟡 Automated Test Suite implemented & passing per PROJECT_STATE.md; trustworthy regression baseline pending Sprint 15
+- ✅ Automated Test Suite passing per PROJECT_STATE.md; coverage, PostgreSQL and OpenAPI-diff gates in CI
 - ✅ Stable Performance Validation
-- 🟡 Engineering Documentation extensive; known documentation/repository contradictions — reconciliation pending Sprint 15
+- ✅ Engineering Documentation reconciled with the code at v14.1.0
 - ✅ Stable Persistence Layer
 - ✅ Stable Repository Layer
 - ✅ Stable Database Abstraction Layer
@@ -1861,17 +1891,17 @@ Current repository state:
 - ✅ Stable OpenAPI Specification
 - ✅ Stable Business Intelligence Layer
 - ✅ Stable Power BI Integration
-- 🟡 Frontend Layer implemented & tested; remediation planned in Sprint 15
-- 🟡 Streamlit Frontend released (v10.0.0); needs remediation (pending Sprint 15)
+- ✅ Frontend Layer API-only and AppTest-covered (v14.1.0); UX remediation planned in Sprint 15
 - 🟡 Dashboard implemented; product value/information architecture needs remediation (pending Sprint 15)
 - ✅ Stable AI Insight Engine
 - ✅ Stable Production Deployment & Docker Containerization
-- ✅ Enterprise Identity & Multi-User Platform released (v13.0.0); 🟡 Admin UI/backend user-lifecycle reconciliation pending Sprint 15
-- 🟡 Technical Debt not verified as low — known duplication, dead code, quality-gate exclusions and UI/API mismatches pending Sprint 15
+- ✅ Enterprise Identity & Multi-User Platform released (v13.0.0); Admin UI matches the admin API (v14.1.0)
+- 🟡 Technical Debt: dead code removed and gated; quality-gate exclusions pending the Sprint 15 audit
 - 📋 AI provider abstraction (Ollama + Gemini) and final React-readiness gate pending Sprint 16
 - ✅ Sprint 13 Complete
 - ✅ Sprint 14 released (v14.0.0)
-- 📋 Sprint 15 (Stabilization & Remediation) is next — may begin now that v14.0.0 is released
+- ✅ Pre-Sprint-15 hardening released (v14.1.0); Sprint 15 Readiness Gate closed (40/40)
+- 📋 Sprint 15 (Stabilization & Remediation) is next. Sprint 15 may start once every P1 item of the Sprint 15 Readiness Gate (2026-09-29 audit) is closed, which happens with the v14.1.0 release (the hardening merged to `main` through a green CI run and tagged `v14.1.0`), and a readiness re-audit of `v14.1.0` confirms it.
 - 📋 Sprint 16 (AI Provider Abstraction & React Readiness) follows v15.0.0
 - 📋 Sprint 17 (React Migration) follows v16.0.0 — no React work before then
 
@@ -1879,6 +1909,6 @@ Current repository state:
 
 **Roadmap covers through:** **v17.0.0 (planned)**
 
-**Last released version:** **v14.0.0**
+**Last released version:** **v14.1.0**
 
 **Next Planned Sprint Release:** **v15.0.0 — Sprint 15: Enterprise Stabilization, Governance Completion & Product/UX Remediation** → v16.0.0 (Sprint 16) → v17.0.0 (Sprint 17)
