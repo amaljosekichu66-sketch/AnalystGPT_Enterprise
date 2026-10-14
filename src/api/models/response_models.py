@@ -369,5 +369,10 @@ class DashboardStatusResponse(BaseModel):
 
     status: str = Field(
         ...,
-        description="Current dashboard status.",
+        description="'Ready' when every check passes, otherwise 'Degraded'.",
+    )
+
+    checks: dict[str, str] = Field(
+        default_factory=dict,
+        description="Individual checks, e.g. database: ok | schema_outdated | unavailable.",
     )

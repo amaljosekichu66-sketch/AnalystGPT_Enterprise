@@ -150,12 +150,17 @@ def get_dashboard(
     description="Return lightweight application and dashboard status.",
 )
 def dashboard_status(
+    _user: UserContext = Depends(require_permission(Permission.DASHBOARD_VIEW)),
     orchestrator: DashboardOrchestrator = Depends(
         get_dashboard_orchestrator,
     ),
 ) -> DashboardStatusResponse:
     """
     Return dashboard status.
+
+    P3-05: this used to need no authentication and always answered "Ready".
+    It now requires DASHBOARD_VIEW and reports the database check; the
+    unauthenticated liveness probe is GET /api/health.
     """
 
     status_data = orchestrator.get_status()
@@ -163,4 +168,5 @@ def dashboard_status(
         application=status_data["application"],
         version=status_data["version"],
         status=status_data["status"],
+        checks=status_data["checks"],
     )

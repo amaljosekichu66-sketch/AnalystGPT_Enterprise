@@ -22,6 +22,7 @@ from src.core.constants import (
     APP_NAME,
     APP_VERSION,
 )
+from src.core.logger import logger
 from src.core.redaction import public_artifact_name, public_report_dict
 
 
@@ -100,14 +101,37 @@ class DashboardOrchestrator:
         self,
     ) -> dict[str, Any]:
         """
-        Return lightweight application status.
+        Return application status from real checks (P3-05; it was a constant "Ready").
         """
-
+        checks = {"database": self._database_check()}
         return {
             "application": APP_NAME,
             "version": APP_VERSION,
-            "status": "Ready",
+            "status": "Ready" if all(value == "ok" for value in checks.values()) else "Degraded",
+            "checks": checks,
         }
+
+    @staticmethod
+    def _database_check() -> str:
+        """ok, schema_outdated, or unavailable - never the error text."""
+        from src.database.connection_factory import ConnectionFactory
+        from src.database.schema_manager import SCHEMA_VERSION, SchemaManager
+
+        conn = None
+        try:
+            conn = ConnectionFactory.create_connection()
+            conn.connect()
+            version = SchemaManager(conn).current_version()
+        except Exception:
+            logger.exception("Status check: database unavailable.")
+            return "unavailable"
+        finally:
+            if conn is not None:
+                try:
+                    conn.disconnect()
+                except Exception:
+                    logger.debug("Status check: disconnect failed.", exc_info=True)
+        return "ok" if version == SCHEMA_VERSION else "schema_outdated"
 
     # ==========================================================
     # Internal Helpers

@@ -14,7 +14,7 @@ import json
 import re
 import time
 import uuid
-from typing import Any
+from typing import Any, TypeGuard
 
 from src.core import config
 from src.identity.exceptions import InvalidTokenError
@@ -41,6 +41,15 @@ def _b64url_decode(data_str: str) -> bytes:
     if _b64url_encode(decoded) != data_str:
         raise ValueError("Non-canonical base64url segment.")
     return decoded
+
+
+#: Tolerance for iat/nbf against this server's clock (P3-05).
+CLOCK_SKEW_SECONDS = 60
+
+
+def _is_int(value: object) -> TypeGuard[int]:
+    """A JSON integer claim; bool is an int subclass in Python and is refused."""
+    return isinstance(value, int) and not isinstance(value, bool)
 
 
 class TokenService:
@@ -186,13 +195,25 @@ class TokenService:
         if "exp" not in payload:
             raise InvalidTokenError("Token missing expiration claim.")
 
+        if not _is_int(payload["exp"]):
+            raise InvalidTokenError("Token expiration claim is not a number.")
+
         now = int(time.time())
         if payload["exp"] < now:
             raise InvalidTokenError("Authentication token has expired.")
 
         issued_at = payload.get("iat")
-        if not isinstance(issued_at, int) or payload["exp"] - issued_at > self._max_lifetime_seconds:
+        if not _is_int(issued_at) or payload["exp"] - issued_at > self._max_lifetime_seconds:
             raise InvalidTokenError("Token lifetime exceeds the allowed maximum.")
+
+        # P3-05: a token issued in the future, or not yet valid, is refused
+        # (allowing CLOCK_SKEW_SECONDS for clocks that disagree slightly).
+        if issued_at > now + CLOCK_SKEW_SECONDS:
+            raise InvalidTokenError("Token issued in the future.")
+
+        not_before = payload.get("nbf")
+        if not_before is not None and (not _is_int(not_before) or not_before > now + CLOCK_SKEW_SECONDS):
+            raise InvalidTokenError("Token is not yet valid.")
 
         if payload.get("type") != "access":
             raise InvalidTokenError("Invalid token type.")
