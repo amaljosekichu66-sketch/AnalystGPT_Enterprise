@@ -58,10 +58,17 @@ def test_postgres_connection_passes_tls_and_timeout(monkeypatch: pytest.MonkeyPa
     assert seen["connect_timeout"] == config.POSTGRES_CONNECT_TIMEOUT
 
 
+@pytest.fixture(scope="module")
+def compose() -> dict:
+    return yaml.safe_load((REPO / "docker-compose.yml").read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def workflow() -> str:
+    return (REPO / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+
 class TestCompose:
-    @pytest.fixture(scope="class")
-    def compose(self) -> dict:
-        return yaml.safe_load((REPO / "docker-compose.yml").read_text(encoding="utf-8"))
 
     def test_postgres_image_is_pinned_by_digest(self, compose) -> None:
         assert DIGEST.search(compose["services"]["postgres"]["image"])
@@ -84,9 +91,6 @@ class TestCompose:
 
 
 class TestCI:
-    @pytest.fixture(scope="class")
-    def workflow(self) -> str:
-        return (REPO / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
 
     def test_images_are_scanned_with_a_pinned_trivy(self, workflow: str) -> None:
         assert re.search(r"aquasec/trivy@sha256:[0-9a-f]{64}", workflow)

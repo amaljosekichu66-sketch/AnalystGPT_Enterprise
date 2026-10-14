@@ -65,3 +65,10 @@ addopts = "-ra -m \"not integration\""
 markers = [
     "integration: requires live external infrastructure (Ollama, REST API). Deselected by default; run with `pytest -m integration`.",
 ]
+# P3-10: starlette < 1.8 used the deprecated anyio.abc.BlockingPortal alias.
+# Fixed by the upgrade; any deprecation from starlette or fastapi now fails
+# the run instead of scrolling past in the summary.
+filterwarnings = [
+    "error::DeprecationWarning:starlette.*",
+    "error::DeprecationWarning:fastapi.*",
+]
