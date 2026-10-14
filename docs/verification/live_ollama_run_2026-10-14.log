@@ -1,0 +1,545 @@
+# P2-24 live Ollama verification run
+# date        : 2026-10-14T16:42:01Z
+# commit      : f1abcb7 (+ uncommitted: P2-24 test, dataset, generator)
+# python      : Python 3.11.8
+# ollama      : {"version":"0.40.0"}
+# model       : gemma3:4b (4.3B, Q4_K_M; local tags aa1cd77181b3 and c30276f7dffe)
+# dataset     : sample_data/support_tickets.xlsx sha256=9c3678642cd3128c (seeded; scripts/make_live_sample.py --check)
+# command     : pytest -m integration -v -s -p no:cacheprovider tests/ai/test_ollama_connection.py tests/ai/test_ollama_production_path.py tests/integration/test_live_ollama_pipeline.py
+
+============================= test session starts =============================
+platform win32 -- Python 3.11.8, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Asus\AnalystGPT_Enterprise\venv\Scripts\python.exe
+rootdir: C:\Users\Asus\AnalystGPT_Enterprise
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 16 items
+
+tests/ai/test_ollama_connection.py::test_ollama_server_running PASSED
+tests/ai/test_ollama_connection.py::test_model_exists PASSED
+tests/ai/test_ollama_connection.py::test_simple_generation 
+Generation Time: 2.02 sec
+PASSED
+tests/ai/test_ollama_connection.py::test_response_speed 
+Response Time: 1.79 sec
+PASSED
+tests/ai/test_ollama_connection.py::test_business_prompt 
+
+============================================================
+**Executive Summary:**
+
+The enterprise experienced significant positive growth, with a 18% revenue increase and a 6% reduction in customer churn. Data integrity is high with 98.6% completeness and no duplicate rows.
+============================================================
+PASSED
+tests/ai/test_ollama_connection.py::test_multiple_requests PASSED
+tests/ai/test_ollama_connection.py::test_large_prompt PASSED
+tests/ai/test_ollama_production_path.py::test_ai_timeout_reaches_the_live_http_client 2026-10-14 22:16:55,106 - INFO - AnalystGPT Enterprise - Initialising LLM Provider: ollama
+2026-10-14 22:16:56,819 - INFO - AnalystGPT Enterprise - Connected to Ollama Host: http://localhost:11434
+2026-10-14 22:16:56,821 - INFO - AnalystGPT Enterprise - Provider: Ollama
+2026-10-14 22:16:56,821 - INFO - AnalystGPT Enterprise - LLM Configuration | model=gemma3:4b | temperature=0.20 | max_tokens=1024 | top_p=0.90 | keep_alive=30m
+2026-10-14 22:16:56,821 - INFO - AnalystGPT Enterprise - LLM Initialised | Provider=ollama | Model=gemma3:4b
+PASSED
+tests/ai/test_ollama_production_path.py::test_ai_max_tokens_reaches_the_live_request 2026-10-14 22:16:56,828 - INFO - AnalystGPT Enterprise - Initialising LLM Provider: ollama
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - Connected to Ollama Host: http://localhost:11434
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - Provider: Ollama
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - LLM Configuration | model=gemma3:4b | temperature=0.20 | max_tokens=1024 | top_p=0.90 | keep_alive=30m
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - LLM Initialised | Provider=ollama | Model=gemma3:4b
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - OLLAMA CLIENT
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - Model: gemma3:4b
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - Prompt Length: 55 characters
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - Prompt Size: 0.05 KB
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - Context budget OK | prompt~14 + max_tokens=1024 = 1038 of num_ctx=8192
+2026-10-14 22:16:58,804 - INFO - AnalystGPT Enterprise - Sending request to Ollama...
+2026-10-14 22:17:11,389 - INFO - AnalystGPT Enterprise - Ollama API completed in 12.58 seconds
+2026-10-14 22:17:11,389 - INFO - AnalystGPT Enterprise - Raw Response Length: 4
+2026-10-14 22:17:11,390 - INFO - AnalystGPT Enterprise - Approx Word Count: 1
+2026-10-14 22:17:11,390 - INFO - AnalystGPT Enterprise - Approx Throughput: 0.08 words/sec
+2026-10-14 22:17:11,390 - INFO - AnalystGPT Enterprise - Total generate() time: 12.58 seconds
+PASSED
+tests/ai/test_ollama_production_path.py::test_ai_context_window_reaches_the_live_request 2026-10-14 22:17:11,392 - INFO - AnalystGPT Enterprise - Initialising LLM Provider: ollama
+2026-10-14 22:17:13,114 - INFO - AnalystGPT Enterprise - Connected to Ollama Host: http://localhost:11434
+2026-10-14 22:17:13,115 - INFO - AnalystGPT Enterprise - Provider: Ollama
+2026-10-14 22:17:13,115 - INFO - AnalystGPT Enterprise - LLM Configuration | model=gemma3:4b | temperature=0.20 | max_tokens=1024 | top_p=0.90 | keep_alive=30m
+2026-10-14 22:17:13,116 - INFO - AnalystGPT Enterprise - LLM Initialised | Provider=ollama | Model=gemma3:4b
+2026-10-14 22:17:13,116 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:17:13,116 - INFO - AnalystGPT Enterprise - OLLAMA CLIENT
+2026-10-14 22:17:13,116 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:17:13,116 - INFO - AnalystGPT Enterprise - Model: gemma3:4b
+2026-10-14 22:17:13,116 - INFO - AnalystGPT Enterprise - Prompt Length: 55 characters
+2026-10-14 22:17:13,116 - INFO - AnalystGPT Enterprise - Prompt Size: 0.05 KB
+2026-10-14 22:17:13,116 - INFO - AnalystGPT Enterprise - Context budget OK | prompt~14 + max_tokens=1024 = 1038 of num_ctx=8192
+2026-10-14 22:17:13,116 - INFO - AnalystGPT Enterprise - Sending request to Ollama...
+2026-10-14 22:17:15,832 - INFO - AnalystGPT Enterprise - Ollama API completed in 2.71 seconds
+2026-10-14 22:17:15,832 - INFO - AnalystGPT Enterprise - Raw Response Length: 4
+2026-10-14 22:17:15,833 - INFO - AnalystGPT Enterprise - Approx Word Count: 1
+2026-10-14 22:17:15,833 - INFO - AnalystGPT Enterprise - Approx Throughput: 0.37 words/sec
+2026-10-14 22:17:15,833 - INFO - AnalystGPT Enterprise - Total generate() time: 2.71 seconds
+PASSED
+tests/ai/test_ollama_production_path.py::test_generation_parameters_reach_the_live_request 2026-10-14 22:17:15,833 - INFO - AnalystGPT Enterprise - Initialising LLM Provider: ollama
+2026-10-14 22:17:17,247 - INFO - AnalystGPT Enterprise - Connected to Ollama Host: http://localhost:11434
+2026-10-14 22:17:17,247 - INFO - AnalystGPT Enterprise - Provider: Ollama
+2026-10-14 22:17:17,247 - INFO - AnalystGPT Enterprise - LLM Configuration | model=gemma3:4b | temperature=0.20 | max_tokens=1024 | top_p=0.90 | keep_alive=30m
+2026-10-14 22:17:17,247 - INFO - AnalystGPT Enterprise - LLM Initialised | Provider=ollama | Model=gemma3:4b
+2026-10-14 22:17:17,250 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:17:17,250 - INFO - AnalystGPT Enterprise - OLLAMA CLIENT
+2026-10-14 22:17:17,250 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:17:17,250 - INFO - AnalystGPT Enterprise - Model: gemma3:4b
+2026-10-14 22:17:17,250 - INFO - AnalystGPT Enterprise - Prompt Length: 55 characters
+2026-10-14 22:17:17,250 - INFO - AnalystGPT Enterprise - Prompt Size: 0.05 KB
+2026-10-14 22:17:17,250 - INFO - AnalystGPT Enterprise - Context budget OK | prompt~14 + max_tokens=1024 = 1038 of num_ctx=8192
+2026-10-14 22:17:17,250 - INFO - AnalystGPT Enterprise - Sending request to Ollama...
+2026-10-14 22:17:20,005 - INFO - AnalystGPT Enterprise - Ollama API completed in 2.75 seconds
+2026-10-14 22:17:20,006 - INFO - AnalystGPT Enterprise - Raw Response Length: 4
+2026-10-14 22:17:20,006 - INFO - AnalystGPT Enterprise - Approx Word Count: 1
+2026-10-14 22:17:20,006 - INFO - AnalystGPT Enterprise - Approx Throughput: 0.36 words/sec
+2026-10-14 22:17:20,007 - INFO - AnalystGPT Enterprise - Total generate() time: 2.75 seconds
+PASSED
+tests/ai/test_ollama_production_path.py::test_configured_model_is_the_model_requested 2026-10-14 22:17:20,008 - INFO - AnalystGPT Enterprise - Initialising LLM Provider: ollama
+2026-10-14 22:17:21,647 - INFO - AnalystGPT Enterprise - Connected to Ollama Host: http://localhost:11434
+2026-10-14 22:17:21,649 - INFO - AnalystGPT Enterprise - Provider: Ollama
+2026-10-14 22:17:21,649 - INFO - AnalystGPT Enterprise - LLM Configuration | model=gemma3:4b | temperature=0.20 | max_tokens=1024 | top_p=0.90 | keep_alive=30m
+2026-10-14 22:17:21,649 - INFO - AnalystGPT Enterprise - LLM Initialised | Provider=ollama | Model=gemma3:4b
+2026-10-14 22:17:21,651 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:17:21,653 - INFO - AnalystGPT Enterprise - OLLAMA CLIENT
+2026-10-14 22:17:21,653 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:17:21,653 - INFO - AnalystGPT Enterprise - Model: gemma3:4b
+2026-10-14 22:17:21,653 - INFO - AnalystGPT Enterprise - Prompt Length: 55 characters
+2026-10-14 22:17:21,653 - INFO - AnalystGPT Enterprise - Prompt Size: 0.05 KB
+2026-10-14 22:17:21,653 - INFO - AnalystGPT Enterprise - Context budget OK | prompt~14 + max_tokens=1024 = 1038 of num_ctx=8192
+2026-10-14 22:17:21,653 - INFO - AnalystGPT Enterprise - Sending request to Ollama...
+2026-10-14 22:17:24,313 - INFO - AnalystGPT Enterprise - Ollama API completed in 2.66 seconds
+2026-10-14 22:17:24,313 - INFO - AnalystGPT Enterprise - Raw Response Length: 4
+2026-10-14 22:17:24,313 - INFO - AnalystGPT Enterprise - Approx Word Count: 1
+2026-10-14 22:17:24,313 - INFO - AnalystGPT Enterprise - Approx Throughput: 0.38 words/sec
+2026-10-14 22:17:24,313 - INFO - AnalystGPT Enterprise - Total generate() time: 2.66 seconds
+PASSED
+tests/ai/test_ollama_production_path.py::test_environment_overrides_flow_through_to_the_client 2026-10-14 22:17:25,972 - INFO - AnalystGPT Enterprise - Connected to Ollama Host: http://localhost:11434
+2026-10-14 22:17:25,972 - INFO - AnalystGPT Enterprise - Provider: Ollama
+2026-10-14 22:17:25,972 - INFO - AnalystGPT Enterprise - LLM Configuration | model=gemma3:4b | temperature=0.20 | max_tokens=600 | top_p=0.90 | keep_alive=30m
+PASSED
+tests/ai/test_ollama_production_path.py::test_production_timeout_covers_a_realistic_report_prompt 2026-10-14 22:17:25,989 - INFO - AnalystGPT Enterprise - Initialising LLM Provider: ollama
+2026-10-14 22:17:27,628 - INFO - AnalystGPT Enterprise - Connected to Ollama Host: http://localhost:11434
+2026-10-14 22:17:27,628 - INFO - AnalystGPT Enterprise - Provider: Ollama
+2026-10-14 22:17:27,628 - INFO - AnalystGPT Enterprise - LLM Configuration | model=gemma3:4b | temperature=0.20 | max_tokens=1024 | top_p=0.90 | keep_alive=30m
+2026-10-14 22:17:27,628 - INFO - AnalystGPT Enterprise - LLM Initialised | Provider=ollama | Model=gemma3:4b
+2026-10-14 22:17:27,630 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:17:27,630 - INFO - AnalystGPT Enterprise - OLLAMA CLIENT
+2026-10-14 22:17:27,630 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:17:27,630 - INFO - AnalystGPT Enterprise - Model: gemma3:4b
+2026-10-14 22:17:27,632 - INFO - AnalystGPT Enterprise - Prompt Length: 7778 characters
+2026-10-14 22:17:27,632 - INFO - AnalystGPT Enterprise - Prompt Size: 7.60 KB
+2026-10-14 22:17:27,632 - INFO - AnalystGPT Enterprise - Context budget OK | prompt~2046 + max_tokens=1024 = 3070 of num_ctx=8192
+2026-10-14 22:17:27,632 - INFO - AnalystGPT Enterprise - Sending request to Ollama...
+2026-10-14 22:20:22,568 - INFO - AnalystGPT Enterprise - Ollama API completed in 179.32 seconds
+2026-10-14 22:20:22,568 - INFO - AnalystGPT Enterprise - Raw Response Length: 256
+2026-10-14 22:20:22,569 - INFO - AnalystGPT Enterprise - Approx Word Count: 38
+2026-10-14 22:20:22,569 - INFO - AnalystGPT Enterprise - Approx Throughput: 0.21 words/sec
+2026-10-14 22:20:22,569 - INFO - AnalystGPT Enterprise - Total generate() time: 179.32 seconds
+PASSED
+tests/ai/test_ollama_production_path.py::test_ai_manager_builds_a_report_through_the_live_model 2026-10-14 22:20:22,571 - INFO - AnalystGPT Enterprise - Initialising AI Manager...
+2026-10-14 22:20:22,571 - INFO - AnalystGPT Enterprise - Initialising LLM Provider: ollama
+2026-10-14 22:20:24,428 - INFO - AnalystGPT Enterprise - Connected to Ollama Host: http://localhost:11434
+2026-10-14 22:20:24,428 - INFO - AnalystGPT Enterprise - Provider: Ollama
+2026-10-14 22:20:24,428 - INFO - AnalystGPT Enterprise - LLM Configuration | model=gemma3:4b | temperature=0.20 | max_tokens=1024 | top_p=0.90 | keep_alive=30m
+2026-10-14 22:20:24,428 - INFO - AnalystGPT Enterprise - LLM Initialised | Provider=ollama | Model=gemma3:4b
+2026-10-14 22:20:25,532 - INFO - AnalystGPT Enterprise - Starting analytics pipeline.
+2026-10-14 22:20:25,532 - INFO - AnalystGPT Enterprise - Profiling dataset (6 rows, 7 columns)...
+2026-10-14 22:20:25,562 - INFO - AnalystGPT Enterprise - Dataset profiling completed. Completeness: 97.62% | Semantic classes: {'numeric_discrete': 3, 'categorical': 2, 'boolean': 1, 'datetime': 1}
+2026-10-14 22:20:25,562 - INFO - AnalystGPT Enterprise - Running DescriptiveStatistics...
+2026-10-14 22:20:25,562 - INFO - AnalystGPT Enterprise - Analyzing dataset descriptive statistics.
+2026-10-14 22:20:25,565 - INFO - AnalystGPT Enterprise - Descriptive statistics analysis completed.
+2026-10-14 22:20:25,565 - INFO - AnalystGPT Enterprise - Running NumericalAnalysis...
+2026-10-14 22:20:25,565 - INFO - AnalystGPT Enterprise - Analyzing numerical columns.
+2026-10-14 22:20:25,573 - INFO - AnalystGPT Enterprise - Numerical analysis completed.
+2026-10-14 22:20:25,573 - INFO - AnalystGPT Enterprise - Running CategoricalAnalysis...
+2026-10-14 22:20:25,573 - INFO - AnalystGPT Enterprise - Analyzing categorical columns.
+2026-10-14 22:20:25,576 - INFO - AnalystGPT Enterprise - Categorical analysis completed.
+2026-10-14 22:20:25,576 - INFO - AnalystGPT Enterprise - Running CorrelationAnalysis...
+2026-10-14 22:20:25,576 - INFO - AnalystGPT Enterprise - Analyzing correlations.
+2026-10-14 22:20:25,578 - INFO - AnalystGPT Enterprise - Correlation analysis completed.
+2026-10-14 22:20:25,578 - INFO - AnalystGPT Enterprise - Running DistributionAnalysis...
+2026-10-14 22:20:25,578 - INFO - AnalystGPT Enterprise - Analyzing data distributions.
+2026-10-14 22:20:25,584 - INFO - AnalystGPT Enterprise - Distribution analysis completed.
+2026-10-14 22:20:25,584 - INFO - AnalystGPT Enterprise - Analytics pipeline completed successfully in 0.0535 seconds.
+2026-10-14 22:20:25,584 - INFO - AnalystGPT Enterprise - Creating AnalyticsReport.
+2026-10-14 22:20:25,584 - INFO - AnalystGPT Enterprise - Starting reporting pipeline.
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Generating executive summary...
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Generating executive summary.
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Executive summary generated.
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Formatting KPI section...
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Formatting KPI section.
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - KPI section formatted.
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Building structured report...
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Building structured report...
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Structured report built successfully.
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Analytics Sections : 6
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Recommendations    : 2
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Exporting text report...
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Reporting pipeline completed successfully in 0.0016 seconds.
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Creating ReportingReport.
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Starting AI Insight Engine...
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - Calling UnifiedReportEngine.generate()...
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:20:25,586 - INFO - AnalystGPT Enterprise - UNIFIED REPORT ENGINE
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - Prompt Length : 14675 characters
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - Calling LLM...
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - OLLAMA CLIENT
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - Model: gemma3:4b
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - Prompt Length: 14675 characters
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - Prompt Size: 14.35 KB
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - Context budget OK | prompt~3861 + max_tokens=1024 = 4885 of num_ctx=8192
+2026-10-14 22:20:25,589 - INFO - AnalystGPT Enterprise - Sending request to Ollama...
+2026-10-14 22:27:04,433 - INFO - AnalystGPT Enterprise - Ollama API completed in 287.02 seconds
+2026-10-14 22:27:04,466 - INFO - AnalystGPT Enterprise - Raw Response Length: 3422
+2026-10-14 22:27:04,477 - INFO - AnalystGPT Enterprise - Approx Word Count: 476
+2026-10-14 22:27:04,478 - INFO - AnalystGPT Enterprise - Approx Throughput: 1.66 words/sec
+2026-10-14 22:27:04,478 - INFO - AnalystGPT Enterprise - Total generate() time: 287.08 seconds
+2026-10-14 22:27:04,478 - INFO - AnalystGPT Enterprise - LLM returned 3417 characters.
+2026-10-14 22:27:04,494 - INFO - AnalystGPT Enterprise - LLM response: 3417 characters, sha256=c950f2f8024f3068
+2026-10-14 22:27:04,497 - INFO - AnalystGPT Enterprise - Parsed headings found: ['EXECUTIVE SUMMARY', 'RECOMMENDATIONS', 'EXPLANATIONS', 'NARRATIVE']
+2026-10-14 22:27:04,509 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise - Report Generation Performance:
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise -   Prompt Build : 0.001 s
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise -   LLM Call     : 287.095 s
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise -   Parsing      : 0.015 s
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise -   Total        : 287.111 s
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise -   Response Length : 3417 chars
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise - Section Metrics:
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise -   Executive Summary : 807 chars
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise -   Recommendations   : 5 items
+2026-10-14 22:27:04,510 - INFO - AnalystGPT Enterprise -   Explanations      : 1 items
+2026-10-14 22:27:04,513 - INFO - AnalystGPT Enterprise -   Narrative         : 1054 chars
+2026-10-14 22:27:04,513 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:04,513 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:04,620 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:04,620 - INFO - AnalystGPT Enterprise - Generated AI sections successfully.
+2026-10-14 22:27:04,620 - INFO - AnalystGPT Enterprise - Executive Summary : 807 chars
+2026-10-14 22:27:04,622 - INFO - AnalystGPT Enterprise - Recommendations   : 5 items
+2026-10-14 22:27:04,622 - INFO - AnalystGPT Enterprise - Explanations      : 1 items
+2026-10-14 22:27:04,622 - INFO - AnalystGPT Enterprise - Narrative         : 1054 chars
+2026-10-14 22:27:04,622 - INFO - AnalystGPT Enterprise - Building AIReport object...
+2026-10-14 22:27:04,695 - WARNING - AnalystGPT Enterprise - AI insight validation: Generated text cited kurtosis as evidence of skew or asymmetry. Kurtosis measures tail weight only and cannot evidence asymmetry.
+2026-10-14 22:27:04,704 - WARNING - AnalystGPT Enterprise - AI insight validation: Generated text used causal language. This dataset is observational, so relationships are associations, not causes.
+2026-10-14 22:27:04,717 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:04,717 - INFO - AnalystGPT Enterprise - AI Insight Engine completed successfully.
+2026-10-14 22:27:04,717 - INFO - AnalystGPT Enterprise - Provider : ollama
+2026-10-14 22:27:04,717 - INFO - AnalystGPT Enterprise - Model    : gemma3:4b
+2026-10-14 22:27:04,725 - INFO - AnalystGPT Enterprise - Engine Generation : 287.224 s
+2026-10-14 22:27:04,732 - INFO - AnalystGPT Enterprise - Report Build      : 0.094 s
+2026-10-14 22:27:04,732 - INFO - AnalystGPT Enterprise - Total Time        : 287.319 s
+2026-10-14 22:27:04,732 - INFO - AnalystGPT Enterprise - Prompt Count      : 1
+2026-10-14 22:27:04,732 - INFO - AnalystGPT Enterprise - Recommendations   : 5
+2026-10-14 22:27:04,732 - INFO - AnalystGPT Enterprise - Explanations      : 1
+2026-10-14 22:27:04,732 - INFO - AnalystGPT Enterprise - Narrative Length  : 1054
+2026-10-14 22:27:04,732 - INFO - AnalystGPT Enterprise - Executive Summary Length : 807
+2026-10-14 22:27:04,732 - INFO - AnalystGPT Enterprise - Assigned Confidence : Low — Sample size is too small (6 records) to establish statistically reliable business patterns.
+2026-10-14 22:27:04,746 - INFO - AnalystGPT Enterprise - ============================================================
+PASSED
+tests/integration/test_live_ollama_pipeline.py::test_live_generation_end_to_end 2026-10-14 22:27:04,834 - WARNING - AnalystGPT Enterprise - SECURITY_ALERT | Access tokens are signed with the PUBLISHED development key. Anyone who can reach this API can forge an ADMIN token. Set AUTH_SECRET_KEY.
+2026-10-14 22:27:05,034 - INFO - AnalystGPT Enterprise - Registering custom policy handler: clip_outliers
+2026-10-14 22:27:05,035 - INFO - AnalystGPT Enterprise - Registering custom policy handler: domain_fallback
+2026-10-14 22:27:05,035 - INFO - AnalystGPT Enterprise - Registering custom policy handler: clip_outliers
+2026-10-14 22:27:05,035 - INFO - AnalystGPT Enterprise - Registering custom policy handler: domain_fallback
+2026-10-14 22:27:05,035 - INFO - AnalystGPT Enterprise - Initialising AI Manager...
+2026-10-14 22:27:05,035 - INFO - AnalystGPT Enterprise - Initialising LLM Provider: ollama
+2026-10-14 22:27:08,186 - INFO - AnalystGPT Enterprise - Connected to Ollama Host: http://localhost:11434
+2026-10-14 22:27:08,186 - INFO - AnalystGPT Enterprise - Provider: Ollama
+2026-10-14 22:27:08,186 - INFO - AnalystGPT Enterprise - LLM Configuration | model=gemma3:4b | temperature=0.20 | max_tokens=1024 | top_p=0.90 | keep_alive=30m
+2026-10-14 22:27:08,186 - INFO - AnalystGPT Enterprise - LLM Initialised | Provider=ollama | Model=gemma3:4b
+2026-10-14 22:27:08,570 - INFO - AnalystGPT Enterprise - ================================================================================
+2026-10-14 22:27:08,571 - INFO - AnalystGPT Enterprise - APPLICATION SINGLETON CREATED
+2026-10-14 22:27:08,571 - INFO - AnalystGPT Enterprise - Application ID : 1960446450192
+2026-10-14 22:27:08,571 - INFO - AnalystGPT Enterprise - ================================================================================
+2026-10-14 22:27:11,579 - INFO - AnalystGPT Enterprise - Registering API routers...
+2026-10-14 22:27:11,580 - INFO - AnalystGPT Enterprise - FastAPI server initialized successfully.
+2026-10-14 22:27:18,699 - INFO - AnalystGPT Enterprise - Registering user 'live_3efb66' (l***@example.com) with role 'ANALYST'...
+2026-10-14 22:27:22,137 - INFO - AnalystGPT Enterprise - User 'live_3efb66' registered successfully (ID=1).
+2026-10-14 22:27:22,145 - INFO - AnalystGPT Enterprise - AUDIT_EVENT | Type=USER_REGISTERED | Action=USER_REGISTRATION | Actor=live_3efb66 (ID=1) | Target=USER (ID=1) | Outcome=SUCCESS | Details={'username': 'live_3efb66', 'email': 'l***@example.com', 'role': 'ANALYST'}
+2026-10-14 22:27:23,383 - INFO - AnalystGPT Enterprise - User 'live_3efb66' (ID=1, Role=ANALYST) authenticated successfully.
+2026-10-14 22:27:23,392 - INFO - AnalystGPT Enterprise - AUDIT_EVENT | Type=LOGIN_SUCCESS | Action=USER_LOGIN | Actor=live_3efb66 (ID=1) | Target=AUTH (ID=1) | Outcome=SUCCESS | Details={'role': 'ANALYST'}
+2026-10-14 22:27:25,039 - INFO - AnalystGPT Enterprise - Database Engine          : SQLite
+2026-10-14 22:27:25,047 - INFO - AnalystGPT Enterprise - Persisted raw artifact: path=C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\artifacts\raw\e0\e049edb7-8baa-4914-9176-57bcb0aa7301\support_tickets.xlsx bytes=28328 sha256=9c3678642cd3128c8888f9a8efb969d1dacfaa5a4161afb32c05079b3fd60425
+2026-10-14 22:27:25,049 - INFO - AnalystGPT Enterprise - Uploading file: C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\artifacts\raw\e0\e049edb7-8baa-4914-9176-57bcb0aa7301\support_tickets.xlsx
+2026-10-14 22:27:25,049 - INFO - AnalystGPT Enterprise - Reading Excel file: C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\artifacts\raw\e0\e049edb7-8baa-4914-9176-57bcb0aa7301\support_tickets.xlsx
+2026-10-14 22:27:25,725 - INFO - AnalystGPT Enterprise - Registered source DatasetVersion: version_id=e049edb7-8baa-4914-9176-57bcb0aa7301 rows=400 cols=11
+2026-10-14 22:27:25,731 - INFO - AnalystGPT Enterprise - Registered uploaded dataset version_id=e049edb7-8baa-4914-9176-57bcb0aa7301 owner=1 rows=400
+2026-10-14 22:27:25,740 - INFO - AnalystGPT Enterprise - AUDIT_EVENT | Type=DATASET_UPLOADED | Action=DATASET_UPLOAD | Actor=live_3efb66 (ID=1) | Target=DATASET (ID=None) | Outcome=SUCCESS | Details={'dataset_version_id': 'e049edb7-8baa-4914-9176-57bcb0aa7301', 'byte_size': 28328, 'checksum_sha256': '9c3678642cd3128c8888f9a8efb969d1dacfaa5a4161afb32c05079b3fd60425'}
+2026-10-14 22:27:25,779 - INFO - AnalystGPT Enterprise - Database Engine          : SQLite
+2026-10-14 22:27:25,791 - INFO - AnalystGPT Enterprise - ================================================================================
+2026-10-14 22:27:25,791 - INFO - AnalystGPT Enterprise - APPLICATION.RUN() ENTERED
+2026-10-14 22:27:25,791 - INFO - AnalystGPT Enterprise - ================================================================================
+2026-10-14 22:27:25,791 - INFO - AnalystGPT Enterprise - Application Instance : 1960446450192
+2026-10-14 22:27:25,791 - INFO - AnalystGPT Enterprise - Dataset : dataset_version_id=e049edb7-8baa-4914-9176-57bcb0aa7301
+2026-10-14 22:27:25,791 - INFO - AnalystGPT Enterprise - Identity Context    : User=live_3efb66 | Role=ANALYST | Authenticated=True
+2026-10-14 22:27:25,792 - INFO - AnalystGPT Enterprise - ================================================================================
+2026-10-14 22:27:25,792 - INFO - AnalystGPT Enterprise - Starting AnalystGPT Enterprise...
+2026-10-14 22:27:25,792 - INFO - AnalystGPT Enterprise - ================================================================================
+2026-10-14 22:27:25,792 - INFO - AnalystGPT Enterprise - Database Engine          : SQLite
+2026-10-14 22:27:25,797 - INFO - AnalystGPT Enterprise - Uploading file: C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\artifacts\raw\e0\e049edb7-8baa-4914-9176-57bcb0aa7301\support_tickets.xlsx
+2026-10-14 22:27:25,797 - INFO - AnalystGPT Enterprise - Reading Excel file: C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\artifacts\raw\e0\e049edb7-8baa-4914-9176-57bcb0aa7301\support_tickets.xlsx
+2026-10-14 22:27:26,011 - INFO - AnalystGPT Enterprise - ------------------------------------------------------------
+2026-10-14 22:27:26,011 - INFO - AnalystGPT Enterprise - CLEANING STAGE (Governance-Aware)
+2026-10-14 22:27:26,011 - INFO - AnalystGPT Enterprise - ------------------------------------------------------------
+2026-10-14 22:27:26,011 - INFO - AnalystGPT Enterprise - Starting quality assessment pipeline.
+2026-10-14 22:27:26,011 - INFO - AnalystGPT Enterprise - Running CompletenessChecker...
+2026-10-14 22:27:26,011 - INFO - AnalystGPT Enterprise - Assessing dataset completeness.
+2026-10-14 22:27:26,017 - INFO - AnalystGPT Enterprise - Completeness assessment completed.
+2026-10-14 22:27:26,018 - INFO - AnalystGPT Enterprise - Running ValidityChecker...
+2026-10-14 22:27:26,018 - INFO - AnalystGPT Enterprise - Assessing data validity.
+2026-10-14 22:27:26,028 - INFO - AnalystGPT Enterprise - Validity assessment completed.
+2026-10-14 22:27:26,028 - INFO - AnalystGPT Enterprise - Running ConsistencyChecker...
+2026-10-14 22:27:26,028 - INFO - AnalystGPT Enterprise - Assessing data consistency.
+2026-10-14 22:27:26,074 - INFO - AnalystGPT Enterprise - Consistency assessment completed.
+2026-10-14 22:27:26,074 - INFO - AnalystGPT Enterprise - Running UniquenessChecker...
+2026-10-14 22:27:26,074 - INFO - AnalystGPT Enterprise - Assessing data uniqueness.
+2026-10-14 22:27:26,091 - INFO - AnalystGPT Enterprise - Uniqueness assessment completed.
+2026-10-14 22:27:26,092 - INFO - AnalystGPT Enterprise - Running OutlierChecker...
+2026-10-14 22:27:26,092 - INFO - AnalystGPT Enterprise - Assessing dataset outliers.
+2026-10-14 22:27:26,120 - INFO - AnalystGPT Enterprise - Outlier assessment completed.
+2026-10-14 22:27:26,120 - INFO - AnalystGPT Enterprise - Quality assessment completed successfully in 0.1086 seconds.
+2026-10-14 22:27:26,120 - INFO - AnalystGPT Enterprise - Creating QualityReport.
+2026-10-14 22:27:26,122 - INFO - AnalystGPT Enterprise - Executing missing-value policy: DROP_ROWS
+2026-10-14 22:27:26,126 - INFO - AnalystGPT Enterprise - Starting cleaning pipeline.
+2026-10-14 22:27:26,126 - INFO - AnalystGPT Enterprise - Running ColumnCleaner...
+2026-10-14 22:27:26,126 - INFO - AnalystGPT Enterprise - Standardizing column names.
+2026-10-14 22:27:26,139 - INFO - AnalystGPT Enterprise - Column name standardization completed.
+2026-10-14 22:27:26,139 - INFO - AnalystGPT Enterprise - Running TextCleaner...
+2026-10-14 22:27:26,139 - INFO - AnalystGPT Enterprise - Cleaning text columns.
+2026-10-14 22:27:26,149 - INFO - AnalystGPT Enterprise - Text cleaning completed.
+2026-10-14 22:27:26,150 - INFO - AnalystGPT Enterprise - Running MissingValueCleaner...
+2026-10-14 22:27:26,151 - INFO - AnalystGPT Enterprise - MissingValueCleaner removed 0 rows (371 -> 371).
+2026-10-14 22:27:26,151 - INFO - AnalystGPT Enterprise - Running DuplicateCleaner...
+2026-10-14 22:27:26,151 - INFO - AnalystGPT Enterprise - Removing duplicate rows.
+2026-10-14 22:27:26,162 - INFO - AnalystGPT Enterprise - DuplicateCleaner removed 0 duplicate rows (371 -> 371).
+2026-10-14 22:27:26,162 - INFO - AnalystGPT Enterprise - Running DataTypeCleaner...
+2026-10-14 22:27:26,162 - INFO - AnalystGPT Enterprise - Converting column data types.
+2026-10-14 22:27:26,162 - INFO - AnalystGPT Enterprise - Data type conversion completed.
+2026-10-14 22:27:26,162 - INFO - AnalystGPT Enterprise - Resetting DataFrame index...
+2026-10-14 22:27:26,164 - INFO - AnalystGPT Enterprise - Cleaning pipeline completed successfully in 0.0367 seconds.
+2026-10-14 22:27:26,164 - INFO - AnalystGPT Enterprise - Starting quality assessment pipeline.
+2026-10-14 22:27:26,164 - INFO - AnalystGPT Enterprise - Running CompletenessChecker...
+2026-10-14 22:27:26,164 - INFO - AnalystGPT Enterprise - Assessing dataset completeness.
+2026-10-14 22:27:26,167 - INFO - AnalystGPT Enterprise - Completeness assessment completed.
+2026-10-14 22:27:26,167 - INFO - AnalystGPT Enterprise - Running ValidityChecker...
+2026-10-14 22:27:26,167 - INFO - AnalystGPT Enterprise - Assessing data validity.
+2026-10-14 22:27:26,171 - INFO - AnalystGPT Enterprise - Validity assessment completed.
+2026-10-14 22:27:26,171 - INFO - AnalystGPT Enterprise - Running ConsistencyChecker...
+2026-10-14 22:27:26,171 - INFO - AnalystGPT Enterprise - Assessing data consistency.
+2026-10-14 22:27:26,189 - INFO - AnalystGPT Enterprise - Consistency assessment completed.
+2026-10-14 22:27:26,189 - INFO - AnalystGPT Enterprise - Running UniquenessChecker...
+2026-10-14 22:27:26,191 - INFO - AnalystGPT Enterprise - Assessing data uniqueness.
+2026-10-14 22:27:26,196 - INFO - AnalystGPT Enterprise - Uniqueness assessment completed.
+2026-10-14 22:27:26,197 - INFO - AnalystGPT Enterprise - Running OutlierChecker...
+2026-10-14 22:27:26,197 - INFO - AnalystGPT Enterprise - Assessing dataset outliers.
+2026-10-14 22:27:26,214 - INFO - AnalystGPT Enterprise - Outlier assessment completed.
+2026-10-14 22:27:26,214 - INFO - AnalystGPT Enterprise - Quality assessment completed successfully in 0.0505 seconds.
+2026-10-14 22:27:26,214 - INFO - AnalystGPT Enterprise - Creating QualityReport.
+2026-10-14 22:27:26,353 - INFO - AnalystGPT Enterprise - Persisted cleaned analytical parquet: path=C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\artifacts\cleaned\53\535151f3-f59f-4f67-815a-6ab34c2fa8b1\support_tickets_cleaned.parquet bytes=17805 sha256=be9b8ae1ed721f9f425e8ce2fd6be02b869d3c98c4e2014a3b7b1a8521dea69f
+2026-10-14 22:27:26,353 - INFO - AnalystGPT Enterprise - Dataset after cleaning:
+2026-10-14 22:27:26,355 - INFO - AnalystGPT Enterprise - Shape: 371 rows x 11 columns (values are not logged)
+2026-10-14 22:27:26,368 - INFO - AnalystGPT Enterprise - ------------------------------------------------------------
+2026-10-14 22:27:26,368 - INFO - AnalystGPT Enterprise - QUALITY STAGE
+2026-10-14 22:27:26,369 - INFO - AnalystGPT Enterprise - ------------------------------------------------------------
+2026-10-14 22:27:26,369 - INFO - AnalystGPT Enterprise - Starting quality assessment pipeline.
+2026-10-14 22:27:26,369 - INFO - AnalystGPT Enterprise - Running CompletenessChecker...
+2026-10-14 22:27:26,369 - INFO - AnalystGPT Enterprise - Assessing dataset completeness.
+2026-10-14 22:27:26,370 - INFO - AnalystGPT Enterprise - Completeness assessment completed.
+2026-10-14 22:27:26,372 - INFO - AnalystGPT Enterprise - Running ValidityChecker...
+2026-10-14 22:27:26,372 - INFO - AnalystGPT Enterprise - Assessing data validity.
+2026-10-14 22:27:26,379 - INFO - AnalystGPT Enterprise - Validity assessment completed.
+2026-10-14 22:27:26,379 - INFO - AnalystGPT Enterprise - Running ConsistencyChecker...
+2026-10-14 22:27:26,379 - INFO - AnalystGPT Enterprise - Assessing data consistency.
+2026-10-14 22:27:26,399 - INFO - AnalystGPT Enterprise - Consistency assessment completed.
+2026-10-14 22:27:26,399 - INFO - AnalystGPT Enterprise - Running UniquenessChecker...
+2026-10-14 22:27:26,399 - INFO - AnalystGPT Enterprise - Assessing data uniqueness.
+2026-10-14 22:27:26,404 - INFO - AnalystGPT Enterprise - Uniqueness assessment completed.
+2026-10-14 22:27:26,407 - INFO - AnalystGPT Enterprise - Running OutlierChecker...
+2026-10-14 22:27:26,407 - INFO - AnalystGPT Enterprise - Assessing dataset outliers.
+2026-10-14 22:27:26,424 - INFO - AnalystGPT Enterprise - Outlier assessment completed.
+2026-10-14 22:27:26,424 - INFO - AnalystGPT Enterprise - Quality assessment completed successfully in 0.0555 seconds.
+2026-10-14 22:27:26,425 - INFO - AnalystGPT Enterprise - Creating QualityReport.
+2026-10-14 22:27:26,428 - INFO - AnalystGPT Enterprise - ------------------------------------------------------------
+2026-10-14 22:27:26,428 - INFO - AnalystGPT Enterprise - ANALYTICS STAGE
+2026-10-14 22:27:26,428 - INFO - AnalystGPT Enterprise - ------------------------------------------------------------
+2026-10-14 22:27:26,428 - INFO - AnalystGPT Enterprise - Starting analytics pipeline.
+2026-10-14 22:27:26,428 - INFO - AnalystGPT Enterprise - Profiling dataset (371 rows, 11 columns)...
+2026-10-14 22:27:26,481 - INFO - AnalystGPT Enterprise - Dataset profiling completed. Completeness: 100.00% | Semantic classes: {'identifier': 1, 'date': 1, 'state_region': 1, 'categorical': 4, 'numeric_measure': 3, 'email': 1}
+2026-10-14 22:27:26,483 - INFO - AnalystGPT Enterprise - Running DescriptiveStatistics...
+2026-10-14 22:27:26,483 - INFO - AnalystGPT Enterprise - Analyzing dataset descriptive statistics.
+2026-10-14 22:27:26,489 - INFO - AnalystGPT Enterprise - Descriptive statistics analysis completed.
+2026-10-14 22:27:26,489 - INFO - AnalystGPT Enterprise - Running NumericalAnalysis...
+2026-10-14 22:27:26,489 - INFO - AnalystGPT Enterprise - Analyzing numerical columns.
+2026-10-14 22:27:26,510 - INFO - AnalystGPT Enterprise - Numerical analysis completed.
+2026-10-14 22:27:26,510 - INFO - AnalystGPT Enterprise - Running CategoricalAnalysis...
+2026-10-14 22:27:26,510 - INFO - AnalystGPT Enterprise - Analyzing categorical columns.
+2026-10-14 22:27:26,527 - INFO - AnalystGPT Enterprise - Categorical analysis completed.
+2026-10-14 22:27:26,527 - INFO - AnalystGPT Enterprise - Running CorrelationAnalysis...
+2026-10-14 22:27:26,527 - INFO - AnalystGPT Enterprise - Analyzing correlations.
+2026-10-14 22:27:26,530 - INFO - AnalystGPT Enterprise - Correlation analysis completed.
+2026-10-14 22:27:26,531 - INFO - AnalystGPT Enterprise - Running DistributionAnalysis...
+2026-10-14 22:27:26,531 - INFO - AnalystGPT Enterprise - Analyzing data distributions.
+2026-10-14 22:27:26,548 - INFO - AnalystGPT Enterprise - Distribution analysis completed.
+2026-10-14 22:27:26,549 - INFO - AnalystGPT Enterprise - Analytics pipeline completed successfully in 0.1195 seconds.
+2026-10-14 22:27:26,549 - INFO - AnalystGPT Enterprise - Creating AnalyticsReport.
+2026-10-14 22:27:26,554 - INFO - AnalystGPT Enterprise - ------------------------------------------------------------
+2026-10-14 22:27:26,555 - INFO - AnalystGPT Enterprise - REPORTING STAGE
+2026-10-14 22:27:26,555 - INFO - AnalystGPT Enterprise - ------------------------------------------------------------
+2026-10-14 22:27:26,555 - INFO - AnalystGPT Enterprise - Starting reporting pipeline.
+2026-10-14 22:27:26,555 - INFO - AnalystGPT Enterprise - Generating executive summary...
+2026-10-14 22:27:26,556 - INFO - AnalystGPT Enterprise - Generating executive summary.
+2026-10-14 22:27:26,556 - INFO - AnalystGPT Enterprise - Executive summary generated.
+2026-10-14 22:27:26,556 - INFO - AnalystGPT Enterprise - Formatting KPI section...
+2026-10-14 22:27:26,556 - INFO - AnalystGPT Enterprise - Formatting KPI section.
+2026-10-14 22:27:26,556 - INFO - AnalystGPT Enterprise - KPI section formatted.
+2026-10-14 22:27:26,556 - INFO - AnalystGPT Enterprise - Building structured report...
+2026-10-14 22:27:26,556 - INFO - AnalystGPT Enterprise - Building structured report...
+2026-10-14 22:27:26,556 - INFO - AnalystGPT Enterprise - Structured report built successfully.
+2026-10-14 22:27:26,558 - INFO - AnalystGPT Enterprise - Analytics Sections : 6
+2026-10-14 22:27:26,558 - INFO - AnalystGPT Enterprise - Recommendations    : 2
+2026-10-14 22:27:26,558 - INFO - AnalystGPT Enterprise - Exporting text report...
+2026-10-14 22:27:26,560 - INFO - AnalystGPT Enterprise - Reporting pipeline completed successfully in 0.0063 seconds.
+2026-10-14 22:27:26,560 - INFO - AnalystGPT Enterprise - Creating ReportingReport.
+2026-10-14 22:27:26,562 - INFO - AnalystGPT Enterprise - Report successfully generated.
+2026-10-14 22:27:26,562 - INFO - AnalystGPT Enterprise - Export Location: C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\reports\report_run_1.txt
+2026-10-14 22:27:26,581 - INFO - AnalystGPT Enterprise - Created AI job 'ai_job_25480234ec12' (Status=PENDING) for Pipeline Run 1.
+2026-10-14 22:27:26,581 - INFO - AnalystGPT Enterprise - Submitting AI job 'ai_job_25480234ec12' to background worker pool...
+2026-10-14 22:27:26,583 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,583 - INFO - AnalystGPT Enterprise - PIPELINE EXECUTION SUMMARY
+2026-10-14 22:27:26,583 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,584 - INFO - AnalystGPT Enterprise - Rows Processed          : 371
+2026-10-14 22:27:26,584 - INFO - AnalystGPT Enterprise - Columns Processed       : 11
+2026-10-14 22:27:26,584 - INFO - AnalystGPT Enterprise - Numeric Columns         : 3
+2026-10-14 22:27:26,584 - INFO - AnalystGPT Enterprise - Categorical Columns     : 5
+2026-10-14 22:27:26,584 - INFO - AnalystGPT Enterprise - Datetime Columns        : 1
+2026-10-14 22:27:26,584 - INFO - AnalystGPT Enterprise - Memory Usage (MB)       : 0.07
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - Dataset Completeness    : 100.00%
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - Duplicate Rows          : 0
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - Quality Time (s)        : 0.0555
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - Analytics Time (s)      : 0.1195
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - Reporting Time (s)      : 0.0063
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - AI Job ID               : ai_job_25480234ec12
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - AI Job Status           : PENDING
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - AI Model                : gemma3:4b
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - AI Provider             : ollama
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - Report Exported         : C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\reports\report_run_1.txt
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - Pipeline persisted successfully.
+2026-10-14 22:27:26,586 - INFO - AnalystGPT Enterprise - AnalystGPT Enterprise completed successfully.
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - PIPELINE RESULT CREATED
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - Pipeline Success : True
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - Pipeline Report  : present (PipelineReport)
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - Reporting Report : present (ReportingReport)
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - AI Report        : absent
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - Output Path      : C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\reports\report_run_1.txt
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - ================================================================================
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - PIPELINE RESULT CACHED
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - ================================================================================
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - Application Instance : 1960446450192
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - Dataset : dataset_version:e049edb7-8baa-4914-9176-57bcb0aa7301
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - Cached Result : present (PipelineResult)
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - Pipeline Report : present (PipelineReport)
+2026-10-14 22:27:26,588 - INFO - AnalystGPT Enterprise - AI Report : absent
+2026-10-14 22:27:26,590 - INFO - AnalystGPT Enterprise - ================================================================================
+2026-10-14 22:27:26,590 - INFO - AnalystGPT Enterprise - PipelineResult cached successfully for dataset: dataset_version:e049edb7-8baa-4914-9176-57bcb0aa7301 (user_id=1)
+2026-10-14 22:27:26,597 - INFO - AnalystGPT Enterprise - Starting AI generation for job 'ai_job_25480234ec12' (Attempt 1/3)...
+2026-10-14 22:27:26,628 - INFO - AnalystGPT Enterprise - AUDIT_EVENT | Type=PIPELINE_EXECUTED | Action=PIPELINE_EXECUTE | Actor=live_3efb66 (ID=1) | Target=PIPELINE_RUN (ID=1) | Outcome=SUCCESS | Details={'dataset_version_id': 'e049edb7-8baa-4914-9176-57bcb0aa7301'}
+
+pipeline_run_id=1 report_id=1 ai_job_id=ai_job_25480234ec12
+2026-10-14 22:27:26,728 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,759 - INFO - AnalystGPT Enterprise - Starting AI Insight Engine...
+2026-10-14 22:27:26,759 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,760 - INFO - AnalystGPT Enterprise - Calling UnifiedReportEngine.generate()...
+2026-10-14 22:27:26,760 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,768 - INFO - AnalystGPT Enterprise - UNIFIED REPORT ENGINE
+2026-10-14 22:27:26,800 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,810 - INFO - AnalystGPT Enterprise - Prompt Length : 16866 characters
+2026-10-14 22:27:26,811 - INFO - AnalystGPT Enterprise - Calling LLM...
+2026-10-14 22:27:26,811 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,811 - INFO - AnalystGPT Enterprise - OLLAMA CLIENT
+2026-10-14 22:27:26,811 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:27:26,811 - INFO - AnalystGPT Enterprise - Model: gemma3:4b
+2026-10-14 22:27:26,812 - INFO - AnalystGPT Enterprise - Prompt Length: 16866 characters
+2026-10-14 22:27:26,812 - INFO - AnalystGPT Enterprise - Prompt Size: 16.49 KB
+2026-10-14 22:27:26,812 - INFO - AnalystGPT Enterprise - Context budget OK | prompt~4438 + max_tokens=1024 = 5462 of num_ctx=8192
+2026-10-14 22:27:26,812 - INFO - AnalystGPT Enterprise - Sending request to Ollama...
+  t+   0.2s  GENERATING
+2026-10-14 22:33:37,734 - INFO - AnalystGPT Enterprise - Ollama API completed in 370.92 seconds
+2026-10-14 22:33:37,741 - INFO - AnalystGPT Enterprise - Raw Response Length: 3048
+2026-10-14 22:33:37,746 - INFO - AnalystGPT Enterprise - Approx Word Count: 385
+2026-10-14 22:33:37,746 - INFO - AnalystGPT Enterprise - Approx Throughput: 1.04 words/sec
+2026-10-14 22:33:37,747 - INFO - AnalystGPT Enterprise - Total generate() time: 370.93 seconds
+2026-10-14 22:33:37,747 - INFO - AnalystGPT Enterprise - LLM returned 3046 characters.
+2026-10-14 22:33:37,749 - INFO - AnalystGPT Enterprise - LLM response: 3046 characters, sha256=0566c1a31438443d
+2026-10-14 22:33:37,751 - INFO - AnalystGPT Enterprise - Parsed headings found: ['EXECUTIVE SUMMARY', 'RECOMMENDATIONS', 'EXPLANATIONS', 'NARRATIVE']
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - Report Generation Performance:
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise -   Prompt Build : 0.005 s
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise -   LLM Call     : 370.939 s
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise -   Parsing      : 0.003 s
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise -   Total        : 370.947 s
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise -   Response Length : 3046 chars
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - Section Metrics:
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise -   Executive Summary : 764 chars
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise -   Recommendations   : 3 items
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise -   Explanations      : 1 items
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise -   Narrative         : 1010 chars
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - Generated AI sections successfully.
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - Executive Summary : 764 chars
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - Recommendations   : 3 items
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - Explanations      : 1 items
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - Narrative         : 1010 chars
+2026-10-14 22:33:37,752 - INFO - AnalystGPT Enterprise - Building AIReport object...
+2026-10-14 22:33:37,762 - WARNING - AnalystGPT Enterprise - AI insight validation: Generated text used causal language. This dataset is observational, so relationships are associations, not causes.
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - AI Insight Engine completed successfully.
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Provider : ollama
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Model    : gemma3:4b
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Engine Generation : 370.996 s
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Report Build      : 0.007 s
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Total Time        : 371.003 s
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Prompt Count      : 1
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Recommendations   : 3
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Explanations      : 1
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Narrative Length  : 1010
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Executive Summary Length : 764
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - Assigned Confidence : High — Grounded in governed numerical measures, verified distribution statistics, and bivariate correlations.
+2026-10-14 22:33:37,762 - INFO - AnalystGPT Enterprise - ============================================================
+2026-10-14 22:33:37,785 - INFO - AnalystGPT Enterprise - AI job 'ai_job_25480234ec12' completed successfully -> READY.
+  t+ 374.1s  READY
+  model=gemma3:4b provider=ollama
+  executive_summary=764 chars
+  recommendations=3
+2026-10-14 22:33:40,772 - INFO - AnalystGPT Enterprise - ReportingOrchestrator: export_pdf_report requested (user_id=1, report_id=1)
+2026-10-14 22:33:40,773 - INFO - AnalystGPT Enterprise - Database Engine          : SQLite
+2026-10-14 22:33:40,784 - INFO - AnalystGPT Enterprise - Exporting executive enterprise PDF report...
+2026-10-14 22:33:46,717 - INFO - AnalystGPT Enterprise - Executive PDF report exported successfully: C:\Users\Asus\AppData\Local\Temp\analystgpt-tests-xw_2ib72\reports\exports\export_c67f42a02aa54dc69a7f7b969823df78.pdf (5 pages)
+2026-10-14 22:33:46,747 - INFO - AnalystGPT Enterprise - AUDIT_EVENT | Type=REPORT_EXPORTED | Action=REPORT_EXPORT | Actor=live_3efb66 (ID=1) | Target=REPORT (ID=None) | Outcome=SUCCESS | Details={'format': 'application/pdf', 'bytes': 88008}
+  pdf=88008 bytes
+PASSED
+
+======================= 16 passed in 1181.58s (0:19:41) =======================
+exit=0
+
+# ----------------------------------------------------------------------
+# Result: 16 passed (15 live LLM path tests + the end-to-end pipeline test).
+# End to end: upload -> pipeline -> AI job GENERATING -> READY after 374 s on
+# CPU; report from gemma3:4b with a 764-char executive summary and 3
+# recommendations; PDF export 88,008 bytes; no customer e-mail in the output.
+# The SECURITY_ALERT line above is expected: the test process runs in
+# APP_ENVIRONMENT=development on loopback with the built-in key, and the API
+# warns loudly about that by design (L4). No secret values are logged.
+# Reproduce from a clean clone: pip install -r requirements-dev.txt;
+# ollama pull gemma3:4b; python scripts/make_live_sample.py --check; then the
+# command in the header.
