@@ -1,3 +1,10 @@
+# Changelog
+
+All notable changes to AnalystGPT Enterprise, oldest first. The newest release is at the end:
+**[v14.1.0]**. The file begins with the tail of the v5.0.0 entry; earlier releases are described in
+docs/project/PROJECT_JOURNAL.md.
+
+---
 
 ### Improved
 
@@ -1525,7 +1532,9 @@ so the disagreement was over naming rather than scope. The combined authoritativ
 
 ---
 
-### Sprint 14 Phase 2: Asynchronous AI Execution, Persistent Job Lifecycle & Performance (Implemented, Verified)
+> *Note (2026-10-14): the Sprint 14 phase headings below originally read "(Implemented, Verified)". Under the evidence vocabulary adopted afterwards they were implemented and tested, not verified end to end; several were later found broken (governance policy selection, retry, export by id) and fixed in v14.1.0. The headings are corrected; the bodies are unchanged.*
+
+### Sprint 14 Phase 2: Asynchronous AI Execution, Persistent Job Lifecycle & Performance (Implemented, Tested)
 
 #### Added
 - `src/ai/models.py`: Domain entity `AIJob` and enums `AIJobStatus` (`PENDING`, `GENERATING`, `READY`, `FAILED`) and `AIFailureCategory` (`TIMEOUT`, `PROVIDER_UNAVAILABLE`, `MODEL_ERROR`, `INVALID_OUTPUT`, `SYSTEM_ERROR`) with formal finite state machine transitions per ADR-025.
@@ -1555,7 +1564,7 @@ so the disagreement was over naming rather than scope. The combined authoritativ
 - `src/frontend/services/api_client.py`: Added API client methods `get_ai_job()`, `get_latest_ai_job()`, `retry_ai_job()`.
 - `src/frontend/views/ai_insights_page.py`: Hardened view with dynamic status banners, automatic completion rendering, and retry triggers.
 
-### Sprint 14 Phase 3: Data Cleaning Governance & Lineage (Implemented, Verified)
+### Sprint 14 Phase 3: Data Cleaning Governance & Lineage (Implemented, Tested)
 
 #### Added
 - `src/governance/`: Enterprise dataset governance and versioning models (`DatasetVersion`, `CleaningConfig`, `CleaningExecution`).
@@ -1568,7 +1577,7 @@ so the disagreement was over naming rather than scope. The combined authoritativ
 
 ---
 
-### Sprint 14 Phase 4: AI Data Context & Analytical Integrity (Implemented, Verified)
+### Sprint 14 Phase 4: AI Data Context & Analytical Integrity (Implemented, Tested)
 
 #### Added
 - `src/ai/context.py`: Domain data context models (`AIDataContext`, `SourceDataContext`, `CleaningContext`, `QualityContext`, `AnalyticsContext`, `LineageContext`).
@@ -1579,7 +1588,7 @@ so the disagreement was over naming rather than scope. The combined authoritativ
 
 ---
 
-### Sprint 14 Phase 5: Reporting & PDF Export Stabilization (Implemented, Verified)
+### Sprint 14 Phase 5: Reporting & PDF Export Stabilization (Implemented, Tested)
 
 #### Added
 - `src/reporting/exporters/pdf_report_exporter.py`: Standards-compliant `%PDF-1.4` multi-page PDF exporter.
@@ -1601,7 +1610,7 @@ so the disagreement was over naming rather than scope. The combined authoritativ
 
 ---
 
-### Sprint 14 Phase 6: OpenAPI / React Migration Readiness (Implemented, Verified)
+### Sprint 14 Phase 6: OpenAPI / React Migration Readiness (Implemented, Tested)
 
 #### Added
 - `docs/api/openapi.json`: Authoritative, formatted OpenAPI 3.1 specification across all 40 registered API routes.
@@ -1622,7 +1631,7 @@ so the disagreement was over naming rather than scope. The combined authoritativ
 
 ---
 
-### Sprint 14 Phase 7: Semantic Profiling, Visual Analytics & Publication-Grade Exporter Redesign (Implemented, Verified)
+### Sprint 14 Phase 7: Semantic Profiling, Visual Analytics & Publication-Grade Exporter Redesign (Implemented, Tested)
 
 #### Added
 - `src/profiling/`: Semantic profiling engine with 20-class `SemanticType` taxonomy, `AnalyticalRole` taxonomy, and deterministic `SemanticClassifier` / `DataProfiler`.
@@ -1639,7 +1648,7 @@ so the disagreement was over naming rather than scope. The combined authoritativ
 
 ---
 
-### Sprint 14 Final Closure: AI Grounding Remediation & E2E Validation (Implemented, Verified)
+### Sprint 14 Final Closure: AI Grounding Remediation & E2E Validation (Implemented, Tested)
 
 #### Added
 - `tests/ai/test_ai_grounding_remediation.py`: Dedicated regression test suite ensuring distinct category cardinality cannot be converted to percentage frequency and preventing non-majority dominance claims.
@@ -1694,17 +1703,90 @@ Sprint 14 delivers comprehensive enterprise stabilization, asynchronous AI execu
 
 ---
 
-## [Unreleased] — Pre-Sprint-15 Security & Stability Hardening
+## [v14.1.0] — 2026-10-14 — Pre-Sprint-15 Hardening & Sprint 15 Readiness Gate
 
-> Branch `pre-sprint-15-hardening` from `b841b52` (v14.0.0 baseline). Not released. Status:
-> **READY FOR RE-AUDIT**. Every item below was reproduced on `b841b52` before it was fixed and
-> re-probed afterwards; details and evidence in PROJECT_STATE.md § *Pre-Sprint-15 Hardening*.
+> Branch `pre-sprint-15-hardening` from `b841b52` (the v14.0.0 baseline), merged to `main` and
+> tagged `v14.1.0`. It contains three security and readiness audit passes plus the 40-item Sprint 15
+> Readiness Gate, all closed. Every security item was reproduced before it was fixed, and
+> re-probed afterwards. Current figures: PROJECT_STATE.md § *Sprint 15 Readiness Gate*.
+> Decisions: ADR-029 – ADR-035. Sprint 15 has not started: it starts after a readiness
+> re-audit of this release.
+
+### Upgrade notes (read before deploying)
+
+**Configuration — the API refuses to start until these are right**
+
+- `APP_ENVIRONMENT` unset now means **production**.
+- `AUTH_SECRET_KEY` must be private and at least 32 bytes. It must not be the published
+  development key or the `.env.example` `CHANGE_ME` placeholder.
+- Compose also requires `POSTGRES_PASSWORD` and `APP_DB_PASSWORD`, with no fallbacks.
+- For local development, start from `cp .env.development.example .env`. `.env.example` is now a
+  production template.
+
+**Rotate secrets (I11).** Any deployment that ran v14.0.0 or earlier with default settings
+signed tokens with a public key and used the `postgres` password. Rotate `AUTH_SECRET_KEY` and
+the database password.
+
+**Everyone signs in again.** Tokens issued by v14.0.0 lack `jti`, `iss` and `aud` and are
+rejected. Tokens are now also revoked by:
+
+- logout;
+- password change (`POST /api/auth/password`);
+- "log out everywhere" (`POST /api/auth/logout-all`);
+- role or status changes.
+
+**Review ADMIN accounts.** Before the SEC-01 fix (`0c4d9b2`), anyone could register as ADMIN.
+List the admins (`GET /api/admin/users`) and demote or delete any you did not create.
+Self-registered accounts are now **VIEWER**; promote them with
+`PATCH /api/admin/users/{id}`. `AUTH_SELF_REGISTRATION_ENABLED=false` turns off public sign-up.
+
+**Database**
+
+- The schema migrates once, at the first start (`schema_version` 15). After that, startup runs
+  no DDL (ADR-035).
+- Startup refuses to run if two users differ only by the case of their username or email (L6).
+  Merge or rename them first.
+- **Existing PostgreSQL volumes:** run `docker/postgres/init-app-role.sh` once before upgrading.
+  The API now connects as the least-privilege `APP_DB_USER`.
+
+**API clients (breaking changes)**
+
+- Datasets:
+  - Upload bytes with `POST /api/datasets` and use the returned `dataset_version_id`.
+  - `input_path` and `?dataset=` are gone (ADR-029).
+  - Uploads need `Content-Length` (411), and `.xls` is no longer accepted.
+  - Limits answer 413; job and rate caps answer 429.
+- Registration rejects `role` and any other unknown field.
+- `POST /api/auth/logout` requires the token being revoked.
+- `GET /api/powerbi/status` requires authentication.
+- Error bodies carry `request_id` instead of exception text.
+- See *Contract* below for everything new.
+
+**Operations**
+
+- **One uvicorn worker.** Lockout state is in the database, but the per-client rate limiter is
+  per process.
+- **Reverse proxy.** Put the proxy's address in `TRUSTED_PROXY_IPS` and its hostname in
+  `API_ALLOWED_HOSTS`.
+- **Audit retention.** Audit rows older than `AUDIT_RETENTION_DAYS` (default 365; `0` keeps
+  everything) are deleted at startup.
+- **CLI.** `python main.py` needs a dataset and `--owner USERNAME`, or an explicit
+  `--ownerless`. `python main.py --help` shows the options.
+- **Removed settings:** `OPENAI_API_KEY`, `GEMINI_API_KEY`, `CLAUDE_API_KEY` (nothing read them)
+  and `AUTH_DEFAULT_ADMIN_*` (there is no bootstrap admin; use `scripts/create_admin.py`).
+- **Dependencies.** Install with `pip install --require-hashes -r requirements.lock`. This
+  release moves starlette to 1.8.0 and urllib3 to 2.8.0 (PYSEC-2026-4175/4176/4177).
+
+**Local data (P3-07 / I13).** `analystgpt.db` and `data/artifacts/` on development machines
+hold real data. Never copy or ship them.
+
+### Security — first pass (blockers B-01 … B-06)
 
 ### Security
 
 - **B-01 / SEC-01 — public ADMIN self-registration.** `POST /api/auth/register` accepted a
   caller-supplied `role`. Registration now binds `UserRegistration` (no role, unknown fields →
-  422); self-registered accounts are ANALYST. `scripts/create_admin.py` bootstraps the first
+  422); self-registered accounts are ANALYST *(VIEWER since the third pass, M10)*. `scripts/create_admin.py` bootstraps the first
   ADMIN from a shell on the deployment.
 - **B-02 / SEC-02 / SEC-19 — arbitrary server file read.** Client-supplied paths
   (`input_path`, `?dataset=`) are gone. New `POST /api/datasets` (multipart) validates type and
@@ -1718,7 +1800,7 @@ Sprint 14 delivers comprehensive enterprise stabilization, asynchronous AI execu
   production. Outside development the API refuses to start with a missing, empty, < 32-byte or
   published `AUTH_SECRET_KEY`. Compose sets production and requires the key (no fallback).
 
-### Fixed
+### Fixed — first pass
 
 - **B-03 / SEC-06 — crash under concurrent requests.** Per-run / per-request persistence
   sessions replace the shared `PersistenceManager`; results carry their own lineage; caches are
@@ -1727,15 +1809,15 @@ Sprint 14 delivers comprehensive enterprise stabilization, asynchronous AI execu
   on PostgreSQL 16). Column migrations no longer depend on failing statements; the schema is one
   atomic transaction.
 
-### Changed (breaking for API clients)
+### Changed — first pass (breaking for API clients)
 
 - `POST /api/pipeline` body: `{"dataset_version_id": "<uuid>"}` (was `input_path`).
 - `/api/powerbi/*`: `?dataset_version_id=` (was `?dataset=`); 404 until the dataset has been run.
 - `DatasetVersionResponse.storage_path` removed. `POST /api/auth/register` rejects `role`.
-- Local development must set `APP_ENVIRONMENT=development` explicitly.
-- OpenAPI: 34 paths, 43 schemas.
+- Local development must set `APP_ENVIRONMENT=development` explicitly *(now via `.env.development.example`)*.
+- OpenAPI after the first pass: 34 paths, 43 schemas *(46 paths, 51 schemas at v14.1.0)*.
 
-### Documentation
+### Documentation — first pass
 
 - ROADMAP.md, PROJECT_STATE.md, API_REFERENCE.md, DEPLOYMENT_GUIDE.md, REACT_MIGRATION_MAPPING.md,
   ADR-028 and ARCHITECTURE.md corrected where they contradicted the code: governance policy
@@ -1743,7 +1825,7 @@ Sprint 14 delivers comprehensive enterprise stabilization, asynchronous AI execu
   "Production Ready" ratings replaced with evidence-based status, performance validation is
   partial, coverage is 81% (not 100%), and the stale "v14.0.0 release pending" line.
 
-### Verification
+### Verification — first pass
 
 - 870 passed, 1 skipped, 15 deselected, 0 failed (baseline: 714 passed, 15 deselected);
   PostgreSQL integration 4 passed against a throwaway PostgreSQL 16.15; flake8 / black / isort /
@@ -1773,3 +1855,127 @@ Sprint 14 delivers comprehensive enterprise stabilization, asynchronous AI execu
 - Verification (second pass): 959 passed, 1 skipped, 15 deselected, 0 failed; coverage 82%;
   PostgreSQL 16 integration 4 passed; API image built and smoke-tested; gitleaks, pip-audit and
   bandit (HIGH) clean.
+
+### Security — third pass (2026-09-29 audit: M1 … M12, L1 … L19, I1 … I17, X1)
+
+- **Login path:** constant-time unknown-user check with a real PBKDF2 dummy hash; hashing off
+  the event loop; one 401 for disabled accounts; capped and escaped identifiers; canonical
+  base64url tokens (M1, M2, L1, L2, I1, I4).
+- **Accounts:** self-registration gives VIEWER (`AUTH_SELF_REGISTRATION_ENABLED`); uniqueness
+  is case-insensitive (M10, L6). Lockout is keyed on (account, source) and stored in the
+  database; an admin can unlock (`POST /api/admin/users/{id}/unlock`). There is a per-source
+  spraying counter, and the denylist is SecLists-derived (M11, M12, L5, I3). The API trusts
+  `X-Forwarded-For` only from `TRUSTED_PROXY_IPS`.
+- **Sessions:** `token_version` (`ver`) revocation; `POST /api/auth/password`,
+  `POST /api/auth/logout-all`; `AUTH_TOKEN_MAX_LIFETIME_MINUTES`; the development key is refused
+  off loopback (I2, L4).
+- **Rendering:** AI text and column names are escaped, prompt delimiters neutralised, autolinks
+  broken, and mathtext escaped in charts (M9, L8, I15, L17).
+- **Uploads:**
+  - every route has a body limit; uploads require `Content-Length`;
+  - the archive check works by content, and `.xls` was dropped;
+  - shape is capped header-first;
+  - the frontend applies the same guards;
+  - `defusedxml`;
+  - filenames are normalised (M3, M4, M5, M8, I5, I8).
+- **Errors, quotas, caches:** generic errors with no tracebacks or input echo. The governance
+  preview takes a job slot; AI jobs are quota'd and the queue is bounded. Caches are bounded
+  LRU + TTL (L7, M6, M7, L10, I9).
+- **AI jobs:** leases, conditional transitions, and interrupted jobs fail visibly (L12, I16).
+- **API hygiene:** security headers, `TrustedHostMiddleware`, `allow_credentials=False`, and
+  audit events for uploads, runs, exports, cross-tenant admin reads, rejected tokens and 429s
+  (L13, L14, I10).
+- **Files:** exports are served from memory; report paths are contained; dataset delete and
+  optional retention; SQLite foreign keys on every connection; chunked purge (L15, L16, L18,
+  I6, I7, I14).
+- **Logging:** sizes and digests are logged, not LLM text or data (L9).
+- **Infrastructure:**
+  - PostgreSQL TLS options and a connect timeout;
+  - plain HTTP to a remote Ollama is refused;
+  - the PostgreSQL image is pinned by digest, with a least-privilege app role;
+  - a Trivy image scan runs in CI (L11, L19, I12).
+
+### Sprint 15 Readiness Gate (P1-01 … P3-10)
+
+- **AI jobs.**
+  - Jobs persist their input; retry really re-runs (FAILED or CANCELLED).
+  - Interrupted jobs are requeued at startup (`AI_RECOVER_ALL_ON_STARTUP`).
+  - `POST /api/ai/jobs/{id}/cancel`.
+  - No connection leaks (P2-01, P2-02, P2-20).
+- **Reports.** Export by id rebuilds that report from persisted rows or answers 404, never
+  another report. Text and PDF match, and `report_id` is returned (P2-03).
+- **Governance.** Cleaning-policy proposals (`/api/governance/policies`, with approve, modify and
+  reject). `POST /api/pipeline` runs an approved proposal (`cleaning_policy_proposal_id`), and
+  lineage records `proposal_id` and `approved_by` (P2-04, ADR-034).
+- **Frontend.**
+  - It talks only to the API (import-guarded); `GET /api/datasets/{id}/analysis` serves
+    profiling.
+  - Views are read-only and keyed to their dataset.
+  - Uploads have a hash guard; pages show readable errors with the API down.
+  - The Admin UI covers delete, unlock, audit and pagination (P2-05 … P2-08, P2-25).
+- **Security.**
+  - Rate limits are per real client behind the frontend (P1-02).
+  - Lockout can't be weaponised (P2-11).
+  - Timing is equalised and hashing runs in the threadpool (P2-09, P2-10).
+  - Chunked uploads are capped before parsing (P2-12).
+  - Error text no longer reaches clients (P2-13).
+  - Identifiers are log-safe (P3-06).
+  - `/api/powerbi/status` is authenticated and real; token `iat` / `nbf` are checked (P3-05).
+- **Data governance.**
+  - Account deletion is all-or-nothing: data and the account go in one transaction, and the
+    audit trail is pseudonymised (P2-14, ADR-033).
+  - The audit trail is hash-chained, with `GET /api/admin/audit-events/verify` and
+    `AUDIT_RETENTION_DAYS` (ADR-032).
+  - `scripts/purge_ownerless_data.py`.
+- **Personal data (P2-15).** Detected by name and by value (e-mail, phone, SSN, IPv4), and
+  camelCase names are split. Masked in report, dashboard and Power BI analytics, never charted,
+  and masked in previews.
+- **Database (P2-16, ADR-035).**
+  - `schema_version`: the DDL runs once per version, under a PostgreSQL advisory lock.
+  - A fingerprint guard makes CI fail on a DDL change without a version bump.
+- **Configuration.**
+  - `.env.example` is a refused production template, and `.env.development.example` is added
+    (P2-18, ADR-030).
+  - Compose AI defaults are aligned (P2-17).
+  - `python-multipart` is declared (P2-19).
+- **Dead code removed and gated (P2-22).**
+  - Unused `Application` methods and the debug print.
+  - `ai_orchestrator`; the insight, executive-summary, explanation, narrative and
+    recommendation engines.
+  - Unused frontend components and `src/frontend/theme/`.
+  - Duplicated identity exceptions; unused settings.
+  - `vulture` runs in CI with a documented whitelist.
+- **CLI (P2-26).** `argparse`, `--help`, a dataset argument, and an accountable `--owner` (or
+  explicit `--ownerless`); exit codes 0 / 1 / 2.
+- **Tests and CI (P2-21).**
+  - An end-to-end API journey test.
+  - The OpenAPI contract is diffed as a whole document.
+  - Coverage gate at 85%.
+  - AppTest for every registered page.
+  - A `postgres` CI job runs schema and concurrency tests on PostgreSQL 16.
+  - The reviewed bandit B608 count (57) is gated (P3-04).
+- **Live AI (P2-24).**
+  - A tracked synthetic dataset, `sample_data/support_tickets.xlsx` (seeded:
+    `scripts/make_live_sample.py`).
+  - `tests/integration/test_live_ollama_pipeline.py`.
+  - The recorded run: `docs/verification/live_ollama_run_2026-10-14.log`.
+- **Maintenance.**
+  - The duplicate `/powerbi/dashboard` route is removed (P3-01).
+  - starlette 1.8.0 clears the TestClient deprecation, and pytest now fails on
+    starlette/fastapi deprecations (P3-10).
+  - urllib3 2.8.0.
+- **Documentation.**
+  - One start condition in PROJECT_STATE, ROADMAP and PROJECT_JOURNAL (P1-03).
+  - ADR-029 – ADR-035 (P1-04).
+  - Full reconciliation (P2-23); broken references (P3-03); stale governance documents (P3-08).
+- **Release (P1-01).** Merged to `main` through a green CI run and tagged `v14.1.0`. The stale
+  `sprint-15-stabilization` branch is deleted (P3-02).
+
+### Verification — v14.1.0
+
+- Default suite: 1,241 passed, 1 skipped, 0 failed (1,242 collected; the two PostgreSQL modules skip without `TEST_POSTGRES_*`); 16 `integration` tests deselected; coverage 88.39% (gate 85%); 15m34s.
+- Static gates: flake8, black, isort and mypy are clean. vulture is clean. bandit has 0 HIGH
+  and 57 reviewed B608 findings. pip-audit of the lock finds no known vulnerabilities.
+- PostgreSQL 16: schema tests 4/4 passed locally against a throwaway container. The schema and
+  concurrency tests run in the `postgres` CI job of the release PR.
+- Live gemma3:4b: 16 passed (19m41s; end-to-end job READY after 374 s).
